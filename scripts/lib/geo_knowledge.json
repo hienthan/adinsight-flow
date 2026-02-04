@@ -1,0 +1,298 @@
+{
+    "penang": {
+        "country": "Malaysia",
+        "city": "Penang"
+    },
+    "sabah": {
+        "country": "Malaysia",
+        "city": "Sabah"
+    },
+    "tasmania": {
+        "country": "Australia",
+        "city": "Tasmania"
+    },
+    "reykjavik": {
+        "country": "Iceland",
+        "city": "Reykjavik"
+    },
+    "bohol": {
+        "country": "Philippines",
+        "city": "Bohol"
+    },
+    "boracay": {
+        "country": "Philippines",
+        "city": "Boracay"
+    },
+    "bintan": {
+        "country": "Indonesia",
+        "city": "Bintan"
+    },
+    "cebu": {
+        "country": "Philippines",
+        "city": "Cebu"
+    },
+    "mactan": {
+        "country": "Philippines",
+        "city": "Mactan"
+    },
+    "moalboal": {
+        "country": "Philippines",
+        "city": "Moalboal"
+    },
+    "da-lat": {
+        "country": "Viet Nam",
+        "city": "Da Lat"
+    },
+    "chau-doc": {
+        "country": "Viet Nam",
+        "city": "Chau Doc"
+    },
+    "jeju": {
+        "country": "South Korea",
+        "city": "Jeju"
+    },
+    "cappadocia": {
+        "country": "Turkey",
+        "city": "Cappadocia"
+    },
+    "koh-samui": {
+        "country": "Thailand",
+        "city": "Koh Samui"
+    },
+    "angkor": {
+        "country": "Cambodia",
+        "city": "Siem Reap"
+    },
+    "vatican": {
+        "country": "Italy",
+        "city": "Vatican City"
+    },
+    "ayutthaya": {
+        "country": "Thailand",
+        "city": "Ayutthaya"
+    },
+    "penghu": {
+        "country": "Taiwan",
+        "city": "Penghu"
+    },
+    "penhu": {
+        "country": "Taiwan",
+        "city": "Penghu"
+    },
+    "hualien": {
+        "country": "Taiwan",
+        "city": "Hualien"
+    },
+    "taitung": {
+        "country": "Taiwan",
+        "city": "Taitung"
+    },
+    "loire-valley": {
+        "country": "France",
+        "city": "Loire Valley"
+    },
+    "french-riviera": {
+        "country": "France",
+        "city": "French Riviera"
+    },
+    "provence": {
+        "country": "France",
+        "city": "Provence"
+    },
+    "hobat": {
+        "country": "Australia",
+        "city": "Hobart"
+    },
+    "guangdong": {
+        "country": "China",
+        "city": "Guangdong"
+    },
+    "ha-long": {
+        "country": "Viet Nam",
+        "city": "Ha Long Bay"
+    },
+    "halong": {
+        "country": "Viet Nam",
+        "city": "Ha Long Bay"
+    },
+    "coron": {
+        "country": "Philippines",
+        "city": "Coron"
+    },
+    "palawan": {
+        "country": "Philippines",
+        "city": "Palawan"
+    },
+    "oslob": {
+        "country": "Philippines",
+        "city": "Oslob"
+    },
+    "tegalalang": {
+        "country": "Indonesia",
+        "city": "Bali"
+    },
+    "balkans": {
+        "country": "Europe",
+        "city": "Balkans"
+    },
+    "scotland": {
+        "country": "United Kingdom",
+        "city": "Scotland"
+    },
+    "wales": {
+        "country": "United Kingdom",
+        "city": "Wales"
+    },
+    "northern-ireland": {
+        "country": "United Kingdom",
+        "city": "Northern Ireland"
+    },
+    "quy-nhon": {
+        "country": "Viet Nam",
+        "city": "Quy Nhon"
+    },
+    "quynhon": {
+        "country": "Viet Nam",
+        "city": "Quy Nhon"
+    },
+    "hunter-valley": {
+        "country": "Australia",
+        "city": "Hunter Valley"
+    },
+    "shodoshima": {
+        "country": "Japan",
+        "city": "Shodoshima"
+    },
+    "namdaemun": {
+        "country": "South Korea",
+        "city": "Seoul"
+    },
+    "ba-na": {
+        "country": "Viet Nam",
+        "city": "Da Nang"
+    },
+    "nami-island": {
+        "country": "South Korea",
+        "city": "Nami Island"
+    },
+    "sunshine-coast": {
+        "country": "Australia",
+        "city": "Sunshine Coast"
+    },
+    "fulong": {
+        "country": "Taiwan",
+        "city": "Fulong"
+    },
+    "xiaoliuqiu": {
+        "country": "Taiwan",
+        "city": "Xiaoliuqiu"
+    },
+    "koh-tao": {
+        "country": "Thailand",
+        "city": "Koh Tao"
+    },
+    "koh-nangyuan": {
+        "country": "Thailand",
+        "city": "Koh Nangyuan"
+    },
+    "koh-pha-ngan": {
+        "country": "Thailand",
+        "city": "Koh Pha Ngan"
+    },
+    "blue-mountains": {
+        "country": "Australia",
+        "city": "Blue Mountains"
+    },
+    "mount-fuji": {
+        "country": "Japan",
+        "city": "Mount Fuji"
+    },
+    "fuji": {
+        "country": "Japan",
+        "city": "Mount Fuji"
+    },
+    "hakone": {
+        "country": "Japan",
+        "city": "Hakone"
+    },
+    "nikko": {
+        "country": "Japan",
+        "city": "Nikko"
+    },
+    "nara": {
+        "country": "Japan",
+        "city": "Nara"
+    },
+    "kamakura": {
+        "country": "Japan",
+        "city": "Kamakura"
+    },
+    "yokohama": {
+        "country": "Japan",
+        "city": "Yokohama"
+    },
+    "nagoya": {
+        "country": "Japan",
+        "city": "Nagoya"
+    },
+    "hiroshima": {
+        "country": "Japan",
+        "city": "Hiroshima"
+    },
+    "fukuoka": {
+        "country": "Japan",
+        "city": "Fukuoka"
+    },
+    "sapporo": {
+        "country": "Japan",
+        "city": "Sapporo"
+    },
+    "otaru": {
+        "country": "Japan",
+        "city": "Otaru"
+    },
+    "shirakawago": {
+        "country": "Japan",
+        "city": "Shirakawago"
+    },
+    "kanazawa": {
+        "country": "Japan",
+        "city": "Kanazawa"
+    },
+    "takayama": {
+        "country": "Japan",
+        "city": "Takayama"
+    },
+    "matsumoto": {
+        "country": "Japan",
+        "city": "Matsumoto"
+    },
+    "kobe": {
+        "country": "Japan",
+        "city": "Kobe"
+    },
+    "himeji": {
+        "country": "Japan",
+        "city": "Himeji"
+    },
+    "miyajima": {
+        "country": "Japan",
+        "city": "Miyajima"
+    },
+    "kumamoto": {
+        "country": "Japan",
+        "city": "Kumamoto"
+    },
+    "kagoshima": {
+        "country": "Japan",
+        "city": "Kagoshima"
+    },
+    "miyazaki": {
+        "country": "Japan",
+        "city": "Miyazaki"
+    },
+    "beppu": {
+        "country": "Japan",
+        "city": "Beppu"
+    }
+}

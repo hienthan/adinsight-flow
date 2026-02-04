@@ -1,0 +1,522 @@
+/Users/hienthan/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Loading data from data/klook_experiences-activity_preview.json...
+
+=== Geopy Enrichment ===
+Total URLs: 33,777
+Unknown URLs: 7,380 (21.8%)
+Processing: 500 URLs
+Rate limit: 1 request/second (OpenStreetMap policy)
+
+✗ [1/500] tokyocity-to-disney-transfer                       -> Not found
+✓ [2/500] swiss-travel-rail-pass                             -> Switzerland, Rail Travel Office
+✓ [3/500] snow-king-ice-cream-taipei%EF%BB%BF                -> Taiwan, Snow King Ice Cream
+✓ [4/500] park-cafe-hotel                                    -> Germany, Hotel Park-Cafe
+✓ [5/500] kuan-zhai-xiao-xiang-pagoda-street                 -> China, 邦宽线
+✗ [6/500] new-ubin-seafood-chijmes-city-hall                 -> Not found
+✗ [7/500] lingzhi-vegetarian-orchard                         -> Not found
+✗ [8/500] ocean-adventure-lambai-island                      -> Not found
+✗ [9/500] heroic-13-sri-petaling                             -> Not found
+✗ [10/500] dodo-dim-sum-bowls-subang-parade%09%09%09          -> Not found
+✗ [11/500] sub-culture-vulture-discover-world-otaku           -> Not found
+✓ [12/500] tree-valley-life-science-museum-ticket             -> Taiwan, Tree Valley Life Science Museum
+✓ [13/500] ba-den-cable-car-ticket-in-tay-ninh                -> China, Zhuhai cable car upper station ticket office
+✗ [14/500] tulloch-wines-tasting-experience                   -> Not found
+✗ [15/500] tulloch-wines-mystery-wine-tasting-experience      -> Not found
+✗ [16/500] sweetstart-bakery-setia-alam                       -> Not found
+✗ [17/500] miss-tan-oriental-cuisine-bukit-prima-pelangi      -> Not found
+✗ [18/500] venus-kitchen-delivery-segambut                    -> Not found
+✓ [19/500] wild-west-cowboy-indoor-theme-park-segarcity       -> Malaysia, Wild West Cowboy
+✗ [20/500] windlab-indoor-skydiving-experience                -> Not found
+✗ [21/500] table-island-and-qimei-hopping-tour-water-activiti -> Not found
+✗ [22/500] chateau-dareumbeau-linc-kl                         -> Not found
+✗ [23/500] upperroom-board-game-cafe-taman-connaught          -> Not found
+✗ [24/500] cultural-cycling-experience-transfers-langkawi     -> Not found
+✗ [25/500] mangrove-tour-transfers-meal-kayaking-langkawi     -> Not found
+✗ [26/500] kintamani-indonesian-restaurant-furama-riverfront- -> Not found
+✗ [27/500] bernina-trenino-svizzera-alpi                      -> Not found
+✗ [28/500] just-stay-resort-guang-zhou                        -> Not found
+✗ [29/500] irukandji-shark-ray-encounters-ticket-port-stephen -> Not found
+✗ [30/500] instawalk-civic-colours-tour                       -> Not found
+✗ [31/500] regal-palace-resort-hui-zhou                       -> Not found
+✗ [32/500] chimelong-spaceship-hotel-zhu-hai                  -> Not found
+✗ [33/500] gibbston-valley-canyoning-half-day-guided-tour     -> Not found
+✗ [34/500] coolies-towkays-gig-economy-join-tour              -> Not found
+✗ [35/500] its-wrap-fragrant-sustainable-traditions-yesteryea -> Not found
+✗ [36/500] caesarmetro-metrobuffet                            -> Not found
+✗ [37/500] eiffel-tower-elevator-tour                         -> Not found
+✗ [38/500] penguin-hotel-buffet-chimelong-zhu-hai             -> Not found
+✗ [39/500] sun-moon-lake-glamping-experience-biwak            -> Not found
+✗ [40/500] miniature-food-workshop-egg-rolls-in-a-bottle      -> Not found
+✓ [41/500] sea-prince-conference-resort-hui-zhou              -> Canada, Prince Albert Resort and Conference Centre
+✗ [42/500] kinmen-hanfu-cheongsa,-experience                  -> Not found
+✗ [43/500] sujata-spa-experience-tsim-sha-tsui                -> Not found
+✗ [44/500] phu-quy-island-2d1n-tour                           -> Not found
+✗ [45/500] aperitif-river-cruise-seine                        -> Not found
+✗ [46/500] stargazing-tour-kalbarri                           -> Not found
+✗ [47/500] chimelong-panda-hotel-buffet-guang-zhou            -> Not found
+✗ [48/500] ulva-island-explorer-stewart-island                -> Not found
+✗ [49/500] eco-sailing-dolphin-watching-adventure-fraser-isla -> Not found
+✓ [50/500] otsuka-museum-art-e-ticket                         -> Japan, Ōtsuka Museum of Art
+✗ [51/500] whale-watching-experience-coastal-express-mooloola -> Not found
+✗ [52/500] 33camping-glamping-miaoli                          -> Not found
+✗ [53/500] tonyblack-beautyexperience-tonymoly-tsimshatsui    -> Not found
+✗ [54/500] newcastles-true-crime-tour                         -> Not found
+✗ [55/500] sup-experience-xiao-liuqiu-coral-ocean             -> Not found
+✗ [56/500] hue-dining-afternoon-tea-set                       -> Not found
+✗ [57/500] pingtung-lambai-island-sup-experience              -> Not found
+✗ [58/500] fullon-hotels-hotspring-vacation-newtaipei         -> Not found
+✗ [59/500] artist-mosaic-craft-studio                         -> Not found
+✗ [60/500] lambai-island-sailboat-kayaking                    -> Not found
+✗ [61/500] newtown-chewtown-food-street-art-walking-tour      -> Not found
+✗ [62/500] wellness-me-time-package-st-gregory-parkroyal-on-b -> Not found
+✓ [63/500] hi-lai-harbour                                     -> India, Harbour
+✓ [64/500] mos-burger                                         -> Italy, Burger - Borghetto
+✓ [65/500] jr-rail-ticket-west-all-area                       -> China, West Rail Tsuen Wan Station Transformer Room D
+✓ [66/500] island-hopping-panglao-island-hopping              -> Philippines, Islehopping Boat Tour Island Hopping
+✗ [67/500] portaventura-amusement-park-ticket                 -> Not found
+✓ [68/500] dong-giang-heaven-gate-admission-ticket            -> China, Silkworm Hill Heaven Pool
+✓ [69/500] hsin-tung-yang                                     -> Taiwan, Hsin Tung Yang
+✗ [70/500] join-paddle-boarding-hillarys-boat-harbor          -> Not found
+✗ [71/500] bic-camera-tourist-privilege-discount-coupon-2022  -> Not found
+✗ [72/500] handmade-carpet-tuftinggun                         -> Not found
+✗ [73/500] angthing-marine-national-park-by-speedboat-or-big- -> Not found
+✓ [74/500] desa-dairy-cattle-farm-poring-hotspring-lohan-para -> Malaysia, Desa Dairy Farm
+✗ [75/500] phnom-kulen-mountain-tour                          -> Not found
+✗ [76/500] miaoli-shuiyun-waterfall-river-tracing-experience  -> Not found
+✓ [77/500] outdoor-adventures-kayak-stand-up-paddle-fishing-k -> Sweden, Outdoor Adventures
+✓ [78/500] doi-inthanon-national-park-pha-dok-siew-fullday-to -> Thailand, Doi Inthanon National Park
+✗ [79/500] private-one-way-transfer-transfer-jetty-langkawi   -> Not found
+✗ [80/500] emmebi-italia-hk-head-spa-tsim-sha-tsui            -> Not found
+✗ [81/500] trelax-massage-expeerience-causewaybay             -> Not found
+✓ [82/500] hue-monuments-complex-admission-ticket             -> Kazakhstan, Korkyt Ata Complex
+✓ [83/500] cinnamon-coffee-house-one-world-hotel              -> Sri Lanka, London House of Coffee
+✓ [84/500] the-market-hotel-icon-hk                           -> Philippines, Icon Premiere Hotel
+✗ [85/500] straits-oriental-museum                            -> Not found
+✗ [86/500] forestpath-camping-experience                      -> Not found
+✓ [87/500] hung-fook-tong                                     -> China, Hung Fook Tong
+✓ [88/500] natural-thai-spa-2022                              -> United States, Thai Spices Natural Restaurant
+✓ [89/500] k-style-make-up-and-hair-styling-experience        -> Germany, Time for Style Hair&Make-Up
+✗ [90/500] awaji-farm-park-england-hill-admission-ticket      -> Not found
+✓ [91/500] i-o-n-kwun-tong                                    -> China, Kwun Tong
+✗ [92/500] timetodraw-workshop-tsuenwan                       -> Not found
+✗ [93/500] iwtarot-tarotclass-sheungwan                       -> Not found
+✓ [94/500] cape-point-penguin-join-day-landmark-tour          -> Australia, Stubbs Point
+✗ [95/500] peachyforest-beadbracelet-workshop-fortresshill    -> Not found
+✗ [96/500] lcmleather-artjam-causewaybay                      -> Not found
+✗ [97/500] lcmleather-diffuserworkshop-causewaybay            -> Not found
+✗ [98/500] lcmleather-nftmosaiccoasterworkshop-causewaybay    -> Not found
+✗ [99/500] lcmleather-miniterrariumworkshop-causewaybay       -> Not found
+✗ [100/500] lcmleather-resinalphabetsworkshops-causewaybay     -> Not found
+✓ [101/500] ningxia-night-market                               -> Taiwan, Ningxia Night Market
+✗ [102/500] chillon-castle-direct-entry-admission-veytaux      -> Not found
+✓ [103/500] le-cafe                                            -> Philippines, Cafe
+✓ [104/500] beauty-maker-spa-2022                              -> United Kingdom, Beauty Maker
+✓ [105/500] huahin-muay-thai-gym                               -> Thailand, King of Muay Thai
+✗ [106/500] emilyq-shop                                        -> Not found
+✗ [107/500] huis-ten-bosch-bus-tour-from-tenjin                -> Not found
+✗ [108/500] bench-pin-handcraft                                -> Not found
+✗ [109/500] sumlang-lake-express-tour-cagsawa-ruins            -> Not found
+✗ [110/500] cagsawa-ruins-express-tour                         -> Not found
+✗ [111/500] splashmania-waterpark-ticket-in-gamuda-cove-selang -> Not found
+✗ [112/500] ephesus-join-day-bus-tour-izmir                    -> Not found
+✓ [113/500] the-royal-garden                                   -> Greece, National Garden
+✗ [114/500] caesarparkkenting-compassbuffetrestaurant-pingtung -> Not found
+✓ [115/500] meiji-mura-admission                               -> Japan, Meiji-mura Museum
+✗ [116/500] siargao-motorbike-rental                           -> Not found
+✓ [117/500] harbour-tour                                       -> India, Harbour
+✓ [118/500] the-bentong-farm-ticket-in-pahang                  -> Malaysia, Bentong Happy Farm
+✓ [119/500] mrs-fields-cookies                                 -> United States, Crumbl Cookies
+✗ [120/500] gankeng-hotel-shenz-zhen                           -> Not found
+✗ [121/500] 90-minutes-join-karting-monkey-kart-shibuya        -> Not found
+✗ [122/500] rc-rachai-muay-thai-class-in-patong                -> Not found
+✗ [123/500] memories-ceramic-hk-ceramic-hand-painted-glaze-wor -> Not found
+✗ [124/500] misaki-maguro-tuna-ticket                          -> Not found
+✗ [125/500] sundrug-tax-free-discount-coupon                   -> Not found
+✗ [126/500] 4-hour-glenorchy-kiwi-special-tour-photography     -> Not found
+✓ [127/500] royal-plaza-hotel-lion-rock                        -> China, Royal Plaza Hotel
+✗ [128/500] nort-zen-bamboo-walk-day-use                       -> Not found
+✓ [129/500] swissminiatur-melide                               -> Switzerland, Swissminiatur
+✓ [130/500] congress-plus                                      -> United States, Red Roof PLUS Austin South
+✗ [131/500] mount-daraitan-join-in-day-hike                    -> Not found
+✓ [132/500] wu-wang-guo-hotpot                                 -> China, HOTPOT
+✗ [133/500] 1-hour-2-hours-join-fishing-experience-daintree    -> Not found
+✗ [134/500] city-explorer-helicopter-experience-lisboa         -> Not found
+✗ [135/500] christ-the-redeemer-and-sugarloaf-mountain-day-tou -> Not found
+✗ [136/500] hotel-buffet-sheraton-hongkong-hotel-towers-thecaf -> Not found
+✗ [137/500] japanese-cafe-instagram-day-tour-tour              -> Not found
+✗ [138/500] ningxia-5-days-4-nights                            -> Not found
+✗ [139/500] hotel-buffet-the-cityview-city-cafe                -> Not found
+✗ [140/500] soju-tasting-experience                            -> Not found
+✓ [141/500] thai-spa-massage-institute-shen-zhen               -> Slovakia, Nail Institute & Thai Massage by Yen Nhi
+✗ [142/500] asahiyama-zoo-kurodake-ropeway-blue-pond-join-one- -> Not found
+✗ [143/500] sky-beach-at-mahanakhon-skywalk                    -> Not found
+✓ [144/500] franz-josef-glacier-fox-glacier-scenic-flight      -> New Zealand, Franz Josef Glacier
+✗ [145/500] flight-experience-20-minute-neve-discoverer        -> Not found
+✗ [146/500] beginners-scuba-diving-experience-fujairah         -> Not found
+✓ [147/500] game-of-thrones-studio-tour                        -> United Kingdom, Game of Thrones Studio Tour
+✗ [148/500] 4-day-kakadu-outback-4wd-adventure-landmark-tour   -> Not found
+✓ [149/500] snorkeling-experience-at-orchid-island-free-photog -> Taiwan, Cold spring & snorkeling
+✗ [150/500] promenade-restaurant-harbour-plaza-metropolis      -> Not found
+✗ [151/500] travel-for-better-limited-one-day-workshop-with-ba -> Not found
+✓ [152/500] notre-dame-cathedral-self-guided-audio-tour        -> Luxembourg, Notre-Dame Cathedral
+✗ [153/500] 3-day-kakadu-litchfield-4wd-camping-tour           -> Not found
+✗ [154/500] fox-glacier-mountain-spectacular-helicopter-flight -> Not found
+✗ [155/500] fragrance-making-workshop-perfume-play             -> Not found
+✗ [156/500] eizan-railway-eekippu-day-pass                     -> Not found
+✗ [157/500] dmz-shuttle-bus-round-trip                         -> Not found
+✗ [158/500] dmz-tour                                           -> No meaningful words
+✗ [159/500] family-river-cruise-seine                          -> Not found
+✗ [160/500] star-chaser-night-cruise                           -> Not found
+✗ [161/500] from-phi-phi-day-tour-visit-to-railay-beach-with-t -> Not found
+✗ [162/500] dragon-boat-orientation-and-team-building-experien -> Not found
+✗ [163/500] muay-thai-class-at-boon-lanna-muay-thai-gym        -> Not found
+✗ [164/500] twilight-didgeridoo-cave-tour                      -> Not found
+✗ [165/500] davos-paragliding-tandem-flight-experience-paragli -> Not found
+✓ [166/500] harbour-plaza-metropolis-senzuru-japanese-restaura -> China, Harbour Plaza Metropolis
+✗ [167/500] ballenberg-open-air-museum-brienzwiler             -> Not found
+✗ [168/500] koprulu-canyon-water-rafting-experience            -> Not found
+✗ [169/500] belle-vue-afternoon-tea-bukit-tinggi               -> Not found
+✗ [170/500] khao-lak-day-trip-phi-phi-with-transfer-and-privat -> Not found
+✓ [171/500] frida-kahlo-tour                                   -> Mexico, Frida Kahlo
+✗ [172/500] taste-qagoma-1-hour-tour                           -> Not found
+✗ [173/500] sion-scavenger-hunt-sights-self-guided-tour        -> Not found
+✗ [174/500] private-mountain-chocolate-fondue-experience-mount -> Not found
+✓ [175/500] zurich-private-walking-tour                        -> Switzerland, Walking Frames
+✗ [176/500] miaoli-tomsworldsmo-ticket                         -> Not found
+✓ [177/500] boat-dolphin-tour                                  -> New Zealand, Boat Parks
+✗ [178/500] guzheng-han-style-clothing-experience-kotomusic    -> Not found
+✗ [179/500] 5-in-1-snorkeling-tour-turtles-reefs-musa-shipwrec -> Not found
+✗ [180/500] private-davos-paragliding-tandem-experience-half-d -> Not found
+✗ [181/500] umeda-gofukuza                                     -> Not found
+✗ [182/500] klosters-tandem-paragliding-flight-half-day-experi -> Not found
+✗ [183/500] pallay-punchu-full-day                             -> Not found
+✓ [184/500] milano-hop-on-off-bus-pass                         -> Italy, Milan
+✗ [185/500] fondue-paragliding-flight-experience-davos         -> Not found
+✓ [186/500] kintetsu-department-store-guest-coupon             -> Japan, Kintetsu
+✗ [187/500] 3-day-isle-skye-highlands-loch-ness-tour           -> Not found
+✗ [188/500] paragliding-tandem-flight-experience-flums         -> Not found
+✗ [189/500] sky-lagoon-pass-optional-transfer                  -> Not found
+✗ [190/500] desert-sea-sports-excursion-sharm-el-sheikh        -> Not found
+✗ [191/500] jesmonite-workshop-by-hey-decoupage                -> Not found
+✓ [192/500] full-day-dharamshala-tour                          -> India, Dharamshala
+✓ [193/500] maras-moray-tour                                   -> Peru, Conjunto arqueologico Moray
+✗ [194/500] cooking-class-at-daun-senja-kitchen-in-cheras-sela -> Not found
+✗ [195/500] whale-watching-cruise-kalbarri                     -> Not found
+✗ [196/500] phom-penh-silk-island-tuktuk-tour                  -> Not found
+✗ [197/500] 11-and-half-hour-tuscany-walking-day-tour          -> Not found
+✓ [198/500] kapal-layar-restaurant-langkawi                    -> Malaysia, Kapal Layar
+✗ [199/500] madmatte-silver-ring-making-workshop               -> Not found
+✓ [200/500] guimaras-private-half-day-land-tour                -> Philippines, Land Transportation Office Guimaras
+✓ [201/500] desa-dairy-cattle-farm-atv-paragliding-kundasang-d -> Malaysia, Desa Dairy Farm
+✓ [202/500] lake-titicaca-full-day-tour-uros-taquile-islands   -> Peru, Jardin Lake Titicaca Hotel
+✗ [203/500] mengkabong-mangrove-river-day-tour                 -> Not found
+✗ [204/500] glamping-experience-cameron-highlands              -> Not found
+✗ [205/500] shake-savor-coffee-cocktails-from-the-soul-of-viet -> Not found
+✗ [206/500] private-mengalum-island-snorkeling-mangrove-firefl -> Not found
+✗ [207/500] ausangate-trek-3-days                              -> Not found
+✗ [208/500] lares-trek-machu-picchu-4-days                     -> Not found
+✗ [209/500] kimchi-making-class                                -> Not found
+✗ [210/500] leman-ice-and-snow-kingdom-shen-zhen               -> Not found
+✓ [211/500] we-feng-mushroom-museum                            -> Taiwan, Taiwan Mushroom Culture Museum
+✓ [212/500] hk-heritage-tour                                   -> Canada, Heritage
+✓ [213/500] lake-titicaca-uros-floating-islands-tour           -> Peru, Jardin Lake Titicaca Hotel
+✗ [214/500] titicaca-lake-tour-floating-islands-uros-amantani- -> Not found
+✗ [215/500] selangor-hop-on-hop-off-signtseeing-bus-pass       -> Not found
+✗ [216/500] lacquered-spoon-making                             -> Not found
+✗ [217/500] ultimate-jetboat-ride-surf-lesson-combo            -> Not found
+✓ [218/500] orizuru-tower                                      -> Japan, Hiroshima Orizuru Tower
+✗ [219/500] mt-tamborine-day-tour-with-chinese-speaking-guide  -> Not found
+✗ [220/500] currumbin-wildlife-point-danger-tour-with-chinese- -> Not found
+✗ [221/500] natural-bridge-glow-worm-night-tour-japanese-engli -> Not found
+✓ [222/500] yarra-valley-dairy-cheese-tasting-experience       -> Australia, Yarra Valley Dairy
+✗ [223/500] catamaran-bike-tour-langkawi                       -> Not found
+✗ [224/500] langkawi-geoforest-hike-stand-up-paddle-experience -> Not found
+✗ [225/500] huguang-guild-hall-ticket                          -> Not found
+✓ [226/500] garden-restaurant-south-garden-hotels-and-resorts  -> United Arab Emirates, Garden Restaurant
+✗ [227/500] zooparc-de-beauval-direct-entry-ticket-saint-aigna -> Not found
+✗ [228/500] seafood-buffet-ngon-gallery-restaurant-nhatrang    -> Not found
+✓ [229/500] hk-half-day-food-tour                              -> Gabon, Moanda Airport
+✗ [230/500] manatees-and-monkeys-clear-kayak-or-clear-paddlebo -> Not found
+✗ [231/500] hongdae-unique                                     -> Not found
+✗ [232/500] marinated-abalone                                  -> Not found
+✗ [233/500] watersports-experience-langkawi-red-ray-watersport -> Not found
+✗ [234/500] helicopter-flight-ultimate-jetboat-ride-combo      -> Not found
+✓ [235/500] mt-moiwa-ropeway                                   -> Japan, Moiwayama Ropeway
+✗ [236/500] kidzania-koshien                                   -> Not found
+✗ [237/500] korean-make-up-service                             -> Not found
+✓ [238/500] river-trekking                                     -> Malaysia, River Trekking
+✗ [239/500] yi-by-jereme-leung-raffles-hotel                   -> Not found
+✓ [240/500] yarra-valley-dairy-take-away-tasting-pack          -> Australia, Yarra Valley Dairy
+✓ [241/500] yarra-valley-dairy-picnic-pack                     -> Australia, Yarra Valley Dairy
+✗ [242/500] ranger-reds-zoo-ticket                             -> Not found
+✗ [243/500] phillip-island-penguin-parade-and-churchill-island -> Not found
+✓ [244/500] han-river-activity                                 -> United States, Lee Activity Center
+✓ [245/500] manu-national-park-4-days                          -> Peru, Manu National Park
+✗ [246/500] manu-rainforest-tour-6-days                        -> Not found
+✗ [247/500] manu-jungle-tour-3-days                            -> Not found
+✓ [248/500] beyond-boxing-stadium                              -> Thailand, Beyond Boxing Stadium
+✗ [249/500] giant-clam-dive-tokoriki-island-padi-5-star-dive-r -> Not found
+✗ [250/500] sunny-hill-pineapple-cake-gift-box                 -> Not found
+✓ [251/500] frankfurt-card                                     -> Germany, Goethe-Card Service Westend
+✗ [252/500] buffet-restaurant-eda-skylark-hotel                -> Not found
+✗ [253/500] coffee-shop-joyous-restaurant-eda-skylark-hotel    -> Not found
+✗ [254/500] 90-minutes-join-karting-shibuya-kart               -> Not found
+✓ [255/500] silver-ring-diy                                    -> India, Inner Peripheral Ring Road
+✗ [256/500] manu-reserved-zone-tour-7-days                     -> Not found
+✗ [257/500] tea-experience                                     -> No meaningful words
+✗ [258/500] world-heritage-tour-dazu-grottoes-one-day-tour     -> Not found
+✗ [259/500] 3d2n-kakadu-litchfield-offroad-tour                -> Not found
+✓ [260/500] nusa-penida-private-boat-tour                      -> Indonesia, Sri Rejeki Boat
+✗ [261/500] park-guell-guided-tour-with-skip-the-line-tickets  -> Not found
+✗ [262/500] yoy-baiwei-glamping                                -> Not found
+✗ [263/500] irregulart-workshop-series-master                  -> Not found
+✗ [264/500] hygge-workshop                                     -> Not found
+✗ [265/500] emerald-cave-kayak-sup-rental-optional-transpotati -> Not found
+✓ [266/500] arches-national-park-self-guided-driving-tour-in-u -> United States, Arches National Park
+✓ [267/500] dance-class                                        -> France, Dance class
+✗ [268/500] mount-bromo-ijen-multiday-private-tour-with-multi- -> Not found
+✗ [269/500] borghese-gallery-guided-walking-tour               -> Not found
+✓ [270/500] phillip-island-1-day-private-tour                  -> Australia, Phillip Island
+✗ [271/500] camping-car-package                                -> Not found
+✗ [272/500] tasting-yarra-valley-wine-cheese-bubbles-beer-gin- -> Not found
+✗ [273/500] flight-experience-uluru-rock-blast-scenic-flights  -> Not found
+✗ [274/500] ebb-and-flow-buffet                                -> Not found
+✗ [275/500] glacier-express-panoramic-train-private-day-tour   -> Not found
+✗ [276/500] zurich-instagrammable-spots-walking-tour           -> Not found
+✗ [277/500] royal-garden-the-greenery                          -> Not found
+✓ [278/500] full-day-dive-trip-koh-chang-padi-5-star-dive-cent -> Thailand, BB Divers – PADI 5 star Dive Center Koh Chang
+✓ [279/500] padi-try-scuba-diving-koh-phangan-padi-5-star-dive -> Thailand, Super Divers PADI 5 Star Phuket Scuba Diving Centre
+✗ [280/500] dive-trip-sail-rock-koh-phangan-padi-5-star-dive-r -> Not found
+✗ [281/500] dive-resort-koh-phangan                            -> Not found
+✗ [282/500] try-scuba-diving-koh-phangan-padi-5-star-idc-resor -> Not found
+✗ [283/500] padi-enriched-air-diver-koh-chang-padi-5-star-dive -> Not found
+✗ [284/500] padi-ow-diver-koh-chang-padi-5-star-dive-center    -> Not found
+✗ [285/500] padi-aow-diver-koh-chang-padi-5-star-dive-center   -> Not found
+✓ [286/500] padi-try-scuba-diving-koh-chang-padi-5-star-dive-c -> Thailand, Super Divers PADI 5 Star Phuket Scuba Diving Centre
+✗ [287/500] dive-trip-koh-rang-national-park-padi-5-star-dive- -> Not found
+✗ [288/500] ow-diver-course-e-learning-koh-kood-padi-5-star-di -> Not found
+✗ [289/500] aow-course-koh-kood-padi-5-star-dive-center        -> Not found
+✗ [290/500] padi-ow-diver-koh-kood-padi-5-star-dive-center     -> Not found
+✗ [291/500] enriched-air-diver-koh-phangan-padi-5-star-idc-res -> Not found
+✗ [292/500] padi-aow-diver-koh-phangan-padi-5-star-idc-resort  -> Not found
+✗ [293/500] padi-ow-diver-koh-phangan-padi-5-star-idc-resort   -> Not found
+✗ [294/500] sail-rock-fun-dive-koh-phangan-padi-5-star-idc-res -> Not found
+✗ [295/500] ow-diver-koh-phi-phi-padi-dive-center              -> Not found
+✗ [296/500] nforgettable-dive-trip-koh-phi-phi-padi-5-star-idc -> Not found
+✗ [297/500] fabulous-4-dives-koh-phi-phi-padi-5-star-idc       -> Not found
+✗ [298/500] knossos-palace-entry-ticket-in-crete-with-optional -> Not found
+✗ [299/500] aow-diver-mindoro-padi-5-star-dive-resort          -> Not found
+✗ [300/500] 4-days-dive-package-mindoro-padi-5-star-dive-resor -> Not found
+✗ [301/500] padi-enriched-air-diver-luzon                      -> Not found
+✗ [302/500] padi-enriched-air-diver-negros-padi-resort         -> Not found
+✓ [303/500] padi-try-scuba-diving-negros-padi-resort           -> Thailand, Super Divers PADI 5 Star Phuket Scuba Diving Centre
+✗ [304/500] 1pm-dive-cauayan-negros-padi-resort                -> Not found
+✗ [305/500] cycling-northern-rivers-rail-trail-e-bike-hire     -> Not found
+✗ [306/500] experience-alcatraz-island-various-tour-options    -> Not found
+✗ [307/500] alfama-chiado-belem-private-half-day-rickshaw-tour -> Not found
+✓ [308/500] kangaroo-island-trail-food-wine-tour               -> Australia, Kangaroo Island Sculpture Trail
+✓ [309/500] meknes-volubilis-moulay-idriss-day-tour-fes        -> Morocco, Bus stop 15
+✗ [310/500] wallabies-rocks-copper-rawnsley-park               -> Not found
+✗ [311/500] bunyeroo-brachina-gorge-rawnsley-park              -> Not found
+✓ [312/500] kangaroo-island-scenic-nature-wildlife-day-tour    -> Australia, Scenic Drive
+✗ [313/500] walking-tour-intramuros                            -> Not found
+✗ [314/500] have-fun-fukui-pass-1-week-free-pass               -> Not found
+✗ [315/500] project-smoked                                     -> Not found
+✗ [316/500] snorkel-napaling-swim-panglao-sardines             -> Not found
+✗ [317/500] hanbok-photo-snap                                  -> Not found
+✗ [318/500] arkapena-tour-rawnsley-park                        -> Not found
+✓ [319/500] station-run-rawnsley-park                          -> Australia, Station Hill Lookout
+✗ [320/500] freediving-tour-napaling-reef-sardines             -> Not found
+✗ [321/500] 2d1n-sahara-desert-tour-merzouga-camp-stay-fes     -> Not found
+✗ [322/500] elaphite-island-hopping-cruise-karaka-ship         -> Not found
+✗ [323/500] volcano-black-lava-and-black-sand-day-tour-jeep-wi -> Not found
+✗ [324/500] double-kayak-at-lazarus-sea-sports-centre          -> Not found
+✓ [325/500] the-foret-spa                                      -> France, Foret
+✓ [326/500] yen-tu-mountain-cable-car-ticket                   -> Australia, Cable Crescent
+✗ [327/500] 1-hour-melbournes-yarra-valley-orchard-tour        -> Not found
+✗ [328/500] 12d11n-everest-base-camp-trek                      -> Not found
+✗ [329/500] half-day-desert-quad-dromedary-tour-marrakech      -> Not found
+✗ [330/500] 15d14n-gokyo-valley-everest-base-camp-trek         -> Not found
+✓ [331/500] cherry-blossom-tour                                -> Philippines, Cherry Blossom
+✗ [332/500] thousand-sardines-diving-pescador-island-tour      -> Not found
+✗ [333/500] fork-grape-safari-tour                             -> Not found
+✓ [334/500] over-the-top-safari-tour                           -> Pakistan, SAFARI PALM VILLAGE OFFICE
+✓ [335/500] road-to-kangaroo-island-tour                       -> Australia, Ten Trees Lagoon Road
+✓ [336/500] willowbank-wildlife-reserve-admission-ticket       -> New Zealand, Willowbank Wildlife Reserve
+✗ [337/500] colorful-souks-tour-marrakech                      -> Not found
+✗ [338/500] marrakech-historical-cultural-half-day-tour        -> Not found
+✓ [339/500] street-food-night-tour-marrakech                   -> United Kingdom, Tandoori Night
+✓ [340/500] namobuddha-day-tour                                -> Nepal, Namobuddha
+✗ [341/500] holopark-ticket-in-chiayi                          -> Not found
+✗ [342/500] red-sea-semi-submarine-boat-trip-with-snorkeling   -> Not found
+✗ [343/500] us-navy-memorial-white-house-capitol-building-join -> Not found
+✗ [344/500] padi-discover-scuba-diving-attica-padi-5-star-dive -> Not found
+✗ [345/500] half-day-snorkelling-trip-attica-padi-5-star-dive- -> Not found
+✗ [346/500] beach-snorkelling-trip-aegean-islands-padi-5-star- -> Not found
+✗ [347/500] padi-advanced-open-water-diver-aegean-islands-padi -> Not found
+✗ [348/500] open-water-diver-negros-padi-5-star-idc-resort     -> Not found
+✓ [349/500] dauin-marine-sanctuary-shore-dive-negros-padi-5-st -> Philippines, Dauin Marine Reserve and Sanctuary
+✗ [350/500] padi-open-water-diver-attica-padi-5-star-dive-cent -> Not found
+✗ [351/500] padi-advanced-open-water-diver-attica-padi-5-star- -> Not found
+✗ [352/500] everest-experience-mountain-flight                 -> API Error: HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Max retries exceeded with url: /search?q=everest+mountain+flight&format=json&limit=1&accept-language=en (Caused by NameResolutionError("HTTPSConnection(host='nominatim.openstreetmap.org', port=443): Failed to resolve 'nominatim.openstreetmap.org' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ [353/500] padi-enriched-air-diver-in-sicily-with-padi-5-star -> API Error: HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Max retries exceeded with url: /search?q=padi+enriched+diver&format=json&limit=1&accept-language=en (Caused by NameResolutionError("HTTPSConnection(host='nominatim.openstreetmap.org', port=443): Failed to resolve 'nominatim.openstreetmap.org' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ [354/500] half-day-snorkelling-trip-in-sardinia-with-padi-5- -> API Error: HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Max retries exceeded with url: /search?q=snorkelling+sardinia+with&format=json&limit=1&accept-language=en (Caused by NameResolutionError("HTTPSConnection(host='nominatim.openstreetmap.org', port=443): Failed to resolve 'nominatim.openstreetmap.org' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ [355/500] padi-open-water-diver-in-sardinia-with-padi-5-star -> API Error: HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Max retries exceeded with url: /search?q=padi+open+water&format=json&limit=1&accept-language=en (Caused by NameResolutionError("HTTPSConnection(host='nominatim.openstreetmap.org', port=443): Failed to resolve 'nominatim.openstreetmap.org' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ [356/500] dsd-in-sardinia-with-padi-5-star-dive-resort       -> API Error: HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Max retries exceeded with url: /search?q=sardinia+with+padi&format=json&limit=1&accept-language=en (Caused by NameResolutionError("HTTPSConnection(host='nominatim.openstreetmap.org', port=443): Failed to resolve 'nominatim.openstreetmap.org' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ [357/500] padi-open-water-diver-course-in-campania-with-padi -> API Error: HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Max retries exceeded with url: /search?q=padi+open+water&format=json&limit=1&accept-language=en (Caused by NameResolutionError("HTTPSConnection(host='nominatim.openstreetmap.org', port=443): Failed to resolve 'nominatim.openstreetmap.org' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ [358/500] padi-discover-scuba-diving-in-sicily-with-padi-5-s -> API Error: HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Max retries exceeded with url: /search?q=padi+discover+scuba&format=json&limit=1&accept-language=en (Caused by NameResolutionError("HTTPSConnection(host='nominatim.openstreetmap.org', port=443): Failed to resolve 'nominatim.openstreetmap.org' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ [359/500] padi-reactivate-e-learning-in-sicily-with-padi-5-s -> API Error: HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Max retries exceeded with url: /search?q=padi+reactivate+learning&format=json&limit=1&accept-language=en (Caused by NameResolutionError("HTTPSConnection(host='nominatim.openstreetmap.org', port=443): Failed to resolve 'nominatim.openstreetmap.org' ([Errno 8] nodename nor servname provided, or not known)"))
+✓ [360/500] padi-deep-diver-course-e-learning-in-sicily-with-p -> Philippines, Ocean Deep - Diver Training Center (PADI)
+✗ [361/500] let-us-guide-and-show-you-snorkelling-trip-ustica- -> Not found
+✗ [362/500] padi-advanced-open-water-diver-elearning-in-catalo -> Not found
+✗ [363/500] padi-discover-scuba-diving-in-catalonia-with-padi- -> Not found
+✗ [364/500] padi-scuba-refresher-in-catalonia-with-padi-5-star -> Not found
+✗ [365/500] padi-enriched-air-diver-e-learning-in-catalonia-wi -> Not found
+✗ [366/500] padi-advanced-open-water-diver-elearning-in-canary -> Not found
+✗ [367/500] open-water-diver-elearning-in-canary-islands-with- -> Not found
+✗ [368/500] full-day-dive-trip-in-sardinia-with-padi-5-star-id -> Not found
+✗ [369/500] padi-advanced-open-water-diver-in-sardinia-with-pa -> Not found
+✗ [370/500] rottnest-island-snorkelling-boat-tour              -> Not found
+✓ [371/500] white-house-capitol-building-join-bus-tour         -> United States, The White Swan Public House
+✗ [372/500] padi-reactivate-scuba-refresher-elearning-in-canar -> Not found
+✓ [373/500] half-day-dive-trip-in-canary-islands-with-padi-5-s -> Spain, Dive Club Ocean Trek
+✗ [374/500] short-snorkelling-trip-in-canary-islands-with-padi -> Not found
+✗ [375/500] padi-enriched-air-diver-in-canary-islands-with-pad -> Not found
+✗ [376/500] sharm-el-sheikh-private-yacht-trip                 -> Not found
+✓ [377/500] sharm-el-sheikh-desert-stargazing-bbq-dinner       -> Egypt, Desert View
+✓ [378/500] half-day-annah-rais-bidayuh-longhouse-tour-sarawak -> Malaysia, Karum Bidayuh Homestay
+✓ [379/500] small-group-philip-island-express-penguin-wallaby- -> United Kingdom, Small Street
+✗ [380/500] sharm-el-sheikh-private-speedboat-tiran-island     -> Not found
+✗ [381/500] 24-hour-frankfurt-hop-on-off-bus-ticket            -> Not found
+✗ [382/500] marsa-alam-snorkel-sea-cows-turtles-marsa-mubarak  -> Not found
+✗ [383/500] marsa-alam-hamata-islands-snorkeling-trip-lunch    -> Not found
+✗ [384/500] goyang-aquafield-spa-gimbap-making-experience      -> Not found
+✗ [385/500] lubeck-scavenger-hunt-city-private-half-day-walkin -> Not found
+✗ [386/500] kpop-idol-experience                               -> Not found
+✓ [387/500] capitol-building-white-house-memorials-join-half-d -> United States, George C. White Building
+✗ [388/500] albaicin-sacromonte-join-walking-tour              -> Not found
+✗ [389/500] sharm-atv-safari-horse-ride-camel-ride-breakfast   -> Not found
+✗ [390/500] sahl-hasheesh-diving-snorkeling-boat-trip-lunch    -> Not found
+✗ [391/500] el-gouna-empire-semi-submarine-trip-snorkeling     -> Not found
+✗ [392/500] sharm-overnight-dahab-canyon-safari-snorkel-camp-s -> Not found
+✗ [393/500] shared-parndorf-designer-outlet-parndorf-round-tri -> Not found
+✓ [394/500] barossa-valley-full-day-wine-tasting-tour          -> Australia, Lydoch Cafe & Wine Bar
+✗ [395/500] mengalum-island-and-mengkabong-river-cruise-day-to -> Not found
+✓ [396/500] everest-base-camp-adventure-trekking-mountain-flig -> China, Everest Base Camp
+✗ [397/500] zaanse-schans-giethoorn-small-group-tour-hotel-pic -> Not found
+✓ [398/500] full-day-clare-valley-wine-tour                    -> Australia, Clare Valley Wine & Food Tourism Centre
+✗ [399/500] begonia-garden-petite-italian-village-jara-island- -> Not found
+✓ [400/500] siam-park-ticket                                   -> Spain, Siam Park
+✗ [401/500] tufting-pompom-workshop-tudu-diy                   -> Not found
+✓ [402/500] experience-banff-national-park-lake-louise-moraine -> Canada, Banff National Park
+✗ [403/500] sacred-valley-machu-picchu-tour-2-days             -> Not found
+✗ [404/500] explore-shepherds-hut-cheese-making-process        -> Not found
+✗ [405/500] kpop-vocal-class                                   -> Not found
+✗ [406/500] kpop-dance-vocal-class                             -> Not found
+✗ [407/500] kpop-dance-class                                   -> Not found
+✗ [408/500] river-sightseeing-cruise-experience-sarawak        -> Not found
+✗ [409/500] advanced-open-water-diver-north-sulawesi-padi-5-st -> Not found
+✗ [410/500] padi-open-water-diver-dahab                        -> Not found
+✗ [411/500] padi-advanced-open-water-diver-dahab-padi-5-star-d -> Not found
+✗ [412/500] full-day-dive-trip-dahab-padi-5-star-dive-resort   -> Not found
+✓ [413/500] everglades-national-park-self-guided-driving-audio -> United States, Everglades National Park
+✓ [414/500] gourmet-food-wine-adventure-yarra-valley           -> Austria, Matto Pizza Gourmet
+✗ [415/500] fishermans-wharf-join-walking-tour-alcatraz-ticket -> Not found
+✗ [416/500] guipu-glamping-chiayi                              -> Not found
+✗ [417/500] round-trip-shuttle-bus-pompeii                     -> Not found
+✗ [418/500] south-palms-freediving-plane-wreck                 -> Not found
+✓ [419/500] sharm-el-sheikh-ras-mohamed-snorkel-excursion-padi -> Egypt, Mohamed Al Yamany Street
+✗ [420/500] padi-advanced-open-water-diver-komodo-padi-5-star- -> Not found
+✗ [421/500] wudengyi-art-museum                                -> Not found
+✗ [422/500] advanced-open-water-diver-baa-atoll-padi-5-star-di -> Not found
+✗ [423/500] open-water-diver-baa-atoll-padi-5-star-dive-center -> Not found
+✗ [424/500] padi-open-water-diver-south-ari-atoll-padi-5-star- -> Not found
+✗ [425/500] full-day-dive-trip-fuvahmulah-atoll-padi-5-star-di -> Not found
+✗ [426/500] padi-advanced-open-water-diver-north-ari-atoll-pad -> Not found
+✗ [427/500] margaret-river-surfing-academy-group-surfing-lesso -> Not found
+✗ [428/500] 2-hour-mozart-johann-strauss-concert-schonbrunn-pa -> Not found
+✓ [429/500] sharm-el-sheikh-desert-sea-sports-excursion-lunch  -> Egypt, Desert View
+✗ [430/500] sharm-desert-adventures-atv-buggy-horse-ride-camel -> Not found
+✗ [431/500] sunway-lagoon-day-trip-private-transfers-kl        -> Not found
+✗ [432/500] private-seven-unesco-heritage-tour                 -> Not found
+✗ [433/500] dynjandi-waterfall-farm-tour-join-tour-isafjordur- -> Not found
+✓ [434/500] science-and-technology-park-icon-lab               -> South Africa, Science & Technology Park
+✗ [435/500] private-guided-exploration-ephesus                 -> Not found
+✗ [436/500] romantic-concept-dinner-valley                     -> Not found
+✗ [437/500] margaret-river-surfing-academy-private-surfing-les -> Not found
+✗ [438/500] learksen-lennam-centralworld                       -> Not found
+✗ [439/500] professional-photoshoot-santorini                  -> Not found
+✗ [440/500] the-aubrey-mandarion-oriental-hk                   -> Not found
+✗ [441/500] balay-angkan-beachfront-villas-zambales            -> Not found
+✓ [442/500] shen-zhen-long-gang                                -> China, The Chinese University of Hong Kong
+✓ [443/500] tun-sakaran-marine-park-island-snorkeling-or-divin -> Malaysia, Tun Sakaran Marine Park
+✓ [444/500] you-mee-grand-hyatt-erawan                         -> Thailand, Grand Hyatt Erawan
+✗ [445/500] shibuya-street-ride-bus-ticket                     -> Not found
+✗ [446/500] night-jiufen-day-tour                              -> Not found
+✗ [447/500] sapi-island-snorkeling-water-sports-experience     -> Not found
+✗ [448/500] mekong-aqua-park-ben-tre-ticket                    -> Not found
+✗ [449/500] exploring-bangalore-full-day-private-city-tour     -> Not found
+✗ [450/500] private-charter-boat-for-scuba-diving-or-snorkelin -> Not found
+✗ [451/500] daytrip-scuba-diving-or-snorkeling-to-nusa-penida  -> Not found
+✗ [452/500] daintree-mossman-gorge-wildlife-tour               -> Not found
+✗ [453/500] historical-pharmacy-cellar-tour                    -> Not found
+✗ [454/500] viennese-underground-world-tour                    -> Not found
+✗ [455/500] sarawak-nanga-ukom-ibans-cultural-experience       -> Not found
+✗ [456/500] petting-zoo-lake-tekapo                            -> Not found
+✗ [457/500] krauma-geothermal-baths-experience-reykholt        -> Not found
+✗ [458/500] arskogssandur-whale-watching-boat-tour             -> Not found
+✓ [459/500] langkawi-half-day-full-day-private-tour            -> Malaysia, Langkawi
+✓ [460/500] one-day-tour-gangwondo                             -> South Korea, 강원도 삼척의료원
+✗ [461/500] guided-fishing-in-lake-tekapo                      -> Not found
+✗ [462/500] tideland-chili-fish-sauce                          -> Not found
+✗ [463/500] kimino-asakusa-photo-tour                          -> Not found
+✗ [464/500] authentic-turkish-vegan-cooking-class-local-mom-da -> Not found
+✗ [465/500] bluespice-grandecentrepoint-sukhumvit              -> Not found
+✓ [466/500] sharm-el-sheikh-farsha-mountain-lounge-private-tri -> Egypt, Farsha cafe
+✗ [467/500] private-photoshoot-experience-aomor                -> Not found
+✗ [468/500] franz-josef-tasman-glacier-flying-experience       -> Not found
+✗ [469/500] preserved-fruit-diy                                -> Not found
+✗ [470/500] speicherstadt-and-hafencity-walking-tour           -> Not found
+✗ [471/500] cologne-sudstadt-3-hour-culinary-food-tour         -> Not found
+✓ [472/500] lobkowicz-palace-ticket                            -> Czechia, Lobkowicz Palace
+✓ [473/500] tai-o-sightseeing-boat-tickets                     -> China, Sightseeing boat tickets
+✗ [474/500] royal-mangrove-tour-langkawi                       -> Not found
+✗ [475/500] sahl-hasheesh-snorkeling-cruise-tour               -> Not found
+✗ [476/500] nicholinis-european-brunch-on-the-eighth           -> Not found
+✗ [477/500] dusseldorf-old-town-and-altbier-2-hour-walking-tou -> Not found
+✓ [478/500] tai-o-sweet-steamed-buns-workshop-free-tai-o-boat- -> Myanmar, Steamed Buns (Sweet)
+✗ [479/500] 3-course-dinner-concert-experience-schonbrunn-pala -> Not found
+✓ [480/500] thung-nham-bird-park-ticket                        -> Vietnam, Thung Nham Bird Park
+✗ [481/500] schonbrunn-palace-concert-ticket                   -> Not found
+✗ [482/500] micropig-cafe-experience-meguro-ikebukuro          -> Not found
+✗ [483/500] st-pauli-highlights-guided-walking-tour-beer       -> Not found
+✗ [484/500] traditional-nasi-lemak-cooking-class-history-by-th -> Not found
+✗ [485/500] follow-the-gold-full-day-private-photography-tour  -> Not found
+✗ [486/500] 10km-atv-explore-jungle                            -> Not found
+✗ [487/500] diy-your-own-mahjong-tiles-for-display             -> Not found
+✗ [488/500] elbphilharmonie-plaza-and-hafencity-food-tour      -> Not found
+✗ [489/500] a-japanese-traditional-tatami-room-dance-by-sumiyo -> Not found
+✗ [490/500] fast-transit-service-in-noi-bai-international-airp -> Not found
+✗ [491/500] self-smoothie-emsphere                             -> Not found
+✗ [492/500] afternoon-tea-at-risemount-premier-danang-resort   -> Not found
+✗ [493/500] asakusa-japanese-dance-show-theater-show-ticket    -> Not found
+✗ [494/500] jims-vegetable-farm-ticket-cameron-highlands       -> Not found
+✗ [495/500] ventisi-restaurant-centaragrand-centralworld       -> Not found
+✓ [496/500] eatwith                                            -> Portugal, Eatwith host
+✗ [497/500] landrina-escape-villa-1                            -> Not found
+✓ [498/500] thai-thai-massage-siam-square-soi6                 -> Finland, Thai-Thai Massage
+✗ [499/500] north-restaurant-sukhumvit                         -> Not found
+✗ [500/500] amanohashidate-ine-no-funaya-miyama-kayabuki-no-sa -> Not found
+
+=== Results ===
+Enriched: 122 URLs
+Failed: 378 URLs
+Remaining Unknown: 7,258 (21.5%)
+Improvement: 122 URLs
+
+Saving enriched data to data/klook_experiences-activity_geopy_enriched.json...
+
+✅ Enrichment complete!
+   Next step: Import to database
+   Command: python3 scripts/02_import_to_pb.py data/klook_experiences-activity_geopy_enriched.json klook
