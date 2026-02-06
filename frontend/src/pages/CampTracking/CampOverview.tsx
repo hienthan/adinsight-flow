@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { pb } from '../../lib/pocketbase';
+import { Plus, Loader2, Check } from 'lucide-react';
+import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campaign';
 import CampaignCard from '../../components/campaign/CampaignCard';
 
@@ -51,7 +51,7 @@ export default function CampOverview() {
     const { data: reminders = [] } = useQuery<CampaignReminder[]>({
         queryKey: ['reminders', 'pending'],
         queryFn: async () => {
-            const today = new Date().toISOString().split('T')[0];
+            const today = formatDateForInput(new Date().toISOString());
             return await pb.collection('campaign_reminders').getFullList<CampaignReminder>({
                 filter: `reminder_date <= "${today}" && status = "pending"`,
             });
@@ -97,28 +97,22 @@ export default function CampOverview() {
                 style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '2rem',
+                    alignItems: 'flex-start',
+                    marginBottom: '1.5rem',
+                    marginTop: '0.5rem'
                 }}
             >
                 <div>
-                    <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>Campaign Overview</h2>
-                    <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-                        {filteredCampaigns.length} campaign{filteredCampaigns.length !== 1 ? 's' : ''} total
+                    <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: 'hsl(var(--primary))', letterSpacing: '-0.03em' }}>
+                        Campaign Tracking
+                    </h1>
+                    <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                        {filteredCampaigns.length} active monitors
                     </p>
                 </div>
 
                 <button
-                    className="primary-btn"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.75rem 1.25rem',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                    }}
+                    className="hero-btn hero-btn-primary"
                     onClick={() => navigate('/camp-tracking/new')}
                 >
                     <Plus size={18} />
@@ -127,7 +121,7 @@ export default function CampOverview() {
             </div>
 
             {/* Filters */}
-            <div className="filter-bar">
+            <div className="filter-bar" style={{ marginBottom: '1.5rem' }}>
                 <div className="filter-group">
                     <label>Platform</label>
                     <select
@@ -135,7 +129,7 @@ export default function CampOverview() {
                         onChange={(e) => setFilterPlatform(e.target.value)}
                         style={{ minWidth: '160px' }}
                     >
-                        <option value="all">All Platforms</option>
+                        <option value="all">All Channels</option>
                         {platforms.map((platform) => (
                             <option key={platform.id} value={platform.id}>
                                 {platform.display_name}
@@ -151,7 +145,7 @@ export default function CampOverview() {
                         onChange={(e) => setFilterStatus(e.target.value)}
                         style={{ minWidth: '140px' }}
                     >
-                        <option value="all">All Status</option>
+                        <option value="all">Any Status</option>
                         <option value="active">Active</option>
                         <option value="paused">Paused</option>
                         <option value="testing">Testing</option>
@@ -159,28 +153,42 @@ export default function CampOverview() {
                     </select>
                 </div>
 
-                <div
-                    className="filter-group"
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '0.5rem 1rem',
-                        background: 'var(--secondary)',
-                        borderRadius: '10px',
-                        cursor: 'pointer'
-                    }}
-                    onClick={() => setFilterReminders(!filterReminders)}
-                >
-                    <input
-                        type="checkbox"
-                        checked={filterReminders}
-                        onChange={(e) => setFilterReminders(e.target.checked)}
-                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                    />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                        Pending Reminders
-                    </span>
+                <div className="filter-group">
+                    <label style={{ opacity: 0 }}>&nbsp;</label>
+                    <div
+                        onClick={() => setFilterReminders(!filterReminders)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.6rem',
+                            padding: '0.55rem 0.85rem',
+                            background: filterReminders ? 'var(--accent-glow)' : 'var(--bg-content)',
+                            border: `1px solid ${filterReminders ? 'hsl(var(--primary))' : 'var(--border-subtle)'}`,
+                            borderRadius: '0.65rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            userSelect: 'none',
+                            height: '100%',
+                            minHeight: '42px'
+                        }}
+                    >
+                        <div style={{
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border-subtle)',
+                            background: filterReminders ? 'hsl(var(--primary))' : 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white'
+                        }}>
+                            {filterReminders && <Check size={12} strokeWidth={4} />}
+                        </div>
+                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: filterReminders ? 'hsl(var(--primary))' : 'var(--text-dim)' }}>
+                            Alerts Only
+                        </span>
+                    </div>
                 </div>
 
                 {(filterPlatform !== 'all' || filterStatus !== 'all' || filterReminders) && (
@@ -190,81 +198,54 @@ export default function CampOverview() {
                             setFilterStatus('all');
                             setFilterReminders(false);
                         }}
+                        className="hero-btn hero-btn-ghost"
                         style={{
                             marginLeft: 'auto',
-                            padding: '0.65rem 1rem',
-                            background: 'transparent',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '10px',
-                            color: 'var(--text-dim)',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.color = 'var(--text-main)';
-                            e.currentTarget.style.background = 'var(--secondary)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.color = 'var(--text-dim)';
-                            e.currentTarget.style.background = 'transparent';
+                            alignSelf: 'flex-end',
+                            padding: '0.45rem 0.75rem',
+                            fontSize: 'var(--text-xs)'
                         }}
                     >
-                        Reset Filters
+                        Reset
                     </button>
                 )}
             </div>
 
             {/* Campaign Cards Grid */}
             {isLoading ? (
-                <div
-                    style={{
-                        padding: '4rem',
-                        textAlign: 'center',
-                        color: 'var(--text-dim)',
-                    }}
-                >
-                    Loading campaigns...
+                <div style={{ padding: '8rem', textAlign: 'center', color: 'var(--text-dim)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                    <Loader2 size={40} className="animate-spin" style={{ color: 'hsl(var(--primary))' }} />
+                    <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>Syncing monitors...</div>
                 </div>
             ) : filteredCampaigns.length === 0 ? (
                 <div
+                    className="hero-card"
                     style={{
-                        padding: '4rem',
+                        padding: '6rem 4rem',
                         textAlign: 'center',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '1.5rem'
                     }}
                 >
-                    <p style={{ color: 'var(--text-dim)', marginBottom: '1rem' }}>
-                        {campaigns.length === 0
-                            ? 'No campaigns yet. Create your first campaign to get started!'
-                            : 'No campaigns match the current filters.'}
-                    </p>
-                    {campaigns.length === 0 && (
-                        <button
-                            style={{
-                                padding: '0.75rem 1.25rem',
-                                background: 'var(--accent)',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontSize: '0.9rem',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                            }}
-                            onClick={() => navigate('/camp-tracking/new')}
-                        >
-                            Create First Campaign
-                        </button>
-                    )}
+                    <div style={{ padding: '2rem', background: 'var(--accent-glow)', borderRadius: '50%', color: 'hsl(var(--primary))' }}>
+                        <Plus size={48} />
+                    </div>
+                    <div style={{ maxWidth: '400px' }}>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>No monitors found</h3>
+                        <p style={{ color: 'var(--text-dim)', fontSize: '1rem', lineHeight: '1.6' }}>
+                            {campaigns.length === 0
+                                ? "You haven't tracked any campaigns yet. Start optimization by creating your first one."
+                                : "We couldn't find any campaigns matching your current filters. Try adjusting them."}
+                        </p>
+                    </div>
                 </div>
             ) : (
                 <div
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
                         gap: '1.5rem',
                     }}
                 >

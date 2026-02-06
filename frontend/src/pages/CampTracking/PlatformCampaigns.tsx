@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Plus } from 'lucide-react';
-import { pb } from '../../lib/pocketbase';
+import { ChevronLeft, Plus, Loader2 } from 'lucide-react';
+import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campaign';
 import CampaignCard from '../../components/campaign/CampaignCard';
 
@@ -35,7 +35,7 @@ export default function PlatformCampaigns() {
     const { data: reminders = [] } = useQuery<CampaignReminder[]>({
         queryKey: ['reminders', 'pending'],
         queryFn: async () => {
-            const today = new Date().toISOString().split('T')[0];
+            const today = formatDateForInput(new Date().toISOString());
             return await pb.collection('campaign_reminders').getFullList<CampaignReminder>({
                 filter: `reminder_date <= "${today}" && status = "pending"`,
             });
@@ -67,67 +67,61 @@ export default function PlatformCampaigns() {
     return (
         <div className="page-container">
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
                 <button
                     onClick={() => navigate('/camp-tracking')}
-                    style={{
-                        background: 'var(--accent-glow)',
-                        border: '1px solid var(--glass-border)',
-                        borderRadius: '8px',
-                        padding: '0.5rem',
-                        cursor: 'pointer',
-                        color: 'var(--text-main)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}
+                    className="hero-btn hero-btn-ghost"
+                    style={{ padding: '0.4rem 0.75rem', marginLeft: '-0.75rem', marginBottom: '1rem' }}
                 >
-                    <ArrowLeft size={18} />
+                    <ChevronLeft size={18} />
+                    <span>Back to Tracking</span>
                 </button>
-                <div style={{ flex: 1 }}>
-                    <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', color: 'var(--text-main)' }}>
-                        {platform?.display_name || 'Platform Campaigns'}
-                    </h2>
-                    <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-                        {campaigns.length} campaigns active
-                    </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                        <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: 'hsl(var(--primary))', letterSpacing: '-0.03em' }}>
+                            {platform?.display_name || 'Platform Campaigns'}
+                        </h1>
+                        <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                            {campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''} total
+                        </p>
+                    </div>
+                    <button
+                        className="hero-btn hero-btn-primary"
+                        onClick={() => navigate(`/camp-tracking/new?platformId=${platformId}`)}
+                    >
+                        <Plus size={18} />
+                        New Campaign
+                    </button>
                 </div>
-                <button
-                    className="primary-btn"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.75rem 1.25rem',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                    }}
-                    onClick={() => navigate(`/camp-tracking/new?platformId=${platformId}`)}
-                >
-                    <Plus size={18} />
-                    New Campaign
-                </button>
             </div>
 
             {/* Content */}
             {isLoading ? (
-                <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-dim)' }}>
-                    Loading campaigns...
+                <div style={{ padding: '10rem 0', textAlign: 'center', color: 'var(--text-dim)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                    <Loader2 size={40} className="animate-spin" style={{ color: 'hsl(var(--primary))' }} />
+                    <div style={{ fontSize: '1.1rem', fontWeight: 600, letterSpacing: '-0.01em' }}>Loading optimized campaigns...</div>
                 </div>
             ) : campaigns.length === 0 ? (
-                <div style={{
-                    padding: '4rem',
+                <div className="hero-card" style={{
+                    padding: '6rem 4rem',
                     textAlign: 'center',
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '1.5rem'
                 }}>
-                    <p style={{ color: 'var(--text-dim)', marginBottom: '1rem' }}>
-                        No campaigns found for this platform.
-                    </p>
+                    <div style={{ padding: '2rem', background: 'var(--accent-glow)', borderRadius: '50%', color: 'hsl(var(--primary))' }}>
+                        <Plus size={48} />
+                    </div>
+                    <div style={{ maxWidth: '400px' }}>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>No campaigns found</h3>
+                        <p style={{ color: 'var(--text-dim)', fontSize: '1rem', lineHeight: '1.6' }}>
+                            No campaigns have been created for this platform yet. Start optimization by creating your first one.
+                        </p>
+                    </div>
                     <button
-                        className="primary-btn"
+                        className="hero-btn hero-btn-primary"
+                        style={{ padding: '1rem 2.5rem' }}
                         onClick={() => navigate(`/camp-tracking/new?platformId=${platformId}`)}
                     >
                         Create First Campaign
@@ -136,7 +130,7 @@ export default function PlatformCampaigns() {
             ) : (
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', // More compact grid
                     gap: '1.5rem',
                 }}>
                     {enrichedCampaigns.map((campaign) => (

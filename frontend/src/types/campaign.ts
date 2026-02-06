@@ -24,6 +24,7 @@ export interface Campaign {
     keywords?: string[] | Record<string, any>;
     description?: string;
     general_notes?: string;
+    is_dsa: boolean;
     custom_fields?: Record<string, any>;
     created: string;
     updated: string;

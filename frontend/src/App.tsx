@@ -15,6 +15,7 @@ import CampaignDetail from './pages/CampTracking/CampaignDetail';
 import AllReminders from './pages/CampTracking/AllReminders';
 import AllChanges from './pages/CampTracking/AllChanges';
 import CampaignFormPage from './pages/CampTracking/CampaignFormPage';
+import PlatformManagement from './pages/CampTracking/PlatformManagement';
 
 import './App.css';
 
@@ -51,6 +52,8 @@ function App() {
           {/* Camp Tracking Routes */}
           <Route path="/camp-tracking" element={<CampOverview />} />
           <Route path="/camp-tracking/new" element={<CampaignFormPage />} />
+          <Route path="/camp-tracking/edit/:campaignId" element={<CampaignFormPage />} />
+          <Route path="/camp-tracking/platforms" element={<PlatformManagement />} />
           <Route path="/camp-tracking/platform/:platformId" element={<PlatformCampaigns />} />
           <Route path="/camp-tracking/campaign/:campaignId" element={<CampaignDetail />} />
           <Route path="/camp-tracking/reminders" element={<AllReminders />} />

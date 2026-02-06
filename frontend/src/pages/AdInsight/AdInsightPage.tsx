@@ -1,7 +1,7 @@
 // This file contains the existing AdInsight URL analysis logic
 // Migrated from App.tsx for the new router structure
 
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { pb } from '../../lib/pocketbase';
 import {
     Search,
@@ -44,6 +44,7 @@ export default function AdInsightPage() {
     const [filterPrivate, setFilterPrivate] = useState<boolean | null>(null);
     const [filterLanguage, setFilterLanguage] = useState('all');
     const [countries, setCountries] = useState<string[]>([]);
+    const [exporting, setExporting] = useState(false);
 
     // Fetch countries metadata
     useEffect(() => {
@@ -60,6 +61,15 @@ export default function AdInsightPage() {
         };
         fetchMeta();
     }, []);
+
+    const getTierStyle = (tier: string) => {
+        switch (tier) {
+            case '1': return { background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' };
+            case '2': return { background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.2)' };
+            case '3': return { background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.2)' };
+            default: return { background: 'var(--bg-overlay)', color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' };
+        }
+    };
 
     const fetchPages = useCallback(async (pageNum: number) => {
         if (loading) return;
@@ -129,6 +139,7 @@ export default function AdInsightPage() {
         if (filterPrivate !== null) filterString += ` && is_private = ${filterPrivate}`;
 
         try {
+            setExporting(true);
             const allRecords: PageRecord[] = [];
             let page = 1;
             let hasMore = true;
@@ -181,6 +192,8 @@ export default function AdInsightPage() {
         } catch (err) {
             console.error('Export error:', err);
             alert('Export failed. Please try again.');
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -193,17 +206,11 @@ export default function AdInsightPage() {
         setSearchInput('');
     };
 
-    const getTierClass = (tier: string) => {
-        if (tier === '1') return 'badge badge-tier-1';
-        if (tier === '2') return 'badge badge-tier-2';
-        if (tier === '5') return 'badge badge-tier-5';
-        return 'badge';
-    };
-
     const isFiltered = searchTerm || filterTier || filterCountry || filterPrivate !== null || filterLanguage !== 'all';
 
     return (
         <div className="page-container">
+            {/* Header / Summary Card */}
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -211,20 +218,20 @@ export default function AdInsightPage() {
                 marginBottom: '1.5rem',
                 padding: '1rem 1.5rem',
                 background: 'var(--bg-card)',
-                border: '1px solid var(--border-color)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '12px',
-                boxShadow: 'var(--shadow-sm)'
+                boxShadow: 'var(--shadow-soft)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <div style={{
                         width: '40px',
                         height: '40px',
                         borderRadius: '10px',
-                        background: 'var(--accent-glow)',
+                        background: 'hsla(var(--primary) / 0.1)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'var(--accent)'
+                        color: 'hsl(var(--primary))'
                     }}>
                         <ExternalLink size={20} />
                     </div>
@@ -239,7 +246,7 @@ export default function AdInsightPage() {
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', lineHeight: 1 }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))', lineHeight: 1 }}>
                         {totalCount.toLocaleString()}
                     </div>
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginTop: '0.25rem' }}>
@@ -248,17 +255,21 @@ export default function AdInsightPage() {
                 </div>
             </div>
 
+            {/* Filter Bar */}
             <section className="filter-bar">
                 <div className="filter-group">
                     <label>Search Slug</label>
-                    <input
-                        type="text"
-                        placeholder="Type to search..."
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && setSearchTerm(searchInput)}
-                        style={{ width: '280px' }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                        <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                        <input
+                            type="text"
+                            placeholder="Type to search..."
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && setSearchTerm(searchInput)}
+                            style={{ width: '240px', paddingLeft: '2.5rem' }}
+                        />
+                    </div>
                 </div>
 
                 <div className="filter-group">
@@ -278,8 +289,8 @@ export default function AdInsightPage() {
                         list="country-list"
                         value={filterCountry}
                         onChange={(e) => setFilterCountry(e.target.value)}
-                        placeholder="Search country..."
-                        style={{ width: '180px' }}
+                        placeholder="Global / All"
+                        style={{ width: '160px' }}
                     />
                     <datalist id="country-list">
                         <option value="">Global / All</option>
@@ -291,8 +302,8 @@ export default function AdInsightPage() {
                     <label>Private</label>
                     <select value={filterPrivate === null ? '' : filterPrivate.toString()} onChange={(e) => setFilterPrivate(e.target.value === '' ? null : e.target.value === 'true')}>
                         <option value="">All Types</option>
-                        <option value="false">Public Only</option>
-                        <option value="true">Private Only</option>
+                        <option value="false">Public</option>
+                        <option value="true">Private</option>
                     </select>
                 </div>
 
@@ -300,68 +311,95 @@ export default function AdInsightPage() {
                     <label>Tier</label>
                     <select value={filterTier} onChange={(e) => setFilterTier(e.target.value)}>
                         <option value="">All Tiers</option>
-                        <option value="1">Tier 1 (High Intent)</option>
-                        <option value="2">Tier 2 (Activities)</option>
-                        <option value="3">Tier 3 (Services)</option>
-                        <option value="4">Tier 4 (Packages)</option>
-                        <option value="5">Tier 5 (Guides)</option>
+                        <option value="1">Tier 1</option>
+                        <option value="2">Tier 2</option>
+                        <option value="5">Tier 5</option>
                     </select>
                 </div>
 
-                <div className="filter-group">
-                    <label>&nbsp;</label>
-                    <button onClick={handleReset} style={{ background: 'var(--secondary)', color: 'var(--text-main)', border: '1px solid var(--border-color)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', width: '100%' }}>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem', alignSelf: 'flex-end' }}>
+                    <button
+                        onClick={handleReset}
+                        className="hero-btn hero-btn-secondary"
+                        style={{ padding: '0.6rem 1.2rem' }}
+                    >
                         Reset
                     </button>
-                </div>
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'flex-end', height: '100%', paddingBottom: '0.2rem' }}>
-                    <button className="primary-btn" onClick={handleExport} style={{ border: 'none', padding: '0.65rem 1.25rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                        <Download size={18} /> Export URLs
+                    <button
+                        onClick={handleExport}
+                        disabled={exporting}
+                        className="hero-btn hero-btn-primary"
+                        style={{ padding: '0.6rem 1.5rem' }}
+                    >
+                        <Download size={18} />
+                        {exporting ? 'Exporting...' : 'Export DSA CSV'}
                     </button>
                 </div>
             </section>
 
-            <section className="animate-fade">
-                <div className="data-table-container">
+            {/* Main Content Table */}
+            <div className="animate-fade">
+                <div className="data-table-container hero-card" style={{ padding: 0 }}>
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th style={{ width: '80px' }}>Can. ID</th>
-                                <th>Slug</th>
-                                <th>Vi. Title (Smart Trans)</th>
+                                <th style={{ width: '80px' }}>ID</th>
+                                <th style={{ width: '320px' }}>Slug</th>
+                                <th>Smart Title</th>
                                 <th style={{ width: '60px' }}>Tier</th>
                                 <th>Location</th>
-                                <th style={{ width: '90px' }}>Access</th>
-                                <th style={{ width: '90px' }}>Status</th>
+                                <th style={{ width: '100px' }}>Access</th>
+                                <th style={{ width: '60px', textAlign: 'center' }}>DSA</th>
                             </tr>
                         </thead>
                         <tbody>
                             {pages.map((page) => (
                                 <tr key={page.id}>
-                                    <td style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>#{page.canonical_id}</td>
-                                    <td>
-                                        <a href={page.url} target="_blank" rel="noopener noreferrer" className="slug-link" title="Open original URL">
-                                            {page.slug} <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                                    <td style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', width: '80px' }}>#{page.canonical_id}</td>
+                                    <td style={{ maxWidth: '320px', overflow: 'hidden' }}>
+                                        <a href={page.url} target="_blank" rel="noopener noreferrer" className="slug-link" title="Open original URL" style={{ maxWidth: '100%' }}>
+                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{page.slug}</span>
+                                            <ExternalLink size={12} style={{ flexShrink: 0 }} />
                                         </a>
                                     </td>
-                                    <td style={{ fontWeight: 500, color: 'var(--accent)' }}>{page.translated_title_vi}</td>
-                                    <td><span className={getTierClass(page.tier)}>T{page.tier}</span></td>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <MapPin size={12} color="var(--accent)" />
-                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>{page.city}, {page.country}</span>
+                                    <td style={{ fontWeight: 600, color: 'var(--text-main)', minWidth: '200px' }}>{page.translated_title_vi}</td>
+                                    <td style={{ width: '60px' }}>
+                                        <div
+                                            className="hero-badge"
+                                            style={{
+                                                textTransform: 'none',
+                                                padding: '0.2rem 0.5rem',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 800,
+                                                borderRadius: '6px',
+                                                minWidth: '24px',
+                                                justifyContent: 'center',
+                                                ...getTierStyle(page.tier)
+                                            }}
+                                        >
+                                            {page.tier}
                                         </div>
                                     </td>
-                                    <td>
+                                    <td style={{ minWidth: '150px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <MapPin size={12} style={{ color: 'hsl(var(--primary))', opacity: 0.8 }} />
+                                            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)', fontWeight: 500 }}>{page.city}, {page.country}</span>
+                                        </div>
+                                    </td>
+                                    <td style={{ width: '100px' }}>
                                         {page.is_private ?
-                                            <span className="private-tag"><Lock size={12} /> Private</span> :
-                                            <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>Public</span>
+                                            <div className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.15)', textTransform: 'none', gap: '0.4rem', borderRadius: '6px' }}>
+                                                <Lock size={12} /> <span>Private</span>
+                                            </div> :
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, paddingLeft: '0.5rem' }}>Public</span>
                                         }
                                     </td>
-                                    <td>
+                                    <td style={{ width: '60px', textAlign: 'center' }}>
                                         {page.include_for_dsa ?
-                                            <span style={{ color: '#4ade80', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}><ShieldCheck size={14} /> Active</span> :
-                                            <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>-</span>
+                                            <div title="DSA Active" style={{ color: '#22c55e', display: 'flex', justifyContent: 'center' }}>
+                                                <ShieldCheck size={18} strokeWidth={2.5} />
+                                            </div> :
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
                                         }
                                     </td>
                                 </tr>
@@ -374,74 +412,62 @@ export default function AdInsightPage() {
                             )}
                         </tbody>
                     </table>
+                </div>
 
-                    {/* Pagination */}
-                    <div style={{
+                {/* Pagination */}
+                <div
+                    className="hero-card"
+                    style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         marginTop: '1.5rem',
-                        padding: '1rem',
-                        background: 'var(--secondary)',
-                        borderRadius: '12px',
+                        padding: '1.25rem',
                         gap: '2rem'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Per page:</span>
-                            <select
-                                value={perPage}
-                                onChange={(e) => setPerPage(Number(e.target.value))}
-                            >
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                                <option value="200">200</option>
-                                <option value="500">500</option>
-                            </select>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-                                Showing {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, totalCount)} of {totalCount.toLocaleString()}
-                            </span>
-                        </div>
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Per page:</span>
+                        <select
+                            value={perPage}
+                            onChange={(e) => setPerPage(Number(e.target.value))}
+                            style={{ padding: '0.4rem', borderRadius: '0.75rem', border: '1px solid var(--border-subtle)', background: 'var(--bg-content)', fontSize: '0.85rem' }}
+                        >
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                            Showing {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, totalCount)} of {totalCount.toLocaleString()}
+                        </span>
+                    </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <button
-                                onClick={() => fetchPages(currentPage - 1)}
-                                disabled={currentPage === 1}
-                                style={{
-                                    padding: '0.4rem 0.75rem',
-                                    background: currentPage === 1 ? 'var(--secondary)' : 'var(--bg-card)',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: '6px',
-                                    color: currentPage === 1 ? 'var(--text-dim)' : 'var(--text-main)',
-                                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                                    fontSize: '0.85rem'
-                                }}
-                            >
-                                ← Prev
-                            </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <button
+                            onClick={() => fetchPages(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="hero-btn hero-btn-secondary"
+                            style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                        >
+                            ← Prev
+                        </button>
 
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-main)', padding: '0 0.5rem' }}>
-                                Page {currentPage} of {totalPages}
-                            </span>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-main)', padding: '0 0.5rem', fontWeight: 700 }}>
+                            Page {currentPage} / {totalPages}
+                        </span>
 
-                            <button
-                                onClick={() => fetchPages(currentPage + 1)}
-                                disabled={currentPage === totalPages}
-                                style={{
-                                    padding: '0.4rem 0.75rem',
-                                    background: currentPage === totalPages ? 'var(--secondary)' : 'var(--bg-card)',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: '6px',
-                                    color: currentPage === totalPages ? 'var(--text-dim)' : 'var(--text-main)',
-                                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                                    fontSize: '0.85rem'
-                                }}
-                            >
-                                Next →
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => fetchPages(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="hero-btn hero-btn-secondary"
+                            style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                        >
+                            Next →
+                        </button>
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
     );
 }

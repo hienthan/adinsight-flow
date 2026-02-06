@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     ChevronLeft,
     ChevronRight,
     Layers,
     Globe,
-    Tag,
     Target,
     Bell,
     History,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Plus
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { CampaignPlatform, CampaignReminder } from '../../types/campaign';
@@ -23,323 +23,138 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const location = useLocation();
-    const [adInsightOpen, setAdInsightOpen] = useState(true);
-    const [campTrackingOpen, setCampTrackingOpen] = useState(true);
     const [platformsOpen, setPlatformsOpen] = useState(true);
     const [platforms, setPlatforms] = useState<CampaignPlatform[]>([]);
     const [pendingRemindersCount, setPendingRemindersCount] = useState(0);
 
-    // Fetch campaign platforms
     useEffect(() => {
-        const controller = new AbortController();
         const fetchPlatforms = async () => {
             try {
                 const records = await pb.collection('campaign_platforms').getFullList<CampaignPlatform>({
                     sort: 'display_name',
-                    $autoCancel: false, // Disabling auto-cancel to manage manually if needed or just handle error
                 });
                 setPlatforms(records);
-            } catch (error: any) {
-                if (!error.isAbort) {
-                    console.error('Failed to fetch platforms:', error);
-                }
+            } catch (error) {
+                console.error('Failed to fetch platforms:', error);
             }
         };
-
         fetchPlatforms();
-        return () => controller.abort();
     }, []);
 
-    // Fetch pending reminders count
     useEffect(() => {
-        const controller = new AbortController();
         const fetchRemindersCount = async () => {
             try {
                 const today = new Date().toISOString().split('T')[0];
                 const records = await pb.collection('campaign_reminders').getList<CampaignReminder>(1, 1, {
                     filter: `reminder_date <= "${today}" && status = "pending"`,
-                    $autoCancel: false,
                 });
                 setPendingRemindersCount(records.totalItems);
-            } catch (error: any) {
-                if (!error.isAbort) {
-                    console.error('Failed to fetch reminders:', error);
-                }
+            } catch (error) {
+                console.error('Failed to fetch reminders:', error);
             }
         };
-
         fetchRemindersCount();
-        // Refresh every minute
         const interval = setInterval(fetchRemindersCount, 60000);
-        return () => {
-            controller.abort();
-            clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, []);
 
     const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
+    const NavLink = ({ to, icon: Icon, children, badgeCount, activeCondition }: any) => {
+        const active = activeCondition !== undefined ? activeCondition : isActive(to);
+        return (
+            <Link
+                to={to}
+                className={cn("nav-item", active && "active")}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem',
+                    textDecoration: 'none', color: active ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                    background: active ? 'var(--accent-glow)' : 'transparent', fontWeight: active ? 700 : 500
+                }}
+            >
+                <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+                {!collapsed && <span style={{ fontSize: '0.875rem' }}>{children}</span>}
+                {!collapsed && badgeCount > 0 && (
+                    <span style={{
+                        marginLeft: 'auto', background: 'var(--destructive)', color: 'white',
+                        fontSize: '10px', padding: '2px 6px', borderRadius: '10px', fontWeight: 800
+                    }}>
+                        {badgeCount}
+                    </span>
+                )}
+            </Link>
+        );
+    };
+
     return (
-        <aside className={cn(
-            "sidebar",
-            collapsed && "collapsed"
-        )}>
+        <aside className={cn("sidebar", collapsed && "collapsed")}>
             <button className="collapse-btn" onClick={onToggle}>
-                {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
             </button>
 
-            <div className="logo">
-                <Layers size={24} strokeWidth={2.5} />
+            <div className="logo" style={{ marginBottom: '1rem' }}>
+                <Layers size={22} strokeWidth={2.5} />
                 {!collapsed && <span>AdInsight Flow</span>}
             </div>
 
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1 }}>
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', overflowY: 'auto', flex: 1 }}>
+                {/* Section Header */}
+                {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.65rem 0.5rem', textTransform: 'uppercase' }}>Tracking Core</div>}
 
-                {/* Camp Tracking Section */}
+                <NavLink to="/camp-tracking" icon={Target} activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes'].some(p => location.pathname.includes(p))}>
+                    Overview
+                </NavLink>
+
                 <div>
                     <button
-                        onClick={() => setCampTrackingOpen(!campTrackingOpen)}
-                        className="section-header"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            padding: '0.5rem',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-dim)',
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            letterSpacing: '0.05em',
-                            cursor: 'pointer',
-                        }}
+                        onClick={() => setPlatformsOpen(!platformsOpen)}
+                        className="nav-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem', width: '100%', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-dim)' }}
                     >
-                        {!collapsed && <span>CAMP TRACKING</span>}
-                        {!collapsed && (campTrackingOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                        <Globe size={18} />
+                        {!collapsed && <span style={{ fontSize: '0.875rem', flex: 1, fontWeight: 500 }}>Platforms</span>}
+                        {!collapsed && (platformsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                     </button>
 
-                    {campTrackingOpen && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
-                            {/* Overview */}
-                            <Link
-                                to="/camp-tracking"
-                                className={cn(
-                                    "nav-item",
-                                    isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes'].some(p => location.pathname.includes(p)) && "active"
-                                )}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    padding: '0.75rem',
-                                    borderRadius: '8px',
-                                    textDecoration: 'none',
-                                    color: 'var(--text-main)',
-                                    background: isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes'].some(p => location.pathname.includes(p)) ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                                }}
-                            >
-                                <Target size={18} color={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes'].some(p => location.pathname.includes(p)) ? '#3b82f6' : 'currentColor'} />
-                                {!collapsed && <span style={{ fontSize: '0.9rem' }}>Overview</span>}
-                            </Link>
-
-                            {/* Platforms Section */}
-                            <div>
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setPlatformsOpen(!platformsOpen);
-                                    }}
-                                    className="nav-item"
+                    {platformsOpen && !collapsed && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', paddingLeft: '1.25rem', marginTop: '0.2rem', alignItems: 'flex-start' }}>
+                            {platforms.map((p) => (
+                                <Link
+                                    key={p.id}
+                                    to={`/camp-tracking/platform/${p.id}`}
+                                    className={cn("nav-item", isActive(`/camp-tracking/platform/${p.id}`) && "active")}
                                     style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.75rem',
-                                        padding: '0.75rem',
-                                        width: '100%',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        textAlign: 'left'
+                                        display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.6rem',
+                                        fontSize: '0.8rem', textDecoration: 'none', width: '100%',
+                                        color: isActive(`/camp-tracking/platform/${p.id}`) ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                                        justifyContent: 'flex-start'
                                     }}
                                 >
-                                    <Globe size={18} />
-                                    {!collapsed && <span style={{ fontSize: '0.9rem', flex: 1 }}>Platforms</span>}
-                                    {!collapsed && (platformsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
-                                </button>
-
-                                {platformsOpen && !collapsed && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', marginTop: '0.1rem', paddingLeft: '1.25rem' }}>
-                                        {platforms.map((platform) => (
-                                            <Link
-                                                key={platform.id}
-                                                to={`/camp-tracking/platform/${platform.id}`}
-                                                className={cn(
-                                                    "nav-item",
-                                                    isActive(`/camp-tracking/platform/${platform.id}`) && "active"
-                                                )}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.75rem',
-                                                    padding: '0.5rem 0.75rem',
-                                                    borderRadius: '8px',
-                                                    textDecoration: 'none',
-                                                    color: isActive(`/camp-tracking/platform/${platform.id}`) ? 'hsl(var(--primary))' : 'var(--text-dim)',
-                                                    fontSize: '0.85rem'
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        width: '8px',
-                                                        height: '8px',
-                                                        borderRadius: '50%',
-                                                        background: platform.color,
-                                                    }}
-                                                />
-                                                {platform.display_name}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Reminders */}
-                            <Link
-                                to="/camp-tracking/reminders"
-                                className={cn(
-                                    "nav-item",
-                                    isActive('/camp-tracking/reminders') && "active"
-                                )}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    padding: '0.75rem',
-                                    borderRadius: '8px',
-                                    textDecoration: 'none',
-                                    color: 'var(--text-main)',
-                                    background: isActive('/camp-tracking/reminders') ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                                    position: 'relative',
-                                }}
-                            >
-                                <Bell size={18} color={isActive('/camp-tracking/reminders') ? '#3b82f6' : 'currentColor'} />
-                                {!collapsed && (
-                                    <>
-                                        <span style={{ fontSize: '0.9rem' }}>Reminders</span>
-                                        {pendingRemindersCount > 0 && (
-                                            <span
-                                                style={{
-                                                    marginLeft: 'auto',
-                                                    background: '#ef4444',
-                                                    color: '#fff',
-                                                    fontSize: '0.7rem',
-                                                    padding: '0.1rem 0.4rem',
-                                                    borderRadius: '99px',
-                                                    fontWeight: 600,
-                                                }}
-                                            >
-                                                {pendingRemindersCount}
-                                            </span>
-                                        )}
-                                    </>
-                                )}
-                            </Link>
-
-                            {/* Change Logs */}
-                            <Link
-                                to="/camp-tracking/changes"
-                                className={cn(
-                                    "nav-item",
-                                    isActive('/camp-tracking/changes') && "active"
-                                )}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    padding: '0.75rem',
-                                    borderRadius: '8px',
-                                    textDecoration: 'none',
-                                    color: 'var(--text-main)',
-                                    background: isActive('/camp-tracking/changes') ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                                }}
-                            >
-                                <History size={18} color={isActive('/camp-tracking/changes') ? '#3b82f6' : 'currentColor'} />
-                                {!collapsed && <span style={{ fontSize: '0.9rem' }}>Change Logs</span>}
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                                    {p.display_name}
+                                </Link>
+                            ))}
+                            <Link to="/camp-tracking/platforms" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', padding: '0.5rem 0.6rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'flex-start' }}>
+                                <Plus size={12} /> Manage
                             </Link>
                         </div>
                     )}
                 </div>
+
+                <NavLink to="/camp-tracking/reminders" icon={Bell} badgeCount={pendingRemindersCount}>
+                    Reminders
+                </NavLink>
+
+                <NavLink to="/camp-tracking/changes" icon={History}>
+                    Auto Logs
+                </NavLink>
 
                 {/* Ad Insight Section */}
-                <div>
-                    <button
-                        onClick={() => setAdInsightOpen(!adInsightOpen)}
-                        className="section-header"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            padding: '0.5rem',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-dim)',
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            letterSpacing: '0.05em',
-                            cursor: 'pointer',
-                            marginTop: '1rem',
-                        }}
-                    >
-                        {!collapsed && <span>AD INSIGHT</span>}
-                        {!collapsed && (adInsightOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
-                    </button>
-                    {adInsightOpen && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
-                            {/* Platform: Klook */}
-                            <div
-                                style={{
-                                    background: isActive('/adinsight') ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                                    padding: '0.75rem',
-                                    borderRadius: '8px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                }}
-                            >
-                                <Globe size={18} color={isActive('/adinsight') ? '#3b82f6' : 'currentColor'} />
-                                {!collapsed && <span style={{ fontSize: '0.9rem' }}>Klook</span>}
-                            </div>
+                {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.75rem 0.5rem 0.65rem 0.5rem', textTransform: 'uppercase' }}>DSA Analytics</div>}
 
-                            {/* Sitemaps under Klook */}
-                            {!collapsed && (
-                                <div style={{ paddingLeft: '2.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                    <Link
-                                        to="/adinsight"
-                                        className={cn(
-                                            "nav-item",
-                                            isActive('/adinsight') && "active"
-                                        )}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            padding: '0.4rem 0.5rem',
-                                            fontSize: '0.85rem',
-                                            color: isActive('/adinsight') ? '#3b82f6' : 'var(--text-main)',
-                                            textDecoration: 'none',
-                                            borderRadius: '6px',
-                                        }}
-                                    >
-                                        <Tag size={14} />
-                                        zh-HK Activity
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+                <NavLink to="/adinsight" icon={Globe}>
+                    Klook zh-HK
+                </NavLink>
             </nav>
         </aside>
     );
