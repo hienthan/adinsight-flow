@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Save, X, AlertTriangle, Plus, ShieldCheck, Lock } from 'lucide-react';
+import { Save, AlertTriangle, ShieldCheck, Lock } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
 
@@ -20,13 +20,13 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
         platform: '',
         cpc: 0,
         max_daily_budget: 0,
-        keywords: [],
+        keywords: '',
+        chatgpt_metadata: '',
         description: '',
         general_notes: '',
         is_dsa: true, // Default to true
         created_date: formatDateForInput(new Date().toISOString()),
     });
-    const [keywordInput, setKeywordInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -53,10 +53,8 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
     // Initialize form with existing data
     useEffect(() => {
         if (existingCampaign) {
-            const keywords = Array.isArray(existingCampaign.keywords) ? existingCampaign.keywords : [];
             setFormData({
                 ...existingCampaign,
-                keywords,
                 created_date: formatDateForInput(existingCampaign.created_date),
             });
         }
@@ -75,25 +73,7 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
         }));
     };
 
-    const handleAddKeyword = (e: React.FormEvent | React.MouseEvent) => {
-        e.preventDefault();
-        const currentKeywords = Array.isArray(formData.keywords) ? formData.keywords : [];
-        if (keywordInput.trim() && !currentKeywords.includes(keywordInput.trim())) {
-            setFormData((prev) => ({
-                ...prev,
-                keywords: [...currentKeywords, keywordInput.trim()],
-            }));
-            setKeywordInput('');
-        }
-    };
-
-    const removeKeyword = (kw: string) => {
-        const currentKeywords = Array.isArray(formData.keywords) ? formData.keywords : [];
-        setFormData((prev) => ({
-            ...prev,
-            keywords: currentKeywords.filter((k: string) => k !== kw),
-        }));
-    };
+    // Keyword tag logic removed as keywords is now a long-form text field
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -149,8 +129,6 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
             setLoading(false);
         }
     };
-
-    const currentKeywords = Array.isArray(formData.keywords) ? formData.keywords : [];
 
     return (
         <form onSubmit={handleSubmit} className="animate-fade">
@@ -246,64 +224,39 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div className="filter-group">
-                            <label>CPC ($)</label>
-                            <input
-                                type="number"
-                                name="cpc"
-                                value={formData.cpc || 0}
-                                onChange={handleChange}
-                                min="0"
-                                placeholder="000"
-                            />
-                        </div>
-                        <div className="filter-group">
-                            <label>Max Daily Budget ($)</label>
-                            <input
-                                type="number"
-                                name="max_daily_budget"
-                                value={formData.max_daily_budget || 0}
-                                onChange={handleChange}
-                                min="0"
-                                placeholder="000"
-                            />
-                        </div>
-                    </div>
-
                     <div className="filter-group">
-                        <label>Keywords</label>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <input
-                                type="text"
-                                value={keywordInput}
-                                onChange={(e) => setKeywordInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddKeyword(e))}
-                                placeholder="Add keyword..."
-                                style={{ flex: 1 }}
-                            />
-                            <button
-                                type="button"
-                                onClick={handleAddKeyword}
-                                className="hero-btn hero-btn-secondary"
-                                style={{ padding: '0 1rem' }}
-                            >
-                                <Plus size={16} />
-                            </button>
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.6rem' }}>
-                            {currentKeywords.map((kw: string) => (
-                                <span
-                                    key={kw}
-                                    className="hero-badge"
-                                    style={{ background: 'var(--secondary)', color: 'var(--text-main)', border: '1px solid var(--border-subtle)', textTransform: 'none' }}
-                                >
-                                    {kw}
-                                    <X size={12} style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => removeKeyword(kw)} />
-                                </span>
-                            ))}
-                        </div>
+                        <label>CPC ($)</label>
+                        <input
+                            type="number"
+                            name="cpc"
+                            value={formData.cpc || 0}
+                            onChange={handleChange}
+                            min="0"
+                            placeholder="000"
+                        />
                     </div>
+                    <div className="filter-group">
+                        <label>Max Daily Budget ($)</label>
+                        <input
+                            type="number"
+                            name="max_daily_budget"
+                            value={formData.max_daily_budget || 0}
+                            onChange={handleChange}
+                            min="0"
+                            placeholder="000"
+                        />
+                    </div>
+                </div>
+
+                <div className="filter-group">
+                    <label>Active Keywords (Running)</label>
+                    <textarea
+                        name="keywords"
+                        value={formData.keywords || ''}
+                        onChange={handleChange}
+                        placeholder="Enter list of running keywords..."
+                        style={{ minHeight: '120px' }}
+                    />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
@@ -327,6 +280,17 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                             style={{ minHeight: '90px' }}
                         />
                     </div>
+                </div>
+
+                <div className="filter-group">
+                    <label>AI Insights (ChatGPT Metadata)</label>
+                    <textarea
+                        name="chatgpt_metadata"
+                        value={formData.chatgpt_metadata || ''}
+                        onChange={handleChange}
+                        placeholder="Auxiliary AI data, prompt history, etc..."
+                        style={{ minHeight: '80px' }}
+                    />
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', justifyContent: 'flex-end' }}>

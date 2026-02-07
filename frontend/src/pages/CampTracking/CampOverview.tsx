@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Loader2, Check } from 'lucide-react';
+import { Plus, Loader2, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import CampaignCard from '../../components/campaign/CampaignCard';
 import EditCampaignModal from '../../components/campaign/EditCampaignModal';
 import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campaign';
@@ -12,6 +12,14 @@ export default function CampOverview() {
     const [filterReminders, setFilterReminders] = useState<boolean>(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+
+    const toggleSection = (platformId: string) => {
+        setCollapsedSections(prev => ({
+            ...prev,
+            [platformId]: !prev[platformId]
+        }));
+    };
 
     // Fetch platforms
     const { data: platforms = [] } = useQuery<CampaignPlatform[]>({
@@ -41,7 +49,7 @@ export default function CampOverview() {
             filter = filters.join(' && ');
 
             return await pb.collection('campaigns').getFullList<Campaign>({
-                sort: '-created_date',
+                sort: 'name',
                 filter: filter || undefined,
                 expand: 'platform',
             });
@@ -111,11 +119,6 @@ export default function CampOverview() {
             campaigns: orphans
         });
     }
-
-    const openEdit = (id: string) => {
-        setEditingId(id);
-        setIsEditModalOpen(true);
-    };
 
     return (
         <div className="page-container">
@@ -272,39 +275,69 @@ export default function CampOverview() {
                     </div>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-                    {groupedCampaigns.map((group) => (
-                        <div key={group.platform.id}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                                <div style={{ width: '8px', height: '24px', background: group.platform.color, borderRadius: '4px' }} />
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
-                                    {group.platform.display_name}
-                                </h3>
-                                <div style={{ height: '1px', flex: 1, background: 'var(--border-subtle)', marginLeft: '0.5rem', opacity: 0.5 }} />
-                                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>{group.campaigns.length} campaigns</span>
-                            </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {groupedCampaigns.map((group) => {
+                        const isCollapsed = collapsedSections[group.platform.id];
 
-                            <div
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                                    gap: '1.5rem',
-                                }}
-                            >
-                                {group.campaigns.map((campaign: any) => (
-                                    <CampaignCard
-                                        key={campaign.id}
-                                        campaign={campaign}
-                                        platform={campaign.platform_data}
-                                        hasRecentChanges={campaign.hasRecentChanges}
-                                        hasPendingReminders={campaign.hasPendingReminders}
-                                        highestPriority={campaign.highestPriority}
-                                        onEdit={openEdit}
-                                    />
-                                ))}
+                        return (
+                            <div key={group.platform.id} className="animate-fade">
+                                <div
+                                    onClick={() => toggleSection(group.platform.id)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        marginBottom: isCollapsed ? '0' : '1.25rem',
+                                        cursor: 'pointer',
+                                        padding: '0.5rem',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s',
+                                        userSelect: 'none'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'var(--bg-overlay)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'transparent';
+                                    }}
+                                >
+                                    {isCollapsed ? (
+                                        <ChevronRight size={18} className="text-muted" />
+                                    ) : (
+                                        <ChevronDown size={18} className="text-muted" />
+                                    )}
+                                    <div style={{ width: '8px', height: '24px', background: group.platform.color, borderRadius: '4px' }} />
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', textTransform: 'uppercase', margin: 0 }}>
+                                        {group.platform.display_name}
+                                    </h3>
+                                    <div style={{ height: '1px', flex: 1, background: 'var(--border-subtle)', marginLeft: '0.5rem', opacity: 0.5 }} />
+                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>{group.campaigns.length} campaigns</span>
+                                </div>
+
+                                {!isCollapsed && (
+                                    <div
+                                        className="animate-fade"
+                                        style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                                            gap: '1.5rem',
+                                            padding: '0 0.5rem'
+                                        }}
+                                    >
+                                        {group.campaigns.map((campaign: any) => (
+                                            <CampaignCard
+                                                key={campaign.id}
+                                                campaign={campaign}
+                                                platform={campaign.platform_data}
+                                                hasPendingReminders={campaign.hasPendingReminders}
+                                                highestPriority={campaign.highestPriority}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 

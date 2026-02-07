@@ -24,7 +24,7 @@ export default function PlatformCampaigns() {
         queryFn: async () => {
             return await pb.collection('campaigns').getFullList<Campaign>({
                 filter: `platform = "${platformId}"`,
-                sort: '-created_date',
+                sort: 'name',
                 expand: 'platform',
             });
         },
@@ -138,7 +138,6 @@ export default function PlatformCampaigns() {
                             key={campaign.id}
                             campaign={campaign}
                             platform={platform}
-                            hasRecentChanges={campaign.hasRecentChanges}
                             hasPendingReminders={campaign.hasPendingReminders}
                             highestPriority={campaign.highestPriority}
                             onEdit={(id) => navigate(`/camp-tracking/edit/${id}`)}

@@ -13,7 +13,10 @@ import {
     ExternalLink,
     ShieldCheck,
     Lock,
-    Plus
+    Plus,
+    BrainCircuit,
+    Hash,
+    Info
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
@@ -180,79 +183,88 @@ export default function CampaignDetail() {
                         <div style={{ gridColumn: 'span 7', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
                             {/* Unified Info Card */}
-                            <div className="hero-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div className="hero-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
 
-                                {/* Row 1: Campaign Name & Platform */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                                    <div className="filter-group">
-                                        <label>Campaign Name</label>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: platformColor, marginTop: '0.25rem' }}>
+                                {/* Header: Identity & Platform */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>Campaign Identity</div>
+                                        <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.02em', margin: 0 }}>
                                             {campaign.name}
-                                        </div>
+                                        </h2>
                                     </div>
-                                    <div className="filter-group">
-                                        <label>Platform</label>
-                                        <div style={{ marginTop: '0.25rem' }}>
-                                            <span className="hero-badge" style={{ background: platformColor + '15', color: platformColor, fontWeight: 800 }}>
-                                                {platform?.display_name}
-                                            </span>
-                                        </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>Platform</div>
+                                        <span className="hero-badge" style={{ background: platformColor + '15', color: platformColor, fontWeight: 900, fontSize: '0.8rem', padding: '0.4rem 0.75rem', borderRadius: '8px' }}>
+                                            {platform?.display_name || 'Generic Platform'}
+                                        </span>
                                     </div>
                                 </div>
 
-                                {/* Row 2: Status, Start Date, DSA Support */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem' }}>
+                                {/* Operational Meta Grid */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', background: 'var(--bg-overlay)', padding: '1.25rem', borderRadius: '12px' }}>
                                     <div className="filter-group">
-                                        <label>Status</label>
+                                        <label>Current Status</label>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.4rem' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: campaign.status === 'active' ? '#22c55e' : '#f59e0b' }} />
-                                            <span style={{ fontWeight: 700, color: 'var(--text-main)', textTransform: 'capitalize', fontSize: '0.85rem' }}>{campaign.status}</span>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: campaign.status === 'active' ? '#22c55e' : '#f59e0b', boxShadow: campaign.status === 'active' ? '0 0 8px #22c55e60' : 'none' }} />
+                                            <span style={{ fontWeight: 800, color: 'var(--text-main)', textTransform: 'uppercase', fontSize: '0.75rem' }}>{campaign.status}</span>
                                         </div>
                                     </div>
                                     <div className="filter-group">
-                                        <label>Start Date</label>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 600 }}>
-                                            <Calendar size={14} className="text-primary" />
+                                        <label>Initial Start</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem', color: 'var(--text-main)', fontSize: '0.85rem', fontWeight: 700 }}>
                                             {formatDate(campaign.created_date)}
                                         </div>
                                     </div>
                                     <div className="filter-group">
-                                        <label>DSA Support</label>
+                                        <label>DSA Mode</label>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem' }}>
                                             {campaign.is_dsa ? (
-                                                <><ShieldCheck size={14} color="hsl(var(--primary))" /><span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'hsl(var(--primary))' }}>DSA Active</span></>
+                                                <><ShieldCheck size={14} color="hsl(var(--primary))" /><span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))' }}>ACTIVE</span></>
                                             ) : (
-                                                <><Lock size={14} color="var(--text-dim)" /><span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-dim)' }}>Manual Only</span></>
+                                                <><Lock size={14} color="var(--text-dim)" /><span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-dim)' }}>MANUAL</span></>
                                             )}
+                                        </div>
+                                    </div>
+                                    <div className="filter-group">
+                                        <label>Target CPC</label>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.2rem' }}>
+                                            ${campaign.cpc?.toFixed(0) || '0'}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Row 3: CPC, Budget, Keywords */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '1.25rem' }}>
-                                    <div className="filter-group">
-                                        <label>CPC ($)</label>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 500, color: 'var(--text-main)', marginTop: '0.25rem' }}>
-                                            {campaign.cpc?.toFixed(0)}
-                                        </div>
+                                {/* Financial Performance Highlight */}
+                                <div style={{ borderLeft: `4px solid ${platformColor}`, paddingLeft: '1.25rem' }}>
+                                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Maximum Daily Budget Allocation</label>
+                                    <div style={{ fontSize: '2rem', fontWeight: 900, color: platformColor, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                                        ${campaign.max_daily_budget?.toLocaleString() || '0'}
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600, marginLeft: '0.5rem', verticalAlign: 'middle' }}>USD / DAY</span>
                                     </div>
-                                    <div className="filter-group">
-                                        <label>Max Daily Budget ($)</label>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 500, color: platformColor, marginTop: '0.25rem' }}>
-                                            {campaign.max_daily_budget?.toFixed(0)}
-                                        </div>
-                                    </div>
-                                    <div className="filter-group">
-                                        <label>Keywords</label>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.4rem' }}>
-                                            {Array.isArray(campaign.keywords) && campaign.keywords.length > 0 ? (
-                                                campaign.keywords.map((kw: string) => (
-                                                    <span key={kw} className="hero-badge" style={{ background: 'var(--bg-main)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)', fontSize: '0.7rem', textTransform: 'none', padding: '0.1rem 0.4rem' }}>{kw}</span>
-                                                ))
-                                            ) : (
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>None</div>
-                                            )}
-                                        </div>
+                                </div>
+
+                                {/* Row 3.5: Active Keywords (Full Width Text) */}
+                                <div className="filter-group">
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Hash size={14} className="text-secondary" />
+                                        Active Tracking Keywords
+                                    </label>
+                                    <div style={{
+                                        marginTop: '0.6rem',
+                                        padding: '1rem',
+                                        background: 'var(--bg-overlay)',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--border-subtle)',
+                                        fontSize: '0.85rem',
+                                        lineHeight: 1.6,
+                                        color: 'var(--text-main)',
+                                        minHeight: '80px',
+                                        maxHeight: '200px',
+                                        overflowY: 'auto',
+                                        whiteSpace: 'pre-wrap',
+                                        fontFamily: 'monospace'
+                                    }}>
+                                        {campaign.keywords || 'No keywords tracked for this campaign.'}
                                     </div>
                                 </div>
 
@@ -293,6 +305,52 @@ export default function CampaignDetail() {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Row 5: AI Insights (Conditional) */}
+                                {campaign.chatgpt_metadata && (
+                                    <div className="filter-group">
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'hsl(var(--primary))' }}>
+                                            <BrainCircuit size={14} />
+                                            AI Strategic Insights
+                                        </label>
+                                        <div style={{
+                                            marginTop: '0.6rem',
+                                            padding: '1rem',
+                                            background: 'hsla(var(--primary) / 0.05)',
+                                            borderRadius: '10px',
+                                            border: '1px solid hsla(var(--primary) / 0.1)',
+                                            fontSize: '0.85rem',
+                                            lineHeight: 1.6,
+                                            color: 'var(--text-main)',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {campaign.chatgpt_metadata}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Row 6: Platform Global Notes (Institutional Context) */}
+                                {platform?.metadata && (
+                                    <div className="filter-group" style={{ marginTop: '0.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: platformColor }}>
+                                            <Info size={14} />
+                                            Platform Global Governance & Notes
+                                        </label>
+                                        <div style={{
+                                            marginTop: '0.6rem',
+                                            padding: '1rem',
+                                            background: 'var(--bg-main)',
+                                            borderRadius: '10px',
+                                            border: `1px solid ${platformColor}20`,
+                                            fontSize: '0.85rem',
+                                            lineHeight: 1.6,
+                                            color: 'var(--text-dim)',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {platform.metadata}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

@@ -7,7 +7,7 @@ export interface CampaignPlatform {
     display_name: string;
     color: string;
     icon?: string;
-    metadata?: Record<string, any>;
+    metadata?: string;
     created: string;
     updated: string;
 }
@@ -21,7 +21,8 @@ export interface Campaign {
     last_reviewed_date?: string;
     cpc?: number;
     max_daily_budget?: number;
-    keywords?: string[] | Record<string, any>;
+    keywords?: string;
+    chatgpt_metadata?: string;
     description?: string;
     general_notes?: string;
     is_dsa: boolean;
