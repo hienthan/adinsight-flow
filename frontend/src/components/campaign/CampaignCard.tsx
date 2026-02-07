@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MoreVertical, Edit, Eye, Bell, Calendar, DollarSign, TrendingUp, Key } from 'lucide-react';
+import { MoreVertical, Edit, Eye, Bell, Key, AlertCircle } from 'lucide-react';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
 import { formatDate } from '../../lib/utils';
 import AddReminderModal from './AddReminderModal';
@@ -46,36 +46,35 @@ export default function CampaignCard({
                 e.currentTarget.style.boxShadow = 'var(--shadow-soft)';
             }}
         >
-            <div onClick={() => navigate(`/camp-tracking/campaign/${campaign.id}`)} style={{ flex: 1 }}>
-                {/* Header - Platform on Left, Name & Actions on Right */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '1rem' }}>
+            <div onClick={() => navigate(`/camp-tracking/campaign/${campaign.id}`)} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', gap: '1rem' }}>
                     {platform && (
                         <div
-                            className="hero-badge"
                             style={{
-                                background: 'transparent',
-                                border: `1px solid ${platform.color}40`,
+                                border: `1px solid ${platform.color}30`,
                                 color: platform.color,
-                                padding: '0.15rem 0.4rem',
+                                padding: '0.1rem 0.35rem',
                                 borderRadius: '4px',
-                                height: 'fit-content',
-                                flexShrink: 0
+                                fontSize: '0.55rem',
+                                fontWeight: 900,
+                                textTransform: 'uppercase'
                             }}
                         >
-                            <span style={{ fontWeight: 900, fontSize: '0.55rem' }}>{platform.display_name}</span>
+                            {platform.display_name}
                         </div>
                     )}
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, justifyContent: 'flex-end', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, justifyContent: 'flex-end', minWidth: 0 }}>
+                        {hasPendingReminders && (
+                            <AlertCircle size={12} style={{ color: highestPriority === 'high' ? '#ef4444' : '#f59e0b', flexShrink: 0 }} />
+                        )}
                         <h3
                             style={{
-                                fontSize: '0.875rem',
+                                fontSize: '0.85rem',
                                 fontWeight: 800,
-                                lineHeight: 1.2,
-                                color: 'var(--text-main)',
-                                letterSpacing: '-0.01em',
+                                color: platform?.color || 'var(--text-main)',
                                 margin: 0,
-                                textAlign: 'right',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap'
@@ -83,146 +82,83 @@ export default function CampaignCard({
                         >
                             {campaign.name}
                         </h3>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-                            {campaign.is_dsa === false && (
-                                <div title="Non-DSA Campaign (Key Required)" style={{ color: 'var(--text-dim)', opacity: 0.7 }}>
-                                    <Key size={14} />
-                                </div>
-                            )}
-                            <div style={{ position: 'relative' }}>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowActions(!showActions);
-                                    }}
-                                    className="hero-btn-ghost"
-                                    style={{ padding: '0.2rem', borderRadius: '6px' }}
-                                >
-                                    <MoreVertical size={14} />
+                        {campaign.is_dsa === false && (
+                            <Key size={12} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                        )}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowActions(!showActions);
+                            }}
+                            className="hero-btn-ghost"
+                            style={{ padding: '0.15rem', borderRadius: '4px' }}
+                        >
+                            <MoreVertical size={14} />
+                        </button>
+                        {showActions && (
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    right: '1rem',
+                                    top: '2.5rem',
+                                    background: 'var(--bg-content)',
+                                    border: '1px solid var(--border-subtle)',
+                                    borderRadius: '0.5rem',
+                                    boxShadow: 'var(--shadow-medium)',
+                                    minWidth: '150px',
+                                    zIndex: 50,
+                                    padding: '0.2rem'
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <button className="hero-tab" style={{ width: '100%', fontSize: '0.75rem', padding: '0.5rem' }} onClick={(e) => { e.stopPropagation(); navigate(`/camp-tracking/campaign/${campaign.id}`); }}>
+                                    <Eye size={12} /> View Details
                                 </button>
-                                {showActions && (
-                                    <div
-                                        style={{
-                                            position: 'absolute',
-                                            right: 0,
-                                            top: '110%',
-                                            background: 'var(--bg-content)',
-                                            border: '1px solid var(--border-subtle)',
-                                            borderRadius: '0.65rem',
-                                            boxShadow: 'var(--shadow-medium)',
-                                            minWidth: '160px',
-                                            zIndex: 20,
-                                            padding: '0.25rem'
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <button
-                                            className="hero-tab"
-                                            style={{ width: '100%', justifyContent: 'flex-start', padding: '0.5rem' }}
-                                            onClick={() => navigate(`/camp-tracking/campaign/${campaign.id}`)}
-                                        >
-                                            <Eye size={14} /> View Details
-                                        </button>
-                                        <button
-                                            className="hero-tab"
-                                            style={{ width: '100%', justifyContent: 'flex-start', padding: '0.5rem' }}
-                                            onClick={() => { onEdit?.(campaign.id); setShowActions(false); }}
-                                        >
-                                            <Edit size={14} /> Edit Campaign
-                                        </button>
-                                        <button
-                                            className="hero-tab"
-                                            style={{ width: '100%', justifyContent: 'flex-start', padding: '0.5rem' }}
-                                            onClick={() => { setIsReminderModalOpen(true); setShowActions(false); }}
-                                        >
-                                            <Bell size={14} /> Add Reminder
-                                        </button>
-                                    </div>
-                                )}
+                                <button className="hero-tab" style={{ width: '100%', fontSize: '0.75rem', padding: '0.5rem' }} onClick={(e) => { e.stopPropagation(); onEdit?.(campaign.id); }}>
+                                    <Edit size={12} /> Edit
+                                </button>
+                                <button className="hero-tab" style={{ width: '100%', fontSize: '0.75rem', padding: '0.5rem' }} onClick={(e) => { e.stopPropagation(); setIsReminderModalOpen(true); }}>
+                                    <Bell size={12} /> Reminder
+                                </button>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Badges */}
-                <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                    {hasPendingReminders && (
-                        <span
-                            className="hero-badge"
-                            style={{
-                                background: highestPriority === 'high' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)',
-                                color: highestPriority === 'high' ? '#ef4444' : '#f59e0b',
-                                gap: '0.3rem',
-                                textTransform: 'none',
-                                fontWeight: 700
-                            }}
-                        >
-                            <Bell size={10} fill="currentColor" />
-                            {highestPriority === 'high' ? 'Urgent' : 'Reminders'}
+                {/* Efficiency Bar: Metrics & Date */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 700 }}>
+                        <span style={{ color: 'var(--text-main)' }}>${campaign.cpc?.toFixed(0) || '0'}</span>
+                        <span style={{ color: 'var(--text-dim)', opacity: 0.3 }}>—</span>
+                        <span style={{ color: platform?.color || 'hsl(var(--primary))' }}>
+                            ${campaign.max_daily_budget ? (campaign.max_daily_budget >= 1000 ? `${(campaign.max_daily_budget / 1000).toFixed(0)}k` : campaign.max_daily_budget) : '0'}
                         </span>
-                    )}
-
-                    {hasRecentChanges && (
-                        <span
-                            className="hero-badge"
-                            style={{
-                                background: 'var(--accent-glow)',
-                                color: 'hsl(var(--primary))',
-                                fontWeight: 800,
-                                textTransform: 'none'
-                            }}
-                        >
-                            Recent Audit
-                        </span>
-                    )}
-                </div>
-
-                {/* Metrics Grid */}
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '0.6rem',
-                        marginBottom: '1rem',
-                    }}
-                >
-                    <div style={{ background: 'hsla(var(--primary) / 0.04)', padding: '0.5rem 0.75rem', borderRadius: '0.75rem', border: '1px solid hsla(var(--primary) / 0.08)' }}>
-                        <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <DollarSign size={10} /> CPC
-                        </div>
-                        <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            ${campaign.cpc?.toFixed(2) || '0.00'}
-                        </div>
                     </div>
-
-                    <div style={{ background: 'var(--bg-overlay)', padding: '0.5rem 0.75rem', borderRadius: '0.75rem', border: '1px solid var(--border-subtle)' }}>
-                        <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <TrendingUp size={10} /> Daily
-                        </div>
-                        <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                            ${campaign.max_daily_budget?.toFixed(0) || '0'}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        color: 'var(--text-muted)',
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        paddingTop: '0.75rem',
-                        borderTop: '1px solid var(--border-subtle)',
-                    }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <Calendar size={12} />
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                         {formatDate(campaign.created_date)}
                     </div>
+                </div>
+
+                {/* Fixed-Height Notes Section */}
+                <div
+                    title={campaign.general_notes || 'No notes available'}
+                    style={{
+                        padding: '0.6rem 0.75rem',
+                        background: 'var(--bg-overlay)',
+                        borderRadius: '0.5rem',
+                        border: '1px solid var(--border-subtle)',
+                        fontSize: '0.75rem',
+                        lineHeight: 1.4,
+                        color: campaign.general_notes ? 'var(--text-main)' : 'var(--text-muted)',
+                        height: '75px',
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        fontStyle: 'italic'
+                    }}
+                >
+                    {campaign.general_notes || 'Define optimization notes...'}
                 </div>
             </div>
 

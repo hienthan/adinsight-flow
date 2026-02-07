@@ -254,8 +254,8 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                                 name="cpc"
                                 value={formData.cpc || 0}
                                 onChange={handleChange}
-                                step="0.01"
                                 min="0"
+                                placeholder="000"
                             />
                         </div>
                         <div className="filter-group">
@@ -266,6 +266,7 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                                 value={formData.max_daily_budget || 0}
                                 onChange={handleChange}
                                 min="0"
+                                placeholder="000"
                             />
                         </div>
                     </div>

@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, Check } from 'lucide-react';
-import { pb, formatDateForInput } from '../../lib/pocketbase';
-import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campaign';
 import CampaignCard from '../../components/campaign/CampaignCard';
+import EditCampaignModal from '../../components/campaign/EditCampaignModal';
+import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campaign';
+import { pb, formatDateForInput } from '../../lib/pocketbase';
 
 export default function CampOverview() {
-    const navigate = useNavigate();
     const [filterPlatform, setFilterPlatform] = useState<string>('all');
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [filterReminders, setFilterReminders] = useState<boolean>(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     // Fetch platforms
     const { data: platforms = [] } = useQuery<CampaignPlatform[]>({
@@ -23,7 +24,7 @@ export default function CampOverview() {
     });
 
     // Fetch campaigns with platform expand
-    const { data: campaigns = [], isLoading } = useQuery<Campaign[]>({
+    const { data: campaigns = [], isLoading, refetch } = useQuery<Campaign[]>({
         queryKey: ['campaigns', filterPlatform, filterStatus],
         queryFn: async () => {
             let filter = '';
@@ -90,6 +91,32 @@ export default function CampOverview() {
         ? enrichedCampaigns.filter((c) => c.hasPendingReminders)
         : enrichedCampaigns;
 
+    // Group by platform
+    const groupedCampaigns = platforms.reduce((acc, platform) => {
+        const platformCampaigns = filteredCampaigns.filter(c => c.platform === platform.id);
+        if (platformCampaigns.length > 0) {
+            acc.push({
+                platform,
+                campaigns: platformCampaigns
+            });
+        }
+        return acc;
+    }, [] as { platform: CampaignPlatform, campaigns: any[] }[]);
+
+    // Handle campaigns with no platform (fallback)
+    const orphans = filteredCampaigns.filter(c => !platforms.find(p => p.id === c.platform));
+    if (orphans.length > 0) {
+        groupedCampaigns.push({
+            platform: { id: 'unknown', display_name: 'Unassigned', color: '#64748b' } as any,
+            campaigns: orphans
+        });
+    }
+
+    const openEdit = (id: string) => {
+        setEditingId(id);
+        setIsEditModalOpen(true);
+    };
+
     return (
         <div className="page-container">
             {/* Header */}
@@ -113,7 +140,10 @@ export default function CampOverview() {
 
                 <button
                     className="hero-btn hero-btn-primary"
-                    onClick={() => navigate('/camp-tracking/new')}
+                    onClick={() => {
+                        setEditingId(null);
+                        setIsEditModalOpen(true);
+                    }}
                 >
                     <Plus size={18} />
                     New Campaign
@@ -242,26 +272,48 @@ export default function CampOverview() {
                     </div>
                 </div>
             ) : (
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                        gap: '1.5rem',
-                    }}
-                >
-                    {filteredCampaigns.map((campaign: any) => (
-                        <CampaignCard
-                            key={campaign.id}
-                            campaign={campaign}
-                            platform={campaign.platform_data}
-                            hasRecentChanges={campaign.hasRecentChanges}
-                            hasPendingReminders={campaign.hasPendingReminders}
-                            highestPriority={campaign.highestPriority}
-                            onEdit={(id) => navigate(`/camp-tracking/edit/${id}`)}
-                        />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                    {groupedCampaigns.map((group) => (
+                        <div key={group.platform.id}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                                <div style={{ width: '8px', height: '24px', background: group.platform.color, borderRadius: '4px' }} />
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
+                                    {group.platform.display_name}
+                                </h3>
+                                <div style={{ height: '1px', flex: 1, background: 'var(--border-subtle)', marginLeft: '0.5rem', opacity: 0.5 }} />
+                                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>{group.campaigns.length} campaigns</span>
+                            </div>
+
+                            <div
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                                    gap: '1.5rem',
+                                }}
+                            >
+                                {group.campaigns.map((campaign: any) => (
+                                    <CampaignCard
+                                        key={campaign.id}
+                                        campaign={campaign}
+                                        platform={campaign.platform_data}
+                                        hasRecentChanges={campaign.hasRecentChanges}
+                                        hasPendingReminders={campaign.hasPendingReminders}
+                                        highestPriority={campaign.highestPriority}
+                                        onEdit={openEdit}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </div>
             )}
+
+            <EditCampaignModal
+                campaignId={editingId || undefined}
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                onSuccess={() => refetch()}
+            />
         </div>
     );
 }

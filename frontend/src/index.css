@@ -407,6 +407,12 @@ textarea:focus {
   box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
 }
 
+::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+  font-weight: 400;
+}
+
 /* HeroUI Table System */
 .data-table-container {
   overflow-x: auto;
