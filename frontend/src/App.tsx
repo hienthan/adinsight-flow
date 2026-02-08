@@ -16,6 +16,7 @@ import AllReminders from './pages/CampTracking/AllReminders';
 import AllChanges from './pages/CampTracking/AllChanges';
 import CampaignFormPage from './pages/CampTracking/CampaignFormPage';
 import PlatformManagement from './pages/CampTracking/PlatformManagement';
+import GlobalNotesPage from './pages/GlobalNotes/GlobalNotesPage';
 
 import './App.css';
 
@@ -58,6 +59,9 @@ function App() {
           <Route path="/camp-tracking/campaign/:campaignId" element={<CampaignDetail />} />
           <Route path="/camp-tracking/reminders" element={<AllReminders />} />
           <Route path="/camp-tracking/changes" element={<AllChanges />} />
+
+          {/* Global Notes Route */}
+          <Route path="/global-notes" element={<GlobalNotesPage />} />
 
           {/* 404 fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

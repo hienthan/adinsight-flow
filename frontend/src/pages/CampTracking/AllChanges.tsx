@@ -1,41 +1,85 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { History, ArrowRight, Calendar, User, Info, Trash2 } from 'lucide-react';
+import { History, ChevronDown, ChevronRight } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
-import { formatDate } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 
 import { useSearchParams } from 'react-router-dom';
+
+import AutoLogItem from '../../components/tracking/AutoLogItem';
 
 export default function AllChanges() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
     const platformId = searchParams.get('platform');
+    const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+
+    const toggleSection = (pid: string) => {
+        setCollapsedSections(prev => ({
+            ...prev,
+            [pid]: !prev[pid]
+        }));
+    };
+
+    const { data: platforms = [] } = useQuery<any[]>({
+        queryKey: ['platforms'],
+        queryFn: async () => {
+            return await pb.collection('campaign_platforms').getFullList({
+                sort: 'display_name',
+            });
+        }
+    });
 
     const { data: platform } = useQuery<any>({
         queryKey: ['platform', platformId],
         queryFn: async () => {
-            if (!platformId) return null;
+            if (!platformId || platformId === 'all') return null;
             return await pb.collection('campaign_platforms').getOne(platformId);
         },
-        enabled: !!platformId
+        enabled: !!platformId && platformId !== 'all'
     });
 
     const { data: changes, isLoading } = useQuery<any[]>({
         queryKey: ['all-changes', platformId],
         queryFn: async () => {
             let filter = '';
-            if (platformId) {
+            if (platformId && platformId !== 'all') {
                 filter = `campaign.platform = "${platformId}"`;
             }
             return await pb.collection('campaign_changes').getFullList({
                 filter,
                 sort: '-change_date',
                 expand: 'campaign,campaign.platform',
-                limit: 100
+                limit: 200
             });
         }
     });
+
+    // Grouping logic
+    const groupedChanges = platforms.reduce((acc, p) => {
+        const platformChanges = (changes || []).filter(c => c.expand?.campaign?.platform === p.id);
+        if (platformChanges.length > 0) {
+            acc.push({
+                platform: p,
+                items: platformChanges
+            });
+        }
+        return acc;
+    }, [] as { platform: any, items: any[] }[]);
+
+    // Handle items with unknown platforms if any (e.g. if platform was deleted or data is inconsistent)
+    const orphans = (changes || []).filter(c => !platforms.find(p => p.id === c.expand?.campaign?.platform));
+    if (orphans.length > 0) {
+        groupedChanges.push({
+            platform: { id: 'unknown', display_name: 'Others', color: '#666' },
+            items: orphans
+        });
+    }
+
+    const setFilterPlatform = (val: string) => {
+        navigate(val === 'all' ? '/camp-tracking/changes' : `/camp-tracking/changes?platform=${val}`);
+    };
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
@@ -49,17 +93,6 @@ export default function AllChanges() {
 
     if (isLoading) return <div className="page-container" style={{ textAlign: 'center', padding: '5rem' }}>Loading change logs...</div>;
 
-    const renderValue = (val: any) => {
-        if (val === null || val === undefined) return <span style={{ fontStyle: 'italic', color: 'var(--text-dim)' }}>null</span>;
-        if (Array.isArray(val)) return val.length > 0 ? val.join(', ') : <span style={{ fontStyle: 'italic', color: 'var(--text-dim)' }}>empty list</span>;
-        if (typeof val === 'object') return JSON.stringify(val);
-        return String(val);
-    };
-
-    const getFieldLabel = (field: string) => {
-        return field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    };
-
     return (
         <div className="page-container">
             <div style={{ marginBottom: '1.5rem' }}>
@@ -71,93 +104,84 @@ export default function AllChanges() {
                 </p>
             </div>
 
-            {changes?.length === 0 ? (
+            {/* Platform Filter */}
+            <div className="filter-bar" style={{ marginBottom: '1.5rem' }}>
+                <div className="filter-group">
+                    <label>Filter by Platform</label>
+                    <select
+                        value={platformId || 'all'}
+                        onChange={(e) => setFilterPlatform(e.target.value)}
+                        style={{ minWidth: '200px' }}
+                    >
+                        <option value="all">All Channels</option>
+                        {platforms.map((p) => (
+                            <option key={p.id} value={p.id}>
+                                {p.display_name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            {groupedChanges.length === 0 ? (
                 <div className="hero-card" style={{ textAlign: 'center', padding: '5rem' }}>
                     <History size={48} style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', opacity: 0.5 }} />
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>No changes logged yet</h3>
                     <p style={{ color: 'var(--text-dim)' }}>Campaign modifications will appear here.</p>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    {changes?.map((change) => (
-                        <div
-                            key={change.id}
-                            className="hero-card animate-fade"
-                            style={{
-                                padding: '1.5rem',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '1rem',
-                                borderLeft: `4px solid ${platform?.color || 'hsl(var(--primary))'}`
-                            }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <span
-                                        onClick={() => navigate(`/camp-tracking/campaign/${change.campaign}`)}
-                                        style={{ color: platform?.color || 'hsl(var(--primary))', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', letterSpacing: '-0.01em' }}
-                                    >
-                                        {change.expand?.campaign?.name || 'Unknown Campaign'}
-                                    </span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>•</span>
-                                    <span className="hero-badge" style={{
-                                        background: 'var(--accent-glow)',
-                                        color: platform?.color || 'hsl(var(--primary))',
-                                        fontSize: '0.7rem'
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {groupedChanges.map((group: any) => {
+                        const isCollapsed = collapsedSections[group.platform.id];
+                        return (
+                            <div key={group.platform.id} className="animate-fade">
+                                <div
+                                    onClick={() => toggleSection(group.platform.id)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        marginBottom: isCollapsed ? '0' : '1.25rem',
+                                        cursor: 'pointer',
+                                        padding: '0.5rem',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s',
+                                        userSelect: 'none'
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-overlay)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                    {isCollapsed ? <ChevronRight size={18} className="text-muted" /> : <ChevronDown size={18} className="text-muted" />}
+                                    <div style={{ width: '8px', height: '24px', background: group.platform.color, borderRadius: '4px' }} />
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', textTransform: 'uppercase', margin: 0 }}>
+                                        {group.platform.display_name}
+                                    </h3>
+                                    <div style={{ height: '1px', flex: 1, background: 'var(--border-subtle)', marginLeft: '0.5rem', opacity: 0.5 }} />
+                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>{group.items.length} logs</span>
+                                </div>
+
+                                {!isCollapsed && (
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                                        gap: '0.75rem',
+                                        padding: '0 0.5rem'
                                     }}>
-                                        {getFieldLabel(change.field_changed)}
-                                    </span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-dim)', fontSize: '0.8rem', fontWeight: 500 }}>
-                                        <Calendar size={14} />
-                                        {formatDate(change.change_date)}
-                                    </div>
-                                    <button
-                                        onClick={() => { if (confirm('Remove this log entry?')) deleteMutation.mutate(change.id); }}
-                                        className="hero-btn-ghost text-destructive"
-                                        style={{ padding: '0.4rem', borderRadius: '8px' }}
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr auto 1fr',
-                                gap: '1.5rem',
-                                alignItems: 'center',
-                                background: 'hsla(var(--primary) / 0.03)',
-                                padding: '1.25rem',
-                                borderRadius: '1rem',
-                                border: '1px solid var(--border-subtle)'
-                            }}>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PREVIOUS</div>
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ef4444' }}>{renderValue(change.old_value)}</div>
-                                </div>
-                                <ArrowRight size={18} style={{ color: 'var(--text-muted)' }} />
-                                <div>
-                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>UPDATED</div>
-                                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#22c55e' }}>{renderValue(change.new_value)}</div>
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 500 }}>
-                                    <Info size={14} />
-                                    {change.metadata?.auto_detected ? 'Automatically detected' : 'Manual entry'}
-                                </div>
-                                {change.user && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 500 }}>
-                                        <User size={14} />
-                                        Modified by {change.user}
+                                        {group.items.map((change: any) => (
+                                            <AutoLogItem
+                                                key={change.id}
+                                                change={change}
+                                                showCampaignName={true}
+                                                onCampaignClick={(id) => navigate(`/camp-tracking/campaign/${id}`)}
+                                                onDelete={(id) => deleteMutation.mutate(id)}
+                                                platformColor={group.platform.color}
+                                            />
+                                        ))}
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>
