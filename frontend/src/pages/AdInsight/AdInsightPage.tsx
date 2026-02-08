@@ -2,6 +2,7 @@
 // Migrated from App.tsx for the new router structure
 
 import { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { pb } from '../../lib/pocketbase';
 import {
     Search,
@@ -26,16 +27,23 @@ interface PageRecord {
     is_private: boolean;
     languages: string[];
     content_type: string;
+    sub_tag?: string;  // NEW: for mobility URLs
 }
 
 export default function AdInsightPage() {
+    const { content } = useParams<{ content: string }>(); // Read URL param
+    const isMobility = content === 'mobility';
+
+    // Set sitemap_tag based on content type
+    const selectedTag = isMobility ? 'mobility' : 'experiences-activity';
+
     const [pages, setPages] = useState<PageRecord[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(100);
-    const [selectedTag] = useState('experiences-activity');
+    // const [selectedTag] = useState('experiences-activity'); // REMOVED - uses derived variable
     const [selectedLang] = useState('zh-HK');
     const [searchInput, setSearchInput] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -43,10 +51,12 @@ export default function AdInsightPage() {
     const [filterCountry, setFilterCountry] = useState('');
     const [filterPrivate, setFilterPrivate] = useState<boolean | null>(null);
     const [filterLanguage, setFilterLanguage] = useState('all');
+    const [filterSubTag, setFilterSubTag] = useState('');  // NEW: sub_tag filter
     const [countries, setCountries] = useState<string[]>([]);
+    const [subTags, setSubTags] = useState<string[]>([]);  // NEW: available sub_tags
     const [exporting, setExporting] = useState(false);
 
-    // Fetch countries metadata
+    // Fetch countries and sub_tags metadata
     useEffect(() => {
         const fetchMeta = async () => {
             try {
@@ -54,7 +64,9 @@ export default function AdInsightPage() {
                     sort: 'value'
                 });
                 const uniqueCountries = Array.from(new Set(records.filter(r => r.type === 'country').map(r => r.value))).sort();
+                const uniqueSubTags = Array.from(new Set(records.filter(r => r.type === 'sub_tag').map(r => r.value))).sort();
                 setCountries(uniqueCountries);
+                setSubTags(uniqueSubTags);
             } catch (err) {
                 console.error('Meta fetch error', err);
             }
@@ -72,7 +84,7 @@ export default function AdInsightPage() {
     };
 
     const fetchPages = useCallback(async (pageNum: number) => {
-        if (loading) return;
+        // if (loading) return; // Allow re-fetch if params change
         setLoading(true);
 
         try {
@@ -90,6 +102,7 @@ export default function AdInsightPage() {
             if (filterTier) filterString += ` && tier = "${filterTier}"`;
             if (filterCountry) filterString += ` && country = "${filterCountry}"`;
             if (filterPrivate !== null) filterString += ` && is_private = ${filterPrivate}`;
+            if (filterSubTag) filterString += ` && sub_tag = "${filterSubTag}"`; // NEW
 
             const result = await pb.collection('pages').getList<PageRecord>(pageNum, perPage, {
                 sort: 'tier',
@@ -106,7 +119,7 @@ export default function AdInsightPage() {
         } finally {
             setLoading(false);
         }
-    }, [selectedTag, searchTerm, filterTier, filterCountry, filterPrivate, filterLanguage, perPage, loading]);
+    }, [selectedTag, searchTerm, filterTier, filterCountry, filterPrivate, filterLanguage, filterSubTag, perPage]);
 
     // Debounced search
     useEffect(() => {
@@ -116,11 +129,10 @@ export default function AdInsightPage() {
         return () => clearTimeout(timer);
     }, [searchInput]);
 
-    // Fetch on filter change
     useEffect(() => {
         setCurrentPage(1);
         fetchPages(1);
-    }, [selectedTag, selectedLang, searchTerm, filterTier, filterCountry, filterPrivate, filterLanguage, perPage]);
+    }, [selectedTag, selectedLang, searchTerm, filterTier, filterCountry, filterPrivate, filterLanguage, filterSubTag, perPage]);
 
     const handleExport = async () => {
         let filterString = `sitemap_tag = "${selectedTag}"`;
@@ -137,6 +149,7 @@ export default function AdInsightPage() {
         if (filterTier) filterString += ` && tier = "${filterTier}"`;
         if (filterCountry) filterString += ` && country = "${filterCountry}"`;
         if (filterPrivate !== null) filterString += ` && is_private = ${filterPrivate}`;
+        if (filterSubTag) filterString += ` && sub_tag = "${filterSubTag}"`; // NEW
 
         try {
             setExporting(true);
@@ -166,9 +179,11 @@ export default function AdInsightPage() {
                 const tier = `Tier${record.tier || 'Unknown'}`;
                 const privacy = record.is_private ? 'Private' : 'Public';
 
+                // For mobility, check if we need special labels based on sub_tag?
+                // Currently keeping same label strategy
                 const labels = city
-                    ? [country, city, tier, privacy].join(',')
-                    : [country, tier, privacy].join(',');
+                    ? [country, city, tier, privacy].join(';')
+                    : [country, tier, privacy].join(';');
 
                 return `${url},${labels}`;
             }).join('\n');
@@ -202,11 +217,12 @@ export default function AdInsightPage() {
         setFilterCountry('');
         setFilterPrivate(null);
         setFilterLanguage('all');
+        setFilterSubTag('');  // NEW
         setSearchTerm('');
         setSearchInput('');
     };
 
-    const isFiltered = searchTerm || filterTier || filterCountry || filterPrivate !== null || filterLanguage !== 'all';
+    const isFiltered = searchTerm || filterTier || filterCountry || filterPrivate !== null || filterLanguage !== 'all' || filterSubTag;
 
     return (
         <div className="page-container">
@@ -237,10 +253,10 @@ export default function AdInsightPage() {
                     </div>
                     <div>
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>
-                            {isFiltered ? 'Matched URL Analytics' : 'Global URL Inventory'}
+                            {isMobility ? 'Mobility Analytics' : 'Activity Analytics'}
                         </h3>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', margin: 0 }}>
-                            {isFiltered ? 'Showing results for current active filters' : 'Total crawled URLs available in sitemaps'}
+                            Platform: Klook | Tag: {selectedTag}
                         </p>
                     </div>
                 </div>
@@ -298,14 +314,28 @@ export default function AdInsightPage() {
                     </datalist>
                 </div>
 
-                <div className="filter-group">
-                    <label>Private</label>
-                    <select value={filterPrivate === null ? '' : filterPrivate.toString()} onChange={(e) => setFilterPrivate(e.target.value === '' ? null : e.target.value === 'true')}>
-                        <option value="">All Types</option>
-                        <option value="false">Public</option>
-                        <option value="true">Private</option>
-                    </select>
-                </div>
+                {/* Hide Private Filter for Mobility if needed, currently showing for logic completeness unless requested to hide */}
+                {!isMobility && (
+                    <div className="filter-group">
+                        <label>Private</label>
+                        <select value={filterPrivate === null ? '' : filterPrivate.toString()} onChange={(e) => setFilterPrivate(e.target.value === '' ? null : e.target.value === 'true')}>
+                            <option value="">All Types</option>
+                            <option value="false">Public</option>
+                            <option value="true">Private</option>
+                        </select>
+                    </div>
+                )}
+
+                {/* Sub-tag Filter - Primary for Mobility */}
+                {isMobility && (
+                    <div className="filter-group">
+                        <label>Sub-tag</label>
+                        <select value={filterSubTag} onChange={(e) => setFilterSubTag(e.target.value)}>
+                            <option value="">All Sub-tags</option>
+                            {subTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+                        </select>
+                    </div>
+                )}
 
                 <div className="filter-group">
                     <label>Tier</label>
@@ -346,16 +376,37 @@ export default function AdInsightPage() {
                                 <th style={{ width: '80px' }}>ID</th>
                                 <th style={{ width: '320px' }}>Slug</th>
                                 <th>Smart Title</th>
-                                <th style={{ width: '60px' }}>Tier</th>
+
+                                {/* Dynamic Column Ordering */}
+                                {isMobility ? (
+                                    <>
+                                        <th style={{ width: '150px' }}>Sub-tag</th>
+                                        <th style={{ width: '60px' }}>Tier</th>
+                                    </>
+                                ) : (
+                                    <>
+                                        <th style={{ width: '60px' }}>Tier</th>
+                                        <th style={{ width: '150px' }}>Sub-tag</th>
+                                    </>
+                                )}
+
                                 <th>Location</th>
-                                <th style={{ width: '100px' }}>Access</th>
-                                <th style={{ width: '60px', textAlign: 'center' }}>DSA</th>
+
+                                {/* Hide Access/DSA for Mobility */}
+                                {!isMobility && (
+                                    <>
+                                        <th style={{ width: '100px' }}>Access</th>
+                                        <th style={{ width: '60px', textAlign: 'center' }}>DSA</th>
+                                    </>
+                                )}
                             </tr>
                         </thead>
                         <tbody>
                             {pages.map((page) => (
                                 <tr key={page.id}>
-                                    <td style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', width: '80px' }}>#{page.canonical_id}</td>
+                                    <td style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', width: '80px' }}>
+                                        {page.canonical_id === "0" ? "-" : `#${page.canonical_id}`}
+                                    </td>
                                     <td style={{ maxWidth: '320px', overflow: 'hidden' }}>
                                         <a href={page.url} target="_blank" rel="noopener noreferrer" className="slug-link" title="Open original URL" style={{ maxWidth: '100%' }}>
                                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{page.slug}</span>
@@ -363,52 +414,87 @@ export default function AdInsightPage() {
                                         </a>
                                     </td>
                                     <td style={{ fontWeight: 600, color: 'var(--text-main)', minWidth: '200px' }}>{page.translated_title_vi}</td>
-                                    <td style={{ width: '60px' }}>
-                                        <div
-                                            className="hero-badge"
-                                            style={{
-                                                textTransform: 'none',
-                                                padding: '0.2rem 0.5rem',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 800,
-                                                borderRadius: '6px',
-                                                minWidth: '24px',
-                                                justifyContent: 'center',
-                                                ...getTierStyle(page.tier)
-                                            }}
-                                        >
-                                            {page.tier}
-                                        </div>
-                                    </td>
+
+                                    {/* Dynamic Row Rendering */}
+                                    {isMobility ? (
+                                        <>
+                                            <td style={{ width: '150px' }}>
+                                                {page.sub_tag ? (
+                                                    <div className="hero-badge" style={{
+                                                        background: 'rgba(139, 92, 246, 0.1)',
+                                                        color: '#8b5cf6',
+                                                        border: '1px solid rgba(139, 92, 246, 0.2)',
+                                                        textTransform: 'capitalize',
+                                                        fontSize: '0.7rem',
+                                                        padding: '0.2rem 0.5rem',
+                                                        borderRadius: '6px'
+                                                    }}>
+                                                        {page.sub_tag.replace(/-/g, ' ')}
+                                                    </div>
+                                                ) : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>}
+                                            </td>
+                                            <td style={{ width: '60px' }}>
+                                                <div className="hero-badge" style={{
+                                                    textTransform: 'none', padding: '0.2rem 0.5rem', fontSize: '0.75rem',
+                                                    fontWeight: 800, borderRadius: '6px', minWidth: '24px', justifyContent: 'center',
+                                                    ...getTierStyle(page.tier)
+                                                }}>
+                                                    {page.tier}
+                                                </div>
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td style={{ width: '60px' }}>
+                                                <div className="hero-badge" style={{
+                                                    textTransform: 'none', padding: '0.2rem 0.5rem', fontSize: '0.75rem',
+                                                    fontWeight: 800, borderRadius: '6px', minWidth: '24px', justifyContent: 'center',
+                                                    ...getTierStyle(page.tier)
+                                                }}>
+                                                    {page.tier}
+                                                </div>
+                                            </td>
+                                            <td style={{ width: '150px' }}>
+                                                {/* Allow Activity to have sub-tag in future */}
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
+                                            </td>
+                                        </>
+                                    )}
+
                                     <td style={{ minWidth: '150px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <MapPin size={12} style={{ color: 'hsl(var(--primary))', opacity: 0.8 }} />
                                             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)', fontWeight: 500 }}>{page.city}, {page.country}</span>
                                         </div>
                                     </td>
-                                    <td style={{ width: '100px' }}>
-                                        {page.is_private ?
-                                            <div className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.15)', textTransform: 'none', gap: '0.4rem', borderRadius: '6px' }}>
-                                                <Lock size={12} /> <span>Private</span>
-                                            </div> :
-                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, paddingLeft: '0.5rem' }}>Public</span>
-                                        }
-                                    </td>
-                                    <td style={{ width: '60px', textAlign: 'center' }}>
-                                        {page.include_for_dsa ?
-                                            <div title="DSA Active" style={{ color: '#22c55e', display: 'flex', justifyContent: 'center' }}>
-                                                <ShieldCheck size={18} strokeWidth={2.5} />
-                                            </div> :
-                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
-                                        }
-                                    </td>
+
+                                    {!isMobility && (
+                                        <>
+                                            <td style={{ width: '100px' }}>
+                                                {page.is_private ?
+                                                    <div className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.15)', textTransform: 'none', gap: '0.4rem', borderRadius: '6px' }}>
+                                                        <Lock size={12} /> <span>Private</span>
+                                                    </div> :
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, paddingLeft: '0.5rem' }}>Public</span>
+                                                }
+                                            </td>
+                                            <td style={{ width: '60px', textAlign: 'center' }}>
+                                                {page.include_for_dsa ?
+                                                    <div title="DSA Active" style={{ color: '#22c55e', display: 'flex', justifyContent: 'center' }}>
+                                                        <ShieldCheck size={18} strokeWidth={2.5} />
+                                                    </div> :
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
+                                                }
+                                            </td>
+                                        </>
+                                    )}
                                 </tr>
                             ))}
                             {loading && (
-                                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>Loading next batch...</td></tr>
+                                <tr><td colSpan={isMobility ? 6 : 8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>Loading next batch...</td></tr>
                             )}
                             {pages.length === 0 && !loading && (
-                                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-dim)' }}>No records found for active filters.</td></tr>
+                                <tr><td colSpan={isMobility ? 6 : 8} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-dim)' }}>No records found for active filters.</td></tr>
                             )}
                         </tbody>
                     </table>

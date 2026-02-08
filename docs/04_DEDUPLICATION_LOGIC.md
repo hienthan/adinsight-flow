@@ -16,6 +16,11 @@ Every activity in Klook (and most platforms) has a unique numeric ID in the slug
     - Tiering and Category analysis is done ONCE per `canonical_id`.
     - When a new language version of the same ID is found, it copies the `tier` and `category_hint` from the existing record.
     - Only `translated_title_vi` and `url` remain unique per language record.
+4.  **IMPORTANT - canonical_id = "0" Exclusion**:
+    - Mobility URLs (transport services) have `canonical_id = "0"` since they don't have numeric IDs in URLs
+    - The import script **excludes** `canonical_id = "0"` records from deduplication logic
+    - This prevents incorrect merging of distinct mobility URLs
+    - See `docs/05_MOBILITY_URLS_LOGIC.md` for details
 
 ## Performance at Scale (Millions of Records)
 
