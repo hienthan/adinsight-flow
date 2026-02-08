@@ -73,22 +73,27 @@ def generate_dsa_feed(input_file="data/klook_experiences-activity_preview.json",
         writer = csv.writer(f)
         
         # Header (Google Ads DSA format)
+        # Header (Google Ads DSA format)
         writer.writerow([
             'Page URL',
-            'Custom label (Country)',
-            'Custom label (City)',
-            'Custom label (Tier)',
-            'Custom label (Platform)'
+            'Custom label'
         ])
         
         # Write rows
         for item in filtered:
-            writer.writerow([
-                item['url'],
+            # Create semicolon-separated labels
+            labels = [
                 item.get('country', 'Unknown'),
                 item.get('city', ''),
                 tier_names.get(item.get('tier', '3'), 'Tier3-Services'),
                 'Klook'
+            ]
+            # Filter out empty strings and join with semicolon
+            custom_label = ';'.join([l for l in labels if l])
+            
+            writer.writerow([
+                item['url'],
+                custom_label
             ])
     
     print(f"   ✅ Saved to: {output_file}")
