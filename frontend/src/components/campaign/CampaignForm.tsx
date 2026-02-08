@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save, AlertTriangle, ShieldCheck, Lock } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
@@ -13,11 +13,15 @@ interface CampaignFormProps {
 
 export default function CampaignForm({ campaignId, onCancel, onSuccess }: CampaignFormProps) {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const queryClient = useQueryClient();
+
+    const platformIdFromUrl = searchParams.get('platformId');
+
     const [formData, setFormData] = useState<Partial<Campaign>>({
         name: '',
         status: 'active',
-        platform: '',
+        platform: platformIdFromUrl || '',
         cpc: 0,
         max_daily_budget: 0,
         keywords: '',
@@ -57,8 +61,10 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                 ...existingCampaign,
                 created_date: formatDateForInput(existingCampaign.created_date),
             });
+        } else if (platformIdFromUrl) {
+            setFormData(prev => ({ ...prev, platform: platformIdFromUrl }));
         }
-    }, [existingCampaign]);
+    }, [existingCampaign, platformIdFromUrl]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -88,7 +94,7 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
 
             if (campaignId && existingCampaign) {
                 // --- CHANGE DETECTION ---
-                const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'keywords', 'status', 'is_dsa'];
+                const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'keywords'];
                 const changes: any[] = [];
 
                 trackedFields.forEach((field) => {
@@ -248,16 +254,18 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                     </div>
                 </div>
 
-                <div className="filter-group">
-                    <label>Active Keywords (Running)</label>
-                    <textarea
-                        name="keywords"
-                        value={formData.keywords || ''}
-                        onChange={handleChange}
-                        placeholder="Enter list of running keywords..."
-                        style={{ minHeight: '120px' }}
-                    />
-                </div>
+                {!formData.is_dsa && (
+                    <div className="filter-group">
+                        <label>Active Keywords (Running)</label>
+                        <textarea
+                            name="keywords"
+                            value={formData.keywords || ''}
+                            onChange={handleChange}
+                            placeholder="Enter list of running keywords..."
+                            style={{ minHeight: '120px' }}
+                        />
+                    </div>
+                )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                     <div className="filter-group">

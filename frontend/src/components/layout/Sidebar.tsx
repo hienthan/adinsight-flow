@@ -24,6 +24,8 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const location = useLocation();
     const [platformsOpen, setPlatformsOpen] = useState(true);
+    const [remindersOpen, setRemindersOpen] = useState(false);
+    const [logsOpen, setLogsOpen] = useState(false);
     const [platforms, setPlatforms] = useState<CampaignPlatform[]>([]);
     const [pendingRemindersCount, setPendingRemindersCount] = useState(0);
 
@@ -141,13 +143,98 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     )}
                 </div>
 
-                <NavLink to="/camp-tracking/reminders" icon={Bell} badgeCount={pendingRemindersCount}>
-                    Reminders
-                </NavLink>
+                <div>
+                    <button
+                        onClick={() => setRemindersOpen(!remindersOpen)}
+                        className="nav-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem', width: '100%', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-dim)' }}
+                    >
+                        <Bell size={18} />
+                        {!collapsed && <span style={{ fontSize: '0.875rem', flex: 1, fontWeight: 500 }}>Reminders</span>}
+                        {!collapsed && pendingRemindersCount > 0 && (
+                            <span style={{ background: 'var(--destructive)', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '10px', fontWeight: 800, marginRight: '0.5rem' }}>
+                                {pendingRemindersCount}
+                            </span>
+                        )}
+                        {!collapsed && (remindersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                    </button>
 
-                <NavLink to="/camp-tracking/changes" icon={History}>
-                    Auto Logs
-                </NavLink>
+                    {remindersOpen && !collapsed && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', paddingLeft: '1.25rem', marginTop: '0.2rem', alignItems: 'flex-start' }}>
+                            <Link
+                                to="/camp-tracking/reminders"
+                                className={cn("nav-item", isActive('/camp-tracking/reminders') && !location.search && "active")}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.6rem',
+                                    fontSize: '0.8rem', textDecoration: 'none', width: '100%',
+                                    color: isActive('/camp-tracking/reminders') && !location.search ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                                }}
+                            >
+                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--text-muted)', flexShrink: 0 }} />
+                                All Checkpoints
+                            </Link>
+                            {platforms.map((p) => (
+                                <Link
+                                    key={p.id}
+                                    to={`/camp-tracking/reminders?platform=${p.id}`}
+                                    className={cn("nav-item", location.search === `?platform=${p.id}` && location.pathname.includes('reminders') && "active")}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.6rem',
+                                        fontSize: '0.8rem', textDecoration: 'none', width: '100%',
+                                        color: location.search === `?platform=${p.id}` && location.pathname.includes('reminders') ? p.color : 'var(--text-dim)',
+                                    }}
+                                >
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                                    {p.display_name}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div>
+                    <button
+                        onClick={() => setLogsOpen(!logsOpen)}
+                        className="nav-item"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem', width: '100%', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-dim)' }}
+                    >
+                        <History size={18} />
+                        {!collapsed && <span style={{ fontSize: '0.875rem', flex: 1, fontWeight: 500 }}>Auto Logs</span>}
+                        {!collapsed && (logsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                    </button>
+
+                    {logsOpen && !collapsed && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', paddingLeft: '1.25rem', marginTop: '0.2rem', alignItems: 'flex-start' }}>
+                            <Link
+                                to="/camp-tracking/changes"
+                                className={cn("nav-item", isActive('/camp-tracking/changes') && !location.search && "active")}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.6rem',
+                                    fontSize: '0.8rem', textDecoration: 'none', width: '100%',
+                                    color: isActive('/camp-tracking/changes') && !location.search ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                                }}
+                            >
+                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--text-muted)', flexShrink: 0 }} />
+                                All Changes
+                            </Link>
+                            {platforms.map((p) => (
+                                <Link
+                                    key={p.id}
+                                    to={`/camp-tracking/changes?platform=${p.id}`}
+                                    className={cn("nav-item", location.search === `?platform=${p.id}` && location.pathname.includes('changes') && "active")}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.6rem',
+                                        fontSize: '0.8rem', textDecoration: 'none', width: '100%',
+                                        color: location.search === `?platform=${p.id}` && location.pathname.includes('changes') ? p.color : 'var(--text-dim)',
+                                    }}
+                                >
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                                    {p.display_name}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 {/* Ad Insight Section */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.75rem 0.5rem 0.65rem 0.5rem', textTransform: 'uppercase' }}>DSA Analytics</div>}

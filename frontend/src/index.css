@@ -173,6 +173,19 @@ body {
   color: hsl(var(--primary));
 }
 
+.hero-btn-danger {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.hero-btn-danger:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+
 .hero-badge {
   display: inline-flex;
   align-items: center;

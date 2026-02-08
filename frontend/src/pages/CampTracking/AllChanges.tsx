@@ -1,21 +1,50 @@
-import { useQuery } from '@tanstack/react-query';
-import { History, ArrowRight, Calendar, User, Info } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { History, ArrowRight, Calendar, User, Info, Trash2 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { formatDate } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 
+import { useSearchParams } from 'react-router-dom';
+
 export default function AllChanges() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [searchParams] = useSearchParams();
+    const platformId = searchParams.get('platform');
+
+    const { data: platform } = useQuery<any>({
+        queryKey: ['platform', platformId],
+        queryFn: async () => {
+            if (!platformId) return null;
+            return await pb.collection('campaign_platforms').getOne(platformId);
+        },
+        enabled: !!platformId
+    });
 
     const { data: changes, isLoading } = useQuery<any[]>({
-        queryKey: ['all-changes'],
+        queryKey: ['all-changes', platformId],
         queryFn: async () => {
+            let filter = '';
+            if (platformId) {
+                filter = `campaign.platform = "${platformId}"`;
+            }
             return await pb.collection('campaign_changes').getFullList({
+                filter,
                 sort: '-change_date',
-                expand: 'campaign',
+                expand: 'campaign,campaign.platform',
                 limit: 100
             });
         }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return await pb.collection('campaign_changes').delete(id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['all-changes'] });
+            queryClient.invalidateQueries({ queryKey: ['campaign-changes'] });
+        },
     });
 
     if (isLoading) return <div className="page-container" style={{ textAlign: 'center', padding: '5rem' }}>Loading change logs...</div>;
@@ -34,11 +63,11 @@ export default function AllChanges() {
     return (
         <div className="page-container">
             <div style={{ marginBottom: '1.5rem' }}>
-                <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: 'hsl(var(--primary))', letterSpacing: '-0.03em' }}>
-                    Global Change Logs
+                <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: platform?.color || 'hsl(var(--primary))', letterSpacing: '-0.03em' }}>
+                    {platform ? `${platform.display_name} Audit Logs` : 'Global Change Logs'}
                 </h1>
                 <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-                    Monitor modifications across all tracking campaigns
+                    {platform ? `Historical modifications for ${platform.display_name} campaigns` : 'Monitor modifications across all tracking campaigns'}
                 </p>
             </div>
 
@@ -59,29 +88,38 @@ export default function AllChanges() {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '1rem',
-                                borderLeft: '4px solid hsl(var(--primary))'
+                                borderLeft: `4px solid ${platform?.color || 'hsl(var(--primary))'}`
                             }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     <span
                                         onClick={() => navigate(`/camp-tracking/campaign/${change.campaign}`)}
-                                        style={{ color: 'hsl(var(--primary))', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', letterSpacing: '-0.01em' }}
+                                        style={{ color: platform?.color || 'hsl(var(--primary))', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', letterSpacing: '-0.01em' }}
                                     >
                                         {change.expand?.campaign?.name || 'Unknown Campaign'}
                                     </span>
                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>•</span>
                                     <span className="hero-badge" style={{
                                         background: 'var(--accent-glow)',
-                                        color: 'hsl(var(--primary))',
+                                        color: platform?.color || 'hsl(var(--primary))',
                                         fontSize: '0.7rem'
                                     }}>
                                         {getFieldLabel(change.field_changed)}
                                     </span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-dim)', fontSize: '0.8rem', fontWeight: 500 }}>
-                                    <Calendar size={14} />
-                                    {formatDate(change.change_date)}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-dim)', fontSize: '0.8rem', fontWeight: 500 }}>
+                                        <Calendar size={14} />
+                                        {formatDate(change.change_date)}
+                                    </div>
+                                    <button
+                                        onClick={() => { if (confirm('Remove this log entry?')) deleteMutation.mutate(change.id); }}
+                                        className="hero-btn-ghost text-destructive"
+                                        style={{ padding: '0.4rem', borderRadius: '8px' }}
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
                             </div>
 

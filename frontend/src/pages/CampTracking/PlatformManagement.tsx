@@ -156,7 +156,7 @@ export default function PlatformManagement() {
                 </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '320px 380px 1fr', gap: '1.5rem', alignItems: 'flex-start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr 380px', gap: '1.5rem', alignItems: 'flex-start' }}>
                 {/* Platform List */}
                 <div className="hero-card" style={{ padding: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
@@ -225,9 +225,50 @@ export default function PlatformManagement() {
                     )}
                 </div>
 
-                {/* Form Wrapper */}
-                <form id="platform-form" onSubmit={handleSubmit} style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '380px 1fr', gap: '1.5rem', alignItems: 'stretch' }}>
-                    {/* Identity Column */}
+                {/* Form Wrapper (Spans Notes + Identity) */}
+                <form id="platform-form" onSubmit={handleSubmit} style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.5rem', alignItems: 'stretch' }}>
+
+                    {/* Metadata Column (Now in the Middle) */}
+                    <div className="hero-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
+                                    <Globe size={20} />
+                                </div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>Strategic Notes</h3>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                {isEditing && (
+                                    <button type="button" onClick={handleCancel} className="hero-btn hero-btn-ghost">Cancel</button>
+                                )}
+                                <button type="submit" disabled={submitting} className="hero-btn hero-btn-primary">
+                                    {submitting ? 'Saving...' : (isEditing ? 'Update Platform' : 'Create Platform')}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="filter-group" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Guidelines & Constraints</label>
+                            <textarea
+                                className="hero-input"
+                                name="metadata"
+                                value={formData.metadata}
+                                onChange={handleInputChange}
+                                placeholder="Enter best practices, rules, or constraints for this platform..."
+                                style={{
+                                    flex: 1,
+                                    minHeight: '300px',
+                                    padding: '1rem',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.6',
+                                    marginTop: '0.5rem',
+                                    resize: 'none'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Identity Column (Now on the Right) */}
                     <div className="hero-card" style={{ padding: '2rem', border: isEditing ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
                             <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
@@ -303,46 +344,6 @@ export default function PlatformManagement() {
                                     ))}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Metadata Column */}
-                    <div className="hero-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
-                                    <Globe size={20} />
-                                </div>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>Strategic Notes</h3>
-                            </div>
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                {isEditing && (
-                                    <button type="button" onClick={handleCancel} className="hero-btn hero-btn-ghost">Cancel</button>
-                                )}
-                                <button type="submit" disabled={submitting} className="hero-btn hero-btn-primary">
-                                    {submitting ? 'Saving...' : (isEditing ? 'Update Platform' : 'Create Platform')}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="filter-group" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Guidelines & Constraints</label>
-                            <textarea
-                                className="hero-input"
-                                name="metadata"
-                                value={formData.metadata}
-                                onChange={handleInputChange}
-                                placeholder="Enter best practices, rules, or constraints for this platform..."
-                                style={{
-                                    flex: 1,
-                                    minHeight: '300px',
-                                    padding: '1rem',
-                                    fontSize: '0.9rem',
-                                    lineHeight: '1.6',
-                                    marginTop: '0.5rem',
-                                    resize: 'none'
-                                }}
-                            />
                         </div>
                     </div>
                 </form>

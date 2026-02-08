@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Loader2, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import CampaignCard from '../../components/campaign/CampaignCard';
@@ -7,9 +8,36 @@ import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campai
 import { pb, formatDateForInput } from '../../lib/pocketbase';
 
 export default function CampOverview() {
-    const [filterPlatform, setFilterPlatform] = useState<string>('all');
-    const [filterStatus, setFilterStatus] = useState<string>('all');
-    const [filterReminders, setFilterReminders] = useState<boolean>(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const filterPlatform = searchParams.get('platform') || 'all';
+    const filterStatus = searchParams.get('status') || 'all';
+    const filterReminders = searchParams.get('reminders') === 'true';
+
+    const setFilterPlatform = (val: string) => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (val === 'all') prev.delete('platform');
+            else prev.set('platform', val);
+            return prev;
+        });
+    };
+
+    const setFilterStatus = (val: string) => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (val === 'all') prev.delete('status');
+            else prev.set('status', val);
+            return prev;
+        });
+    };
+
+    const setToggleReminders = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterReminders) prev.delete('reminders');
+            else prev.set('reminders', 'true');
+            return prev;
+        });
+    };
+
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -120,6 +148,11 @@ export default function CampOverview() {
         });
     }
 
+    const openEdit = (id: string) => {
+        setEditingId(id);
+        setIsEditModalOpen(true);
+    };
+
     return (
         <div className="page-container">
             {/* Header */}
@@ -189,7 +222,7 @@ export default function CampOverview() {
                 <div className="filter-group">
                     <label style={{ opacity: 0 }}>&nbsp;</label>
                     <div
-                        onClick={() => setFilterReminders(!filterReminders)}
+                        onClick={setToggleReminders}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -227,9 +260,7 @@ export default function CampOverview() {
                 {(filterPlatform !== 'all' || filterStatus !== 'all' || filterReminders) && (
                     <button
                         onClick={() => {
-                            setFilterPlatform('all');
-                            setFilterStatus('all');
-                            setFilterReminders(false);
+                            setSearchParams({});
                         }}
                         className="hero-btn hero-btn-ghost"
                         style={{
@@ -331,6 +362,7 @@ export default function CampOverview() {
                                                 platform={campaign.platform_data}
                                                 hasPendingReminders={campaign.hasPendingReminders}
                                                 highestPriority={campaign.highestPriority}
+                                                onEdit={openEdit}
                                             />
                                         ))}
                                     </div>

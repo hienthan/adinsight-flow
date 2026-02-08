@@ -1,13 +1,17 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, Plus, Loader2 } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campaign';
 import CampaignCard from '../../components/campaign/CampaignCard';
+import EditCampaignModal from '../../components/campaign/EditCampaignModal';
 
 export default function PlatformCampaigns() {
     const { platformId } = useParams();
     const navigate = useNavigate();
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     // Fetch platform details
     const { data: platform } = useQuery<CampaignPlatform>({
@@ -19,7 +23,7 @@ export default function PlatformCampaigns() {
     });
 
     // Fetch campaigns for this platform
-    const { data: campaigns = [], isLoading } = useQuery<Campaign[]>({
+    const { data: campaigns = [], isLoading, refetch } = useQuery<Campaign[]>({
         queryKey: ['campaigns', platformId],
         queryFn: async () => {
             return await pb.collection('campaigns').getFullList<Campaign>({
@@ -63,6 +67,11 @@ export default function PlatformCampaigns() {
             hasRecentChanges,
         };
     });
+
+    const openEdit = (id: string) => {
+        setEditingId(id);
+        setIsEditModalOpen(true);
+    };
 
     return (
         <div className="page-container">
@@ -140,11 +149,18 @@ export default function PlatformCampaigns() {
                             platform={platform}
                             hasPendingReminders={campaign.hasPendingReminders}
                             highestPriority={campaign.highestPriority}
-                            onEdit={(id) => navigate(`/camp-tracking/edit/${id}`)}
+                            onEdit={openEdit}
                         />
                     ))}
                 </div>
             )}
+
+            <EditCampaignModal
+                campaignId={editingId || undefined}
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                onSuccess={() => refetch()}
+            />
         </div>
     );
 }

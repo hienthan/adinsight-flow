@@ -21,7 +21,7 @@ import './App.css';
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [darkMode, setDarkMode] = useState(true); // Default dark mode
+  const [darkMode, setDarkMode] = useState(false); // Default light mode
 
   React.useEffect(() => {
     if (darkMode) {

@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { History, Activity, Calendar } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { History, Activity, Calendar, Trash2 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { CampaignChange } from '../../types/campaign';
 import { formatDate } from '../../lib/utils';
@@ -9,6 +9,7 @@ interface CampaignHistoryProps {
 }
 
 export default function CampaignHistory({ campaignId }: CampaignHistoryProps) {
+    const queryClient = useQueryClient();
     const { data: changes = [], isLoading } = useQuery<CampaignChange[]>({
         queryKey: ['campaign-changes', campaignId],
         queryFn: async () => {
@@ -16,6 +17,16 @@ export default function CampaignHistory({ campaignId }: CampaignHistoryProps) {
                 filter: `campaign = "${campaignId}"`,
                 sort: '-change_date',
             });
+        },
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return await pb.collection('campaign_changes').delete(id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['campaign-changes', campaignId] });
+            queryClient.invalidateQueries({ queryKey: ['all-changes'] });
         },
     });
 
@@ -73,10 +84,19 @@ export default function CampaignHistory({ campaignId }: CampaignHistoryProps) {
                             <span style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em', color: 'var(--accent)' }}>
                                 {change.field_changed.replace('_', ' ')} Updated
                             </span>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                <Calendar size={12} />
-                                {formatDate(change.change_date)}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <Calendar size={12} />
+                                    {formatDate(change.change_date)}
+                                </span>
+                                <button
+                                    onClick={() => { if (confirm('Remove this log entry?')) deleteMutation.mutate(change.id); }}
+                                    className="hero-btn-ghost text-destructive"
+                                    style={{ padding: '0.25rem', borderRadius: '6px' }}
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(0,0,0,0.1)', padding: '0.75rem', borderRadius: '8px', marginBottom: '0.75rem' }}>

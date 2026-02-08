@@ -3,21 +3,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCircle, Clock, Calendar, ExternalLink } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { formatDate } from '../../lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 export default function AllReminders() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const [searchParams] = useSearchParams();
+    const platformId = searchParams.get('platform');
     const [filterStatus, setFilterStatus] = useState<'pending' | 'completed' | 'all'>('pending');
 
-    const { data: reminders, isLoading } = useQuery<any[]>({
-        queryKey: ['all-reminders', filterStatus],
+    const { data: platform } = useQuery<any>({
+        queryKey: ['platform', platformId],
         queryFn: async () => {
-            const filter = filterStatus === 'all' ? '' : `status = "${filterStatus}"`;
+            if (!platformId) return null;
+            return await pb.collection('campaign_platforms').getOne(platformId);
+        },
+        enabled: !!platformId
+    });
+
+    const { data: reminders, isLoading } = useQuery<any[]>({
+        queryKey: ['all-reminders', filterStatus, platformId],
+        queryFn: async () => {
+            let filter = filterStatus === 'all' ? '' : `status = "${filterStatus}"`;
+            if (platformId) {
+                const platformFilter = `campaign.platform = "${platformId}"`;
+                filter = filter ? `(${filter}) && ${platformFilter}` : platformFilter;
+            }
             return await pb.collection('campaign_reminders').getFullList({
                 filter,
                 sort: 'reminder_date',
-                expand: 'campaign'
+                expand: 'campaign,campaign.platform'
             });
         }
     });
@@ -40,11 +55,11 @@ export default function AllReminders() {
         <div className="page-container">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                 <div>
-                    <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: 'hsl(var(--primary))', letterSpacing: '-0.03em' }}>
-                        Reminders Dashboard
+                    <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: platform?.color || 'hsl(var(--primary))', letterSpacing: '-0.03em' }}>
+                        {platform ? `${platform.display_name} Checkpoints` : 'Reminders Dashboard'}
                     </h1>
                     <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-                        Track tasks and performance checks across all campaigns
+                        {platform ? `Strategic tasks for ${platform.display_name}` : 'Track tasks and performance checks across all campaigns'}
                     </p>
                 </div>
 
