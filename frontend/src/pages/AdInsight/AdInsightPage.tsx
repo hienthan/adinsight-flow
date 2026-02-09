@@ -134,6 +134,16 @@ export default function AdInsightPage() {
         fetchPages(1);
     }, [selectedTag, selectedLang, searchTerm, filterTier, filterCountry, filterPrivate, filterLanguage, filterSubTag, perPage]);
 
+    const [showExportOptions, setShowExportOptions] = useState(false);
+    const [selectedFields, setSelectedFields] = useState<string[]>(['country', 'city', 'tier', 'privacy']);
+    const [exportFileName, setExportFileName] = useState('');
+
+    const toggleField = (field: string) => {
+        setSelectedFields(prev =>
+            prev.includes(field) ? prev.filter(f => f !== field) : [...prev, field]
+        );
+    };
+
     const handleExport = async () => {
         let filterString = `sitemap_tag = "${selectedTag}"`;
 
@@ -149,7 +159,7 @@ export default function AdInsightPage() {
         if (filterTier) filterString += ` && tier = "${filterTier}"`;
         if (filterCountry) filterString += ` && country = "${filterCountry}"`;
         if (filterPrivate !== null) filterString += ` && is_private = ${filterPrivate}`;
-        if (filterSubTag) filterString += ` && sub_tag = "${filterSubTag}"`; // NEW
+        if (filterSubTag) filterString += ` && sub_tag = "${filterSubTag}"`;
 
         try {
             setExporting(true);
@@ -174,17 +184,25 @@ export default function AdInsightPage() {
                     ? record.url.replace(/\/(zh-HK|zh-TW)\//, `/${filterLanguage}/`)
                     : record.url;
 
-                const country = record.country || 'Unknown';
-                const city = country === 'Unknown' ? '' : (record.city || '');
-                const tier = `Tier${record.tier || 'Unknown'}`;
-                const privacy = record.is_private ? 'Private' : 'Public';
+                const labelParts: string[] = [];
 
-                // For mobility, check if we need special labels based on sub_tag?
-                // Currently keeping same label strategy
-                const labels = city
-                    ? [country, city, tier, privacy].join(';')
-                    : [country, tier, privacy].join(';');
+                if (selectedFields.includes('country')) {
+                    labelParts.push(record.country || 'Unknown');
+                }
+                if (selectedFields.includes('city') && record.city) {
+                    labelParts.push(record.city);
+                }
+                if (selectedFields.includes('tier')) {
+                    labelParts.push(`Tier${record.tier || 'Unknown'}`);
+                }
+                if (selectedFields.includes('privacy')) {
+                    labelParts.push(record.is_private ? 'Private' : 'Public');
+                }
+                if (selectedFields.includes('sub_tag') && record.sub_tag) {
+                    labelParts.push(record.sub_tag);
+                }
 
+                const labels = labelParts.join(';');
                 return `${url},${labels}`;
             }).join('\n');
 
@@ -199,11 +217,13 @@ export default function AdInsightPage() {
             const privacy = filterPrivate === null ? 'all' : (filterPrivate ? 'private' : 'public');
             const tier = filterTier ? `tier${filterTier}` : 'all';
 
-            a.download = `${lang}-${sitemap}-${country}-${privacy}-${tier}-${allRecords.length}.csv`;
+            const defaultName = `${lang}-${sitemap}-${country}-${privacy}-${tier}-${allRecords.length}`;
+            a.download = `${exportFileName || defaultName}.csv`;
             a.href = urlObj;
             a.click();
 
             console.log(`Exported ${allRecords.length} URLs to CSV`);
+            setShowExportOptions(false);
         } catch (err) {
             console.error('Export error:', err);
             alert('Export failed. Please try again.');
@@ -355,15 +375,17 @@ export default function AdInsightPage() {
                     >
                         Reset
                     </button>
+
                     <button
-                        onClick={handleExport}
+                        onClick={() => setShowExportOptions(true)}
                         disabled={exporting}
                         className="hero-btn hero-btn-primary"
-                        style={{ padding: '0.6rem 1.5rem' }}
+                        style={{ padding: '0.6rem 1.5rem', gap: '0.6rem' }}
                     >
                         <Download size={18} />
                         {exporting ? 'Exporting...' : 'Export DSA CSV'}
                     </button>
+
                 </div>
             </section>
 
@@ -554,6 +576,182 @@ export default function AdInsightPage() {
                     </div>
                 </div>
             </div>
+            {/* Export Modal - Placed at root level to avoid clipping and layering issues */}
+            {showExportOptions && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    background: 'rgba(0, 0, 0, 0.25)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 999999,
+                    padding: '1.5rem',
+                    animation: 'fade-in 0.2s ease-out'
+                }} onClick={() => setShowExportOptions(false)}>
+                    <div
+                        style={{
+                            width: '100%',
+                            maxWidth: '500px',
+                            background: 'var(--bg-card)',
+                            borderRadius: '24px',
+                            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.4)',
+                            border: '1px solid var(--border-subtle)',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            maxHeight: '85vh',
+                            position: 'relative',
+                            animation: 'zoom-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div style={{
+                            padding: '1.75rem 2rem',
+                            borderBottom: '1px solid var(--border-subtle)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            background: 'var(--bg-main)'
+                        }}>
+                            <div>
+                                <h4 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'hsl(var(--primary))', letterSpacing: '-0.02em' }}>
+                                    Export Configuration
+                                </h4>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', margin: '0.25rem 0 0 0' }}>
+                                    Choose fields to include in 'Custom Label'
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowExportOptions(false)}
+                                style={{
+                                    background: 'var(--bg-overlay)',
+                                    border: '1px solid var(--border-subtle)',
+                                    color: 'var(--text-main)',
+                                    cursor: 'pointer',
+                                    width: '36px',
+                                    height: '36px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '10px',
+                                    transition: 'all 0.2s',
+                                    fontSize: '1.5rem'
+                                }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+
+                        {/* Filename Input */}
+                        <div style={{ padding: '1.5rem 2rem 0 2rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
+                                Filename (Optional)
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Enter custom filename..."
+                                    value={exportFileName}
+                                    onChange={(e) => setExportFileName(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem 1rem',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-content)',
+                                        fontSize: '0.9rem',
+                                        color: 'var(--text-main)',
+                                        outline: 'none',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onFocus={(e) => { e.target.style.borderColor = 'hsl(var(--primary))'; e.target.style.boxShadow = '0 0 0 4px hsla(var(--primary) / 0.1)'; }}
+                                    onBlur={(e) => { e.target.style.borderColor = 'var(--border-subtle)'; e.target.style.boxShadow = 'none'; }}
+                                />
+                                <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-dim)', pointerEvents: 'none' }}>
+                                    .csv
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {[
+                                    { id: 'country', label: 'Country Name', desc: 'e.g. Hong Kong, Japan' },
+                                    { id: 'city', label: 'City Name', desc: 'Included if present' },
+                                    { id: 'tier', label: 'Tier (1, 2, 5)', desc: 'Adds Tier prefix' },
+                                    { id: 'privacy', label: 'Privacy Status', desc: 'Public or Private' },
+                                    { id: 'sub_tag', label: 'Sub-tag', desc: 'Mainly for Mobility' }
+                                ].map(field => (
+                                    <label
+                                        key={field.id}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '1rem',
+                                            cursor: 'pointer',
+                                            padding: '1rem',
+                                            borderRadius: '12px',
+                                            border: '1px solid var(--border-subtle)',
+                                            background: 'var(--bg-content)',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'hsl(var(--primary))'; e.currentTarget.style.background = 'hsla(var(--primary) / 0.02)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--bg-content)'; }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedFields.includes(field.id)}
+                                            onChange={() => toggleField(field.id)}
+                                            style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'hsl(var(--primary))' }}
+                                        />
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>{field.label}</span>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{field.desc}</span>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div style={{
+                            padding: '1.5rem 2rem',
+                            borderTop: '1px solid var(--border-subtle)',
+                            background: 'var(--bg-main)',
+                            display: 'flex',
+                            gap: '1rem'
+                        }}>
+                            <button
+                                onClick={() => setShowExportOptions(false)}
+                                className="hero-btn hero-btn-secondary"
+                                style={{ flex: 1, padding: '0.85rem' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleExport}
+                                disabled={exporting || selectedFields.length === 0}
+                                className="hero-btn hero-btn-primary"
+                                style={{ flex: 2, padding: '0.85rem', gap: '0.6rem' }}
+                            >
+                                {exporting ? 'Exporting...' : (
+                                    <>
+                                        <Download size={18} />
+                                        <span>Export {totalCount.toLocaleString()} Records</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
