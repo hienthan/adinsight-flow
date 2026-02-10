@@ -15,13 +15,17 @@ const queryClient = new QueryClient({
   },
 });
 
+import { HeroUIProvider } from "@heroui/react";
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <App />
-        <Toaster position="top-right" richColors />
-      </QueryClientProvider>
+      <HeroUIProvider>
+        <QueryClientProvider client={queryClient}>
+          <App />
+          <Toaster position="top-right" richColors />
+        </QueryClientProvider>
+      </HeroUIProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

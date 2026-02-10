@@ -7,6 +7,7 @@ import Header from './components/layout/Header';
 
 // Page Components - AdInsight
 import AdInsightPage from './pages/AdInsight/AdInsightPage';
+import TrendSignalsPage from './pages/AdInsight/TrendSignalsPage';
 
 // Page Components - Camp Tracking
 import CampOverview from './pages/CampTracking/CampOverview';
@@ -48,6 +49,7 @@ function App() {
 
           {/* AdInsight Routes */}
           <Route path="/adinsight" element={<AdInsightPage />} />
+          <Route path="/adinsight/trends" element={<TrendSignalsPage />} />
           <Route path="/adinsight/:platform/:content" element={<AdInsightPage />} />
 
           {/* Camp Tracking Routes */}
