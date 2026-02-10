@@ -370,14 +370,16 @@ export default function TrendRadarPage() {
                 ? withSearch
                 : withSearch.filter((x) => {
                     const { state, dates } = x;
+
+                    // FIX: active/peak signals are "current" so they always fall within any future horizon
+                    if (state === "PEAK" || state === "ACTIVE") return true;
+
                     const relevant =
-                        state === "PEAK" || state === "ACTIVE"
-                            ? dates.end
-                            : state === "IN_PREALERT"
-                                ? dates.start
-                                : state === "UPCOMING_PREALERT"
-                                    ? dates.preAlert
-                                    : dates.end;
+                        state === "IN_PREALERT"
+                            ? dates.start
+                            : state === "UPCOMING_PREALERT"
+                                ? dates.preAlert
+                                : dates.end;
 
                     const d = daysDiff(today, relevant);
                     return d >= 0 && d <= horizonDays;

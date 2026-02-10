@@ -1,9 +1,9 @@
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<sitemap>
+<sitemap> // Things to do city worldwide - /coureg/
 <loc>https://www.klook.com/zh-TW/sitemap-country-plain.xml</loc>
 <lastmod>2022-09-06</lastmod>
 </sitemap>
-<sitemap>
+<sitemap> // /city/... things-to-do
 <loc>https://www.klook.com/zh-TW/sitemap-city-plain.xml</loc>
 <lastmod>2022-09-06</lastmod>
 </sitemap>
@@ -11,63 +11,63 @@
 <loc>https://www.klook.com/zh-TW/sitemap-wifi-sim-card-plain.xml</loc>
 <lastmod>2022-09-06</lastmod>
 </sitemap>
-<sitemap>
+<!-- <sitemap>
 <loc>https://www.klook.com/zh-TW/sitemap-experiences-activity-plain.xml</loc>
 <lastmod>2026-02-04</lastmod>
-</sitemap>
-<sitemap>
+</sitemap> -->
+<sitemap> // /hotel/hubpage/
 <loc>https://www.klook.com/zh-TW/sitemap-hotel-hubpage-plain.xml</loc>
 <lastmod>2026-02-02</lastmod>
 </sitemap>
-<sitemap>
+<sitemap> // /fnb/city-highlight/, /city-theme/, /city-area/, /city-acategory/, /city-acuisine/
 <loc>https://www.klook.com/zh-TW/sitemap-fnb-city-plain.xml</loc>
 <lastmod>2026-02-04</lastmod>
 </sitemap>
-<sitemap>
+<sitemap> // /airport-transfer/service/, /car-rental/city/, /car-rental/supplier/, /car-rental/poi/
 <loc>https://www.klook.com/zh-TW/sitemap-car-rental-plain.xml</loc>
 <lastmod>2026-02-02</lastmod>
 </sitemap>
-<sitemap>
+<!-- <sitemap>
 <loc>https://www.klook.com/zh-TW/sitemap-mobility-plain.xml</loc>
 <lastmod>2026-01-23</lastmod>
-</sitemap>
-<sitemap>
+</sitemap> -->
+<sitemap> // Specific city, dest tickets... not relevant -  /event/
 <loc>https://www.klook.com/zh-TW/sitemap-event-city-plain.xml</loc>
 <lastmod>2026-02-04</lastmod>
 </sitemap>
-<sitemap>
+<sitemap> // Specific event - /activity/ and /event-detail/
 <loc>https://www.klook.com/zh-TW/sitemap-event-detail-plain.xml</loc>
 <lastmod>2026-02-04</lastmod>
 </sitemap>
-<sitemap>
+<!-- <sitemap> // Not relevant
 <loc>https://www.klook.com/zh-TW/sitemap-general-plain.xml</loc>
 <lastmod>2022-09-22</lastmod>
-</sitemap>
-<sitemap>
+</sitemap> -->
+<sitemap> // Only /promo/ plans
 <loc>https://www.klook.com/zh-TW/sitemap-promo-plain.xml</loc>
 <lastmod>2022-09-22</lastmod>
 </sitemap>
-<sitemap>
+<sitemap> // too much URLs /destination/p123456... specific destination - point of interest
 <loc>https://www.klook.com/zh-TW/sitemap-poi-plain.xml</loc>
 <lastmod>2026-02-02</lastmod>
 </sitemap>
-<sitemap>
+<sitemap> // too much URLs /exp/list: tours, tríp... with specific destination
 <loc>https://www.klook.com/zh-TW/sitemap-exp-cate-dest-plain.xml</loc>
 <lastmod>2026-02-04</lastmod>
 </sitemap>
-<sitemap>
+<sitemap> // too much URLs /blog/... (Camp: ZH passing blog)
 <loc>https://www.klook.com/zh-TW/sitemap-blog-plain.xml</loc>
 <lastmod>2026-02-02</lastmod>
 </sitemap>
-<sitemap>
+<!-- <sitemap> // island 12 urls
 <loc>https://www.klook.com/zh-TW/sitemap-experience-explorer-plain.xml</loc>
 <lastmod>2026-02-04</lastmod>
-</sitemap>
-<sitemap>
+</sitemap> -->
+<!-- <sitemap> // SKI peak from 12 to 02. Search bắt đầu tăng: Cuối tháng 10 – tháng 11
 <loc>https://www.klook.com/zh-TW/sitemap-experience-tetris-plain.xml</loc>
 <lastmod>2026-02-02</lastmod>
-</sitemap>
-<sitemap>
+</sitemap> -->
+<sitemap> // /exp/list/... (cherry-blossom)
 <loc>https://www.klook.com/zh-TW/sitemap-experience-interest-plain.xml</loc>
 <lastmod>2026-02-04</lastmod>
 </sitemap>
