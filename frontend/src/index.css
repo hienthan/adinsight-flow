@@ -397,52 +397,32 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* Standard Inputs - Base Defaults */
-@layer base {
-
-  input,
-  select,
-  textarea {
-    background: var(--bg-content);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-main);
-    padding: 0.55rem 0.85rem;
-    border-radius: 0.65rem;
-    outline: none;
-    font-size: var(--text-sm);
-    font-weight: 500;
-    transition: all 0.15s ease;
-    font-family: var(--font-main);
-  }
-
-  input:focus,
-  select:focus,
-  textarea:focus {
-    border-color: hsl(var(--primary));
-    box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
-  }
-
-  ::placeholder {
-    color: var(--text-muted);
-    opacity: 0.5;
-    font-weight: 400;
-  }
-}
-
-/* Custom Input Variants */
-.v-input {
-  background-color: white;
-  border: 1px solid #e2e8f0;
-  /* slate-200 */
-  border-radius: 0.75rem;
-  padding: 0.625rem 1rem;
+.filter-group input,
+.filter-group select,
+.filter-group textarea {
+  background: var(--bg-content);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.65rem;
   outline: none;
-  transition: all 0.2s ease;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: all 0.15s ease;
+  font-family: var(--font-main);
 }
 
-.v-input:focus {
+.filter-group input:focus,
+.filter-group select:focus,
+.filter-group textarea:focus {
   border-color: hsl(var(--primary));
-  box-shadow: 0 0 0 4px hsla(var(--primary) / 0.1);
+  box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
+}
+
+.filter-group ::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+  font-weight: 400;
 }
 
 /* HeroUI Table System */
