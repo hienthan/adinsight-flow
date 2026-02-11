@@ -37,6 +37,7 @@ interface SignalRowProps {
     onToggleExpand: () => void;
     onOpenNotes: (id: string, name: string, destLabel: string, notes?: string) => void;
     formatProductType: (type: string) => string;
+    today: Date;
 }
 
 const formatMMDD = (d: Date) => {
@@ -82,21 +83,79 @@ export const SignalRow: React.FC<SignalRowProps> = ({
     onToggleExpand,
     onOpenNotes,
     formatProductType,
+    today,
 }) => {
     const productTypes = (x.s.product_types || []).map(formatProductType);
+    const preAlertDays = x.s.pre_alert_days || x.preAlertDays || 14;
+    const recommendedStartDate = new Date(x.dates.start);
+    recommendedStartDate.setDate(recommendedStartDate.getDate() - preAlertDays);
+
+    const todayStart = new Date(today);
+    todayStart.setHours(0, 0, 0, 0);
+    const startDate = new Date(x.dates.start);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(x.dates.end);
+    endDate.setHours(0, 0, 0, 0);
+
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const daysUntilAction = Math.ceil((recommendedStartDate.getTime() - todayStart.getTime()) / msPerDay);
+    const daysUntilEnd = Math.max(0, Math.ceil((endDate.getTime() - todayStart.getTime()) / msPerDay));
+
+    let actionPrimary = "Start campaigns NOW";
+    let actionSecondary = `Peak starts on ${formatMMDD(startDate)}`;
+    let actionTone: "amber" | "green" | "red" | "yellow" | "gray" = "amber";
+
+    if (todayStart < startDate) {
+        if (todayStart >= recommendedStartDate) {
+            actionPrimary = "Start campaigns NOW";
+            actionSecondary = `Peak starts on ${formatMMDD(startDate)}`;
+            actionTone = "amber";
+        } else {
+            const safeDays = Math.max(daysUntilAction, 1);
+            actionPrimary = `Start in ${safeDays} day${safeDays > 1 ? "s" : ""}`;
+            actionSecondary = `Recommended prep date: ${formatMMDD(recommendedStartDate)}`;
+            actionTone = "amber";
+        }
+    } else if (todayStart <= endDate) {
+        if (x.state === "PEAK") {
+            actionPrimary = "PEAK NOW - maximize coverage";
+            actionSecondary = "Highest demand period";
+            actionTone = "red";
+        } else if (daysUntilEnd <= 7) {
+            actionPrimary = "Peak ending soon";
+            actionSecondary = `Taper budgets after ${formatMMDD(endDate)}`;
+            actionTone = "yellow";
+        } else {
+            actionPrimary = "Active - optimize & scale";
+            actionSecondary = `Peak ends in ${daysUntilEnd} days (${formatMMDD(endDate)})`;
+            actionTone = "green";
+        }
+    } else {
+        actionPrimary = "Trend ended";
+        actionSecondary = "Review performance & save notes";
+        actionTone = "gray";
+    }
+
+    const actionToneStyle = {
+        amber: { bg: "rgba(245, 158, 11, 0.12)", text: "#b45309", border: "rgba(245, 158, 11, 0.24)" },
+        green: { bg: "rgba(16, 185, 129, 0.12)", text: "#047857", border: "rgba(16, 185, 129, 0.24)" },
+        red: { bg: "rgba(239, 68, 68, 0.12)", text: "#b91c1c", border: "rgba(239, 68, 68, 0.24)" },
+        yellow: { bg: "rgba(234, 179, 8, 0.12)", text: "#a16207", border: "rgba(234, 179, 8, 0.24)" },
+        gray: { bg: "rgba(148, 163, 184, 0.12)", text: "#475569", border: "rgba(148, 163, 184, 0.24)" },
+    }[actionTone];
 
     return (
         <div
             className={`w-full group hero-card mb-2 transition-all duration-300 border border-(--border-subtle) ${expanded ? 'bg-(--bg-main) shadow-xl' : 'hover:border-primary/40 hover:shadow-lg'}`}
-            style={{ padding: "px", background: "var(--bg-content)", borderRadius: '12px', overflow: 'hidden' }}
+            style={{ padding: 0, background: "var(--bg-content)", borderRadius: "12px", overflow: "hidden" }}
         >
-            {/* SCAN ROW - 3 COLUMNS LAYOUT */}
+            {/* SCAN ROW - 4 COLUMNS LAYOUT */}
             <button
                 type="button"
                 onClick={onToggleExpand}
-                className="w-full text-left focus:outline-none flex items-center h-[52px] px-6"
+                className="w-full text-left focus:outline-none grid grid-cols-1 md:grid-cols-[1.6fr_1.2fr_1fr_1.2fr] gap-4 items-center min-h-[84px] px-6 py-2"
             >
-                {/* COL 1: Status & Title (Utilize ~40%) */}
+                {/* COL 1: Status & Title (keep) */}
                 <div className="flex items-center gap-5 min-w-0 flex-[1.2]">
                     <div className="w-[100px] shrink-0 flex items-center justify-center">
                         <StateBadge state={x.state} />
@@ -140,7 +199,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                     </div>
                 </div>
 
-                {/* COL 2: Product Types (Wide utilization ~35%) */}
+                {/* COL 2: Product Types (keep) */}
                 <div className="flex-1 flex items-center gap-2 px-4 overflow-hidden">
                     <div className="flex items-center gap-1.5 flex-wrap">
                         {productTypes.slice(0, 6).map((pt: string) => (
@@ -164,25 +223,42 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                     </div>
                 </div>
 
-                {/* COL 3: Timeline & Pre-alert (~25%, right aligned) */}
-                <div className="flex-[0.8] flex items-center justify-end gap-5 min-w-0">
-                    <Chip
-                        size="sm"
-                        variant="flat"
-                        radius="md"
-                        startContent={<Bell size={11} className="ml-1" />}
-                        style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.15)' }}
-                        className="h-7 pr-2 rounded-[12px]"
-                        classNames={{ content: "text-[9px] font-black uppercase tracking-widest" }}
-                    >
-                        Pre: {x.s.pre_alert_days || 14}
-                    </Chip>
-                    <div className="flex items-center gap-1.5 text-[11px] font-black tracking-widest text-(--text-main) pr-1 shrink-0">
-                        <span className="opacity-50">{formatMMDD(x.dates.start)}</span>
-                        <ArrowRight size={10} className="opacity-20" />
-                        <span>{formatMMDD(x.dates.end)}</span>
+                {/* COL 3: Peak window */}
+                <div className="min-w-0 px-2">
+                    <div className="text-[9px] font-black uppercase tracking-[0.14em] text-(--text-muted) mb-1">
+                        Peak window
                     </div>
-                    <div className={`transition-transform duration-300 shrink-0 ${expanded ? 'rotate-180 text-primary' : 'text-(--text-muted)'}`}>
+                    <div className="flex items-center gap-1.5 text-[11px] font-black tracking-wider text-(--text-main)">
+                        <span>{formatMMDD(startDate)}</span>
+                        <ArrowRight size={10} className="opacity-30" />
+                        <span>{formatMMDD(endDate)}</span>
+                    </div>
+                </div>
+
+                {/* COL 4: Action timing */}
+                <div className="min-w-0 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <div
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] border mb-1.5"
+                            style={{
+                                backgroundColor: actionToneStyle.bg,
+                                color: actionToneStyle.text,
+                                borderColor: actionToneStyle.border,
+                            }}
+                        >
+                            <Bell size={10} />
+                            <span className="text-[9px] font-black uppercase tracking-wider">
+                                Action timing
+                            </span>
+                        </div>
+                        <p className="text-[11px] font-black leading-tight text-(--text-main) truncate">
+                            {actionPrimary}
+                        </p>
+                        <p className="text-[10px] font-semibold leading-tight text-(--text-muted) truncate">
+                            {actionSecondary}
+                        </p>
+                    </div>
+                    <div className={`transition-transform duration-300 shrink-0 ${expanded ? "rotate-180 text-primary" : "text-(--text-muted)"}`}>
                         <TrendingUp size={14} className="rotate-90" />
                     </div>
                 </div>

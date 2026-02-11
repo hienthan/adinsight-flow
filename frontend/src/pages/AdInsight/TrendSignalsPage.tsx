@@ -393,7 +393,7 @@ export default function TrendRadarPage() {
     }
 
     return (
-        <div className="page-container w-full max-w-[1440px] px-8 py-8 animate-fade mx-auto">
+        <div className="page-container w-full px-8 py-8 animate-fade">
             {/* Zone 1: Header Summary Card - Compact Version */}
             <div
                 className="hero-card"
@@ -571,6 +571,7 @@ export default function TrendRadarPage() {
                                 onToggleExpand={() => setExpandedKey(expandedKey === x.s.key ? null : x.s.key)}
                                 onOpenNotes={handleOpenNotes}
                                 formatProductType={formatProductType}
+                                today={today}
                             />
                         ))}
                     </div>
@@ -587,6 +588,7 @@ export default function TrendRadarPage() {
                                 onToggleExpand={() => setExpandedKey(expandedKey === x.s.key ? null : x.s.key)}
                                 onOpenNotes={handleOpenNotes}
                                 formatProductType={formatProductType}
+                                today={today}
                             />
                         ))}
                         {!q.trim() && !showMoreActive && active.length > 8 && (
@@ -608,6 +610,7 @@ export default function TrendRadarPage() {
                                 onToggleExpand={() => setExpandedKey(expandedKey === x.s.key ? null : x.s.key)}
                                 onOpenNotes={handleOpenNotes}
                                 formatProductType={formatProductType}
+                                today={today}
                             />
                         ))}
                         {!q.trim() && !showMoreUpcoming && upcoming.length > 12 && (
