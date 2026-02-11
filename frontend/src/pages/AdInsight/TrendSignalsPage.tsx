@@ -267,7 +267,6 @@ export default function TrendRadarPage() {
     const [q, setQ] = useState("");
     const [market, setMarket] = useState<Market | "ALL">("ALL");
     const [horizon, setHorizon] = useState<"TODAY" | "7" | "14" | "30" | "ALL">("14");
-    const [statusView, setStatusView] = useState<"ACTIVE" | "DRAFT" | "ALL">("ALL");
     const [includeBaseline, setIncludeBaseline] = useState(false);
 
     const [showMoreActive, setShowMoreActive] = useState(false);
@@ -286,7 +285,6 @@ export default function TrendRadarPage() {
         const lowerQ = q.trim().toLowerCase();
 
         const filtered = signals
-            .filter((s) => statusView === "ALL" || s.status === statusView.toLowerCase())
             .filter((s) => (includeBaseline ? true : !isBaselineSignal(s)))
             .filter((s) => {
                 const sm = s.source_markets;
@@ -337,7 +335,7 @@ export default function TrendRadarPage() {
         });
 
         return withinHorizon;
-    }, [signals, q, market, horizon, statusView, includeBaseline, defaultPreAlertDays, today]);
+    }, [signals, q, market, horizon, includeBaseline, defaultPreAlertDays, today]);
 
     const peak = prepared.filter((x) => x.state === "PEAK");
     const active = prepared.filter((x) => x.state === "ACTIVE");
@@ -400,7 +398,6 @@ export default function TrendRadarPage() {
                 style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
                     marginBottom: '1.5rem',
                     padding: '0.75rem 1.5rem',
                     background: 'var(--bg-content)',
@@ -429,131 +426,134 @@ export default function TrendRadarPage() {
                         </p>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-1.5 bg-(--bg-overlay) p-1 rounded-xl border border-(--border-subtle)">
-                    {[
-                        { id: "section-peak", label: "At Peak", count: peak.length, color: "#ef4444" },
-                        { id: "section-active", label: "Active", count: active.length, color: "#10b981" },
-                        { id: "section-upcoming", label: "Pre-alert", count: upcoming.length, color: "#f59e0b" },
-                    ].map((stat) => {
-                        const isActive = activeSection === stat.id;
-                        return (
-                            <button
-                                key={stat.id}
-                                onClick={() => scrollToSection(stat.id)}
-                                style={{
-                                    padding: '0.4rem 0.8rem',
-                                    borderRadius: '8px',
-                                    border: '1px solid',
-                                    borderColor: isActive ? `${stat.color}44` : 'transparent',
-                                    background: isActive ? 'var(--bg-content)' : 'transparent',
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    minWidth: '90px',
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: isActive ? stat.color : 'var(--text-muted)', textTransform: 'uppercase' }}>
-                                    {stat.label}
-                                </span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                                    {stat.count}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
             </div>
 
-            {/* Zone 2: Filter Bar - 100% AdInsight Pattern (Standard HTML) */}
-            <section className="filter-bar" style={{ marginBottom: '1.5rem' }}>
-                <div className="filter-group" style={{ flex: '1', minWidth: '280px' }}>
-                    <label>Search Trends</label>
-                    <div style={{ position: 'relative' }}>
-                        <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-                        <input
-                            type="text"
-                            placeholder="Name, destination, keywords..."
-                            value={q}
-                            onChange={(e) => setQ(e.target.value)}
-                            style={{ width: '100%', paddingLeft: '2.5rem' }}
-                        />
+            {/* Zone 2: Filter Controls (grouped like CampOverview) */}
+            <section style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '0.9rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: '0.85rem', background: 'var(--bg-overlay)' }}>
+                    <div className="filter-group">
+                        <label>Search Trends</label>
+                        <div style={{ position: 'relative' }}>
+                            <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                            <input
+                                type="text"
+                                placeholder="Name, destination, keywords..."
+                                value={q}
+                                onChange={(e) => setQ(e.target.value)}
+                                style={{ minWidth: '320px', paddingLeft: '2.5rem' }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="filter-group">
+                        <label>Market</label>
+                        <select
+                            value={market}
+                            onChange={(e) => {
+                                const value = e.target.value as Market | "ALL";
+                                setMarket(value);
+                            }}
+                            style={{ minWidth: '150px' }}
+                        >
+                            <option value="ALL">All Markets</option>
+                            {["HK", "TW", "ID", "SG", "MY", "AU"].map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label>Horizon</label>
+                        <select
+                            value={horizon}
+                            onChange={(e) => {
+                                const value = e.target.value as "TODAY" | "7" | "14" | "30" | "ALL";
+                                setHorizon(value);
+                            }}
+                            style={{ minWidth: '160px' }}
+                        >
+                            <option value="TODAY">Today</option>
+                            <option value="7">Next 7 days</option>
+                            <option value="14">Next 14 days</option>
+                            <option value="30">Next 30 days</option>
+                            <option value="ALL">All time</option>
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label style={{ opacity: 0 }}>&nbsp;</label>
+                        <label
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.55rem',
+                                height: '40px',
+                                border: '1px solid var(--border-subtle)',
+                                background: includeBaseline ? 'var(--accent-glow)' : 'var(--bg-content)',
+                                borderRadius: '0.65rem',
+                                padding: '0 0.8rem',
+                                cursor: 'pointer',
+                                userSelect: 'none',
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                letterSpacing: 'normal',
+                                color: includeBaseline ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={includeBaseline}
+                                onChange={(e) => setIncludeBaseline(e.target.checked)}
+                                style={{ width: '14px', height: '14px', accentColor: 'hsl(var(--primary))', cursor: 'pointer' }}
+                            />
+                            Baseline
+                        </label>
                     </div>
                 </div>
 
-                <div className="filter-group">
-                    <label>Market</label>
-                    <select 
-                        value={market} 
-                        onChange={(e) => {
-                            const value = e.target.value as Market | "ALL";
-                            setMarket(value);
-                        }}
-                        style={{ width: '140px' }}
-                    >
-                        <option value="ALL">All Markets</option>
-                        {["HK", "TW", "ID", "SG", "MY", "AU"].map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                </div>
-
-                <div className="filter-group">
-                    <label>Horizon</label>
-                    <select 
-                        value={horizon} 
-                        onChange={(e) => {
-                            const value = e.target.value as "TODAY" | "7" | "14" | "30" | "ALL";
-                            setHorizon(value);
-                        }}
-                        style={{ width: '160px' }}
-                    >
-                        <option value="TODAY">Today</option>
-                        <option value="7">Next 7 days</option>
-                        <option value="14">Next 14 days</option>
-                        <option value="30">Next 30 days</option>
-                        <option value="ALL">All time</option>
-                    </select>
-                </div>
-
-                <div className="filter-group">
-                    <label>Baseline</label>
-                    <div className="flex items-center justify-center h-10 px-3 bg-(--bg-content) border border-(--border-subtle) rounded-[0.65rem] w-[60px]">
-                        <input 
-                            type="checkbox" 
-                            checked={includeBaseline} 
-                            onChange={(e) => setIncludeBaseline(e.target.checked)}
-                            style={{ width: '18px', height: '18px', accentColor: 'hsl(var(--primary))', cursor: 'pointer' }}
-                        />
-                    </div>
-                </div>
-
-                <div className="filter-group">
-                    <label>Status View</label>
-                    <div className="flex bg-(--bg-overlay) border border-(--border-subtle) p-1 rounded-[0.65rem] h-10">
-                        {(["ALL", "ACTIVE", "DRAFT"] as const).map((v) => (
-                            <button
-                                key={v}
-                                onClick={() => setStatusView(v)}
-                                style={{
-                                    padding: '0 1rem',
-                                    height: '100%',
-                                    fontSize: '0.65rem',
-                                    fontWeight: 800,
-                                    borderRadius: '6px',
-                                    transition: 'all 0.2s',
-                                    background: statusView === v ? 'hsl(var(--primary))' : 'transparent',
-                                    color: statusView === v ? '#ffffff' : 'var(--text-dim)',
-                                    boxShadow: statusView === v ? '0 4px 12px hsla(var(--primary) / 0.25)' : 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    minWidth: '75px'
-                                }}
-                            >
-                                {v}
-                            </button>
-                        ))}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: '0.85rem', background: 'var(--bg-overlay)' }}>
+                    <div className="filter-group">
+                        <label>Status View</label>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                background: 'var(--bg-overlay)',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '0.7rem',
+                                padding: '0.2rem',
+                                gap: '0.25rem',
+                            }}
+                        >
+                            {[
+                                { id: "section-peak", label: "At Peak", count: peak.length },
+                                { id: "section-active", label: "Active", count: active.length },
+                                { id: "section-upcoming", label: "Pre-alert", count: upcoming.length },
+                            ].map((item) => {
+                                const isActive = activeSection === item.id;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => scrollToSection(item.id)}
+                                        className="hero-btn"
+                                        style={{
+                                            padding: '0.4rem 0.7rem',
+                                            borderRadius: '0.5rem',
+                                            fontSize: 'var(--text-xs)',
+                                            fontWeight: 700,
+                                            background: isActive ? 'hsl(var(--primary))' : 'transparent',
+                                            color: isActive ? 'var(--text-on-accent)' : 'var(--text-dim)',
+                                            border: 'none',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '0.35rem',
+                                        }}
+                                    >
+                                        {item.label}
+                                        <span style={{ fontWeight: 800, opacity: isActive ? 1 : 0.8 }}>{item.count}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </section>

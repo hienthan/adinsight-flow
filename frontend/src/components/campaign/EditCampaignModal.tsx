@@ -1,5 +1,9 @@
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { X, Plus, Bell, Activity, ChevronDown, ChevronRight } from 'lucide-react';
 import CampaignForm from './CampaignForm';
+import AddReminderModal from './AddReminderModal';
+import CampaignReminders from './CampaignReminders';
+import CampaignHistory from './CampaignHistory';
 
 interface EditCampaignModalProps {
     campaignId?: string;
@@ -9,10 +13,15 @@ interface EditCampaignModalProps {
 }
 
 export default function EditCampaignModal({ campaignId, isOpen, onClose, onSuccess }: EditCampaignModalProps) {
+    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+    const [isRemindersCollapsed, setIsRemindersCollapsed] = useState(false);
+    const [isAutoLogCollapsed, setIsAutoLogCollapsed] = useState(false);
+
     if (!isOpen) return null;
 
     return (
-        <div
+        <>
+            <div
             style={{
                 position: 'fixed',
                 top: 0,
@@ -45,20 +54,32 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: campaignId ? '1.25rem' : '2rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{ width: '4px', height: '24px', background: 'hsl(var(--primary))', borderRadius: '4px' }} />
                         <h2 className="hero-section-title" style={{ fontSize: '1.25rem', marginBottom: 0 }}>
                             {campaignId ? 'Edit Tracking Strategy' : 'Create New Campaign'}
                         </h2>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="hero-btn-ghost"
-                        style={{ padding: '0.5rem', borderRadius: '50%' }}
-                    >
-                        <X size={20} />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {campaignId && (
+                            <button
+                                onClick={() => setIsReminderModalOpen(true)}
+                                className="hero-btn hero-btn-secondary"
+                                style={{ padding: '0.45rem 0.75rem', fontSize: 'var(--text-xs)' }}
+                            >
+                                <Plus size={14} />
+                                Reminder
+                            </button>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="hero-btn-ghost"
+                            style={{ padding: '0.5rem', borderRadius: '50%' }}
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 <CampaignForm
@@ -69,7 +90,105 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                         onClose();
                     }}
                 />
+
+                {campaignId ? (
+                    <div
+                        style={{
+                            marginTop: '1rem',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                            gap: '0.75rem',
+                        }}
+                    >
+                        <div
+                            className="hero-card"
+                            style={{
+                                padding: '0.75rem',
+                                background: 'var(--bg-overlay)',
+                                border: '1px solid var(--border-subtle)',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isRemindersCollapsed ? 0 : '0.55rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsRemindersCollapsed((v) => !v)}
+                                    className="hero-btn hero-btn-ghost"
+                                    style={{ padding: '0.2rem 0.35rem', gap: '0.35rem', fontSize: 'var(--text-xs)', fontWeight: 800, color: 'var(--text-dim)' }}
+                                >
+                                    {isRemindersCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+                                    <Bell size={13} style={{ color: 'hsl(var(--primary))' }} />
+                                    Reminders
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsReminderModalOpen(true)}
+                                    className="hero-btn hero-btn-ghost"
+                                    style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)' }}
+                                >
+                                    <Plus size={12} />
+                                    Add
+                                </button>
+                            </div>
+
+                            {!isRemindersCollapsed && (
+                                <div style={{ maxHeight: '210px', overflowY: 'auto', paddingRight: '0.15rem' }}>
+                                    <CampaignReminders campaignId={campaignId} compact={true} />
+                                </div>
+                            )}
+                        </div>
+
+                        <div
+                            className="hero-card"
+                            style={{
+                                padding: '0.75rem',
+                                background: 'var(--bg-overlay)',
+                                border: '1px solid var(--border-subtle)',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isAutoLogCollapsed ? 0 : '0.55rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAutoLogCollapsed((v) => !v)}
+                                    className="hero-btn hero-btn-ghost"
+                                    style={{ padding: '0.2rem 0.35rem', gap: '0.35rem', fontSize: 'var(--text-xs)', fontWeight: 800, color: 'var(--text-dim)' }}
+                                >
+                                    {isAutoLogCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+                                    <Activity size={13} style={{ color: 'hsl(var(--primary))' }} />
+                                    AutoLog (Latest)
+                                </button>
+                            </div>
+
+                            {!isAutoLogCollapsed && (
+                                <div style={{ maxHeight: '210px', overflowY: 'auto', paddingRight: '0.15rem' }}>
+                                    <CampaignHistory campaignId={campaignId} compact={true} limit={5} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <div
+                        className="hero-card"
+                        style={{
+                            marginTop: '1.5rem',
+                            padding: '0.85rem 1rem',
+                            background: 'var(--bg-overlay)',
+                            border: '1px dashed var(--border-subtle)',
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--text-dim)',
+                        }}
+                    >
+                        Save campaign first to add reminders.
+                    </div>
+                )}
             </div>
-        </div>
+            </div>
+            {campaignId && (
+                <AddReminderModal
+                    campaignId={campaignId}
+                    isOpen={isReminderModalOpen}
+                    onClose={() => setIsReminderModalOpen(false)}
+                />
+            )}
+        </>
     );
 }

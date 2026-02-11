@@ -290,17 +290,6 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                     </div>
                 </div>
 
-                <div className="filter-group">
-                    <label>AI Insights (ChatGPT Metadata)</label>
-                    <textarea
-                        name="chatgpt_metadata"
-                        value={formData.chatgpt_metadata || ''}
-                        onChange={handleChange}
-                        placeholder="Auxiliary AI data, prompt history, etc..."
-                        style={{ minHeight: '80px' }}
-                    />
-                </div>
-
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', justifyContent: 'flex-end' }}>
                     <button
                         type="button"

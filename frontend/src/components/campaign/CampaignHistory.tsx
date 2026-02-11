@@ -7,9 +7,11 @@ import AutoLogItem from '../tracking/AutoLogItem';
 interface CampaignHistoryProps {
     campaignId: string;
     platformColor?: string;
+    compact?: boolean;
+    limit?: number;
 }
 
-export default function CampaignHistory({ campaignId, platformColor }: CampaignHistoryProps) {
+export default function CampaignHistory({ campaignId, platformColor, compact = false, limit }: CampaignHistoryProps) {
     const queryClient = useQueryClient();
     const { data: changes = [], isLoading } = useQuery<CampaignChange[]>({
         queryKey: ['campaign-changes', campaignId],
@@ -32,14 +34,30 @@ export default function CampaignHistory({ campaignId, platformColor }: CampaignH
         },
     });
 
-    if (isLoading) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-dim)' }}>Loading history...</div>;
-
-    if (changes.length === 0) {
+    if (isLoading) {
         return (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-dim)', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <Activity size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
-                <p>No changes tracked yet for this campaign.</p>
-                <p style={{ fontSize: '0.8rem' }}>Changes to CPC, Budget, Keywords, and Status are automatically logged.</p>
+            <div style={{ padding: compact ? '1rem' : '2rem', textAlign: 'center', color: 'var(--text-dim)', fontSize: compact ? '0.8rem' : 'inherit' }}>
+                Loading history...
+            </div>
+        );
+    }
+
+    const visibleChanges = typeof limit === 'number' ? changes.slice(0, limit) : changes;
+
+    if (visibleChanges.length === 0) {
+        return (
+            <div style={{
+                padding: compact ? '1rem' : '3rem',
+                textAlign: 'center',
+                color: 'var(--text-dim)',
+                background: compact ? 'var(--bg-overlay)' : 'var(--bg-card)',
+                borderRadius: '12px',
+                border: compact ? '1px dashed var(--border-subtle)' : '1px solid var(--border-color)',
+                fontSize: compact ? '0.75rem' : 'inherit'
+            }}>
+                <Activity size={compact ? 22 : 48} style={{ marginBottom: compact ? '0.45rem' : '1rem', opacity: 0.25 }} />
+                <p style={{ margin: 0 }}>No tracked changes yet.</p>
+                {!compact && <p style={{ fontSize: '0.8rem' }}>Changes to CPC, Budget, Keywords, and Status are automatically logged.</p>}
             </div>
         );
     }
@@ -47,14 +65,14 @@ export default function CampaignHistory({ campaignId, platformColor }: CampaignH
     return (
         <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: '0.75rem'
+            gridTemplateColumns: compact ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
+            gap: compact ? '0.5rem' : '0.75rem'
         }}>
-            {changes.map((change) => (
+            {visibleChanges.map((change) => (
                 <AutoLogItem
                     key={change.id}
                     change={change}
-                    onDelete={(id) => deleteMutation.mutate(id)}
+                    onDelete={compact ? undefined : (id) => deleteMutation.mutate(id)}
                     platformColor={platformColor}
                 />
             ))}

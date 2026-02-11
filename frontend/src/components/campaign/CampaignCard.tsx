@@ -7,11 +7,58 @@ import { pb } from '../../lib/pocketbase';
 import { formatDate } from '../../lib/utils';
 import AddReminderModal from './AddReminderModal';
 
+type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
+type ViewMode = 'comfortable' | 'compact' | 'alert';
+
+const REMINDER_STYLES: Record<ReminderState, {
+    cardBackground: string;
+    cardBorder: string;
+    badgeColor: string;
+    badgeBackground: string;
+    badgeBorder: string;
+    alertColor: string;
+}> = {
+    none: {
+        cardBackground: 'var(--bg-content)',
+        cardBorder: 'var(--border-subtle)',
+        badgeColor: 'hsl(var(--primary))',
+        badgeBackground: 'hsla(var(--primary) / 0.08)',
+        badgeBorder: 'hsla(var(--primary) / 0.2)',
+        alertColor: 'hsl(var(--primary))',
+    },
+    upcoming: {
+        cardBackground: 'hsla(var(--primary) / 0.07)',
+        cardBorder: 'hsla(var(--primary) / 0.3)',
+        badgeColor: 'hsl(var(--primary))',
+        badgeBackground: 'hsla(var(--primary) / 0.14)',
+        badgeBorder: 'hsla(var(--primary) / 0.3)',
+        alertColor: 'hsl(var(--primary))',
+    },
+    today: {
+        cardBackground: 'hsla(38 95% 55% / 0.13)',
+        cardBorder: 'hsla(38 95% 55% / 0.45)',
+        badgeColor: 'hsl(38 95% 35%)',
+        badgeBackground: 'hsla(38 95% 55% / 0.23)',
+        badgeBorder: 'hsla(38 95% 45% / 0.45)',
+        alertColor: 'hsl(38 95% 40%)',
+    },
+    overdue: {
+        cardBackground: 'hsla(3 85% 58% / 0.16)',
+        cardBorder: 'hsla(3 85% 58% / 0.5)',
+        badgeColor: 'hsl(3 85% 38%)',
+        badgeBackground: 'hsla(3 85% 58% / 0.24)',
+        badgeBorder: 'hsla(3 85% 48% / 0.45)',
+        alertColor: 'hsl(3 85% 42%)',
+    },
+};
+
 interface CampaignCardProps {
     campaign: Campaign;
     platform?: CampaignPlatform;
     hasPendingReminders?: boolean;
     highestPriority?: 'low' | 'medium' | 'high';
+    reminderState?: ReminderState;
+    viewMode?: ViewMode;
     onEdit?: (id: string) => void;
 }
 
@@ -20,6 +67,8 @@ export default function CampaignCard({
     platform,
     hasPendingReminders,
     highestPriority,
+    reminderState = 'none',
+    viewMode = 'comfortable',
     onEdit,
 }: CampaignCardProps) {
     const navigate = useNavigate();
@@ -51,6 +100,9 @@ export default function CampaignCard({
         },
     });
 
+    const compactView = viewMode === 'compact' || viewMode === 'alert';
+    const reminderStyle = REMINDER_STYLES[reminderState];
+
     return (
         <div
             className="animate-fade hero-card"
@@ -60,7 +112,9 @@ export default function CampaignCard({
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
-                padding: '1rem',
+                padding: compactView ? '0.65rem' : '1rem',
+                background: reminderStyle.cardBackground,
+                border: `1px solid ${reminderStyle.cardBorder}`,
             }}
             onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
@@ -73,13 +127,13 @@ export default function CampaignCard({
         >
             <div onClick={() => navigate(`/camp-tracking/campaign/${campaign.id}`, { state: { from: location.pathname + location.search } })} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 {/* Header: Name & Minimalist Metrics */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: compactView ? '0.5rem' : '0.75rem', gap: compactView ? '0.45rem' : '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0, position: 'relative' }}>
                         <h3
                             onMouseEnter={() => setShowReminderTooltip(true)}
                             onMouseLeave={() => setShowReminderTooltip(false)}
                             style={{
-                                fontSize: '0.9rem',
+                                fontSize: compactView ? '0.78rem' : '0.9rem',
                                 fontWeight: 800,
                                 color: platform?.color || 'var(--text-main)',
                                 margin: 0,
@@ -91,7 +145,28 @@ export default function CampaignCard({
                             {campaign.name}
                         </h3>
                         {campaign.is_dsa === false && (
-                            <Key size={12} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                            <Key size={compactView ? 11 : 12} style={{ color: 'hsl(var(--primary))', flexShrink: 0 }} />
+                        )}
+
+                        {reminderState !== 'none' && (
+                            <span
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: compactView ? '0.08rem 0.3rem' : '0.12rem 0.4rem',
+                                    borderRadius: '999px',
+                                    fontSize: compactView ? '0.58rem' : '0.62rem',
+                                    fontWeight: 800,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.03em',
+                                    color: reminderStyle.badgeColor,
+                                    background: reminderStyle.badgeBackground,
+                                    border: `1px solid ${reminderStyle.badgeBorder}`,
+                                    flexShrink: 0,
+                                }}
+                            >
+                                {reminderState === 'overdue' ? 'Overdue' : reminderState === 'today' ? 'Today' : 'Soon'}
+                            </span>
                         )}
 
                         {/* Tooltip for Latest Reminder */}
@@ -132,17 +207,17 @@ export default function CampaignCard({
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0, position: 'relative' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: compactView ? '0.4rem' : '0.6rem', flexShrink: 0, position: 'relative' }}>
                         {/* Compact Metrics: CPC - Budget */}
                         <div
                             onMouseEnter={() => setShowCPCTooltip(true)}
                             onMouseLeave={() => setShowCPCTooltip(false)}
                             style={{
-                                fontSize: '0.75rem',
+                                fontSize: compactView ? '0.68rem' : '0.75rem',
                                 fontWeight: 800,
                                 color: 'var(--text-main)',
                                 background: 'var(--bg-overlay)',
-                                padding: '0.2rem 0.5rem',
+                                padding: compactView ? '0.15rem 0.38rem' : '0.2rem 0.5rem',
                                 borderRadius: '5px',
                                 border: '1px solid var(--border-subtle)',
                                 whiteSpace: 'nowrap'
@@ -187,8 +262,15 @@ export default function CampaignCard({
                             </div>
                         )}
 
-                        {hasPendingReminders && (
-                            <AlertCircle size={12} style={{ color: highestPriority === 'high' ? '#ef4444' : '#f59e0b', flexShrink: 0 }} />
+                        {reminderState !== 'none' && (
+                            <AlertCircle
+                                size={compactView ? 11 : 12}
+                                style={{
+                                    color: reminderStyle.alertColor,
+                                    opacity: reminderState === 'upcoming' ? 0.75 : 1,
+                                    flexShrink: 0,
+                                }}
+                            />
                         )}
 
                         <button
@@ -201,31 +283,31 @@ export default function CampaignCard({
                                 }
                             }}
                             className="hero-btn-ghost"
-                            style={{ padding: '0.2rem', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            style={{ padding: compactView ? '0.15rem' : '0.2rem', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             title="Edit Campaign"
                         >
-                            <Edit2 size={13} style={{ opacity: 0.7 }} />
+                            <Edit2 size={compactView ? 12 : 13} style={{ opacity: 0.7 }} />
                         </button>
                     </div>
                 </div>
 
-                <div style={{ marginBottom: '0.75rem', borderBottom: '1px solid var(--border-subtle)' }} />
+                <div style={{ marginBottom: compactView ? '0.5rem' : '0.75rem', borderBottom: '1px solid var(--border-subtle)' }} />
 
                 {/* Fixed-Height Notes Section */}
                 <div
                     title={campaign.general_notes || 'No notes available'}
                     style={{
-                        padding: '0.6rem 0.75rem',
+                        padding: compactView ? '0.45rem 0.55rem' : '0.6rem 0.75rem',
                         background: 'var(--bg-overlay)',
                         borderRadius: '0.5rem',
                         border: '1px solid var(--border-subtle)',
-                        fontSize: '0.75rem',
+                        fontSize: compactView ? '0.68rem' : '0.75rem',
                         lineHeight: 1.4,
                         color: campaign.general_notes ? 'var(--text-main)' : 'var(--text-muted)',
-                        height: '75px',
+                        height: compactView ? '56px' : '75px',
                         overflow: 'hidden',
                         display: '-webkit-box',
-                        WebkitLineClamp: 3,
+                        WebkitLineClamp: compactView ? 2 : 3,
                         WebkitBoxOrient: 'vertical',
                         fontStyle: 'italic'
                     }}

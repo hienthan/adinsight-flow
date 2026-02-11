@@ -1,18 +1,69 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Loader2, Check, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Loader2, Check, ChevronDown, ChevronRight, LayoutGrid, Siren, ClockAlert } from 'lucide-react';
 import CampaignCard from '../../components/campaign/CampaignCard';
 import EditCampaignModal from '../../components/campaign/EditCampaignModal';
 import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campaign';
-import { pb, formatDateForInput } from '../../lib/pocketbase';
+import { pb } from '../../lib/pocketbase';
+
+type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
+type OverviewMode = 'comfortable' | 'compact' | 'alert';
+type ReminderQuickFilter = 'all' | 'overdue' | 'today' | 'upcoming';
+
+const VIEW_MODES: Array<{ id: OverviewMode; label: string; icon: typeof LayoutGrid }> = [
+    { id: 'comfortable', label: 'Comfortable', icon: LayoutGrid },
+    { id: 'compact', label: 'Compact', icon: LayoutGrid },
+    { id: 'alert', label: 'Alert Focus', icon: Siren },
+];
+
+const QUICK_FILTERS: Array<{ id: ReminderQuickFilter; label: string }> = [
+    { id: 'all', label: 'All' },
+    { id: 'overdue', label: 'Overdue' },
+    { id: 'today', label: 'Today' },
+    { id: 'upcoming', label: 'Next 3 days' },
+];
+
+const PRIORITY_RANK: Record<'low' | 'medium' | 'high', number> = {
+    high: 0,
+    medium: 1,
+    low: 2,
+};
+
+const REMINDER_STATE_RANK: Record<ReminderState, number> = {
+    overdue: 0,
+    today: 1,
+    upcoming: 2,
+    none: 3,
+};
+
+const parseDateOnly = (input: string): Date => {
+    const isoDate = input.slice(0, 10);
+    const [year, month, day] = isoDate.split('-').map(Number);
+    if (!year || !month || !day) {
+        return new Date(input);
+    }
+    return new Date(year, month - 1, day);
+};
+
+const getStartOfDay = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const getDayDiff = (targetDate: Date, baseDate: Date): number => {
+    const msInDay = 24 * 60 * 60 * 1000;
+    return Math.round((getStartOfDay(targetDate).getTime() - getStartOfDay(baseDate).getTime()) / msInDay);
+};
 
 export default function CampOverview() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const filterPlatform = searchParams.get('platform') || 'all';
     const filterStatus = searchParams.get('status') || 'all';
+    const filterName = searchParams.get('q') || '';
     const filterReminders = searchParams.get('reminders') === 'true';
+    const viewMode = (searchParams.get('view') as OverviewMode) || 'comfortable';
+    const reminderQuickFilter = (searchParams.get('due') as ReminderQuickFilter) || 'all';
+    const compactCards = viewMode === 'compact' || viewMode === 'alert';
+    const alertsOnlyEnabled = filterReminders || viewMode === 'alert';
 
     const setFilterPlatform = (val: string) => {
         setSearchParams((prev: URLSearchParams) => {
@@ -30,10 +81,40 @@ export default function CampOverview() {
         });
     };
 
+    const setFilterName = (val: string) => {
+        setSearchParams((prev: URLSearchParams) => {
+            const normalized = val.trim();
+            if (!normalized) prev.delete('q');
+            else prev.set('q', normalized);
+            return prev;
+        });
+    };
+
     const setToggleReminders = () => {
         setSearchParams((prev: URLSearchParams) => {
+            if (viewMode === 'alert') {
+                prev.set('view', 'compact');
+                prev.delete('reminders');
+                return prev;
+            }
             if (filterReminders) prev.delete('reminders');
             else prev.set('reminders', 'true');
+            return prev;
+        });
+    };
+
+    const setViewMode = (mode: OverviewMode) => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (mode === 'comfortable') prev.delete('view');
+            else prev.set('view', mode);
+            return prev;
+        });
+    };
+
+    const setReminderQuickFilter = (val: ReminderQuickFilter) => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (val === 'all') prev.delete('due');
+            else prev.set('due', val);
             return prev;
         });
     };
@@ -88,24 +169,56 @@ export default function CampOverview() {
     const { data: reminders = [] } = useQuery<CampaignReminder[]>({
         queryKey: ['reminders', 'pending'],
         queryFn: async () => {
-            const today = formatDateForInput(new Date().toISOString());
             return await pb.collection('campaign_reminders').getFullList<CampaignReminder>({
-                filter: `reminder_date <= "${today}" && status = "pending"`,
+                filter: 'status = "pending"',
+                sort: 'reminder_date',
             });
         },
     });
 
-    // Get enriched campaigns with platform data and badges
+    const now = useMemo(() => getStartOfDay(new Date()), []);
+    const reminderByCampaign = useMemo(() => {
+        const bucket = new Map<string, CampaignReminder[]>();
+        reminders.forEach((reminder) => {
+            if (!bucket.has(reminder.campaign)) {
+                bucket.set(reminder.campaign, []);
+            }
+            bucket.get(reminder.campaign)!.push(reminder);
+        });
+        return bucket;
+    }, [reminders]);
+
+    // Get enriched campaigns with platform data and reminder state
     const enrichedCampaigns = campaigns.map((campaign: any) => {
         const platform = platforms.find((p) => p.id === campaign.platform);
-        const campaignReminders = reminders.filter((r) => r.campaign === campaign.id);
-        const hasPendingReminders = campaignReminders.length > 0;
+        const campaignReminders = reminderByCampaign.get(campaign.id) || [];
 
-        // Find highest priority among pending reminders
+        let reminderState: ReminderState = 'none';
+        let nearestDueInDays: number | null = null;
         let priority: 'low' | 'medium' | 'high' = 'low';
-        if (hasPendingReminders) {
-            if (campaignReminders.some(r => r.priority === 'high')) priority = 'high';
-            else if (campaignReminders.some(r => r.priority === 'medium')) priority = 'medium';
+        let hasActionableReminder = false;
+
+        for (const reminder of campaignReminders) {
+            const reminderDate = parseDateOnly(reminder.reminder_date);
+            const dayDiff = getDayDiff(reminderDate, now);
+            const nextState: ReminderState =
+                dayDiff < 0 ? 'overdue' : dayDiff === 0 ? 'today' : dayDiff <= 3 ? 'upcoming' : 'none';
+
+            if (REMINDER_STATE_RANK[nextState] < REMINDER_STATE_RANK[reminderState]) {
+                reminderState = nextState;
+            }
+
+            if (dayDiff <= 0) {
+                hasActionableReminder = true;
+                const normalizedPriority = reminder.priority || 'low';
+                if (PRIORITY_RANK[normalizedPriority] < PRIORITY_RANK[priority]) {
+                    priority = normalizedPriority;
+                }
+            }
+
+            if (nearestDueInDays === null || dayDiff < nearestDueInDays) {
+                nearestDueInDays = dayDiff;
+            }
         }
 
         // Check if changed in last 3 days
@@ -116,20 +229,52 @@ export default function CampOverview() {
         return {
             ...campaign,
             platform_data: platform,
-            hasPendingReminders,
-            highestPriority: hasPendingReminders ? priority : undefined,
+            reminderState,
+            nearestDueInDays,
+            hasPendingReminders: hasActionableReminder,
+            highestPriority: hasActionableReminder ? priority : undefined,
             hasRecentChanges,
         };
     });
 
-    // Filter by reminders if needed
-    const filteredCampaigns = filterReminders
-        ? enrichedCampaigns.filter((c) => c.hasPendingReminders)
-        : enrichedCampaigns;
+    // Filter by reminders, alert focus, and quick due filters
+    const nameKeyword = filterName.trim().toLowerCase();
+    const filteredCampaigns = enrichedCampaigns.filter((campaign) => {
+        if (nameKeyword && !campaign.name.toLowerCase().includes(nameKeyword)) return false;
+        if (alertsOnlyEnabled && !campaign.hasPendingReminders) return false;
+        if (reminderQuickFilter !== 'all' && campaign.reminderState !== reminderQuickFilter) return false;
+        return true;
+    });
+
+    const summary = filteredCampaigns.reduce(
+        (acc, campaign) => {
+            if (campaign.reminderState === 'overdue') acc.overdue += 1;
+            if (campaign.reminderState === 'today') acc.today += 1;
+            if (campaign.reminderState === 'upcoming') acc.upcoming += 1;
+            return acc;
+        },
+        { overdue: 0, today: 0, upcoming: 0 },
+    );
+
+    const sortCampaignsByReminder = (items: any[]) =>
+        [...items].sort((a, b) => {
+            const reminderRankDiff = REMINDER_STATE_RANK[a.reminderState] - REMINDER_STATE_RANK[b.reminderState];
+            if (reminderRankDiff !== 0) return reminderRankDiff;
+
+            const dueDiffA = a.nearestDueInDays ?? Number.MAX_SAFE_INTEGER;
+            const dueDiffB = b.nearestDueInDays ?? Number.MAX_SAFE_INTEGER;
+            if (dueDiffA !== dueDiffB) return dueDiffA - dueDiffB;
+
+            const priorityA = PRIORITY_RANK[a.highestPriority || 'low'];
+            const priorityB = PRIORITY_RANK[b.highestPriority || 'low'];
+            if (priorityA !== priorityB) return priorityA - priorityB;
+
+            return a.name.localeCompare(b.name);
+        });
 
     // Group by platform
     const groupedCampaigns = platforms.reduce((acc, platform) => {
-        const platformCampaigns = filteredCampaigns.filter(c => c.platform === platform.id);
+        const platformCampaigns = sortCampaignsByReminder(filteredCampaigns.filter(c => c.platform === platform.id));
         if (platformCampaigns.length > 0) {
             acc.push({
                 platform,
@@ -140,7 +285,7 @@ export default function CampOverview() {
     }, [] as { platform: CampaignPlatform, campaigns: any[] }[]);
 
     // Handle campaigns with no platform (fallback)
-    const orphans = filteredCampaigns.filter(c => !platforms.find(p => p.id === c.platform));
+    const orphans = sortCampaignsByReminder(filteredCampaigns.filter(c => !platforms.find(p => p.id === c.platform)));
     if (orphans.length > 0) {
         groupedCampaigns.push({
             platform: { id: 'unknown', display_name: 'Unassigned', color: '#64748b' } as any,
@@ -152,6 +297,12 @@ export default function CampOverview() {
         setEditingId(id);
         setIsEditModalOpen(true);
     };
+    const hasActiveFilters = filterPlatform !== 'all'
+        || filterStatus !== 'all'
+        || !!filterName.trim()
+        || filterReminders
+        || viewMode !== 'comfortable'
+        || reminderQuickFilter !== 'all';
 
     return (
         <div className="page-container">
@@ -187,91 +338,194 @@ export default function CampOverview() {
             </div>
 
             {/* Filters */}
-            <div className="filter-bar" style={{ marginBottom: '1.5rem' }}>
-                <div className="filter-group">
-                    <label>Platform</label>
-                    <select
-                        value={filterPlatform}
-                        onChange={(e) => setFilterPlatform(e.target.value)}
-                        style={{ minWidth: '160px' }}
-                    >
-                        <option value="all">All Channels</option>
-                        {platforms.map((platform) => (
-                            <option key={platform.id} value={platform.id}>
-                                {platform.display_name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+            <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '0.9rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: '0.85rem', background: 'var(--bg-overlay)' }}>
+                    <div className="filter-group">
+                        <label>Search Camp</label>
+                        <input
+                            type="text"
+                            value={filterName}
+                            onChange={(e) => setFilterName(e.target.value)}
+                            placeholder="Search by campaign name..."
+                            style={{ minWidth: '320px' }}
+                        />
+                    </div>
 
-                <div className="filter-group">
-                    <label>Status</label>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        style={{ minWidth: '140px' }}
-                    >
-                        <option value="all">Any Status</option>
-                        <option value="active">Active</option>
-                        <option value="paused">Paused</option>
-                        <option value="testing">Testing</option>
-                        <option value="archived">Archived</option>
-                    </select>
-                </div>
+                    <div className="filter-group">
+                        <label>Platform</label>
+                        <select
+                            value={filterPlatform}
+                            onChange={(e) => setFilterPlatform(e.target.value)}
+                            style={{ minWidth: '160px' }}
+                        >
+                            <option value="all">All Channels</option>
+                            {platforms.map((platform) => (
+                                <option key={platform.id} value={platform.id}>
+                                    {platform.display_name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                <div className="filter-group">
-                    <label style={{ opacity: 0 }}>&nbsp;</label>
-                    <div
-                        onClick={setToggleReminders}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.6rem',
-                            padding: '0.55rem 0.85rem',
-                            background: filterReminders ? 'var(--accent-glow)' : 'var(--bg-content)',
-                            border: `1px solid ${filterReminders ? 'hsl(var(--primary))' : 'var(--border-subtle)'}`,
-                            borderRadius: '0.65rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            userSelect: 'none',
-                            height: '100%',
-                            minHeight: '42px'
-                        }}
-                    >
-                        <div style={{
-                            width: '16px',
-                            height: '16px',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border-subtle)',
-                            background: filterReminders ? 'hsl(var(--primary))' : 'transparent',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white'
-                        }}>
-                            {filterReminders && <Check size={12} strokeWidth={4} />}
-                        </div>
-                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: filterReminders ? 'hsl(var(--primary))' : 'var(--text-dim)' }}>
-                            Alerts Only
-                        </span>
+                    <div className="filter-group">
+                        <label>Status</label>
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            style={{ minWidth: '140px' }}
+                        >
+                            <option value="all">Any Status</option>
+                            <option value="active">Active</option>
+                            <option value="paused">Paused</option>
+                            <option value="testing">Testing</option>
+                            <option value="archived">Archived</option>
+                        </select>
                     </div>
                 </div>
 
-                {(filterPlatform !== 'all' || filterStatus !== 'all' || filterReminders) && (
-                    <button
-                        onClick={() => {
-                            setSearchParams({});
-                        }}
-                        className="hero-btn hero-btn-ghost"
-                        style={{
-                            marginLeft: 'auto',
-                            alignSelf: 'flex-end',
-                            padding: '0.45rem 0.75rem',
-                            fontSize: 'var(--text-xs)'
-                        }}
-                    >
-                        Reset
-                    </button>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: '0.85rem', background: 'var(--bg-overlay)' }}>
+                    <div className="filter-group">
+                        <label>Reminder Window</label>
+                        <select
+                            value={reminderQuickFilter}
+                            onChange={(e) => setReminderQuickFilter(e.target.value as ReminderQuickFilter)}
+                            style={{ minWidth: '150px' }}
+                        >
+                            {QUICK_FILTERS.map((filter) => (
+                                <option key={filter.id} value={filter.id}>
+                                    {filter.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label style={{ opacity: 0 }}>&nbsp;</label>
+                        <div
+                            onClick={setToggleReminders}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.6rem',
+                                padding: '0.5rem 0.85rem',
+                                background: alertsOnlyEnabled ? 'var(--accent-glow)' : 'var(--bg-content)',
+                                border: `1px solid ${alertsOnlyEnabled ? 'hsl(var(--primary))' : 'var(--border-subtle)'}`,
+                                borderRadius: '0.65rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                userSelect: 'none',
+                                height: '40px'
+                            }}
+                        >
+                            <div style={{
+                                width: '14px',
+                                height: '14px',
+                                borderRadius: '4px',
+                                border: '1px solid var(--border-subtle)',
+                                background: alertsOnlyEnabled ? 'hsl(var(--primary))' : 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white'
+                            }}>
+                                {alertsOnlyEnabled && <Check size={10} strokeWidth={4} />}
+                            </div>
+                            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: alertsOnlyEnabled ? 'hsl(var(--primary))' : 'var(--text-dim)' }}>
+                                Alerts Only
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: '0.85rem', background: 'var(--bg-overlay)' }}>
+                    <div className="filter-group">
+                        <label>View Mode</label>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                background: 'var(--bg-overlay)',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '0.7rem',
+                                padding: '0.2rem',
+                                gap: '0.25rem',
+                            }}
+                        >
+                            {VIEW_MODES.map((mode) => {
+                                const isActive = viewMode === mode.id;
+                                const Icon = mode.icon;
+                                return (
+                                    <button
+                                        key={mode.id}
+                                        onClick={() => setViewMode(mode.id)}
+                                        className="hero-btn"
+                                        style={{
+                                            padding: '0.4rem 0.7rem',
+                                            borderRadius: '0.5rem',
+                                            fontSize: 'var(--text-xs)',
+                                            fontWeight: 700,
+                                            background: isActive ? 'hsl(var(--primary))' : 'transparent',
+                                            color: isActive ? 'var(--text-on-accent)' : 'var(--text-dim)',
+                                            border: 'none',
+                                        }}
+                                    >
+                                        <Icon size={13} />
+                                        {mode.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ flex: 1 }} />
+
+                <button
+                    onClick={() => {
+                        setSearchParams({});
+                    }}
+                    className="hero-btn hero-btn-ghost"
+                    style={{
+                        alignSelf: 'flex-end',
+                        padding: '0.45rem 0.75rem',
+                        fontSize: 'var(--text-xs)',
+                        visibility: hasActiveFilters ? 'visible' : 'hidden',
+                        pointerEvents: hasActiveFilters ? 'auto' : 'none',
+                    }}
+                >
+                    Reset
+                </button>
+            </div>
+
+            <div
+                className="hero-card"
+                style={{
+                    marginBottom: '1.5rem',
+                    padding: '0.75rem 1rem',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '0.7rem',
+                    background: 'var(--bg-overlay)',
+                }}
+            >
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-dim)', fontSize: 'var(--text-sm)', fontWeight: 700 }}>
+                    <ClockAlert size={14} />
+                    Reminder summary
+                </div>
+                <div style={{ marginLeft: '0.3rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.3rem 0.55rem', borderRadius: '999px', border: '1px solid var(--border-subtle)', background: 'hsla(var(--primary) / 0.16)', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-main)' }}>
+                    Overdue: {summary.overdue}
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.3rem 0.55rem', borderRadius: '999px', border: '1px solid var(--border-subtle)', background: 'hsla(var(--primary) / 0.11)', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-main)' }}>
+                    Today: {summary.today}
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.3rem 0.55rem', borderRadius: '999px', border: '1px solid var(--border-subtle)', background: 'var(--bg-content)', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-main)' }}>
+                    Next 3 days: {summary.upcoming}
+                </div>
+                {viewMode === 'alert' && (
+                    <span style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', color: 'hsl(var(--primary))', fontWeight: 700 }}>
+                        Alert Focus: Alerts Only + Compact are active
+                    </span>
                 )}
             </div>
 
@@ -350,8 +604,10 @@ export default function CampOverview() {
                                         className="animate-fade"
                                         style={{
                                             display: 'grid',
-                                            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                                            gap: '1.5rem',
+                                            gridTemplateColumns: compactCards
+                                                ? 'repeat(auto-fill, minmax(220px, 1fr))'
+                                                : 'repeat(auto-fill, minmax(300px, 1fr))',
+                                            gap: compactCards ? '0.8rem' : '1.5rem',
                                             padding: '0 0.5rem'
                                         }}
                                     >
@@ -362,6 +618,8 @@ export default function CampOverview() {
                                                 platform={campaign.platform_data}
                                                 hasPendingReminders={campaign.hasPendingReminders}
                                                 highestPriority={campaign.highestPriority}
+                                                reminderState={campaign.reminderState}
+                                                viewMode={viewMode}
                                                 onEdit={openEdit}
                                             />
                                         ))}
