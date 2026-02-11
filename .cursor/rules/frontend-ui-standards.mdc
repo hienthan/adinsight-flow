@@ -1,0 +1,37 @@
+---
+description: Frontend UI/UX Standards and AI Implementation Guidelines
+globs: frontend/src/**/*.{tsx,ts,css}
+alwaysApply: true
+---
+
+# Frontend UI/UX Standards
+
+## 1. Tailwind CSS v4 Syntax
+- **CRITICAL**: Use parenthesis syntax for CSS variables.
+- ❌ `text-[var(--primary)]`, `bg-[var(--bg-content)]`
+- ✅ `text-(--primary)`, `bg-(--bg-content)`, `shadow-(--shadow-medium)`
+
+## 2. Component Selection (Library vs Native)
+- **Filters/Inputs**: Use **Native HTML** (`<input>`, `<select>`, `<button>`) inside `.filter-group` wrappers for filter bars. This ensures consistency with `AdInsightPage.tsx` and picks up global `index.css` styles.
+- **Modals/Tabs**: Use **HeroUI** (`@heroui/react`) for complex behavior, but **ALWAYS** override layout-critical padding and borders using `classNames` or inline `style` to prevent global CSS interference.
+
+## 3. Dark Mode & Theming
+- **Mandatory**: Use project-defined CSS variables for ALL colors and borders.
+- **Backgrounds**: `var(--bg-content)`, `var(--bg-main)`, `var(--bg-overlay)`
+- **Text**: `var(--text-main)`, `var(--text-dim)`, `var(--text-muted)`
+- **Borders**: `var(--border-subtle)`
+- **Primary**: `hsl(var(--primary))`
+
+## 4. Data Integrity
+- **Field Names**: Always verify against `db/*.md` or existing models.
+- **Example**: Use `notes` instead of `strategy_notes` for trend signal updates.
+
+## 5. Layout & Spacing
+- **Sections**: Use `gap-12` or `mb-8` between major sections to match `AdInsightPage.tsx`.
+- **Radii**: Use `rounded-xl` (12px) or `rounded-[18px]` for containers.
+- **Buttons**: Status view toggles must have a clear active state (Primary BG + White Text).
+
+## 6. Common Pitfalls to Avoid
+- **Double Borders**: Caused by HeroUI `variant="bordered"` combined with global `.filter-group` input styles.
+- **Clipping**: Avoid `overflow-hidden` on Modal bases if footer elements have shadows.
+- **Alignment**: Icons inside inputs MUST be absolutely positioned with `left-3`.

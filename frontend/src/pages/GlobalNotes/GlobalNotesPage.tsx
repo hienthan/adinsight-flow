@@ -83,7 +83,7 @@ export default function GlobalNotesPage() {
         onSuccess: (newNote) => {
             queryClient.invalidateQueries({ queryKey: ['global-notes'] });
             setSelectedNoteId(newNote.id);
-            startEditing(newNote as Note);
+            startEditing(newNote as unknown as Note);
         }
     });
 

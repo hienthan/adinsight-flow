@@ -9,7 +9,8 @@ import {
     Bell,
     History,
     BookOpen,
-    Settings
+    Settings,
+    TrendingUp // Import
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { CampaignReminder } from '../../types/campaign';
@@ -109,6 +110,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
                 {/* Ad Insight Section */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.75rem 0.5rem 0.65rem 0.5rem', textTransform: 'uppercase' }}>DSA Analytics</div>}
+
+                {/* NEW: Trend Signals Link */}
+                <NavLink to="/adinsight/trends" icon={TrendingUp}>
+                    Trend Signals
+                </NavLink>
 
                 {/* Platform: Klook (Collapsible Group) */}
                 <div>

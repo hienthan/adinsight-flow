@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@source "../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
 
 @layer base {
   :root {
@@ -397,10 +397,9 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* Custom Inputs & Selects */
-select,
-input,
-textarea {
+.filter-group input,
+.filter-group select,
+.filter-group textarea {
   background: var(--bg-content);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
@@ -413,14 +412,14 @@ textarea {
   font-family: var(--font-main);
 }
 
-select:focus,
-input:focus,
-textarea:focus {
+.filter-group input:focus,
+.filter-group select:focus,
+.filter-group textarea:focus {
   border-color: hsl(var(--primary));
   box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
 }
 
-::placeholder {
+.filter-group ::placeholder {
   color: var(--text-muted);
   opacity: 0.5;
   font-weight: 400;
