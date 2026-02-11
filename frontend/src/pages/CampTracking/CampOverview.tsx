@@ -10,6 +10,7 @@ import { pb } from '../../lib/pocketbase';
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type OverviewMode = 'comfortable' | 'compact' | 'alert';
 type ReminderQuickFilter = 'all' | 'overdue' | 'today' | 'upcoming';
+type FreshnessState = 'fresh' | 'watch' | 'stale';
 
 const VIEW_MODES: Array<{ id: OverviewMode; label: string; icon: typeof LayoutGrid }> = [
     { id: 'comfortable', label: 'Comfortable', icon: LayoutGrid },
@@ -37,13 +38,33 @@ const REMINDER_STATE_RANK: Record<ReminderState, number> = {
     none: 3,
 };
 
-const parseDateOnly = (input: string): Date => {
-    const isoDate = input.slice(0, 10);
+const parseDateOnly = (input?: string | null): Date | null => {
+    if (!input || typeof input !== 'string') return null;
+    const normalized = input.trim();
+    if (!normalized || normalized.toLowerCase() === 'n/a') return null;
+
+    // Keep YYYY-MM-DD as local date to avoid timezone drift.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+        const [year, month, day] = normalized.split('-').map(Number);
+        const parsedLocal = new Date(year, month - 1, day);
+        return Number.isNaN(parsedLocal.getTime()) ? null : parsedLocal;
+    }
+
+    // For timestamp strings from PocketBase (UTC), parse full datetime first.
+    const normalizedTimestamp = normalized.includes(' ') ? normalized.replace(' ', 'T') : normalized;
+    const parsedTimestamp = new Date(normalizedTimestamp);
+    if (!Number.isNaN(parsedTimestamp.getTime())) {
+        return parsedTimestamp;
+    }
+
+    const isoDate = normalized.slice(0, 10);
     const [year, month, day] = isoDate.split('-').map(Number);
     if (!year || !month || !day) {
-        return new Date(input);
+        const fallback = new Date(normalized);
+        return Number.isNaN(fallback.getTime()) ? null : fallback;
     }
-    return new Date(year, month - 1, day);
+    const parsed = new Date(year, month - 1, day);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
 const getStartOfDay = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -200,6 +221,7 @@ export default function CampOverview() {
 
         for (const reminder of campaignReminders) {
             const reminderDate = parseDateOnly(reminder.reminder_date);
+            if (!reminderDate) continue;
             const dayDiff = getDayDiff(reminderDate, now);
             const nextState: ReminderState =
                 dayDiff < 0 ? 'overdue' : dayDiff === 0 ? 'today' : dayDiff <= 3 ? 'upcoming' : 'none';
@@ -221,10 +243,22 @@ export default function CampOverview() {
             }
         }
 
-        // Check if changed in last 3 days
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-        const hasRecentChanges = new Date(campaign.updated) > threeDaysAgo;
+        const reviewedAt = campaign.last_reviewed_date ? parseDateOnly(campaign.last_reviewed_date) : null;
+        const reviewedAgeDays = reviewedAt ? Math.max(0, -getDayDiff(reviewedAt, now)) : null;
+        const freshnessState: FreshnessState = reviewedAgeDays === null
+            ? 'stale'
+            : (reviewedAgeDays <= 3 ? 'fresh' : reviewedAgeDays <= 7 ? 'watch' : 'stale');
+        const reviewOutcomeLabel = campaign.last_review_outcome === 'updated'
+            ? 'Updated'
+            : campaign.last_review_outcome === 'no_change'
+                ? 'No change'
+                : undefined;
+        const reviewedText = reviewedAgeDays === 0 ? 'Reviewed today' : `Reviewed ${reviewedAgeDays}d ago`;
+        const reviewStatusLabel = reviewedAgeDays === null
+            ? 'Never reviewed'
+            : reviewOutcomeLabel
+                ? `${reviewedText} • ${reviewOutcomeLabel}`
+                : reviewedText;
 
         return {
             ...campaign,
@@ -233,7 +267,9 @@ export default function CampOverview() {
             nearestDueInDays,
             hasPendingReminders: hasActionableReminder,
             highestPriority: hasActionableReminder ? priority : undefined,
-            hasRecentChanges,
+            freshnessState,
+            hasReviewed: reviewedAgeDays !== null,
+            reviewStatusLabel,
         };
     });
 
@@ -619,6 +655,9 @@ export default function CampOverview() {
                                                 hasPendingReminders={campaign.hasPendingReminders}
                                                 highestPriority={campaign.highestPriority}
                                                 reminderState={campaign.reminderState}
+                                                freshnessState={campaign.freshnessState}
+                                                hasReviewed={campaign.hasReviewed}
+                                                reviewStatusLabel={campaign.reviewStatusLabel}
                                                 viewMode={viewMode}
                                                 onEdit={openEdit}
                                             />

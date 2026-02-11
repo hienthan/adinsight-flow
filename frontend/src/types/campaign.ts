@@ -19,6 +19,7 @@ export interface Campaign {
     status: 'active' | 'paused' | 'testing' | 'archived';
     created_date: string;
     last_reviewed_date?: string;
+    last_review_outcome?: 'no_change' | 'updated';
     cpc?: number;
     max_daily_budget?: number;
     keywords?: string;

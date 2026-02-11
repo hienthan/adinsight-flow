@@ -1,14 +1,22 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Edit2, Key, AlertCircle, History, BellRing, Calendar } from 'lucide-react';
-import { Campaign, CampaignPlatform, CampaignChange, CampaignReminder } from '../../types/campaign';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Edit2, Key, History, CheckCircle2 } from 'lucide-react';
+import { Campaign, CampaignPlatform, CampaignChange } from '../../types/campaign';
 import { pb } from '../../lib/pocketbase';
 import { formatDate } from '../../lib/utils';
-import AddReminderModal from './AddReminderModal';
 
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type ViewMode = 'comfortable' | 'compact' | 'alert';
+type FreshnessState = 'fresh' | 'watch' | 'stale';
+
+const getLocalDateInputValue = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 const REMINDER_STYLES: Record<ReminderState, {
     cardBackground: string;
@@ -58,6 +66,9 @@ interface CampaignCardProps {
     hasPendingReminders?: boolean;
     highestPriority?: 'low' | 'medium' | 'high';
     reminderState?: ReminderState;
+    freshnessState?: FreshnessState;
+    hasReviewed?: boolean;
+    reviewStatusLabel?: string;
     viewMode?: ViewMode;
     onEdit?: (id: string) => void;
 }
@@ -68,14 +79,16 @@ export default function CampaignCard({
     hasPendingReminders,
     highestPriority,
     reminderState = 'none',
+    freshnessState = 'watch',
+    hasReviewed = false,
+    reviewStatusLabel,
     viewMode = 'comfortable',
     onEdit,
 }: CampaignCardProps) {
     const navigate = useNavigate();
     const location = useLocation();
-    const [isReminderModalOpen, setIsReminderModalOpen] = React.useState(false);
+    const queryClient = useQueryClient();
     const [showCPCTooltip, setShowCPCTooltip] = React.useState(false);
-    const [showReminderTooltip, setShowReminderTooltip] = React.useState(false);
 
     const { data: cpcChanges = [] } = useQuery<CampaignChange[]>({
         queryKey: ['campaign-cpc-changes', campaign.id],
@@ -88,20 +101,41 @@ export default function CampaignCard({
         },
     });
 
-    const { data: latestReminder } = useQuery<CampaignReminder>({
-        queryKey: ['campaign-latest-reminder', campaign.id],
-        queryFn: async () => {
-            const records = await pb.collection('campaign_reminders').getFullList<CampaignReminder>({
-                filter: `campaign = "${campaign.id}" && status = "pending"`,
-                sort: 'reminder_date', // Earliest pending first
-                limit: 1
+    const markReviewedMutation = useMutation({
+        mutationFn: async () => {
+            return await pb.collection('campaigns').update(campaign.id, {
+                last_reviewed_date: getLocalDateInputValue(),
+                last_review_outcome: 'no_change',
             });
-            return records[0] || null;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+            queryClient.invalidateQueries({ queryKey: ['campaign', campaign.id] });
         },
     });
 
     const compactView = viewMode === 'compact' || viewMode === 'alert';
     const reminderStyle = REMINDER_STYLES[reminderState];
+    const freshnessStyle: Record<FreshnessState, { label: string; color: string; bg: string; border: string }> = {
+        fresh: {
+            label: 'Fresh',
+            color: 'hsl(142 72% 32%)',
+            bg: 'hsla(142 72% 45% / 0.14)',
+            border: 'hsla(142 72% 40% / 0.34)',
+        },
+        watch: {
+            label: 'Watch',
+            color: 'hsl(38 95% 35%)',
+            bg: 'hsla(38 95% 55% / 0.18)',
+            border: 'hsla(38 95% 45% / 0.34)',
+        },
+        stale: {
+            label: 'Stale',
+            color: 'hsl(3 85% 38%)',
+            bg: 'hsla(3 85% 58% / 0.2)',
+            border: 'hsla(3 85% 48% / 0.38)',
+        },
+    };
 
     return (
         <div
@@ -130,8 +164,7 @@ export default function CampaignCard({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: compactView ? '0.5rem' : '0.75rem', gap: compactView ? '0.45rem' : '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0, position: 'relative' }}>
                         <h3
-                            onMouseEnter={() => setShowReminderTooltip(true)}
-                            onMouseLeave={() => setShowReminderTooltip(false)}
+                            title={campaign.name}
                             style={{
                                 fontSize: compactView ? '0.78rem' : '0.9rem',
                                 fontWeight: 800,
@@ -147,75 +180,17 @@ export default function CampaignCard({
                         {campaign.is_dsa === false && (
                             <Key size={compactView ? 11 : 12} style={{ color: 'hsl(var(--primary))', flexShrink: 0 }} />
                         )}
-
-                        {reminderState !== 'none' && (
-                            <span
-                                style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    padding: compactView ? '0.08rem 0.3rem' : '0.12rem 0.4rem',
-                                    borderRadius: '999px',
-                                    fontSize: compactView ? '0.58rem' : '0.62rem',
-                                    fontWeight: 800,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.03em',
-                                    color: reminderStyle.badgeColor,
-                                    background: reminderStyle.badgeBackground,
-                                    border: `1px solid ${reminderStyle.badgeBorder}`,
-                                    flexShrink: 0,
-                                }}
-                            >
-                                {reminderState === 'overdue' ? 'Overdue' : reminderState === 'today' ? 'Today' : 'Soon'}
-                            </span>
-                        )}
-
-                        {/* Tooltip for Latest Reminder */}
-                        {showReminderTooltip && latestReminder && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                zIndex: 1000,
-                                marginTop: '0.4rem',
-                                background: 'var(--bg-content)',
-                                border: '1px solid var(--border-subtle)',
-                                borderRadius: '10px',
-                                padding: '0.85rem',
-                                boxShadow: 'var(--shadow-medium)',
-                                minWidth: '240px',
-                                pointerEvents: 'none'
-                            }}>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.6rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <BellRing size={10} color="hsl(var(--primary))" /> Latest Checkpoint
-                                </div>
-                                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-main)', marginBottom: '0.5rem', lineHeight: 1.4 }}>
-                                    {latestReminder.message}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: 600 }}>
-                                    <Calendar size={10} /> {formatDate(latestReminder.reminder_date)}
-                                </div>
-                                {latestReminder.check_metrics && latestReminder.check_metrics.length > 0 && (
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.6rem' }}>
-                                        {latestReminder.check_metrics.map(m => (
-                                            <span key={m} style={{ fontSize: '0.6rem', background: 'var(--accent-glow)', color: 'hsl(var(--primary))', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700, border: '1px solid hsla(var(--primary) / 0.1)' }}>
-                                                {m}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: compactView ? '0.4rem' : '0.6rem', flexShrink: 0, position: 'relative' }}>
-                        {/* Compact Metrics: CPC - Budget */}
+                        {/* Compact Metric: CPC only */}
                         <div
                             onMouseEnter={() => setShowCPCTooltip(true)}
                             onMouseLeave={() => setShowCPCTooltip(false)}
                             style={{
                                 fontSize: compactView ? '0.68rem' : '0.75rem',
                                 fontWeight: 800,
-                                color: 'var(--text-main)',
+                                color: platform?.color || 'hsl(var(--primary))',
                                 background: 'var(--bg-overlay)',
                                 padding: compactView ? '0.15rem 0.38rem' : '0.2rem 0.5rem',
                                 borderRadius: '5px',
@@ -224,10 +199,6 @@ export default function CampaignCard({
                             }}
                         >
                             <span>{campaign.cpc?.toFixed(0) || '0'}</span>
-                            <span style={{ margin: '0 0.3rem', color: 'var(--text-muted)', opacity: 0.5 }}>—</span>
-                            <span style={{ color: platform?.color || 'hsl(var(--primary))' }}>
-                                {campaign.max_daily_budget ? (campaign.max_daily_budget >= 1000 ? `${(campaign.max_daily_budget / 1000).toFixed(0)}k` : campaign.max_daily_budget) : '0'}
-                            </span>
                         </div>
 
                         {/* Tooltip for CPC Changes (Moved to Metrics) */}
@@ -262,16 +233,25 @@ export default function CampaignCard({
                             </div>
                         )}
 
-                        {reminderState !== 'none' && (
-                            <AlertCircle
-                                size={compactView ? 11 : 12}
-                                style={{
-                                    color: reminderStyle.alertColor,
-                                    opacity: reminderState === 'upcoming' ? 0.75 : 1,
-                                    flexShrink: 0,
-                                }}
-                            />
-                        )}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                markReviewedMutation.mutate();
+                            }}
+                            disabled={markReviewedMutation.isPending}
+                            className="hero-btn-ghost"
+                            style={{
+                                padding: compactView ? '0.15rem' : '0.2rem',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                opacity: markReviewedMutation.isPending ? 0.55 : 0.9,
+                            }}
+                            title="Mark reviewed (no change)"
+                        >
+                            <CheckCircle2 size={compactView ? 12 : 13} style={{ opacity: 0.85 }} />
+                        </button>
 
                         <button
                             onClick={(e) => {
@@ -291,7 +271,76 @@ export default function CampaignCard({
                     </div>
                 </div>
 
-                <div style={{ marginBottom: compactView ? '0.5rem' : '0.75rem', borderBottom: '1px solid var(--border-subtle)' }} />
+                <div style={{ marginBottom: compactView ? '0.35rem' : '0.55rem', borderBottom: '1px solid var(--border-subtle)' }} />
+
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.4rem',
+                        marginBottom: compactView ? '0.45rem' : '0.65rem',
+                        minHeight: compactView ? '18px' : '20px',
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0, overflow: 'hidden' }}>
+                        {reminderState !== 'none' && (
+                            <span
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: compactView ? '0.06rem 0.28rem' : '0.1rem 0.35rem',
+                                    borderRadius: '999px',
+                                    fontSize: compactView ? '0.54rem' : '0.6rem',
+                                    fontWeight: 800,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.03em',
+                                    color: reminderStyle.badgeColor,
+                                    background: reminderStyle.badgeBackground,
+                                    border: `1px solid ${reminderStyle.badgeBorder}`,
+                                    flexShrink: 0,
+                                }}
+                                title={reminderState === 'overdue' ? 'Overdue reminder' : reminderState === 'today' ? 'Due today' : 'Upcoming reminder'}
+                            >
+                                {reminderState === 'overdue' ? 'Overdue' : reminderState === 'today' ? 'Today' : 'Soon'}
+                            </span>
+                        )}
+                        <History size={compactView ? 10 : 11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                        <span
+                            style={{
+                                fontSize: compactView ? '0.58rem' : '0.65rem',
+                                color: 'var(--text-dim)',
+                                fontWeight: 700,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}
+                            title={reviewStatusLabel || 'No review data'}
+                        >
+                            {reviewStatusLabel || 'No review data'}
+                        </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                        <span
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                padding: compactView ? '0.06rem 0.28rem' : '0.1rem 0.35rem',
+                                borderRadius: '999px',
+                                fontSize: compactView ? '0.54rem' : '0.6rem',
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.03em',
+                                color: freshnessStyle[freshnessState].color,
+                                background: freshnessStyle[freshnessState].bg,
+                                border: `1px solid ${freshnessStyle[freshnessState].border}`,
+                            }}
+                        >
+                            {freshnessStyle[freshnessState].label}
+                        </span>
+                    </div>
+                </div>
 
                 {/* Fixed-Height Notes Section */}
                 <div
@@ -315,12 +364,6 @@ export default function CampaignCard({
                     {campaign.general_notes || 'Define optimization notes...'}
                 </div>
             </div>
-
-            <AddReminderModal
-                campaignId={campaign.id}
-                isOpen={isReminderModalOpen}
-                onClose={() => setIsReminderModalOpen(false)}
-            />
         </div>
     );
 }

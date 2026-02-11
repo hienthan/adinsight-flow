@@ -11,6 +11,24 @@ interface CampaignFormProps {
     onSuccess?: (campaign: Campaign) => void;
 }
 
+const getLocalDateInputValue = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const normalizeForComparison = (field: keyof Campaign, value: any) => {
+    if (field === 'created_date') return formatDateForInput(value || '');
+    if (field === 'is_dsa') return Boolean(value);
+    if (field === 'cpc' || field === 'max_daily_budget') return value === null || value === undefined ? null : Number(value);
+    if (field === 'name' || field === 'status' || field === 'platform' || field === 'keywords' || field === 'description' || field === 'general_notes') {
+        return (value ?? '').toString().trim();
+    }
+    return value;
+};
+
 export default function CampaignForm({ campaignId, onCancel, onSuccess }: CampaignFormProps) {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -29,7 +47,7 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
         description: '',
         general_notes: '',
         is_dsa: true, // Default to true
-        created_date: formatDateForInput(new Date().toISOString()),
+        created_date: getLocalDateInputValue(),
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -96,6 +114,18 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                 // --- CHANGE DETECTION ---
                 const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'keywords'];
                 const changes: any[] = [];
+                const editableFields: (keyof Campaign)[] = [
+                    'name',
+                    'status',
+                    'platform',
+                    'cpc',
+                    'max_daily_budget',
+                    'keywords',
+                    'description',
+                    'general_notes',
+                    'is_dsa',
+                    'created_date',
+                ];
 
                 trackedFields.forEach((field) => {
                     const oldValue = existingCampaign[field];
@@ -110,7 +140,17 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                     }
                 });
 
-                savedRecord = await pb.collection('campaigns').update<Campaign>(campaignId, formData);
+                const hasBusinessUpdates = editableFields.some((field) => {
+                    const oldValue = normalizeForComparison(field, existingCampaign[field]);
+                    const newValue = normalizeForComparison(field, formData[field]);
+                    return JSON.stringify(oldValue) !== JSON.stringify(newValue);
+                });
+                const updatePayload = {
+                    ...formData,
+                    last_reviewed_date: getLocalDateInputValue(),
+                    last_review_outcome: hasBusinessUpdates ? 'updated' : 'no_change',
+                };
+                savedRecord = await pb.collection('campaigns').update<Campaign>(campaignId, updatePayload);
 
                 for (const change of changes) {
                     await pb.collection('campaign_changes').create({
