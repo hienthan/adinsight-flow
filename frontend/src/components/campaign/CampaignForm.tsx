@@ -29,6 +29,12 @@ const normalizeForComparison = (field: keyof Campaign, value: any) => {
     return value;
 };
 
+const toComparableNumber = (value: any): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+};
+
 export default function CampaignForm({ campaignId, onCancel, onSuccess }: CampaignFormProps) {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -145,10 +151,20 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                     const newValue = normalizeForComparison(field, formData[field]);
                     return JSON.stringify(oldValue) !== JSON.stringify(newValue);
                 });
+
+                const previousCpc = toComparableNumber(existingCampaign.cpc);
+                const nextCpc = toComparableNumber(formData.cpc);
+                const cpcDiff = previousCpc !== null && nextCpc !== null ? nextCpc - previousCpc : 0;
+                const cpcChanged = Math.abs(cpcDiff) >= 0.0001;
+                const reviewOutcome: Campaign['last_review_outcome'] =
+                    cpcChanged
+                        ? (cpcDiff > 0 ? 'cpc_increase' : 'cpc_reduce')
+                        : (hasBusinessUpdates ? 'updated' : 'no_change');
+
                 const updatePayload = {
                     ...formData,
                     last_reviewed_date: getLocalDateInputValue(),
-                    last_review_outcome: hasBusinessUpdates ? 'updated' : 'no_change',
+                    last_review_outcome: reviewOutcome,
                 };
                 savedRecord = await pb.collection('campaigns').update<Campaign>(campaignId, updatePayload);
 

@@ -248,11 +248,15 @@ export default function CampOverview() {
         const freshnessState: FreshnessState = reviewedAgeDays === null
             ? 'stale'
             : (reviewedAgeDays <= 3 ? 'fresh' : reviewedAgeDays <= 7 ? 'watch' : 'stale');
-        const reviewOutcomeLabel = campaign.last_review_outcome === 'updated'
-            ? 'Updated'
-            : campaign.last_review_outcome === 'no_change'
-                ? 'No change'
-                : undefined;
+        const reviewOutcomeLabel = campaign.last_review_outcome === 'cpc_increase'
+            ? 'CPC ↑'
+            : campaign.last_review_outcome === 'cpc_reduce'
+                ? 'CPC ↓'
+                : campaign.last_review_outcome === 'updated'
+                    ? 'Updated'
+                    : campaign.last_review_outcome === 'no_change'
+                        ? 'No change'
+                        : undefined;
         const reviewedText = reviewedAgeDays === 0 ? 'Reviewed today' : `Reviewed ${reviewedAgeDays}d ago`;
         const reviewStatusLabel = reviewedAgeDays === null
             ? 'Never reviewed'
