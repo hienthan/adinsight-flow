@@ -1,9 +1,11 @@
 This XML file does not appear to have any style information associated with it. The document tree is shown below.
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\
+<!-- // Things to do city worldwide - /coureg/ -->
 <sitemap>
 <loc>https://www.klook.com/zh-HK/sitemap-country-plain.xml</loc>
 <lastmod>2022-09-06</lastmod>
 </sitemap>
+<!-- /city/... things-to-do -->
 <sitemap>
 <loc>https://www.klook.com/zh-HK/sitemap-city-plain.xml</loc>
 <lastmod>2022-09-06</lastmod>
@@ -16,14 +18,17 @@ This XML file does not appear to have any style information associated with it. 
 <loc>https://www.klook.com/zh-HK/sitemap-experiences-activity-plain.xml</loc>
 <lastmod>2026-02-03</lastmod>
 </sitemap> -->
+<!-- /hotel/hubpage/ -->
 <sitemap>
 <loc>https://www.klook.com/zh-HK/sitemap-hotel-hubpage-plain.xml</loc>
 <lastmod>2026-02-02</lastmod>
 </sitemap>
+<!-- /fnb/city-highlight/, /city-theme/, /city-area/, /city-acategory/, /city-acuisine/ -->
 <sitemap>
 <loc>https://www.klook.com/zh-HK/sitemap-fnb-city-plain.xml</loc>
 <lastmod>2026-02-03</lastmod>
 </sitemap>
+<!-- /airport-transfer/service/, /car-rental/city/, /car-rental/supplier/, /car-rental/poi/ -->
 <sitemap>
 <loc>https://www.klook.com/zh-HK/sitemap-car-rental-plain.xml</loc>
 <lastmod>2026-02-02</lastmod>
@@ -32,10 +37,13 @@ This XML file does not appear to have any style information associated with it. 
 <loc>https://www.klook.com/zh-HK/sitemap-mobility-plain.xml</loc>
 <lastmod>2026-01-23</lastmod>
 </sitemap> -->
+
+<!-- Specific city, dest tickets... not relevant -  /event/ -->
 <sitemap>
 <loc>https://www.klook.com/zh-HK/sitemap-event-city-plain.xml</loc>
 <lastmod>2026-02-03</lastmod>
 </sitemap>
+<!-- Specific event - /activity/ and /event-detail/ -->
 <sitemap>
 <loc>https://www.klook.com/zh-HK/sitemap-event-detail-plain.xml</loc>
 <lastmod>2026-02-03</lastmod>

@@ -2,15 +2,12 @@
 // Migrated from App.tsx for the new router structure
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
 import { pb } from '../../lib/pocketbase';
 import {
     Search,
     MapPin,
     Download,
-    Lock,
     ExternalLink,
-    ShieldCheck,
 } from 'lucide-react';
 
 interface PageRecord {
@@ -22,41 +19,59 @@ interface PageRecord {
     tier: string;
     canonical_id: string;
     translated_title_vi: string;
+    funnel_stage?: string;
     include_for_dsa: boolean;
     exclude_for_dsa: boolean;
     is_private: boolean;
     languages: string[];
     content_type: string;
     sub_tag?: string;  // NEW: for mobility URLs
+    metadata?: {
+        funnel_rule_hit?: string;
+        tier_source?: string;
+        year_detected?: string;
+        geo_source?: string;
+    };
 }
 
+const DEFAULT_SITEMAP_TAGS = ['blog', 'activity', 'mobility'];
+
+const toTitleCase = (value: string) =>
+    value
+        .split('-')
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+const buildSitemapTagFilter = (tag: string) => {
+    if (tag === 'activity') {
+        return '(sitemap_tag = "activity" || sitemap_tag = "experiences-activity")';
+    }
+    if (tag === 'mobility') {
+        return '(sitemap_tag = "mobility" || sitemap_tag = "experiences-mobility")';
+    }
+    return `sitemap_tag = "${tag}"`;
+};
+
 export default function AdInsightPage() {
-    const { content } = useParams<{ content: string }>(); // Read URL param
-    const isMobility = content === 'mobility';
-
-    // Set sitemap_tag based on content type
-    const selectedTag = isMobility ? 'mobility' : 'experiences-activity';
-
     const [pages, setPages] = useState<PageRecord[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(100);
-    // const [selectedTag] = useState('experiences-activity'); // REMOVED - uses derived variable
-    const [selectedLang] = useState('zh-HK');
-    const [searchInput, setSearchInput] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [filterSitemapTag, setFilterSitemapTag] = useState('blog');
+    const [searchTitleInput, setSearchTitleInput] = useState('');
+    const [searchTitleTerm, setSearchTitleTerm] = useState('');
     const [filterTier, setFilterTier] = useState('');
+    const [filterFunnelStage, setFilterFunnelStage] = useState('');
     const [filterCountry, setFilterCountry] = useState('');
-    const [filterPrivate, setFilterPrivate] = useState<boolean | null>(null);
     const [filterLanguage, setFilterLanguage] = useState('all');
-    const [filterSubTag, setFilterSubTag] = useState('');  // NEW: sub_tag filter
+    const [sitemapTags, setSitemapTags] = useState<string[]>(DEFAULT_SITEMAP_TAGS);
     const [countries, setCountries] = useState<string[]>([]);
-    const [subTags, setSubTags] = useState<string[]>([]);  // NEW: available sub_tags
     const [exporting, setExporting] = useState(false);
 
-    // Fetch countries and sub_tags metadata
+    // Fetch countries metadata
     useEffect(() => {
         const fetchMeta = async () => {
             try {
@@ -64,9 +79,17 @@ export default function AdInsightPage() {
                     sort: 'value'
                 });
                 const uniqueCountries = Array.from(new Set(records.filter(r => r.type === 'country').map(r => r.value))).sort();
-                const uniqueSubTags = Array.from(new Set(records.filter(r => r.type === 'sub_tag').map(r => r.value))).sort();
+                const metadataTags = Array.from(
+                    new Set(
+                        records
+                            .filter((r) => r.type === 'sitemap_tag')
+                            .map((r) => String(r.value || '').split(':')[0])
+                            .filter(Boolean)
+                    )
+                ).sort();
                 setCountries(uniqueCountries);
-                setSubTags(uniqueSubTags);
+                const merged = Array.from(new Set([...DEFAULT_SITEMAP_TAGS, ...metadataTags]));
+                setSitemapTags(merged);
             } catch (err) {
                 console.error('Meta fetch error', err);
             }
@@ -78,8 +101,20 @@ export default function AdInsightPage() {
         switch (tier) {
             case '1': return { background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' };
             case '2': return { background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.2)' };
-            case '3': return { background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.2)' };
+            case '3': return { background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', border: '1px solid rgba(99, 102, 241, 0.2)' };
+            case '5': return { background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' };
             default: return { background: 'var(--bg-overlay)', color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' };
+        }
+    };
+
+    const getFunnelStyle = (stage?: string) => {
+        switch (stage) {
+            case 'readiness':
+                return { background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' };
+            case 'planning':
+                return { background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' };
+            default:
+                return { background: 'rgba(107, 114, 128, 0.1)', color: '#6b7280', border: '1px solid rgba(107, 114, 128, 0.2)' };
         }
     };
 
@@ -88,7 +123,7 @@ export default function AdInsightPage() {
         setLoading(true);
 
         try {
-            let filterString = `sitemap_tag = "${selectedTag}"`;
+            let filterString = buildSitemapTagFilter(filterSitemapTag);
 
             if (filterLanguage !== 'all') {
                 if (filterLanguage === 'both') {
@@ -98,11 +133,10 @@ export default function AdInsightPage() {
                 }
             }
 
-            if (searchTerm) filterString += ` && slug ~ "${searchTerm}"`;
+            if (searchTitleTerm) filterString += ` && translated_title_vi ~ "${searchTitleTerm}"`;
             if (filterTier) filterString += ` && tier = "${filterTier}"`;
+            if (filterFunnelStage) filterString += ` && funnel_stage = "${filterFunnelStage}"`;
             if (filterCountry) filterString += ` && country = "${filterCountry}"`;
-            if (filterPrivate !== null) filterString += ` && is_private = ${filterPrivate}`;
-            if (filterSubTag) filterString += ` && sub_tag = "${filterSubTag}"`; // NEW
 
             const result = await pb.collection('pages').getList<PageRecord>(pageNum, perPage, {
                 sort: 'tier',
@@ -119,23 +153,23 @@ export default function AdInsightPage() {
         } finally {
             setLoading(false);
         }
-    }, [selectedTag, searchTerm, filterTier, filterCountry, filterPrivate, filterLanguage, filterSubTag, perPage]);
+    }, [filterSitemapTag, searchTitleTerm, filterTier, filterFunnelStage, filterCountry, filterLanguage, perPage]);
 
     // Debounced search
     useEffect(() => {
         const timer = setTimeout(() => {
-            setSearchTerm(searchInput);
+            setSearchTitleTerm(searchTitleInput);
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchInput]);
+    }, [searchTitleInput]);
 
     useEffect(() => {
         setCurrentPage(1);
         fetchPages(1);
-    }, [selectedTag, selectedLang, searchTerm, filterTier, filterCountry, filterPrivate, filterLanguage, filterSubTag, perPage]);
+    }, [filterSitemapTag, searchTitleTerm, filterTier, filterFunnelStage, filterCountry, filterLanguage, perPage]);
 
     const [showExportOptions, setShowExportOptions] = useState(false);
-    const [selectedFields, setSelectedFields] = useState<string[]>(['country', 'city', 'tier', 'privacy']);
+    const [selectedFields, setSelectedFields] = useState<string[]>(['funnel_stage', 'tier', 'country', 'city']);
     const [exportFileName, setExportFileName] = useState('');
 
     const toggleField = (field: string) => {
@@ -145,7 +179,7 @@ export default function AdInsightPage() {
     };
 
     const handleExport = async () => {
-        let filterString = `sitemap_tag = "${selectedTag}"`;
+        let filterString = buildSitemapTagFilter(filterSitemapTag);
 
         if (filterLanguage !== 'all') {
             if (filterLanguage === 'both') {
@@ -155,11 +189,10 @@ export default function AdInsightPage() {
             }
         }
 
-        if (searchTerm) filterString += ` && slug ~ "${searchTerm}"`;
+        if (searchTitleTerm) filterString += ` && translated_title_vi ~ "${searchTitleTerm}"`;
         if (filterTier) filterString += ` && tier = "${filterTier}"`;
+        if (filterFunnelStage) filterString += ` && funnel_stage = "${filterFunnelStage}"`;
         if (filterCountry) filterString += ` && country = "${filterCountry}"`;
-        if (filterPrivate !== null) filterString += ` && is_private = ${filterPrivate}`;
-        if (filterSubTag) filterString += ` && sub_tag = "${filterSubTag}"`;
 
         try {
             setExporting(true);
@@ -195,11 +228,23 @@ export default function AdInsightPage() {
                 if (selectedFields.includes('tier')) {
                     labelParts.push(`Tier${record.tier || 'Unknown'}`);
                 }
-                if (selectedFields.includes('privacy')) {
-                    labelParts.push(record.is_private ? 'Private' : 'Public');
+                if (selectedFields.includes('funnel_stage')) {
+                    labelParts.push(record.funnel_stage || 'awareness');
                 }
                 if (selectedFields.includes('sub_tag') && record.sub_tag) {
                     labelParts.push(record.sub_tag);
+                }
+                if (selectedFields.includes('funnel_rule_hit') && record.metadata?.funnel_rule_hit) {
+                    labelParts.push(record.metadata.funnel_rule_hit);
+                }
+                if (selectedFields.includes('tier_source') && record.metadata?.tier_source) {
+                    labelParts.push(record.metadata.tier_source);
+                }
+                if (selectedFields.includes('year_detected') && record.metadata?.year_detected) {
+                    labelParts.push(record.metadata.year_detected);
+                }
+                if (selectedFields.includes('geo_source') && record.metadata?.geo_source) {
+                    labelParts.push(record.metadata.geo_source);
                 }
 
                 const labels = labelParts.join(';');
@@ -212,12 +257,12 @@ export default function AdInsightPage() {
             const urlObj = URL.createObjectURL(blob);
             const a = document.createElement('a');
             const lang = filterLanguage !== 'all' && filterLanguage !== 'both' ? filterLanguage : 'all';
-            const sitemap = selectedTag.replace('experiences-', '');
+            const sitemap = filterSitemapTag;
             const country = filterCountry ? filterCountry.toLowerCase().replace(/\s+/g, '-') : 'all';
-            const privacy = filterPrivate === null ? 'all' : (filterPrivate ? 'private' : 'public');
+            const funnel = filterFunnelStage || 'all';
             const tier = filterTier ? `tier${filterTier}` : 'all';
 
-            const defaultName = `${lang}-${sitemap}-${country}-${privacy}-${tier}-${allRecords.length}`;
+            const defaultName = `${lang}-${sitemap}-${country}-${funnel}-${tier}-${allRecords.length}`;
             a.download = `${exportFileName || defaultName}.csv`;
             a.href = urlObj;
             a.click();
@@ -233,16 +278,16 @@ export default function AdInsightPage() {
     };
 
     const handleReset = () => {
+        setFilterSitemapTag('blog');
         setFilterTier('');
+        setFilterFunnelStage('');
         setFilterCountry('');
-        setFilterPrivate(null);
         setFilterLanguage('all');
-        setFilterSubTag('');  // NEW
-        setSearchTerm('');
-        setSearchInput('');
+        setSearchTitleTerm('');
+        setSearchTitleInput('');
     };
 
-    const isFiltered = searchTerm || filterTier || filterCountry || filterPrivate !== null || filterLanguage !== 'all' || filterSubTag;
+    const isFiltered = searchTitleTerm || filterTier || filterFunnelStage || filterCountry || filterLanguage !== 'all' || filterSitemapTag !== 'blog';
 
     return (
         <div className="page-container">
@@ -273,10 +318,10 @@ export default function AdInsightPage() {
                     </div>
                     <div>
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>
-                            {isMobility ? 'Mobility Analytics' : 'Activity Analytics'}
+                            Klook URL Analytics
                         </h3>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', margin: 0 }}>
-                            Platform: Klook | Tag: {selectedTag}
+                            Platform: Klook | Tag: {filterSitemapTag}
                         </p>
                     </div>
                 </div>
@@ -294,27 +339,28 @@ export default function AdInsightPage() {
             {/* Filter Bar */}
             <section className="filter-bar">
                 <div className="filter-group">
-                    <label>Search Slug</label>
+                    <label>Search Title</label>
                     <div style={{ position: 'relative' }}>
                         <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
                         <input
                             type="text"
                             placeholder="Type to search..."
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && setSearchTerm(searchInput)}
+                            value={searchTitleInput}
+                            onChange={(e) => setSearchTitleInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && setSearchTitleTerm(searchTitleInput)}
                             style={{ width: '240px', paddingLeft: '2.5rem' }}
                         />
                     </div>
                 </div>
 
                 <div className="filter-group">
-                    <label>Language</label>
-                    <select value={filterLanguage} onChange={(e) => setFilterLanguage(e.target.value)}>
-                        <option value="all">All Languages</option>
-                        <option value="zh-HK">zh-HK Only</option>
-                        <option value="zh-TW">zh-TW Only</option>
-                        <option value="both">Both (zh-HK & zh-TW)</option>
+                    <label>Sitemap Tag</label>
+                    <select value={filterSitemapTag} onChange={(e) => setFilterSitemapTag(e.target.value)}>
+                        {sitemapTags.map((tag) => (
+                            <option key={tag} value={tag}>
+                                {toTitleCase(tag)}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
@@ -334,28 +380,15 @@ export default function AdInsightPage() {
                     </datalist>
                 </div>
 
-                {/* Hide Private Filter for Mobility if needed, currently showing for logic completeness unless requested to hide */}
-                {!isMobility && (
-                    <div className="filter-group">
-                        <label>Private</label>
-                        <select value={filterPrivate === null ? '' : filterPrivate.toString()} onChange={(e) => setFilterPrivate(e.target.value === '' ? null : e.target.value === 'true')}>
-                            <option value="">All Types</option>
-                            <option value="false">Public</option>
-                            <option value="true">Private</option>
-                        </select>
-                    </div>
-                )}
-
-                {/* Sub-tag Filter - Primary for Mobility */}
-                {isMobility && (
-                    <div className="filter-group">
-                        <label>Sub-tag</label>
-                        <select value={filterSubTag} onChange={(e) => setFilterSubTag(e.target.value)}>
-                            <option value="">All Sub-tags</option>
-                            {subTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
-                        </select>
-                    </div>
-                )}
+                <div className="filter-group">
+                    <label>Funnel Stage</label>
+                    <select value={filterFunnelStage} onChange={(e) => setFilterFunnelStage(e.target.value)}>
+                        <option value="">All Stages</option>
+                        <option value="awareness">Awareness</option>
+                        <option value="planning">Planning</option>
+                        <option value="readiness">Readiness</option>
+                    </select>
+                </div>
 
                 <div className="filter-group">
                     <label>Tier</label>
@@ -363,7 +396,18 @@ export default function AdInsightPage() {
                         <option value="">All Tiers</option>
                         <option value="1">Tier 1</option>
                         <option value="2">Tier 2</option>
+                        <option value="3">Tier 3</option>
                         <option value="5">Tier 5</option>
+                    </select>
+                </div>
+
+                <div className="filter-group">
+                    <label>Language</label>
+                    <select value={filterLanguage} onChange={(e) => setFilterLanguage(e.target.value)}>
+                        <option value="all">All Languages</option>
+                        <option value="zh-HK">zh-HK Only</option>
+                        <option value="zh-TW">zh-TW Only</option>
+                        <option value="both">Both (zh-HK & zh-TW)</option>
                     </select>
                 </div>
 
@@ -398,29 +442,9 @@ export default function AdInsightPage() {
                                 <th style={{ width: '80px' }}>ID</th>
                                 <th style={{ width: '320px' }}>Slug</th>
                                 <th>Smart Title</th>
-
-                                {/* Dynamic Column Ordering */}
-                                {isMobility ? (
-                                    <>
-                                        <th style={{ width: '150px' }}>Sub-tag</th>
-                                        <th style={{ width: '60px' }}>Tier</th>
-                                    </>
-                                ) : (
-                                    <>
-                                        <th style={{ width: '60px' }}>Tier</th>
-                                        <th style={{ width: '150px' }}>Sub-tag</th>
-                                    </>
-                                )}
-
+                                <th style={{ width: '120px' }}>Funnel</th>
+                                <th style={{ width: '60px' }}>Tier</th>
                                 <th>Location</th>
-
-                                {/* Hide Access/DSA for Mobility */}
-                                {!isMobility && (
-                                    <>
-                                        <th style={{ width: '100px' }}>Access</th>
-                                        <th style={{ width: '60px', textAlign: 'center' }}>DSA</th>
-                                    </>
-                                )}
                             </tr>
                         </thead>
                         <tbody>
@@ -436,52 +460,28 @@ export default function AdInsightPage() {
                                         </a>
                                     </td>
                                     <td style={{ fontWeight: 600, color: 'var(--text-main)', minWidth: '200px' }}>{page.translated_title_vi}</td>
-
-                                    {/* Dynamic Row Rendering */}
-                                    {isMobility ? (
-                                        <>
-                                            <td style={{ width: '150px' }}>
-                                                {page.sub_tag ? (
-                                                    <div className="hero-badge" style={{
-                                                        background: 'rgba(139, 92, 246, 0.1)',
-                                                        color: '#8b5cf6',
-                                                        border: '1px solid rgba(139, 92, 246, 0.2)',
-                                                        textTransform: 'capitalize',
-                                                        fontSize: '0.7rem',
-                                                        padding: '0.2rem 0.5rem',
-                                                        borderRadius: '6px'
-                                                    }}>
-                                                        {page.sub_tag.replace(/-/g, ' ')}
-                                                    </div>
-                                                ) : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>}
-                                            </td>
-                                            <td style={{ width: '60px' }}>
-                                                <div className="hero-badge" style={{
-                                                    textTransform: 'none', padding: '0.2rem 0.5rem', fontSize: '0.75rem',
-                                                    fontWeight: 800, borderRadius: '6px', minWidth: '24px', justifyContent: 'center',
-                                                    ...getTierStyle(page.tier)
-                                                }}>
-                                                    {page.tier}
-                                                </div>
-                                            </td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td style={{ width: '60px' }}>
-                                                <div className="hero-badge" style={{
-                                                    textTransform: 'none', padding: '0.2rem 0.5rem', fontSize: '0.75rem',
-                                                    fontWeight: 800, borderRadius: '6px', minWidth: '24px', justifyContent: 'center',
-                                                    ...getTierStyle(page.tier)
-                                                }}>
-                                                    {page.tier}
-                                                </div>
-                                            </td>
-                                            <td style={{ width: '150px' }}>
-                                                {/* Allow Activity to have sub-tag in future */}
-                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
-                                            </td>
-                                        </>
-                                    )}
+                                    <td style={{ width: '120px' }}>
+                                        <div className="hero-badge" style={{
+                                            textTransform: 'capitalize',
+                                            padding: '0.2rem 0.5rem',
+                                            fontSize: '0.72rem',
+                                            fontWeight: 700,
+                                            borderRadius: '6px',
+                                            justifyContent: 'center',
+                                            ...getFunnelStyle(page.funnel_stage)
+                                        }}>
+                                            {page.funnel_stage || 'awareness'}
+                                        </div>
+                                    </td>
+                                    <td style={{ width: '60px' }}>
+                                        <div className="hero-badge" style={{
+                                            textTransform: 'none', padding: '0.2rem 0.5rem', fontSize: '0.75rem',
+                                            fontWeight: 800, borderRadius: '6px', minWidth: '24px', justifyContent: 'center',
+                                            ...getTierStyle(page.tier)
+                                        }}>
+                                            {page.tier}
+                                        </div>
+                                    </td>
 
                                     <td style={{ minWidth: '150px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -489,34 +489,13 @@ export default function AdInsightPage() {
                                             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)', fontWeight: 500 }}>{page.city}, {page.country}</span>
                                         </div>
                                     </td>
-
-                                    {!isMobility && (
-                                        <>
-                                            <td style={{ width: '100px' }}>
-                                                {page.is_private ?
-                                                    <div className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.15)', textTransform: 'none', gap: '0.4rem', borderRadius: '6px' }}>
-                                                        <Lock size={12} /> <span>Private</span>
-                                                    </div> :
-                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, paddingLeft: '0.5rem' }}>Public</span>
-                                                }
-                                            </td>
-                                            <td style={{ width: '60px', textAlign: 'center' }}>
-                                                {page.include_for_dsa ?
-                                                    <div title="DSA Active" style={{ color: '#22c55e', display: 'flex', justifyContent: 'center' }}>
-                                                        <ShieldCheck size={18} strokeWidth={2.5} />
-                                                    </div> :
-                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
-                                                }
-                                            </td>
-                                        </>
-                                    )}
                                 </tr>
                             ))}
                             {loading && (
-                                <tr><td colSpan={isMobility ? 6 : 8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>Loading next batch...</td></tr>
+                                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>Loading next batch...</td></tr>
                             )}
                             {pages.length === 0 && !loading && (
-                                <tr><td colSpan={isMobility ? 6 : 8} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-dim)' }}>No records found for active filters.</td></tr>
+                                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-dim)' }}>No records found for active filters.</td></tr>
                             )}
                         </tbody>
                     </table>
@@ -685,9 +664,13 @@ export default function AdInsightPage() {
                                 {[
                                     { id: 'country', label: 'Country Name', desc: 'e.g. Hong Kong, Japan' },
                                     { id: 'city', label: 'City Name', desc: 'Included if present' },
-                                    { id: 'tier', label: 'Tier (1, 2, 5)', desc: 'Adds Tier prefix' },
-                                    { id: 'privacy', label: 'Privacy Status', desc: 'Public or Private' },
-                                    { id: 'sub_tag', label: 'Sub-tag', desc: 'Mainly for Mobility' }
+                                    { id: 'tier', label: 'Tier (1,2,3,5)', desc: 'Adds Tier prefix' },
+                                    { id: 'funnel_stage', label: 'Funnel Stage', desc: 'awareness/planning/readiness' },
+                                    { id: 'funnel_rule_hit', label: 'Funnel Rule Hit', desc: 'Matched keyword or regex' },
+                                    { id: 'tier_source', label: 'Tier Source', desc: 'funnel_stage or year_override' },
+                                    { id: 'year_detected', label: 'Year Detected', desc: 'For stale-year tier override' },
+                                    { id: 'geo_source', label: 'Geo Source', desc: 'translated_title_vi / decoded_slug / slug' },
+                                    { id: 'sub_tag', label: 'Sub-tag', desc: 'Optional taxonomy field' }
                                 ].map(field => (
                                     <label
                                         key={field.id}

@@ -2,10 +2,57 @@ import json
 import requests
 import os
 import sys
+import re
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 
 # --- CONFIG ---
 CONCURRENT_THREADS = 15 
+RECENT_YEAR = 2025
+
+
+def is_unknown_geo(value):
+    return (value or "").strip().lower() in {"", "unknown", "n/a", "na", "-"}
+
+
+def geo_score(country, city):
+    score = 0
+    if not is_unknown_geo(country):
+        score += 2  # prioritize country quality
+    if not is_unknown_geo(city):
+        score += 1
+    return score
+
+
+def should_patch_geo(old_country, old_city, new_country, new_city):
+    old_s = geo_score(old_country, old_city)
+    new_s = geo_score(new_country, new_city)
+    return new_s > old_s
+
+
+def detect_year(text):
+    if not text:
+        return ""
+    if "2025" in text:
+        return "2025"
+    m = re.search(r"(20\d{2})", text)
+    return m.group(1) if m else ""
+
+
+def derive_tier_from_title(stage, translated_title):
+    year = detect_year(translated_title)
+    if year:
+        y = int(year)
+        if y == RECENT_YEAR:
+            return "4", year, "year_override"
+        if y < RECENT_YEAR:
+            return "5", year, "year_override"
+    base_map = {
+        "readiness": "1",
+        "planning": "2",
+        "awareness": "3",
+    }
+    return base_map.get(stage or "awareness", "3"), year, "funnel_stage"
 
 def get_pb_info():
     info = {}
@@ -42,6 +89,22 @@ def import_to_pb(json_path, platform_key):
 
     with requests.Session() as session:
         session.headers.update(headers)
+        
+        pages_fields = set()
+        pages_schema_resp = session.get(f"{pb_url}/api/collections/pages")
+        if pages_schema_resp.status_code == 200:
+            try:
+                schema_data = pages_schema_resp.json()
+                for f in schema_data.get('fields', []):
+                    name = f.get('name')
+                    if name:
+                        pages_fields.add(name)
+            except Exception:
+                pass
+        
+        def has_field(field_name):
+            # Fallback to True if schema couldn't be loaded
+            return not pages_fields or field_name in pages_fields
         
         plat_resp = session.get(f"{pb_url}/api/collections/platforms/records?filter=(key='{platform_key}')")
         if plat_resp.status_code != 200 or plat_resp.json().get('totalItems', 0) == 0:
@@ -100,18 +163,68 @@ def import_to_pb(json_path, platform_key):
                         existing_langs = []
                     
                     new_lang = item.get('language', 'zh-HK')
-                    
+                    update_payload = {}
+
                     if new_lang not in existing_langs:
                         existing_langs.append(new_lang)
-                        
-                        # ONLY update languages field - keep all other fields unchanged
-                        update_payload = {
-                            "languages": existing_langs
-                        }
+                        update_payload["languages"] = existing_langs
+
+                    # Scope-limited geo patch for Klook blog zh-HK.
+                    is_klook_blog_zhhk = (
+                        platform_key == "klook"
+                        and item.get("sitemap_tag", "") == "blog"
+                        and ("zh-HK" in (item.get("languages", []) or []) or item.get("language") == "zh-HK")
+                    )
+
+                    if is_klook_blog_zhhk:
+                        old_country = existing.get("country", "Unknown")
+                        old_city = existing.get("city", "Unknown")
+                        new_country = item.get("country", "Unknown")
+                        new_city = item.get("city", "Unknown")
+                        metadata_updates = {}
+
+                        if should_patch_geo(old_country, old_city, new_country, new_city):
+                            update_payload["country"] = new_country
+                            update_payload["city"] = new_city
+                            metadata_updates["geo_source"] = item.get("metadata", {}).get("geo_source", "unknown")
+                            metadata_updates["geo_updated_at"] = datetime.now(timezone.utc).isoformat()
+
+                        new_stage = item.get("funnel_stage")
+                        old_stage = existing.get("funnel_stage")
+                        if has_field("funnel_stage") and new_stage and new_stage != old_stage:
+                            update_payload["funnel_stage"] = new_stage
+                            metadata_updates["funnel_source"] = item.get("metadata", {}).get("funnel_source", "translated_title_vi")
+                            metadata_updates["funnel_rule_hit"] = item.get("metadata", {}).get("funnel_rule_hit", "")
+                            metadata_updates["funnel_updated_at"] = datetime.now(timezone.utc).isoformat()
+
+                        # Recompute tier from translated_title_vi to avoid stale/missing year overrides.
+                        existing_title = existing.get("translated_title_vi") or item.get("translated_title_vi", "")
+                        stage_for_tier = new_stage or old_stage or "awareness"
+                        tier_from_title, year_detected, tier_source = derive_tier_from_title(stage_for_tier, existing_title)
+                        new_tier = tier_from_title
+                        old_tier = existing.get("tier")
+                        if new_tier and new_tier != old_tier:
+                            update_payload["tier"] = new_tier
+                            metadata_updates["tier_source"] = tier_source
+                            metadata_updates["year_detected"] = year_detected
+                            metadata_updates["tier_updated_at"] = datetime.now(timezone.utc).isoformat()
+
+                        if metadata_updates and has_field("metadata"):
+                            existing_meta = existing.get("metadata") if isinstance(existing.get("metadata"), dict) else {}
+                            next_meta = dict(existing_meta)
+                            next_meta.update(metadata_updates)
+                            update_payload["metadata"] = next_meta
+
+                    if update_payload:
                         session.patch(f"{pb_url}/api/collections/pages/records/{record_id}", json=update_payload)
+                        if "country" in update_payload or "city" in update_payload:
+                            return ("UPDATE_GEO", 200)
+                        if "funnel_stage" in update_payload:
+                            return ("UPDATE_FUNNEL", 200)
+                        if "tier" in update_payload:
+                            return ("UPDATE_TIER", 200)
                         return ("UPDATE_LANG", 200)
-                    else:
-                        return ("SKIP", 200)  # Language already exists
+                    return ("SKIP", 200)
             except Exception as e:
                 pass  # Fall through to create
             
@@ -120,11 +233,11 @@ def import_to_pb(json_path, platform_key):
                 payload = {
                     "platform": platform_id,
                     "canonical_id": item['canonical_id'],
-                    "language": item['language'],
                     "languages": item.get('languages', [item.get('language', 'zh-HK')]),
                     "content_type": item.get('content_type', 'activity'),
                     "url": item['url'],
                     "slug": item['slug'],
+                    "decoded_slug": item.get('decoded_slug', item.get('slug', '')),
                     "sitemap_tag": item['sitemap_tag'],
                     "sub_tag": item.get('sub_tag', ''),  # NEW: sub_tag field for mobility URLs
                     "country": item['country'],
@@ -136,6 +249,10 @@ def import_to_pb(json_path, platform_key):
                     "exclude_for_dsa": item['exclude_for_dsa'],
                     "metadata": item.get('metadata', None)
                 }
+                if has_field("language"):
+                    payload["language"] = item.get('language', 'zh-HK')
+                if has_field("funnel_stage"):
+                    payload["funnel_stage"] = item.get('funnel_stage', 'awareness')
                 resp = session.post(f"{pb_url}/api/collections/pages/records", json=payload)
                 
                 # CRITICAL: Check response status
@@ -158,12 +275,18 @@ def import_to_pb(json_path, platform_key):
         # Count and log results
         create_count = sum(1 for r in results if r[0] == "CREATE")
         update_count = sum(1 for r in results if r[0] == "UPDATE_LANG")
+        update_geo_count = sum(1 for r in results if r[0] == "UPDATE_GEO")
+        update_funnel_count = sum(1 for r in results if r[0] == "UPDATE_FUNNEL")
+        update_tier_count = sum(1 for r in results if r[0] == "UPDATE_TIER")
         skip_count = sum(1 for r in results if r[0] == "SKIP")
         error_count = sum(1 for r in results if r[0] == "ERROR")
         
         print(f"\n📊 Import Results:")
         print(f"  ✅ Created: {create_count}")
         print(f"  🔄 Updated: {update_count}")
+        print(f"  🧭 Geo Updated: {update_geo_count}")
+        print(f"  🎯 Funnel Updated: {update_funnel_count}")
+        print(f"  🏷️ Tier Updated: {update_tier_count}")
         print(f"  ⏭️  Skipped: {skip_count}")
         print(f"  ❌ Errors: {error_count}")
             

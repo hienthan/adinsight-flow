@@ -1,0 +1,15 @@
+https://www.traveloka.com/id-id/destination
+https://www.traveloka.com/id-id/destination/continent/asia-30019581
+https://www.traveloka.com/id-id/destination/continent/southeast%20asia/30019583
+https://www.traveloka.com/id-id/destination/continent/north-america-30019579
+https://www.traveloka.com/id-id/destination/continent/europe-30019580
+https://www.traveloka.com/id-id/destination/continent/oceania-30019582
+https://www.traveloka.com/id-id/destination/continent/south-america-30019578
+https://www.traveloka.com/id-id/destination/continent/africa-30019577
+https://www.traveloka.com/id-id/destination/area/europe-30019580
+https://www.traveloka.com/id-id/destination/area/oceania-30019582
+https://www.traveloka.com/id-id/destination/area/north-america-30019579
+https://www.traveloka.com/id-id/destination/area/asia-30019581
+https://www.traveloka.com/id-id/destination/area/southeast%20asia/30019583
+https://www.traveloka.com/id-id/destination/area/south-america-30019578
+https://www.traveloka.com/id-id/destination/area/africa-30019577
