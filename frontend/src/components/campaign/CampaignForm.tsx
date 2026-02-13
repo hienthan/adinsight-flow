@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Save, AlertTriangle, ShieldCheck, Lock } from 'lucide-react';
+import { AlertTriangle, ShieldCheck, Lock } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
 
@@ -9,6 +9,10 @@ interface CampaignFormProps {
     campaignId?: string;
     onCancel?: () => void;
     onSuccess?: (campaign: Campaign) => void;
+    formId?: string;
+    hideActions?: boolean;
+    onDirtyChange?: (isDirty: boolean) => void;
+    onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
 const getLocalDateInputValue = () => {
@@ -35,7 +39,15 @@ const toComparableNumber = (value: any): number | null => {
     return Number.isFinite(num) ? num : null;
 };
 
-export default function CampaignForm({ campaignId, onCancel, onSuccess }: CampaignFormProps) {
+export default function CampaignForm({
+    campaignId,
+    onCancel,
+    onSuccess,
+    formId,
+    hideActions = false,
+    onDirtyChange,
+    onSubmittingChange,
+}: CampaignFormProps) {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const queryClient = useQueryClient();
@@ -90,6 +102,35 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
         }
     }, [existingCampaign, platformIdFromUrl]);
 
+    const hasFormChanges = useMemo(() => {
+        if (!campaignId || !existingCampaign) return true;
+        const editableFields: (keyof Campaign)[] = [
+            'name',
+            'status',
+            'platform',
+            'cpc',
+            'max_daily_budget',
+            'keywords',
+            'description',
+            'general_notes',
+            'is_dsa',
+            'created_date',
+        ];
+        return editableFields.some((field) => {
+            const oldValue = normalizeForComparison(field, existingCampaign[field]);
+            const newValue = normalizeForComparison(field, formData[field]);
+            return JSON.stringify(oldValue) !== JSON.stringify(newValue);
+        });
+    }, [campaignId, existingCampaign, formData]);
+
+    useEffect(() => {
+        onDirtyChange?.(hasFormChanges);
+    }, [hasFormChanges, onDirtyChange]);
+
+    useEffect(() => {
+        onSubmittingChange?.(loading);
+    }, [loading, onSubmittingChange]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         if (type === 'checkbox') {
@@ -120,19 +161,6 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                 // --- CHANGE DETECTION ---
                 const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'keywords'];
                 const changes: any[] = [];
-                const editableFields: (keyof Campaign)[] = [
-                    'name',
-                    'status',
-                    'platform',
-                    'cpc',
-                    'max_daily_budget',
-                    'keywords',
-                    'description',
-                    'general_notes',
-                    'is_dsa',
-                    'created_date',
-                ];
-
                 trackedFields.forEach((field) => {
                     const oldValue = existingCampaign[field];
                     const newValue = formData[field];
@@ -146,11 +174,10 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                     }
                 });
 
-                const hasBusinessUpdates = editableFields.some((field) => {
-                    const oldValue = normalizeForComparison(field, existingCampaign[field]);
-                    const newValue = normalizeForComparison(field, formData[field]);
-                    return JSON.stringify(oldValue) !== JSON.stringify(newValue);
-                });
+                if (!hasFormChanges) {
+                    setLoading(false);
+                    return;
+                }
 
                 const previousCpc = toComparableNumber(existingCampaign.cpc);
                 const nextCpc = toComparableNumber(formData.cpc);
@@ -159,7 +186,7 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                 const reviewOutcome: Campaign['last_review_outcome'] =
                     cpcChanged
                         ? (cpcDiff > 0 ? 'cpc_increase' : 'cpc_reduce')
-                        : (hasBusinessUpdates ? 'updated' : 'no_change');
+                        : (hasFormChanges ? 'updated' : 'no_change');
 
                 const updatePayload = {
                     ...formData,
@@ -193,7 +220,7 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
     };
 
     return (
-        <form onSubmit={handleSubmit} className="animate-fade">
+        <form id={formId} onSubmit={handleSubmit} className="animate-fade">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
 
                 {error && (
@@ -346,24 +373,25 @@ export default function CampaignForm({ campaignId, onCancel, onSuccess }: Campai
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', justifyContent: 'flex-end' }}>
-                    <button
-                        type="button"
-                        onClick={onCancel || (() => navigate(-1))}
-                        className="hero-btn hero-btn-ghost"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="hero-btn hero-btn-primary"
-                        style={{ minWidth: '140px' }}
-                    >
-                        {loading ? 'Saving...' : (campaignId ? 'Update Campaign' : 'Create Campaign')}
-                        {!loading && <Save size={18} style={{ marginLeft: '0.5rem' }} />}
-                    </button>
-                </div>
+                {!hideActions && (
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', justifyContent: 'flex-end' }}>
+                        <button
+                            type="button"
+                            onClick={onCancel || (() => navigate(-1))}
+                            className="hero-btn hero-btn-ghost"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading || (!!campaignId && !hasFormChanges)}
+                            className="hero-btn hero-btn-primary"
+                            style={{ minWidth: '140px' }}
+                        >
+                            {loading ? 'Saving...' : (campaignId ? 'Update' : 'Create Campaign')}
+                        </button>
+                    </div>
+                )}
             </div>
         </form>
     );

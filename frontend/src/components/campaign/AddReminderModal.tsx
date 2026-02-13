@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Bell, Save, AlertTriangle } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
@@ -12,6 +12,7 @@ interface AddReminderModalProps {
 
 export default function AddReminderModal({ campaignId, isOpen, onClose }: AddReminderModalProps) {
     const queryClient = useQueryClient();
+    const shouldCloseOnBackdropClickRef = useRef(false);
     const [formData, setFormData] = useState({
         reminder_date: formatDateForInput(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()), // Default 3 days from now
         message: '',
@@ -88,7 +89,17 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
             justifyContent: 'center',
             zIndex: 1000,
             padding: '1.5rem'
-        }} onClick={onClose}>
+        }}
+            onMouseDown={(e) => {
+                shouldCloseOnBackdropClickRef.current = e.target === e.currentTarget;
+            }}
+            onClick={(e) => {
+                if (e.target === e.currentTarget && shouldCloseOnBackdropClickRef.current) {
+                    onClose();
+                }
+                shouldCloseOnBackdropClickRef.current = false;
+            }}
+        >
             <div
                 className="hero-card animate-scale-in"
                 style={{

@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import { X, Plus, Bell, Activity, ChevronDown, ChevronRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { X, Plus, Bell, Activity, ChevronDown, ChevronRight, Edit2, Save } from 'lucide-react';
 import CampaignForm from './CampaignForm';
 import AddReminderModal from './AddReminderModal';
 import CampaignReminders from './CampaignReminders';
 import CampaignHistory from './CampaignHistory';
+import { pb } from '../../lib/pocketbase';
+import { Campaign, CampaignPlatform } from '../../types/campaign';
 
 interface EditCampaignModalProps {
     campaignId?: string;
@@ -13,9 +16,45 @@ interface EditCampaignModalProps {
 }
 
 export default function EditCampaignModal({ campaignId, isOpen, onClose, onSuccess }: EditCampaignModalProps) {
+    const queryClient = useQueryClient();
     const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
     const [isRemindersCollapsed, setIsRemindersCollapsed] = useState(false);
     const [isAutoLogCollapsed, setIsAutoLogCollapsed] = useState(false);
+    const [isFormDirty, setIsFormDirty] = useState(false);
+    const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+    const [isPlatformNotesModalOpen, setIsPlatformNotesModalOpen] = useState(false);
+    const [platformNotesDraft, setPlatformNotesDraft] = useState('');
+    const [platformNotesSaving, setPlatformNotesSaving] = useState(false);
+    const [platformNotesError, setPlatformNotesError] = useState<string | null>(null);
+    const shouldCloseOnBackdropClickRef = useRef(false);
+    const campaignFormId = 'campaign-edit-form';
+
+    const { data: campaign } = useQuery<Campaign>({
+        queryKey: ['campaign', campaignId],
+        queryFn: async () => {
+            if (!campaignId) return null as any;
+            return await pb.collection('campaigns').getOne<Campaign>(campaignId);
+        },
+        enabled: !!campaignId && isOpen,
+    });
+
+    const platformId = campaign?.platform;
+
+    const { data: campaignPlatform } = useQuery<CampaignPlatform>({
+        queryKey: ['campaign-platform', platformId],
+        queryFn: async () => {
+            if (!platformId) return null as any;
+            return await pb.collection('campaign_platforms').getOne<CampaignPlatform>(platformId);
+        },
+        enabled: !!platformId && isOpen,
+    });
+
+    useEffect(() => {
+        if (isPlatformNotesModalOpen) {
+            setPlatformNotesDraft(campaignPlatform?.metadata || '');
+            setPlatformNotesError(null);
+        }
+    }, [isPlatformNotesModalOpen, campaignPlatform?.metadata]);
 
     if (!isOpen) return null;
 
@@ -36,7 +75,15 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                 zIndex: 1000,
                 padding: '1.5rem',
             }}
-            onClick={onClose}
+            onMouseDown={(e) => {
+                shouldCloseOnBackdropClickRef.current = e.target === e.currentTarget;
+            }}
+            onClick={(e) => {
+                if (e.target === e.currentTarget && shouldCloseOnBackdropClickRef.current) {
+                    onClose();
+                }
+                shouldCloseOnBackdropClickRef.current = false;
+            }}
         >
             <div
                 className="hero-card animate-fade"
@@ -62,28 +109,31 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                         </h2>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {campaignId && (
-                            <button
-                                onClick={() => setIsReminderModalOpen(true)}
-                                className="hero-btn hero-btn-secondary"
-                                style={{ padding: '0.45rem 0.75rem', fontSize: 'var(--text-xs)' }}
-                            >
-                                <Plus size={14} />
-                                Reminder
-                            </button>
-                        )}
                         <button
                             onClick={onClose}
-                            className="hero-btn-ghost"
-                            style={{ padding: '0.5rem', borderRadius: '50%' }}
+                            className="hero-btn hero-btn-ghost"
+                            style={{ padding: '0.45rem 0.75rem', fontSize: 'var(--text-xs)' }}
                         >
-                            <X size={20} />
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            form={campaignFormId}
+                            disabled={isFormSubmitting || (!!campaignId && !isFormDirty)}
+                            className="hero-btn hero-btn-primary"
+                            style={{ padding: '0.45rem 0.85rem', fontSize: 'var(--text-xs)' }}
+                        >
+                            {isFormSubmitting ? 'Saving...' : (campaignId ? 'Update' : 'Create')}
                         </button>
                     </div>
                 </div>
 
                 <CampaignForm
                     campaignId={campaignId}
+                    formId={campaignFormId}
+                    hideActions={true}
+                    onDirtyChange={setIsFormDirty}
+                    onSubmittingChange={setIsFormSubmitting}
                     onCancel={onClose}
                     onSuccess={() => {
                         onSuccess?.();
@@ -100,6 +150,48 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             gap: '0.75rem',
                         }}
                     >
+                        <div
+                            className="hero-card"
+                            style={{
+                                gridColumn: '1 / -1',
+                                padding: '0.75rem',
+                                background: 'var(--bg-overlay)',
+                                border: '1px solid var(--border-subtle)',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                                    Campaign Platform Notes
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPlatformNotesModalOpen(true)}
+                                    className="hero-btn hero-btn-ghost"
+                                    style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)' }}
+                                >
+                                    <Edit2 size={12} />
+                                    Edit
+                                </button>
+                            </div>
+                            <div
+                                style={{
+                                    background: 'var(--bg-content)',
+                                    border: '1px solid var(--border-subtle)',
+                                    borderRadius: '10px',
+                                    padding: '0.65rem 0.75rem',
+                                    color: 'var(--text-dim)',
+                                    fontSize: 'var(--text-xs)',
+                                    lineHeight: 1.5,
+                                    whiteSpace: 'pre-wrap',
+                                    minHeight: '74px',
+                                    maxHeight: '160px',
+                                    overflowY: 'auto',
+                                }}
+                            >
+                                {campaignPlatform?.metadata || 'No platform notes yet.'}
+                            </div>
+                        </div>
+
                         <div
                             className="hero-card"
                             style={{
@@ -188,6 +280,130 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     isOpen={isReminderModalOpen}
                     onClose={() => setIsReminderModalOpen(false)}
                 />
+            )}
+
+            {isPlatformNotesModalOpen && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1200,
+                        padding: '1.5rem',
+                    }}
+                    onMouseDown={(e) => {
+                        shouldCloseOnBackdropClickRef.current = e.target === e.currentTarget;
+                    }}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget && shouldCloseOnBackdropClickRef.current) {
+                            setIsPlatformNotesModalOpen(false);
+                        }
+                        shouldCloseOnBackdropClickRef.current = false;
+                    }}
+                >
+                    <div
+                        className="hero-card animate-fade"
+                        style={{
+                            width: '100%',
+                            maxWidth: '700px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem',
+                            padding: '1.25rem',
+                            background: 'var(--bg-content)',
+                            border: '1px solid var(--border-subtle)',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div>
+                                <h3 className="hero-section-title" style={{ marginBottom: 0, fontSize: '1rem' }}>
+                                    Edit Platform Notes
+                                </h3>
+                                <p style={{ margin: '0.2rem 0 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>
+                                    {campaignPlatform?.display_name || 'Current platform'}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsPlatformNotesModalOpen(false)}
+                                className="hero-btn hero-btn-ghost"
+                                style={{ padding: '0.35rem', borderRadius: '50%' }}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {platformNotesError && (
+                            <div
+                                style={{
+                                    border: '1px solid hsla(3 85% 45% / 0.4)',
+                                    background: 'hsla(3 85% 58% / 0.1)',
+                                    color: 'hsl(3 85% 40%)',
+                                    borderRadius: '10px',
+                                    padding: '0.6rem 0.75rem',
+                                    fontSize: 'var(--text-xs)',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {platformNotesError}
+                            </div>
+                        )}
+
+                        <div className="filter-group">
+                            <label>Platform Notes</label>
+                            <textarea
+                                value={platformNotesDraft}
+                                onChange={(e) => setPlatformNotesDraft(e.target.value)}
+                                placeholder="Enter governance notes, constraints, and campaign guidance..."
+                                style={{ minHeight: '220px' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => setIsPlatformNotesModalOpen(false)}
+                                className="hero-btn hero-btn-ghost"
+                                disabled={platformNotesSaving}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                disabled={platformNotesSaving || !campaignPlatform}
+                                className="hero-btn hero-btn-primary"
+                                onClick={async () => {
+                                    if (!campaignPlatform?.id) return;
+                                    try {
+                                        setPlatformNotesSaving(true);
+                                        setPlatformNotesError(null);
+                                        await pb.collection('campaign_platforms').update(campaignPlatform.id, {
+                                            metadata: platformNotesDraft,
+                                        });
+                                        queryClient.invalidateQueries({ queryKey: ['campaign-platform', campaignPlatform.id] });
+                                        queryClient.invalidateQueries({ queryKey: ['platforms'] });
+                                        setIsPlatformNotesModalOpen(false);
+                                    } catch (error: any) {
+                                        setPlatformNotesError(error?.message || 'Failed to update platform notes');
+                                    } finally {
+                                        setPlatformNotesSaving(false);
+                                    }
+                                }}
+                            >
+                                {platformNotesSaving ? 'Saving...' : 'Update Notes'}
+                                {!platformNotesSaving && <Save size={16} />}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );

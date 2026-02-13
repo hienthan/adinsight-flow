@@ -62,8 +62,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {!collapsed && <span style={{ fontSize: '0.875rem' }}>{children}</span>}
                 {!collapsed && badgeCount > 0 && (
                     <span style={{
-                        marginLeft: 'auto', background: 'var(--destructive)', color: 'white',
-                        fontSize: '10px', padding: '2px 6px', borderRadius: '10px', fontWeight: 800
+                        marginLeft: 'auto',
+                        background: 'hsl(3 85% 56%)',
+                        color: 'var(--text-on-accent)',
+                        border: '1px solid hsla(3 85% 40% / 0.45)',
+                        boxShadow: '0 0 0 2px hsla(3 85% 56% / 0.18)',
+                        fontSize: '10px',
+                        padding: '2px 6px',
+                        borderRadius: '10px',
+                        fontWeight: 800
                     }}>
                         {badgeCount}
                     </span>

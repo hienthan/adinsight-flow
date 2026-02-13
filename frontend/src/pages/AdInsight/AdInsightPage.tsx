@@ -397,6 +397,7 @@ export default function AdInsightPage() {
                         <option value="1">Tier 1</option>
                         <option value="2">Tier 2</option>
                         <option value="3">Tier 3</option>
+                        <option value="4">Tier 4</option>
                         <option value="5">Tier 5</option>
                     </select>
                 </div>
@@ -664,7 +665,7 @@ export default function AdInsightPage() {
                                 {[
                                     { id: 'country', label: 'Country Name', desc: 'e.g. Hong Kong, Japan' },
                                     { id: 'city', label: 'City Name', desc: 'Included if present' },
-                                    { id: 'tier', label: 'Tier (1,2,3,5)', desc: 'Adds Tier prefix' },
+                                    { id: 'tier', label: 'Tier (1,2,3,4,5)', desc: 'Adds Tier prefix' },
                                     { id: 'funnel_stage', label: 'Funnel Stage', desc: 'awareness/planning/readiness' },
                                     { id: 'funnel_rule_hit', label: 'Funnel Rule Hit', desc: 'Matched keyword or regex' },
                                     { id: 'tier_source', label: 'Tier Source', desc: 'funnel_stage or year_override' },
