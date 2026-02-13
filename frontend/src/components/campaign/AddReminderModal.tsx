@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Bell, Save, AlertTriangle } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
@@ -71,6 +71,16 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 

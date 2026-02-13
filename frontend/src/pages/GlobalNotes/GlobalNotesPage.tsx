@@ -129,16 +129,37 @@ export default function GlobalNotesPage() {
 
     const renderedNote = useMemo(
         () => prepareNoteHtmlForRender(activeNote?.content || ''),
-        [activeNote?.content]
+        [activeNote?.id, activeNote?.content] // Added activeNote?.id to ensure refresh
     );
+
+    // ESC support for editing
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isEditing) {
+                setIsEditing(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isEditing]);
 
     // Helpers
     const scrollToSection = (headingId: string) => {
-        const container = document.querySelector('.note-content-html');
+        const container = document.querySelector('.note-scroll-container');
         if (!container) return;
         const target = container.querySelector(`[data-note-heading-id="${headingId}"]`) as HTMLElement | null;
         if (!target) return;
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Scroll with offset for sticky header
+        const headerOffset = 100;
+        const elementPosition = target.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + container.scrollTop - headerOffset;
+
+        container.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+        });
+
         const originalBg = target.style.backgroundColor;
         target.style.backgroundColor = 'var(--accent-glow)';
         target.style.transition = 'background-color 0.5s';
@@ -283,7 +304,17 @@ export default function GlobalNotesPage() {
                 {activeNote ? (
                     <>
                         {/* Note Toolbar */}
-                        <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
+                        <div style={{
+                            padding: '1rem 1.5rem',
+                            borderBottom: '1px solid var(--border-subtle)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: 'var(--bg-card)',
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 10
+                        }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 {isEditing ? (
                                     <input
@@ -291,6 +322,7 @@ export default function GlobalNotesPage() {
                                         onChange={e => setEditTitle(e.target.value)}
                                         style={{ fontSize: '1.25rem', fontWeight: 700, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', outline: 'none', color: 'var(--text-main)', width: '300px' }}
                                         placeholder="Note Title"
+                                        autoFocus
                                     />
                                 ) : (
                                     <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>{activeNote.title}</h1>
@@ -318,136 +350,182 @@ export default function GlobalNotesPage() {
                             </div>
                         </div>
 
-                        {/* Editor / Viewer */}
-                        <div style={{ flex: 1, overflowY: 'auto', display: 'flex' }}>
-                            {isEditing ? (
-                                <div style={{ flex: 1, padding: '1.5rem 1.85rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', minHeight: '96px' }}>
-                                        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
-                                            <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                                                Platform
-                                            </div>
-                                            <div className="filter-group">
-                                                <select
-                                                    value={editPlatform || 'General'}
-                                                    onChange={e => setEditPlatform(e.target.value)}
-                                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-main)' }}
-                                                >
-                                                    <option value="General">General</option>
-                                                    <option value="Klook">Klook</option>
-                                                    <option value="Trip">Trip</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
-                                            <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                                                Tags (comma separated)
-                                            </div>
-                                            <div className="filter-group">
-                                                <input
-                                                    value={editTags}
-                                                    onChange={e => setEditTags(e.target.value)}
-                                                    placeholder="e.g. Strategy, Q1, Planning"
-                                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-main)' }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="filter-group" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                        <label>Content</label>
-                                        <RichTextEditor
-                                            value={editContent}
-                                            onChange={setEditContent}
-                                            placeholder="Write your note..."
-                                            minHeight={260}
-                                            maxHeight={520}
-                                        />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div style={{ flex: 1, padding: '1.5rem 1.85rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', minHeight: '96px' }}>
-                                        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
-                                            <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                                                Platform
-                                            </div>
-                                            <span className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-main)' }}>
-                                                {activeNote.platform}
-                                            </span>
-                                        </div>
-                                        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
-                                            <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                                                Tags
-                                            </div>
-                                            <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
-                                                {activeNote.tags?.length ? activeNote.tags.map(t => (
-                                                    <span key={t} className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-dim)' }}>#{t}</span>
-                                                )) : (
-                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No tags</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        style={{
-                                            border: '1px solid var(--border-subtle)',
-                                            borderRadius: '0.9rem',
-                                            padding: '1rem 1.1rem',
-                                            background: 'var(--bg-main)',
-                                            minHeight: '420px',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: '0.8rem'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                            <button onClick={() => startEditing(activeNote)} className="hero-btn hero-btn-ghost">
-                                                Edit Content
-                                            </button>
-                                        </div>
-                                        <div
-                                            className="note-content-html"
-                                            style={{ color: 'var(--text-main)', lineHeight: 1.7, cursor: 'text' }}
-                                            onDoubleClick={() => startEditing(activeNote)}
-                                            dangerouslySetInnerHTML={{ __html: renderedNote.html }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Simple TOC / Meta Sidebar (Right) - only visible in read mode */}
-                            {!isEditing && (
-                                <div style={{ width: '250px', borderLeft: '1px solid var(--border-subtle)', padding: '1.5rem', background: 'var(--bg-card)', overflowY: 'auto' }}>
-                                    <h4 style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem' }}>Table of Contents</h4>
-                                    <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-dim)' }}>
-                                        {renderedNote.headings.length === 0 ? (
-                                            <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No sections found</div>
-                                        ) : (
-                                            renderedNote.headings.map((item) => (
-                                                <div
-                                                    key={item.id}
-                                                    style={{
-                                                        paddingLeft: `${(item.level - 1) * 0.75}rem`,
-                                                        cursor: 'pointer',
-                                                        fontSize: item.level === 1 ? '0.85rem' : '0.8rem',
-                                                        fontWeight: item.level === 1 ? 600 : 400,
-                                                        color: item.level === 1 ? 'var(--text-main)' : 'var(--text-dim)',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap'
-                                                    }}
-                                                    onClick={() => scrollToSection(item.id)}
-                                                    className="hover:text-primary transition-colors"
-                                                    title={item.text}
-                                                >
-                                                    {item.text}
+                        {/* Editor / Viewer Container */}
+                        <div className="note-content-area" style={{ flex: 1, display: 'flex', background: 'var(--bg-main)', overflow: 'hidden' }}>
+                            <div className="note-scroll-container" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                                <div style={{
+                                    maxWidth: '920px',
+                                    width: '100%',
+                                    margin: '0 auto',
+                                    padding: '2.5rem 1.5rem',
+                                    flex: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column'
+                                }}>
+                                    {/* Document "Page" */}
+                                    <div style={{
+                                        flex: 1,
+                                        background: 'var(--bg-card)',
+                                        borderRadius: '1.25rem',
+                                        border: '1px solid var(--border-subtle)',
+                                        boxShadow: '0 10px 30px -15px rgba(0,0,0,0.05)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        overflow: 'hidden'
+                                    }}>
+                                        {isEditing ? (
+                                            <div style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
+                                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                                                            Platform
+                                                        </div>
+                                                        <div className="filter-group">
+                                                            <select
+                                                                value={editPlatform || 'General'}
+                                                                onChange={e => setEditPlatform(e.target.value)}
+                                                                style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-main)' }}
+                                                            >
+                                                                <option value="General">General</option>
+                                                                <option value="Klook">Klook</option>
+                                                                <option value="Trip">Trip</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
+                                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                                                            Tags (comma separated)
+                                                        </div>
+                                                        <div className="filter-group">
+                                                            <input
+                                                                value={editTags}
+                                                                onChange={e => setEditTags(e.target.value)}
+                                                                placeholder="e.g. Strategy, Q1, Planning"
+                                                                style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-main)' }}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            ))
+                                                <div className="filter-group" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                                    <label style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Content</label>
+                                                    <RichTextEditor
+                                                        value={editContent}
+                                                        onChange={setEditContent}
+                                                        placeholder="Write your note..."
+                                                        minHeight={450}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div style={{ flex: 1, padding: '3.5rem 4rem' }}>
+                                                <div
+                                                    style={{
+                                                        color: 'var(--text-main)',
+                                                        lineHeight: 1.85,
+                                                        cursor: 'text',
+                                                        fontSize: '1.05rem'
+                                                    }}
+                                                    onDoubleClick={() => startEditing(activeNote)}
+                                                >
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2rem' }}>
+                                                        <button onClick={() => startEditing(activeNote)} className="hero-btn hero-btn-ghost" style={{ fontSize: '0.75rem' }}>
+                                                            Edit Content
+                                                        </button>
+                                                    </div>
+                                                    <div
+                                                        className="note-content-html"
+                                                        dangerouslySetInnerHTML={{ __html: renderedNote.html }}
+                                                    />
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
-                            )}
+                            </div>
+
+                            {/* Sidebar Meta & TOC (Right) */}
+                            <div style={{
+                                width: '280px',
+                                borderLeft: '1px solid var(--border-subtle)',
+                                padding: '2rem 1.5rem',
+                                background: 'var(--bg-card)',
+                                overflowY: 'auto',
+                                position: 'sticky',
+                                top: '0',
+                                height: 'auto',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2.5rem',
+                                boxShadow: '-5px 0 15px rgba(0,0,0,0.02)'
+                            }}>
+                                {/* Meta Section */}
+                                <div>
+                                    <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', letterSpacing: '0.05em' }}>Information</h4>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        <div>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Platform</div>
+                                            <span className="hero-badge" style={{ background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontWeight: 700 }}>
+                                                {activeNote.platform}
+                                            </span>
+                                        </div>
+
+                                        <div>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Tags</div>
+                                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                                {activeNote.tags?.length ? activeNote.tags.map(t => (
+                                                    <span key={t} className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-dim)', fontSize: '0.7rem' }}>#{t}</span>
+                                                )) : (
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontStyle: 'italic' }}>No tags</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Last Updated</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                                                {new Date(activeNote.updated).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* TOC Section */}
+                                {!isEditing && (
+                                    <div>
+                                        <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', letterSpacing: '0.05em' }}>Table of Contents</h4>
+                                        <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            {renderedNote.headings.length === 0 ? (
+                                                <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.75rem' }}>No sections found</div>
+                                            ) : (
+                                                renderedNote.headings.map((item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        style={{
+                                                            paddingLeft: `${(item.level - 1) * 0.75}rem`,
+                                                            cursor: 'pointer',
+                                                            fontSize: item.level === 1 ? '0.82rem' : '0.78rem',
+                                                            fontWeight: item.level === 1 ? 700 : 500,
+                                                            color: item.level === 1 ? 'var(--text-main)' : 'var(--text-dim)',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                            padding: '0.25rem 0.5rem',
+                                                            borderRadius: '0.4rem',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onClick={() => scrollToSection(item.id)}
+                                                        className="hover:bg-accent-glow hover:text-primary"
+                                                        title={item.text}
+                                                    >
+                                                        {item.text}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </>
                 ) : (

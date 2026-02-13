@@ -163,6 +163,7 @@ export default function AdInsightPage() {
         return () => clearTimeout(timer);
     }, [searchTitleInput]);
 
+
     useEffect(() => {
         setCurrentPage(1);
         fetchPages(1);
@@ -287,6 +288,16 @@ export default function AdInsightPage() {
         setSearchTitleInput('');
     };
 
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && showExportOptions) {
+                setShowExportOptions(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [showExportOptions]);
+
     const isFiltered = searchTitleTerm || filterTier || filterFunnelStage || filterCountry || filterLanguage !== 'all' || filterSitemapTag !== 'blog';
 
     return (
@@ -348,7 +359,7 @@ export default function AdInsightPage() {
                             value={searchTitleInput}
                             onChange={(e) => setSearchTitleInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && setSearchTitleTerm(searchTitleInput)}
-                            style={{ width: '240px', paddingLeft: '2.5rem' }}
+                            style={{ width: '400px', paddingLeft: '2.5rem' }}
                         />
                     </div>
                 </div>

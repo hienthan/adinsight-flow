@@ -4,7 +4,7 @@ import { marked } from 'marked';
 export interface NoteHeading {
     id: string;
     text: string;
-    level: 1 | 2 | 3;
+    level: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 const ALLOWED_TAGS = [
@@ -78,16 +78,41 @@ export const prepareNoteHtmlForRender = (value: string): { html: string; heading
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const headings: NoteHeading[] = [];
-    const headingEls = doc.body.querySelectorAll('h1, h2, h3');
-    headingEls.forEach((el, idx) => {
-        const level = Number(el.tagName[1]) as 1 | 2 | 3;
-        const id = `note-heading-${idx}`;
-        el.setAttribute('data-note-heading-id', id);
-        headings.push({
-            id,
-            text: (el.textContent || '').trim(),
-            level,
-        });
+    // Select standard headings AND paragraphs that look like section titles
+    const els = doc.body.querySelectorAll('h1, h2, h3, h4, h5, h6, p');
+
+    // Pattern for emoji numbers (1️⃣, 2️⃣, etc.) or "1. ", "2. " at start of paragraph
+    const sectionPattern = /^(\d+️⃣|[\u2460-\u2473]|\d+\.|\u2022)\s*(.+)/;
+
+    els.forEach((el, idx) => {
+        let level: 1 | 2 | 3 | 4 | 5 | 6 = 3; // Default for pseudo-headings
+        let isHeading = false;
+        let text = (el.textContent || '').trim();
+
+        if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(el.tagName)) {
+            level = Number(el.tagName[1]) as any;
+            isHeading = true;
+        } else if (el.tagName === 'P') {
+            // Check if paragraph starts with heading-like markers
+            // We only count it if it's bold or has a specific emoji pattern
+            const isBold = el.querySelector('strong, b') !== null;
+            const matches = text.match(sectionPattern);
+
+            if (matches && (isBold || text.length < 100)) {
+                level = 3;
+                isHeading = true;
+            }
+        }
+
+        if (isHeading && text) {
+            const id = `note-heading-${idx}`;
+            el.setAttribute('data-note-heading-id', id);
+            headings.push({
+                id,
+                text: text.length > 60 ? text.substring(0, 57) + '...' : text,
+                level,
+            });
+        }
     });
 
     return { html: doc.body.innerHTML, headings };
