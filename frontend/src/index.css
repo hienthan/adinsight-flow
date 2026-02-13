@@ -507,3 +507,80 @@ h3.hero-section-title {
 .animate-fade {
   animation: fadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
+
+/* Rich text editor base */
+.ProseMirror {
+  outline: none;
+  color: var(--text-main);
+  line-height: 1.6;
+  font-size: var(--text-sm);
+  min-height: 100%;
+}
+
+.ProseMirror p {
+  margin: 0 0 0.5rem 0;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  margin: 0.6rem 0 0.45rem 0;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.ProseMirror h1 {
+  font-size: 1.2rem;
+}
+
+.ProseMirror h2 {
+  font-size: 1.08rem;
+}
+
+.ProseMirror h3 {
+  font-size: 0.98rem;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 0 0 0.5rem 1rem;
+}
+
+.ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 0.6rem 0;
+}
+
+.ProseMirror a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}
+
+.note-content-html h1,
+.note-content-html h2,
+.note-content-html h3 {
+  margin: 0.55rem 0 0.45rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.note-content-html p {
+  margin: 0 0 0.5rem;
+}
+
+.note-content-html ul,
+.note-content-html ol {
+  margin: 0 0 0.5rem 1rem;
+}
+
+.note-content-html hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 0.65rem 0;
+}
+
+.hero-card.no-lift:hover {
+  transform: none;
+  box-shadow: var(--shadow-soft);
+}

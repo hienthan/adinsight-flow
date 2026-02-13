@@ -45,6 +45,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     }, []);
 
     const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+    const isTrendSignalsActive = isActive('/adinsight/trends');
+    const isPlatformKlookActive = isActive('/adinsight') && !isTrendSignalsActive;
 
     const NavLink = ({ to, icon: Icon, children, badgeCount, activeCondition }: any) => {
         const active = activeCondition !== undefined ? activeCondition : isActive(to);
@@ -123,7 +125,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     Trend Signals
                 </NavLink>
 
-                <NavLink to="/adinsight" icon={Globe}>
+                <NavLink to="/adinsight" icon={Globe} activeCondition={isPlatformKlookActive}>
                     Platform: Klook
                 </NavLink>
 

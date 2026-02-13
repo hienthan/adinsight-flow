@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { X, Plus, Bell, Activity, ChevronDown, ChevronRight, Edit2, Save } from 'lucide-react';
+import { X, Plus, Bell, Activity, ChevronDown, ChevronRight, Edit2 } from 'lucide-react';
 import CampaignForm from './CampaignForm';
 import AddReminderModal from './AddReminderModal';
 import CampaignReminders from './CampaignReminders';
 import CampaignHistory from './CampaignHistory';
 import { pb } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
+import RichTextEditor from '../common/RichTextEditor';
+import { normalizeHtmlForCompare, sanitizeNoteHtml } from '../../lib/noteHtml';
 
 interface EditCampaignModalProps {
     campaignId?: string;
@@ -55,6 +57,8 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
             setPlatformNotesError(null);
         }
     }, [isPlatformNotesModalOpen, campaignPlatform?.metadata]);
+
+    const platformNotesDirty = normalizeHtmlForCompare(platformNotesDraft || '') !== normalizeHtmlForCompare(campaignPlatform?.metadata || '');
 
     if (!isOpen) return null;
 
@@ -132,6 +136,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     campaignId={campaignId}
                     formId={campaignFormId}
                     hideActions={true}
+                    layoutVariant="modal"
                     onDirtyChange={setIsFormDirty}
                     onSubmittingChange={setIsFormSubmitting}
                     onCancel={onClose}
@@ -154,20 +159,20 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             className="hero-card"
                             style={{
                                 gridColumn: '1 / -1',
-                                padding: '0.75rem',
+                                padding: '0.6rem',
                                 background: 'var(--bg-overlay)',
                                 border: '1px solid var(--border-subtle)',
                             }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase' }}>
                                     Campaign Platform Notes
                                 </span>
                                 <button
                                     type="button"
                                     onClick={() => setIsPlatformNotesModalOpen(true)}
                                     className="hero-btn hero-btn-ghost"
-                                    style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)' }}
+                                    style={{ padding: '0.2rem 0.4rem', fontSize: '0.72rem' }}
                                 >
                                     <Edit2 size={12} />
                                     Edit
@@ -182,30 +187,36 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                     color: 'var(--text-dim)',
                                     fontSize: 'var(--text-xs)',
                                     lineHeight: 1.5,
-                                    whiteSpace: 'pre-wrap',
-                                    minHeight: '74px',
-                                    maxHeight: '160px',
+                                    minHeight: '42px',
+                                    maxHeight: '84px',
                                     overflowY: 'auto',
                                 }}
                             >
-                                {campaignPlatform?.metadata || 'No platform notes yet.'}
+                                {campaignPlatform?.metadata ? (
+                                    <div
+                                        style={{ color: 'var(--text-dim)' }}
+                                        dangerouslySetInnerHTML={{ __html: sanitizeNoteHtml(campaignPlatform.metadata) }}
+                                    />
+                                ) : (
+                                    'No platform notes yet.'
+                                )}
                             </div>
                         </div>
 
                         <div
                             className="hero-card"
                             style={{
-                                padding: '0.75rem',
+                                padding: '0.55rem',
                                 background: 'var(--bg-overlay)',
                                 border: '1px solid var(--border-subtle)',
                             }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isRemindersCollapsed ? 0 : '0.55rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isRemindersCollapsed ? 0 : '0.35rem' }}>
                                 <button
                                     type="button"
                                     onClick={() => setIsRemindersCollapsed((v) => !v)}
                                     className="hero-btn hero-btn-ghost"
-                                    style={{ padding: '0.2rem 0.35rem', gap: '0.35rem', fontSize: 'var(--text-xs)', fontWeight: 800, color: 'var(--text-dim)' }}
+                                    style={{ padding: '0.15rem 0.3rem', gap: '0.3rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-dim)' }}
                                 >
                                     {isRemindersCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
                                     <Bell size={13} style={{ color: 'hsl(var(--primary))' }} />
@@ -215,7 +226,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                     type="button"
                                     onClick={() => setIsReminderModalOpen(true)}
                                     className="hero-btn hero-btn-ghost"
-                                    style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)' }}
+                                    style={{ padding: '0.15rem 0.35rem', fontSize: '0.72rem' }}
                                 >
                                     <Plus size={12} />
                                     Add
@@ -223,7 +234,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             </div>
 
                             {!isRemindersCollapsed && (
-                                <div style={{ maxHeight: '210px', overflowY: 'auto', paddingRight: '0.15rem' }}>
+                                <div style={{ maxHeight: '120px', overflowY: 'auto', paddingRight: '0.1rem' }}>
                                     <CampaignReminders campaignId={campaignId} compact={true} />
                                 </div>
                             )}
@@ -232,17 +243,17 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                         <div
                             className="hero-card"
                             style={{
-                                padding: '0.75rem',
+                                padding: '0.55rem',
                                 background: 'var(--bg-overlay)',
                                 border: '1px solid var(--border-subtle)',
                             }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isAutoLogCollapsed ? 0 : '0.55rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isAutoLogCollapsed ? 0 : '0.35rem' }}>
                                 <button
                                     type="button"
                                     onClick={() => setIsAutoLogCollapsed((v) => !v)}
                                     className="hero-btn hero-btn-ghost"
-                                    style={{ padding: '0.2rem 0.35rem', gap: '0.35rem', fontSize: 'var(--text-xs)', fontWeight: 800, color: 'var(--text-dim)' }}
+                                    style={{ padding: '0.15rem 0.3rem', gap: '0.3rem', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-dim)' }}
                                 >
                                     {isAutoLogCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
                                     <Activity size={13} style={{ color: 'hsl(var(--primary))' }} />
@@ -251,7 +262,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             </div>
 
                             {!isAutoLogCollapsed && (
-                                <div style={{ maxHeight: '210px', overflowY: 'auto', paddingRight: '0.15rem' }}>
+                                <div style={{ maxHeight: '120px', overflowY: 'auto', paddingRight: '0.1rem' }}>
                                     <CampaignHistory campaignId={campaignId} compact={true} limit={5} />
                                 </div>
                             )}
@@ -359,11 +370,12 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
 
                         <div className="filter-group">
                             <label>Platform Notes</label>
-                            <textarea
+                            <RichTextEditor
                                 value={platformNotesDraft}
-                                onChange={(e) => setPlatformNotesDraft(e.target.value)}
+                                onChange={setPlatformNotesDraft}
                                 placeholder="Enter governance notes, constraints, and campaign guidance..."
-                                style={{ minHeight: '220px' }}
+                                minHeight={220}
+                                maxHeight={420}
                             />
                         </div>
 
@@ -378,7 +390,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             </button>
                             <button
                                 type="button"
-                                disabled={platformNotesSaving || !campaignPlatform}
+                                disabled={platformNotesSaving || !campaignPlatform || !platformNotesDirty}
                                 className="hero-btn hero-btn-primary"
                                 onClick={async () => {
                                     if (!campaignPlatform?.id) return;
@@ -399,7 +411,6 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                 }}
                             >
                                 {platformNotesSaving ? 'Saving...' : 'Update Notes'}
-                                {!platformNotesSaving && <Save size={16} />}
                             </button>
                         </div>
                     </div>

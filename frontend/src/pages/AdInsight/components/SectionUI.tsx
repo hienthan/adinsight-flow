@@ -1,4 +1,3 @@
-import React from "react";
 import { LayoutGrid } from "lucide-react";
 
 export const SectionHeader = ({ id, icon: Icon, title, count, bgClass, colorClass }: any) => (

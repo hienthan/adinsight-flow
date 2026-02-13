@@ -11,6 +11,17 @@ type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type OverviewMode = 'comfortable' | 'compact' | 'alert';
 type ReminderQuickFilter = 'all' | 'overdue' | 'today' | 'upcoming';
 type FreshnessState = 'fresh' | 'watch' | 'stale';
+type ReminderPriority = 'low' | 'medium' | 'high';
+type EnrichedCampaign = Campaign & {
+    platformData?: CampaignPlatform;
+    reminderState: ReminderState;
+    nearestDueInDays: number | null;
+    hasPendingReminders: boolean;
+    highestPriority?: ReminderPriority;
+    freshnessState: FreshnessState;
+    hasReviewed: boolean;
+    reviewStatusLabel?: string;
+};
 
 const VIEW_MODES: Array<{ id: OverviewMode; label: string; icon: typeof LayoutGrid }> = [
     { id: 'comfortable', label: 'Comfortable', icon: LayoutGrid },
@@ -210,7 +221,7 @@ export default function CampOverview() {
     }, [reminders]);
 
     // Get enriched campaigns with platform data and reminder state
-    const enrichedCampaigns = campaigns.map((campaign: any) => {
+    const enrichedCampaigns: EnrichedCampaign[] = campaigns.map((campaign: any) => {
         const platform = platforms.find((p) => p.id === campaign.platform);
         const campaignReminders = reminderByCampaign.get(campaign.id) || [];
 
@@ -296,7 +307,7 @@ export default function CampOverview() {
         { overdue: 0, today: 0, upcoming: 0 },
     );
 
-    const sortCampaignsByReminder = (items: any[]) =>
+    const sortCampaignsByReminder = (items: EnrichedCampaign[]) =>
         [...items].sort((a, b) => {
             const reminderRankDiff = REMINDER_STATE_RANK[a.reminderState] - REMINDER_STATE_RANK[b.reminderState];
             if (reminderRankDiff !== 0) return reminderRankDiff;
@@ -322,7 +333,7 @@ export default function CampOverview() {
             });
         }
         return acc;
-    }, [] as { platform: CampaignPlatform, campaigns: any[] }[]);
+    }, [] as { platform: CampaignPlatform, campaigns: EnrichedCampaign[] }[]);
 
     // Handle campaigns with no platform (fallback)
     const orphans = sortCampaignsByReminder(filteredCampaigns.filter(c => !platforms.find(p => p.id === c.platform)));

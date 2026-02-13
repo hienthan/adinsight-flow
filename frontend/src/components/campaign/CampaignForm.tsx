@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ShieldCheck, Lock } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
+import RichTextEditor from '../common/RichTextEditor';
+import { normalizeHtmlForCompare } from '../../lib/noteHtml';
 
 interface CampaignFormProps {
     campaignId?: string;
@@ -11,6 +13,7 @@ interface CampaignFormProps {
     onSuccess?: (campaign: Campaign) => void;
     formId?: string;
     hideActions?: boolean;
+    layoutVariant?: 'default' | 'modal';
     onDirtyChange?: (isDirty: boolean) => void;
     onSubmittingChange?: (isSubmitting: boolean) => void;
 }
@@ -27,7 +30,8 @@ const normalizeForComparison = (field: keyof Campaign, value: any) => {
     if (field === 'created_date') return formatDateForInput(value || '');
     if (field === 'is_dsa') return Boolean(value);
     if (field === 'cpc' || field === 'max_daily_budget') return value === null || value === undefined ? null : Number(value);
-    if (field === 'name' || field === 'status' || field === 'platform' || field === 'keywords' || field === 'description' || field === 'general_notes') {
+    if (field === 'general_notes') return normalizeHtmlForCompare((value ?? '').toString());
+    if (field === 'name' || field === 'status' || field === 'platform' || field === 'keywords' || field === 'description') {
         return (value ?? '').toString().trim();
     }
     return value;
@@ -45,6 +49,7 @@ export default function CampaignForm({
     onSuccess,
     formId,
     hideActions = false,
+    layoutVariant = 'default',
     onDirtyChange,
     onSubmittingChange,
 }: CampaignFormProps) {
@@ -69,6 +74,7 @@ export default function CampaignForm({
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const isModalLayout = layoutVariant === 'modal';
 
     // Fetch platforms for the dropdown
     const { data: platforms = [] } = useQuery<CampaignPlatform[]>({
@@ -238,81 +244,97 @@ export default function CampaignForm({
                     </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                    <div className="filter-group">
-                        <label>Campaign Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name || ''}
-                            onChange={handleChange}
-                            placeholder="e.g. HK Experiences - Summer Sales"
-                            required
-                        />
-                    </div>
-
-                    <div className="filter-group">
-                        <label>Platform</label>
-                        <select
-                            name="platform"
-                            value={formData.platform || ''}
-                            onChange={handleChange}
-                            required
-                        >
-                            <option value="">Select Platform...</option>
-                            {platforms.map((p) => (
-                                <option key={p.id} value={p.id}>{p.display_name}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem' }}>
-                    <div className="filter-group">
-                        <label>Status</label>
-                        <select name="status" value={formData.status || 'active'} onChange={handleChange}>
-                            <option value="active">Active</option>
-                            <option value="paused">Paused</option>
-                            <option value="testing">Testing</option>
-                            <option value="archived">Archived</option>
-                        </select>
-                    </div>
-
-                    <div className="filter-group">
-                        <label>Start Date</label>
-                        <input
-                            type="date"
-                            name="created_date"
-                            value={formData.created_date || ''}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div className="filter-group">
-                        <label>DSA Support</label>
-                        <div
-                            className={`hero-card ${formData.is_dsa ? 'active' : ''}`}
-                            onClick={() => setFormData(f => ({ ...f, is_dsa: !f.is_dsa }))}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.75rem',
-                                padding: '0.55rem 1rem',
-                                cursor: 'pointer',
-                                background: formData.is_dsa ? 'var(--accent-glow)' : 'var(--bg-content)',
-                                borderColor: formData.is_dsa ? 'hsl(var(--primary))' : 'var(--border-subtle)',
-                                userSelect: 'none'
-                            }}
-                        >
-                            {formData.is_dsa ? <ShieldCheck size={18} color="hsl(var(--primary))" /> : <Lock size={18} color="var(--text-dim)" />}
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: formData.is_dsa ? 'hsl(var(--primary))' : 'var(--text-dim)' }}>
-                                {formData.is_dsa ? 'DSA Active' : 'Manual only'}
-                            </span>
+                {isModalLayout ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1.25rem' }}>
+                        <div className="filter-group">
+                            <label>Campaign Name</label>
+                            <input
+                                type="text"
+                                name="name"
+                                value={formData.name || ''}
+                                onChange={handleChange}
+                                placeholder="e.g. HK Experiences - Summer Sales"
+                                required
+                            />
+                        </div>
+                        <div className="filter-group">
+                            <label>Platform</label>
+                            <select
+                                name="platform"
+                                value={formData.platform || ''}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">Select Platform...</option>
+                                {platforms.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.display_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="filter-group">
+                            <label>Status</label>
+                            <select name="status" value={formData.status || 'active'} onChange={handleChange}>
+                                <option value="active">Active</option>
+                                <option value="paused">Paused</option>
+                                <option value="testing">Testing</option>
+                                <option value="archived">Archived</option>
+                            </select>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                        <div className="filter-group">
+                            <label>Campaign Name</label>
+                            <input
+                                type="text"
+                                name="name"
+                                value={formData.name || ''}
+                                onChange={handleChange}
+                                placeholder="e.g. HK Experiences - Summer Sales"
+                                required
+                            />
+                        </div>
+                        <div className="filter-group">
+                            <label>Platform</label>
+                            <select
+                                name="platform"
+                                value={formData.platform || ''}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">Select Platform...</option>
+                                {platforms.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.display_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                {!isModalLayout && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem' }}>
+                        <div className="filter-group">
+                            <label>Status</label>
+                            <select name="status" value={formData.status || 'active'} onChange={handleChange}>
+                                <option value="active">Active</option>
+                                <option value="paused">Paused</option>
+                                <option value="testing">Testing</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                        </div>
+                        <div className="filter-group">
+                            <label>Start Date</label>
+                            <input
+                                type="date"
+                                name="created_date"
+                                value={formData.created_date || ''}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(4, minmax(0, 1fr))' : '1fr 1fr', gap: '1.25rem' }}>
                     <div className="filter-group">
                         <label>CPC ($)</label>
                         <input
@@ -335,7 +357,61 @@ export default function CampaignForm({
                             placeholder="000"
                         />
                     </div>
+
+                    {isModalLayout && (
+                        <div className="filter-group">
+                            <label>DSA Support</label>
+                            <button
+                                type="button"
+                                className={`hero-btn ${formData.is_dsa ? 'hero-btn-primary' : 'hero-btn-secondary'}`}
+                                onClick={() => setFormData(f => ({ ...f, is_dsa: !f.is_dsa }))}
+                                style={{
+                                    justifyContent: 'flex-start',
+                                    minHeight: '40px',
+                                    padding: '0.5rem 0.75rem',
+                                    fontSize: 'var(--text-sm)',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {formData.is_dsa ? <ShieldCheck size={14} /> : <Lock size={14} />}
+                                {formData.is_dsa ? 'DSA On' : 'Manual'}
+                            </button>
+                        </div>
+                    )}
+                    {isModalLayout && (
+                        <div className="filter-group">
+                            <label>Start Date</label>
+                            <input
+                                type="date"
+                                name="created_date"
+                                value={formData.created_date || ''}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    )}
                 </div>
+
+                {!isModalLayout && (
+                    <div className="filter-group">
+                        <label>DSA Support</label>
+                        <button
+                            type="button"
+                            className={`hero-btn ${formData.is_dsa ? 'hero-btn-primary' : 'hero-btn-secondary'}`}
+                            onClick={() => setFormData(f => ({ ...f, is_dsa: !f.is_dsa }))}
+                            style={{
+                                justifyContent: 'flex-start',
+                                minHeight: '40px',
+                                padding: '0.5rem 0.75rem',
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 700,
+                                width: 'fit-content',
+                            }}
+                        >
+                            {formData.is_dsa ? <ShieldCheck size={14} /> : <Lock size={14} />}
+                            {formData.is_dsa ? 'DSA On' : 'Manual'}
+                        </button>
+                    </div>
+                )}
 
                 {!formData.is_dsa && (
                     <div className="filter-group">
@@ -350,27 +426,25 @@ export default function CampaignForm({
                     </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                    <div className="filter-group">
-                        <label>Strategy & Objective</label>
-                        <textarea
-                            name="description"
-                            value={formData.description || ''}
-                            onChange={handleChange}
-                            placeholder="Objective, target audience..."
-                            style={{ minHeight: '90px' }}
-                        />
-                    </div>
-                    <div className="filter-group">
-                        <label>Internal Notes</label>
-                        <textarea
-                            name="general_notes"
-                            value={formData.general_notes || ''}
-                            onChange={handleChange}
-                            placeholder="Implementation details..."
-                            style={{ minHeight: '90px' }}
-                        />
-                    </div>
+                <div className="filter-group">
+                    <label>Strategy & Objective</label>
+                    <textarea
+                        name="description"
+                        value={formData.description || ''}
+                        onChange={handleChange}
+                        placeholder="Objective, target audience..."
+                        style={{ minHeight: '100px' }}
+                    />
+                </div>
+                <div className="filter-group">
+                    <label>Internal Notes</label>
+                    <RichTextEditor
+                        value={(formData.general_notes || '').toString()}
+                        onChange={(nextHtml) => setFormData((prev) => ({ ...prev, general_notes: nextHtml }))}
+                        placeholder="Implementation details, checkpoints, governance..."
+                        minHeight={isModalLayout ? 220 : 120}
+                        maxHeight={isModalLayout ? 560 : 220}
+                    />
                 </div>
 
                 {!hideActions && (

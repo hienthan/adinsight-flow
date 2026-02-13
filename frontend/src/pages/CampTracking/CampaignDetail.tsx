@@ -21,6 +21,7 @@ import {
 import { pb } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
 import { formatDate } from '../../lib/utils';
+import { sanitizeNoteHtml } from '../../lib/noteHtml';
 import CampaignHistory from '../../components/campaign/CampaignHistory';
 import CampaignReminders from '../../components/campaign/CampaignReminders';
 import AddReminderModal from '../../components/campaign/AddReminderModal';
@@ -315,9 +316,12 @@ export default function CampaignDetail() {
                                         lineHeight: 1.6,
                                         color: 'var(--text-dim)',
                                         minHeight: '100px',
-                                        whiteSpace: 'pre-wrap'
                                     }}>
-                                        {campaign.general_notes || 'Add internal observations...'}
+                                        {campaign.general_notes ? (
+                                            <div dangerouslySetInnerHTML={{ __html: sanitizeNoteHtml(campaign.general_notes) }} />
+                                        ) : (
+                                            'Add internal observations...'
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -360,10 +364,9 @@ export default function CampaignDetail() {
                                         border: `1px solid ${platformColor}20`,
                                         fontSize: '0.85rem',
                                         lineHeight: 1.6,
-                                        color: 'var(--text-dim)',
-                                        whiteSpace: 'pre-wrap'
+                                        color: 'var(--text-dim)'
                                     }}>
-                                        {platform.metadata}
+                                        <div dangerouslySetInnerHTML={{ __html: sanitizeNoteHtml(platform.metadata) }} />
                                     </div>
                                 </div>
                             )}

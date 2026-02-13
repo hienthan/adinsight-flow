@@ -5,6 +5,7 @@ import { Edit2, Key, History, CheckCircle2 } from 'lucide-react';
 import { Campaign, CampaignPlatform, CampaignChange } from '../../types/campaign';
 import { pb } from '../../lib/pocketbase';
 import { formatDate } from '../../lib/utils';
+import { htmlToPlainText } from '../../lib/noteHtml';
 
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type ViewMode = 'comfortable' | 'compact' | 'alert';
@@ -76,11 +77,8 @@ interface CampaignCardProps {
 export default function CampaignCard({
     campaign,
     platform,
-    hasPendingReminders,
-    highestPriority,
     reminderState = 'none',
     freshnessState = 'watch',
-    hasReviewed = false,
     reviewStatusLabel,
     viewMode = 'comfortable',
     onEdit,
@@ -115,6 +113,7 @@ export default function CampaignCard({
     });
 
     const compactView = viewMode === 'compact' || viewMode === 'alert';
+    const notesPreview = htmlToPlainText(campaign.general_notes || '');
     const reminderStyle = REMINDER_STYLES[reminderState];
     const freshnessStyle: Record<FreshnessState, { label: string; color: string; bg: string; border: string }> = {
         fresh: {
@@ -159,7 +158,16 @@ export default function CampaignCard({
                 e.currentTarget.style.boxShadow = 'var(--shadow-soft)';
             }}
         >
-            <div onClick={() => navigate(`/camp-tracking/campaign/${campaign.id}`, { state: { from: location.pathname + location.search } })} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div
+                onClick={() => {
+                    if (onEdit) {
+                        onEdit(campaign.id);
+                        return;
+                    }
+                    navigate(`/camp-tracking/campaign/${campaign.id}`, { state: { from: location.pathname + location.search } });
+                }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+            >
                 {/* Header: Name & Minimalist Metrics */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: compactView ? '0.5rem' : '0.75rem', gap: compactView ? '0.45rem' : '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0, position: 'relative' }}>
@@ -256,15 +264,11 @@ export default function CampaignCard({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (onEdit) {
-                                    onEdit(campaign.id);
-                                } else {
-                                    navigate(`/camp-tracking/edit/${campaign.id}`);
-                                }
+                                navigate(`/camp-tracking/campaign/${campaign.id}`, { state: { from: location.pathname + location.search } });
                             }}
                             className="hero-btn-ghost"
                             style={{ padding: compactView ? '0.15rem' : '0.2rem', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            title="Edit Campaign"
+                            title="Open campaign detail"
                         >
                             <Edit2 size={compactView ? 12 : 13} style={{ opacity: 0.7 }} />
                         </button>
@@ -344,7 +348,7 @@ export default function CampaignCard({
 
                 {/* Fixed-Height Notes Section */}
                 <div
-                    title={campaign.general_notes || 'No notes available'}
+                    title={notesPreview || 'No notes available'}
                     style={{
                         padding: compactView ? '0.45rem 0.55rem' : '0.6rem 0.75rem',
                         background: 'var(--bg-overlay)',
@@ -361,7 +365,7 @@ export default function CampaignCard({
                         fontStyle: 'italic'
                     }}
                 >
-                    {campaign.general_notes || 'Define optimization notes...'}
+                    {notesPreview || 'Define optimization notes...'}
                 </div>
             </div>
         </div>
