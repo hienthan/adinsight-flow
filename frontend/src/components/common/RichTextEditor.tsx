@@ -5,7 +5,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Extension } from '@tiptap/core';
-import { Bold, Italic, Minus, RotateCcw, RotateCw, Pilcrow } from 'lucide-react';
+import { Bold, Italic, Minus, Pilcrow } from 'lucide-react';
 import { normalizeHtmlForCompare, toEditorHtml } from '../../lib/noteHtml';
 
 const MIN_FONT_SIZE = 12;
@@ -47,12 +47,12 @@ const FontSize = Extension.create({
         return {
             setFontSize:
                 (fontSize: string) =>
-                ({ chain }: { chain: any }) =>
-                    chain().setMark('textStyle', { fontSize }).run(),
+                    ({ chain }: { chain: any }) =>
+                        chain().setMark('textStyle', { fontSize }).run(),
             unsetFontSize:
                 () =>
-                ({ chain }: { chain: any }) =>
-                    chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run(),
+                    ({ chain }: { chain: any }) =>
+                        chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run(),
         } as any;
     },
 });
@@ -232,12 +232,6 @@ export default function RichTextEditor({
                     </button>
                 ))}
 
-                <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().undo().run()}>
-                    <RotateCcw size={13} />
-                </button>
-                <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().redo().run()}>
-                    <RotateCw size={13} />
-                </button>
             </div>
 
             <div

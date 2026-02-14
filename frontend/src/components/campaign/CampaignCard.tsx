@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Edit2, Key, History, CheckCircle2 } from 'lucide-react';
+import { ArrowUpRight, Key, History, CheckCircle2 } from 'lucide-react';
 import { Campaign, CampaignPlatform, CampaignChange } from '../../types/campaign';
 import { pb } from '../../lib/pocketbase';
 import { formatDate } from '../../lib/utils';
@@ -158,6 +158,11 @@ export default function CampaignCard({
                 e.currentTarget.style.boxShadow = 'var(--shadow-soft)';
             }}
         >
+            {/* Priority Indicator Line */}
+            {campaign.priority && campaign.priority !== 'normal' && (
+                <div className={`priority-indicator priority-${campaign.priority}`} />
+            )}
+
             <div
                 onClick={() => {
                     if (onEdit) {
@@ -186,7 +191,7 @@ export default function CampaignCard({
                             {campaign.name}
                         </h3>
                         {campaign.is_dsa === false && (
-                            <Key size={compactView ? 11 : 12} style={{ color: 'hsl(var(--primary))', flexShrink: 0 }} />
+                            <Key size={compactView ? 11 : 12} style={{ color: '#facc15', flexShrink: 0 }} />
                         )}
                     </div>
 
@@ -258,7 +263,7 @@ export default function CampaignCard({
                             }}
                             title="Mark reviewed (no change)"
                         >
-                            <CheckCircle2 size={compactView ? 12 : 13} style={{ opacity: 0.85 }} />
+                            <CheckCircle2 size={compactView ? 12 : 13} style={{ opacity: 1, color: '#22c55e' }} />
                         </button>
 
                         <button
@@ -270,7 +275,7 @@ export default function CampaignCard({
                             style={{ padding: compactView ? '0.15rem' : '0.2rem', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             title="Open campaign detail"
                         >
-                            <Edit2 size={compactView ? 12 : 13} style={{ opacity: 0.7 }} />
+                            <ArrowUpRight size={compactView ? 12 : 13} style={{ opacity: 0.7 }} />
                         </button>
                     </div>
                 </div>

@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // Layout Components
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
+import StickyNotesSidebar from './components/layout/StickyNotesSidebar';
 
 // Page Components - AdInsight
 import AdInsightPage from './pages/AdInsight/AdInsightPage';
@@ -23,6 +24,7 @@ import './App.css';
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [stickySidebarOpen, setStickySidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false); // Default light mode
 
   React.useEffect(() => {
@@ -37,10 +39,15 @@ function App() {
     <div className="app-container">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
-      <main className={`main-wrapper ${sidebarCollapsed ? 'full' : ''}`}>
+      <main
+        className={`main-wrapper ${sidebarCollapsed ? 'full' : ''}`}
+        style={{ marginRight: stickySidebarOpen ? '420px' : '48px' }}
+      >
         <Header
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
+          stickySidebarOpen={stickySidebarOpen}
+          onToggleStickySidebar={() => setStickySidebarOpen(!stickySidebarOpen)}
         />
 
         <Routes>
@@ -69,6 +76,11 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+
+      <StickyNotesSidebar
+        open={stickySidebarOpen}
+        onToggle={() => setStickySidebarOpen(!stickySidebarOpen)}
+      />
     </div>
   );
 }
