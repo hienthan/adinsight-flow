@@ -163,7 +163,7 @@ export default function CampaignForm({
             let savedRecord: Campaign;
 
             if (campaignId && existingCampaign) {
-                const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'keywords'];
+                const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'keywords', 'description'];
                 const changes: any[] = [];
                 trackedFields.forEach((field) => {
                     const oldValue = existingCampaign[field];
@@ -418,7 +418,7 @@ export default function CampaignForm({
                         value={(formData.general_notes || '').toString()}
                         onChange={(nextHtml) => setFormData((prev) => ({ ...prev, general_notes: nextHtml }))}
                         placeholder="Implementation details, checkpoints, governance..."
-                        minHeight={isModalLayout ? 200 : 120}
+                        minHeight={isModalLayout ? 100 : 120}
                         maxHeight={isModalLayout ? 500 : 220}
                     />
                 </div>

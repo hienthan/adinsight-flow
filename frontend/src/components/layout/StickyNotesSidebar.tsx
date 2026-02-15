@@ -16,10 +16,12 @@ import { htmlToPlainText } from '../../lib/noteHtml';
 
 interface StickyNotesSidebarProps {
     open: boolean;
+    pinned: boolean; // Sidebar itself is pinned
     onToggle: () => void;
+    onPinToggle: () => void;
 }
 
-export default function StickyNotesSidebar({ open, onToggle }: StickyNotesSidebarProps) {
+export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle }: StickyNotesSidebarProps) {
     const queryClient = useQueryClient();
     const sidebarRef = useRef<HTMLElement>(null);
     const [expandedPlatformId, setExpandedPlatformId] = useState<string | null>(null);
@@ -87,7 +89,7 @@ export default function StickyNotesSidebar({ open, onToggle }: StickyNotesSideba
         };
 
         const handleClickOutside = (e: MouseEvent) => {
-            if (open && sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+            if (open && !pinned && sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
                 onToggle();
             }
         };
@@ -135,10 +137,11 @@ export default function StickyNotesSidebar({ open, onToggle }: StickyNotesSideba
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    cursor: 'pointer',
+                    cursor: pinned ? 'not-allowed' : 'pointer',
                     boxShadow: 'var(--shadow-soft)',
                     zIndex: 10,
-                    color: 'var(--text-dim)'
+                    color: pinned ? 'var(--text-muted)' : 'var(--text-dim)',
+                    opacity: pinned ? 0.5 : 1
                 }}
             >
                 {open ? <ChevronRight size={14} /> : <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />}
@@ -178,7 +181,19 @@ export default function StickyNotesSidebar({ open, onToggle }: StickyNotesSideba
                         alignItems: 'center'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <StickyNote size={18} style={{ color: 'hsl(var(--primary))' }} />
+                            <button
+                                onClick={onPinToggle}
+                                className="hero-btn-ghost"
+                                style={{
+                                    padding: '0.4rem',
+                                    color: pinned ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                                    background: pinned ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                                    borderRadius: '8px'
+                                }}
+                                title={pinned ? "Unpin Sidebar" : "Pin Sidebar"}
+                            >
+                                <Pin size={18} style={{ fill: pinned ? 'currentColor' : 'none' }} />
+                            </button>
                             <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>Sticky Hub</h2>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

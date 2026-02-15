@@ -89,7 +89,7 @@ export default function CampOverview() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const filterPlatform = searchParams.get('platform') || 'all';
-    const filterStatus = searchParams.get('status') || 'all';
+    const filterPriority = searchParams.get('priority') || 'all';
     const filterName = searchParams.get('q') || '';
     const filterReminders = searchParams.get('reminders') === 'true';
     const viewMode = (searchParams.get('view') as OverviewMode) || 'comfortable';
@@ -105,10 +105,10 @@ export default function CampOverview() {
         });
     };
 
-    const setFilterStatus = (val: string) => {
+    const setFilterPriority = (val: string) => {
         setSearchParams((prev: URLSearchParams) => {
-            if (val === 'all') prev.delete('status');
-            else prev.set('status', val);
+            if (val === 'all') prev.delete('priority');
+            else prev.set('priority', val);
             return prev;
         });
     };
@@ -174,7 +174,7 @@ export default function CampOverview() {
 
     // Fetch campaigns with platform expand
     const { data: campaigns = [], isLoading, refetch } = useQuery<Campaign[]>({
-        queryKey: ['campaigns', filterPlatform, filterStatus],
+        queryKey: ['campaigns', filterPlatform, filterPriority],
         queryFn: async () => {
             let filter = '';
             const filters: string[] = [];
@@ -183,8 +183,8 @@ export default function CampOverview() {
                 filters.push(`platform = "${filterPlatform}"`);
             }
 
-            if (filterStatus !== 'all') {
-                filters.push(`status = "${filterStatus}"`);
+            if (filterPriority !== 'all') {
+                filters.push(`priority = "${filterPriority}"`);
             }
 
             filter = filters.join(' && ');
@@ -349,7 +349,7 @@ export default function CampOverview() {
         setIsEditModalOpen(true);
     };
     const hasActiveFilters = filterPlatform !== 'all'
-        || filterStatus !== 'all'
+        || filterPriority !== 'all'
         || !!filterName.trim()
         || filterReminders
         || viewMode !== 'comfortable'
@@ -419,17 +419,20 @@ export default function CampOverview() {
                     </div>
 
                     <div className="filter-group">
-                        <label>Status</label>
+                        <label>Priority</label>
                         <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            style={{ minWidth: '140px' }}
+                            value={filterPriority}
+                            onChange={(e) => setFilterPriority(e.target.value)}
+                            style={{
+                                minWidth: '140px',
+                                color: filterPriority === 'high' ? '#ef4444' : (filterPriority === 'medium' ? '#f59e0b' : 'inherit'),
+                                fontWeight: filterPriority !== 'all' && filterPriority !== 'normal' ? 700 : 500
+                            }}
                         >
-                            <option value="all">Any Status</option>
-                            <option value="active">Active</option>
-                            <option value="paused">Paused</option>
-                            <option value="testing">Testing</option>
-                            <option value="archived">Archived</option>
+                            <option value="all">Any Priority</option>
+                            <option value="normal">Nor (Normal)</option>
+                            <option value="medium">Med (Watch)</option>
+                            <option value="high">Hi (Critical)</option>
                         </select>
                     </div>
                 </div>

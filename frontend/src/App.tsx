@@ -24,7 +24,10 @@ import './App.css';
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [stickySidebarOpen, setStickySidebarOpen] = useState(false);
+  const [stickySidebarPinned, setStickySidebarPinned] = useState(() => {
+    return localStorage.getItem('stickySidebarPinned') === 'true';
+  });
+  const [stickySidebarOpen, setStickySidebarOpen] = useState(stickySidebarPinned);
   const [darkMode, setDarkMode] = useState(false); // Default light mode
 
   React.useEffect(() => {
@@ -34,6 +37,13 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  React.useEffect(() => {
+    localStorage.setItem('stickySidebarPinned', stickySidebarPinned.toString());
+    if (stickySidebarPinned) {
+      setStickySidebarOpen(true);
+    }
+  }, [stickySidebarPinned]);
 
   return (
     <div className="app-container">
@@ -47,7 +57,11 @@ function App() {
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
           stickySidebarOpen={stickySidebarOpen}
-          onToggleStickySidebar={() => setStickySidebarOpen(!stickySidebarOpen)}
+          onToggleStickySidebar={() => {
+            if (!stickySidebarPinned) {
+              setStickySidebarOpen(!stickySidebarOpen);
+            }
+          }}
         />
 
         <Routes>
@@ -79,7 +93,13 @@ function App() {
 
       <StickyNotesSidebar
         open={stickySidebarOpen}
-        onToggle={() => setStickySidebarOpen(!stickySidebarOpen)}
+        pinned={stickySidebarPinned}
+        onToggle={() => {
+          if (!stickySidebarPinned) {
+            setStickySidebarOpen(!stickySidebarOpen);
+          }
+        }}
+        onPinToggle={() => setStickySidebarPinned(!stickySidebarPinned)}
       />
     </div>
   );
