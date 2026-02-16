@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Bell, Activity, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Bell, Activity, ChevronDown, ChevronRight, History, X } from 'lucide-react';
 import CampaignForm from './CampaignForm';
 import AddReminderModal from './AddReminderModal';
 import CampaignReminders from './CampaignReminders';
@@ -19,12 +19,13 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
     const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
     const [isRemindersCollapsed, setIsRemindersCollapsed] = useState(false);
     const [isAutoLogCollapsed, setIsAutoLogCollapsed] = useState(false);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [isFormDirty, setIsFormDirty] = useState(false);
     const [isFormSubmitting, setIsFormSubmitting] = useState(false);
     const shouldCloseOnBackdropClickRef = useRef(false);
     const campaignFormId = 'campaign-edit-form';
 
-    const { data: campaign } = useQuery<Campaign>({
+    useQuery<Campaign>({
         queryKey: ['campaign', campaignId],
         queryFn: async () => {
             if (!campaignId) return null as any;
@@ -77,13 +78,13 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                 }}
             >
                 <div
-                    className="hero-card animate-fade"
+                    className="hero-card animate-fade modal-layout"
                     style={{
                         width: '100%',
                         maxWidth: '800px',
                         display: 'flex',
                         flexDirection: 'column',
-                        padding: '2rem',
+                        padding: '1.5rem',
                         background: 'var(--bg-content)',
                         maxHeight: '90vh',
                         overflowY: 'auto',
@@ -198,6 +199,15 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                         <Activity size={13} style={{ color: 'hsl(var(--primary))' }} />
                                         AutoLog (Latest)
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsHistoryModalOpen(true)}
+                                        className="hero-btn hero-btn-ghost"
+                                        title="View Full History"
+                                        style={{ padding: '0.15rem 0.35rem', fontSize: '0.7rem' }}
+                                    >
+                                        <History size={13} />
+                                    </button>
                                 </div>
 
                                 {!isAutoLogCollapsed && (
@@ -231,6 +241,62 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     isOpen={isReminderModalOpen}
                     onClose={() => setIsReminderModalOpen(false)}
                 />
+            )}
+
+            {/* Sub-modal for Full History */}
+            {campaignId && isHistoryModalOpen && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1100, // Higher than main modal
+                        padding: '2rem',
+                    }}
+                    onClick={() => setIsHistoryModalOpen(false)}
+                >
+                    <div
+                        className="hero-card animate-fade modal-layout"
+                        style={{
+                            width: '100%',
+                            maxWidth: '900px',
+                            maxHeight: '85vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            padding: '1.5rem',
+                            background: 'var(--bg-content)',
+                            position: 'relative',
+                            boxShadow: 'var(--shadow-2xl)',
+                            overflow: 'hidden'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ width: '4px', height: '20px', background: 'hsl(var(--primary))', borderRadius: '4px' }} />
+                                <h3 className="hero-section-title" style={{ fontSize: '1.1rem', marginBottom: 0 }}>Full AutoLog History</h3>
+                            </div>
+                            <button
+                                onClick={() => setIsHistoryModalOpen(false)}
+                                className="hero-btn hero-btn-ghost"
+                                style={{ padding: '0.4rem' }}
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
+                            <CampaignHistory campaignId={campaignId} compact={false} />
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );

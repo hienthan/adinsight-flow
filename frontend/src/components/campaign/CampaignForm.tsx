@@ -30,7 +30,10 @@ const normalizeForComparison = (field: keyof Campaign, value: any) => {
     if (field === 'created_date') return formatDateForInput(value || '');
     if (field === 'is_dsa') return Boolean(value);
     if (field === 'priority') return value || 'normal';
-    if (field === 'cpc' || field === 'max_daily_budget') return value === null || value === undefined ? null : Number(value);
+    if (field === 'cpc' || field === 'max_daily_budget') {
+        const val = toComparableNumber(value);
+        return val === 0 ? null : val; // Normalize 0 to null for stable comparison with DB
+    }
     if (field === 'general_notes') return normalizeHtmlForCompare((value ?? '').toString());
     if (field === 'name' || field === 'status' || field === 'platform' || field === 'keywords' || field === 'description') {
         return (value ?? '').toString().trim();
@@ -109,7 +112,9 @@ export default function CampaignForm({
     }, [existingCampaign, platformIdFromUrl]);
 
     const hasFormChanges = useMemo(() => {
-        if (!campaignId || !existingCampaign) return true;
+        if (!campaignId) return true;
+        // While loading or before data is synced to formData, don't consider it dirty
+        if (!existingCampaign || formData.id !== campaignId) return false;
         const editableFields: (keyof Campaign)[] = [
             'name',
             'status',
@@ -126,7 +131,7 @@ export default function CampaignForm({
         return editableFields.some((field) => {
             const oldValue = normalizeForComparison(field, existingCampaign[field]);
             const newValue = normalizeForComparison(field, formData[field]);
-            return JSON.stringify(oldValue) !== JSON.stringify(newValue);
+            return oldValue !== newValue && JSON.stringify(oldValue) !== JSON.stringify(newValue);
         });
     }, [campaignId, existingCampaign, formData]);
 
@@ -223,7 +228,7 @@ export default function CampaignForm({
 
     return (
         <form id={formId} onSubmit={handleSubmit} className="animate-fade">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isModalLayout ? '0.85rem' : '1.5rem' }}>
 
                 {error && (
                     <div className="hero-badge" style={{
@@ -241,7 +246,7 @@ export default function CampaignForm({
                 )}
 
                 {/* Grid 1: Basic Info & Status & Priority */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 2fr) minmax(140px, 1fr) 100px 90px', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 2fr) minmax(140px, 1fr) 100px 90px', gap: isModalLayout ? '0.75rem' : '1rem' }}>
                     <div className="filter-group">
                         <label>Campaign Name</label>
                         <input
@@ -299,7 +304,7 @@ export default function CampaignForm({
                 </div>
 
                 {/* Grid 2: Metrics & Config */}
-                <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: isModalLayout ? '0.75rem' : '1rem' }}>
                     <div className="filter-group">
                         <label>CPC ($)</label>
                         <input
@@ -408,7 +413,7 @@ export default function CampaignForm({
                         value={formData.description || ''}
                         onChange={handleChange}
                         placeholder="Objective, target audience..."
-                        style={{ minHeight: '80px' }}
+                        style={{ minHeight: isModalLayout ? '60px' : '80px' }}
                     />
                 </div>
 

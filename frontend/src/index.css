@@ -129,12 +129,14 @@ body {
 }
 
 .priority-high {
-  background: #ef4444; /* High Priority - Red */
+  background: #ef4444;
+  /* High Priority - Red */
   box-shadow: 2px 0 10px rgba(239, 68, 68, 0.3);
 }
 
 .priority-medium {
-  background: #facc15; /* Medium Priority - Yellow */
+  background: #facc15;
+  /* Medium Priority - Yellow */
 }
 
 .hero-card:hover {
@@ -155,6 +157,14 @@ body {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   border: 1px solid transparent;
+}
+
+.hero-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .hero-btn-primary {
@@ -415,6 +425,15 @@ body {
   text-transform: uppercase;
   font-weight: 750;
   letter-spacing: 0.05em;
+}
+
+.modal-layout .filter-group label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: none;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  opacity: 0.9;
 }
 
 .filter-group input,
