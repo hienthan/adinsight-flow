@@ -217,6 +217,9 @@ export default function CampaignForm({
 
             queryClient.invalidateQueries({ queryKey: ['campaigns'] });
             queryClient.invalidateQueries({ queryKey: ['campaign', campaignId] });
+            queryClient.invalidateQueries({ queryKey: ['campaign-changes', campaignId] });
+            queryClient.invalidateQueries({ queryKey: ['all-changes'] });
+
             if (onSuccess) onSuccess(savedRecord);
             else navigate('/camp-tracking');
         } catch (err: any) {
