@@ -203,14 +203,23 @@ class GeoEngine:
             "sisters": ("Singapore", "Sisters Islands")
         }
         
-        # Load external knowledge base if exists
-        kb_path = os.path.join(os.path.dirname(__file__), 'geo_knowledge.json')
-        if os.path.exists(kb_path):
-            try:
-                with open(kb_path, 'r', encoding='utf-8') as f:
-                    for k, v in json.load(f).items():
-                        self.kb[k.lower().replace(' ', '-')] = (v['country'], v['city'])
-            except: pass
+        # 2. Dynamic Phrase Scanning (Knowledge Bases)
+        # Load all JSON files in the same directory that look like geo KBs
+        lib_dir = os.path.dirname(__file__)
+        for filename in os.listdir(lib_dir):
+            if filename.endswith('.json') and ('geo' in filename or 'kb' in filename):
+                kb_path = os.path.join(lib_dir, filename)
+                try:
+                    with open(kb_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        for k, v in data.items():
+                            # Support both flat and nested structures
+                            if isinstance(v, dict) and 'country' in v and 'city' in v:
+                                self.kb[k.lower().replace(' ', '-')] = (v['country'], v['city'])
+                            elif isinstance(v, (list, tuple)) and len(v) >= 2:
+                                self.kb[k.lower().replace(' ', '-')] = (v[0], v[1])
+                except Exception as e:
+                    print(f"⚠️ Warning: Failed to load KB {filename}: {e}")
 
         # 2. City Inventory (Multi-word support)
         self.city_lookup = {}
@@ -236,6 +245,12 @@ class GeoEngine:
             "vietnam": "Viet Nam", "usa": "United States", "uk": "United Kingdom",
             "korea": "South Korea", "taiwan": "Taiwan"
         })
+
+        # 4. Stop Words to avoid false positives (e.g., 'anak' in North Korea)
+        self.geo_stop_words = {
+            "anak", "dan", "untuk", "dari", "yang", "dengan", "pada", "ke", 
+            "itu", "ini", "bisa", "buat", "paling", "seru", "favorit"
+        }
 
     def normalize_country(self, val):
         if not val or val == "Unknown": return "Unknown"
@@ -274,6 +289,7 @@ class GeoEngine:
             for i in range(len(words) - n + 1):
                 phrase = " ".join(words[i:i+n])
                 if len(phrase) < 3: continue
+                if phrase in self.geo_stop_words: continue # Skip common words
                 if phrase in self.city_lookup:
                     found_cities.extend(self.city_lookup[phrase])
         
