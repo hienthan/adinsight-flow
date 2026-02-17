@@ -211,9 +211,9 @@ def main():
     # Step 5: Test required fields in 'pages'
     print("\n5️⃣  Testing required fields...")
     required_fields = [
-        'platform', 'canonical_id', 'language', 'languages',
-        'content_type', 'url', 'slug', 'sitemap_tag', 'sub_tag',
-        'country', 'city', 'tier', 'is_private', 'translated_title_vi'
+        'platform', 'canonical_id', 'languages',
+        'content_type', 'url', 'slug', 'decoded_slug', 'sitemap_tag', 'sub_tag',
+        'country', 'city', 'tier', 'is_private', 'translated_title_vi', 'funnel_stage'
     ]
     
     if not test_field_exists(pb_url, token, "pages", required_fields):

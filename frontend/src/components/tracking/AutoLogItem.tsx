@@ -29,12 +29,12 @@ export default function AutoLogItem({
 
     return (
         <div className="hero-card animate-fade" style={{
-            padding: '0.65rem 0.85rem',
+            padding: '0.45rem 0.65rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.4rem',
+            gap: '0.25rem',
             borderLeft: `3px solid ${platformColor || 'hsl(var(--primary))'}`,
-            fontSize: '0.75rem',
+            fontSize: '0.7rem',
             background: 'var(--bg-content)',
             boxShadow: 'var(--shadow-sm)',
             height: '100%'
@@ -65,10 +65,10 @@ export default function AutoLogItem({
                         gap: '0.4rem'
                     }}>
                         <span style={{
-                            textTransform: 'uppercase',
+                            textTransform: 'none',
                             color: 'var(--text-main)',
-                            fontSize: '0.65rem',
-                            fontWeight: 600,
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis'
@@ -106,12 +106,13 @@ export default function AutoLogItem({
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
+                gap: '0.4rem',
                 background: 'hsla(var(--primary) / 0.03)',
-                padding: '0.4rem 0.6rem',
+                padding: '0.3rem 0.5rem',
                 borderRadius: '4px',
                 border: '1px solid var(--border-subtle)',
-                marginTop: '0.1rem'
+                marginTop: '0.05rem',
+                fontSize: '0.68rem'
             }}>
                 <span style={{
                     color: '#ef4444',

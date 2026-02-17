@@ -8,6 +8,8 @@ export interface CampaignPlatform {
     color: string;
     icon?: string;
     metadata?: string;
+    sticky_note?: string;
+    is_pinned?: boolean;
     created: string;
     updated: string;
 }
@@ -19,6 +21,7 @@ export interface Campaign {
     status: 'active' | 'paused' | 'testing' | 'archived';
     created_date: string;
     last_reviewed_date?: string;
+    last_review_outcome?: 'no_change' | 'updated' | 'cpc_increase' | 'cpc_reduce';
     cpc?: number;
     max_daily_budget?: number;
     keywords?: string;
@@ -26,6 +29,7 @@ export interface Campaign {
     description?: string;
     general_notes?: string;
     is_dsa: boolean;
+    priority?: 'normal' | 'medium' | 'high';
     custom_fields?: Record<string, any>;
     created: string;
     updated: string;

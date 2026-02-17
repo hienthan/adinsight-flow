@@ -1,0 +1,23 @@
+---
+description: Performance and Token Usage Optimization Guidelines
+globs: **/*
+alwaysApply: true
+---
+
+# Token & Performance Optimization Rules
+
+## 1. Token Minimization
+- **CRITICAL**: Any implementation of UI, scripts, logic imports, or data processing must prioritize performance and minimize token consumption to reduce assistance costs and improve speed.
+- Avoid redundant data fetching or processing that increases context weight for AI assistance.
+
+## 2. Large URL Data Processing
+- **STRICT RULE**: For tasks involving a large volume of URLs (processing, importing, formatting, etc.), use **SCRIPTS ONLY**.
+- **PROHIBITED**: NEVER read the content of input URLs or output URL results directly into the chat/editor context. 
+- URL processing should be handled by running local scripts that output only summaries, statistics, or status, NOT the full raw data.
+
+## 3. Large Data Confirmation
+- If a task shows signs of processing large amounts of data that would significantly consume tokens, **ALWAYS** ask for explicit confirmation from the user before proceeding.
+- Do not make arbitrary decisions that lead to high token consumption ("đốt token").
+
+## 4. Scripting First
+- For data manipulation tasks (CSV formatting, URL cleaning, sitemap parsing), prefer writing and executing a robust script over manual manipulation or step-by-step AI processing of raw data strings.

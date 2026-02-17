@@ -1,0 +1,91 @@
+---
+description: Smart enrichment flow for Klook zh-HK blog pages
+alwaysApply: true
+---
+
+# Klook zh-HK Blog Enrichment Flow
+
+Use this flow when handling Klook zh-HK pages with special-character slugs.
+
+## Seed Data Rules
+- Keep `slug` as raw URL slug.
+- Always create `decoded_slug` using URL decode + separator normalization.
+- Reuse `translated_title_vi` as smart English title.
+- Default translation source is `decoded_slug` (safe mode).
+- Do NOT fetch page title by default.
+- Only fetch title when user explicitly requests it.
+
+## Geo Detection Priority
+- Detect `country/city` from `translated_title_vi` first (clean title text to remove punctuation/noise).
+- If geo is unknown, fallback to `decoded_slug`.
+- If still unknown, fallback to `slug`.
+- Save geo provenance in `metadata.geo_source`.
+
+## Import Safety Rules
+- Run PocketBase connection/schema test before import.
+- For existing records, do not create duplicates.
+- For existing records, patch `country/city` when new values are better than old values.
+- Keep `languages` as JSON array; do not rely on `language` field.
+- Do not treat `blocked/timeout/request_error` as invalid URL by default.
+
+## Funnel Stage Classification (Critical for DSA)
+- Classify `funnel_stage` with precedence: `readiness` > `planning` > `awareness`.
+- Classification text priority: `translated_title_vi` first, fallback `decoded_slug`.
+- Normalize text before matching: lowercase + remove punctuation/noise + collapse spaces.
+- Save audit hints in metadata:
+  - `metadata.funnel_source`: `translated_title_vi|decoded_slug`
+  - `metadata.funnel_rule_hit`: first matched keyword
+- If no keyword matches, default to `awareness`.
+- Use both keyword-list and regex variants to improve matching coverage (e.g. `k-eta`, `e-visa`, `arrival form`).
+
+### readiness keywords
+- visit japan web
+- visit japan, vjw
+- arrival card, arrival form, entry form, landing card
+- immigration, customs
+- visa, e visa, evisa, travel visa, entry visa
+- eta, k eta, k-eta, electronic travel authorization
+- entry requirement, entry requirements, entry permit, travel requirement, border control
+- passport validity, transit visa
+- health declaration, customs declaration, declaration form, travel declaration
+
+### planning keywords
+- itinerary, travel plan, day trip, x day x night
+- rail pass, jr pass, metro pass, transport pass
+- airport transfer, airport express, from airport, to city
+- sim card, esim, pocket wifi, wifi card
+- budget, cost, price, fare, ticket, booking
+- where to stay, best area, hotel area
+- best time to visit, weather, season
+- restaurant guide, must eat
+
+### awareness keywords
+- things to do, top attractions, best places
+- travel guide, destination guide
+- cherry blossom, autumn leaves, xmas, winter, summer, spring
+- festival, event
+- photo spot, instagrammable
+- family activities, couple date ideas
+- top 10, must visit, recommendation
+
+## Klook Blog Scope Defaults
+- `platform = klook`
+- `sitemap_tag = blog`
+- `canonical_id = "0"`
+- `include_for_dsa = true`
+- `exclude_for_dsa = false`
+- `languages = ["zh-HK"]`
+
+## Tiering Strategy for Blog
+- Compute dynamic tier from funnel intent + freshness.
+- Base tier by `funnel_stage`:
+  - `readiness -> 1`
+  - `planning -> 2`
+  - `awareness -> 3`
+- Freshness override:
+  - if `translated_title_vi` contains `2025`, force `tier = 4`.
+  - if `translated_title_vi` contains any year older than `2025`, force `tier = 5`.
+  - if year is `2026` or no year is detected, use base tier from funnel stage.
+- Save tier audit in metadata:
+  - `metadata.year_detected`
+  - `metadata.tier_source` (`funnel_stage` or `year_override`)

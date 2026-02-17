@@ -45,6 +45,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     }, []);
 
     const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+    const isTrendSignalsActive = isActive('/adinsight/trends');
+    const isPlatformKlookActive = isActive('/adinsight') && !isTrendSignalsActive;
 
     const NavLink = ({ to, icon: Icon, children, badgeCount, activeCondition }: any) => {
         const active = activeCondition !== undefined ? activeCondition : isActive(to);
@@ -62,8 +64,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {!collapsed && <span style={{ fontSize: '0.875rem' }}>{children}</span>}
                 {!collapsed && badgeCount > 0 && (
                     <span style={{
-                        marginLeft: 'auto', background: 'var(--destructive)', color: 'white',
-                        fontSize: '10px', padding: '2px 6px', borderRadius: '10px', fontWeight: 800
+                        marginLeft: 'auto',
+                        background: 'hsl(3 85% 56%)',
+                        color: 'var(--text-on-accent)',
+                        border: '1px solid hsla(3 85% 40% / 0.45)',
+                        boxShadow: '0 0 0 2px hsla(3 85% 56% / 0.18)',
+                        fontSize: '10px',
+                        padding: '2px 6px',
+                        borderRadius: '10px',
+                        fontWeight: 800
                     }}>
                         {badgeCount}
                     </span>
@@ -116,43 +125,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     Trend Signals
                 </NavLink>
 
-                {/* Platform: Klook (Collapsible Group) */}
-                <div>
-                    <div className="nav-item" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem', color: 'var(--text-dim)', fontWeight: 600 }}>
-                        <Globe size={18} />
-                        {!collapsed && <span style={{ fontSize: '0.875rem' }}>Platform: Klook</span>}
-                    </div>
-
-                    {!collapsed && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', paddingLeft: '2rem' }}>
-                            <Link
-                                to="/adinsight/klook/activity"
-                                className={cn("nav-item", isActive('/adinsight/klook/activity') && "active")}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.6rem',
-                                    fontSize: '0.8rem', textDecoration: 'none', width: '100%',
-                                    color: isActive('/adinsight/klook/activity') ? 'hsl(var(--primary))' : 'var(--text-dim)',
-                                }}
-                            >
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'currentColor', flexShrink: 0 }} />
-                                Activity
-                            </Link>
-
-                            <Link
-                                to="/adinsight/klook/mobility"
-                                className={cn("nav-item", isActive('/adinsight/klook/mobility') && "active")}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.6rem',
-                                    fontSize: '0.8rem', textDecoration: 'none', width: '100%',
-                                    color: isActive('/adinsight/klook/mobility') ? 'hsl(var(--primary))' : 'var(--text-dim)',
-                                }}
-                            >
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'currentColor', flexShrink: 0 }} />
-                                Mobility
-                            </Link>
-                        </div>
-                    )}
-                </div>
+                <NavLink to="/adinsight" icon={Globe} activeCondition={isPlatformKlookActive}>
+                    Platform: Klook
+                </NavLink>
 
             </nav>
         </aside>

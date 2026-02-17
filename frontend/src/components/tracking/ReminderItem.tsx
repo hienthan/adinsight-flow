@@ -35,14 +35,14 @@ export default function ReminderItem({
         <div
             className="hero-card animate-fade"
             style={{
-                padding: '0.65rem 0.85rem',
+                padding: '0.45rem 0.65rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.4rem',
+                gap: '0.25rem',
                 borderLeft: reminder.status === 'pending' ? `3px solid ${style.color}` : '1px solid var(--border-subtle)',
                 background: reminder.status === 'completed' ? 'var(--bg-main)' : 'var(--bg-content)',
                 opacity: reminder.status === 'completed' ? 0.8 : 1,
-                fontSize: '0.75rem',
+                fontSize: '0.7rem',
                 boxShadow: 'var(--shadow-sm)',
             }}
         >

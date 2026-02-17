@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { CampaignPlatform } from '../../types/campaign';
+import RichTextEditor from '../../components/common/RichTextEditor';
 
 const COLOR_PRESETS = [
     '#3b82f6', // blue
@@ -43,10 +44,30 @@ export default function PlatformManagement() {
         metadata: ''
     });
     const [isEditing, setIsEditing] = useState(false);
+    const [viewMode, setViewMode] = useState(true); // Default to view mode
 
     useEffect(() => {
         fetchPlatforms();
     }, []);
+
+    useEffect(() => {
+        if (loading) return;
+        if (platforms.length === 0) return;
+        if (formData.id) return;
+        handleSelect(platforms[0]);
+    }, [loading, platforms, formData.id]);
+
+    // ESC support
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !viewMode) {
+                setViewMode(true);
+                setIsEditing(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [viewMode]);
 
     const fetchPlatforms = async () => {
         try {
@@ -63,7 +84,8 @@ export default function PlatformManagement() {
         }
     };
 
-    const handleEdit = (platform: CampaignPlatform) => {
+
+    const handleSelect = (platform: CampaignPlatform) => {
         setFormData({
             id: platform.id,
             display_name: platform.display_name,
@@ -71,13 +93,30 @@ export default function PlatformManagement() {
             color: platform.color,
             metadata: platform.metadata || ''
         });
-        setIsEditing(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsEditing(false);
+        setViewMode(true);
     };
 
     const handleCancel = () => {
-        setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
-        setIsEditing(false);
+        if (formData.id) {
+            setViewMode(true);
+            setIsEditing(false);
+            // Reset to current platform data
+            const current = platforms.find(p => p.id === formData.id);
+            if (current) {
+                setFormData({
+                    id: current.id,
+                    display_name: current.display_name,
+                    platform_name: current.platform_name,
+                    color: current.color,
+                    metadata: current.metadata || ''
+                });
+            }
+        } else {
+            setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
+            setIsEditing(false);
+            setViewMode(true);
+        }
         setError(null);
     };
 
@@ -108,7 +147,9 @@ export default function PlatformManagement() {
                 setSuccess(`Platform "${formData.display_name}" created.`);
             }
 
-            handleCancel();
+            setSuccess(null);
+            setViewMode(true);
+            setIsEditing(false);
             setTimeout(() => setSuccess(null), 3000);
         } catch (err: any) {
             console.error('Failed to save platform:', err);
@@ -158,12 +199,35 @@ export default function PlatformManagement() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr 380px', gap: '1.5rem', alignItems: 'flex-start' }}>
                 {/* Platform List */}
-                <div className="hero-card" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                        <div style={{ padding: '0.5rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
-                            <Globe size={18} />
+                <div className="hero-card no-lift" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ padding: '0.5rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
+                                <Globe size={18} />
+                            </div>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>Channels</h3>
                         </div>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>Channels</h3>
+                        <button
+                            onClick={() => {
+                                setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
+                                setIsEditing(false);
+                                setViewMode(false);
+                            }}
+                            className="hero-btn-ghost"
+                            style={{
+                                padding: '0.4rem',
+                                borderRadius: '8px',
+                                color: 'hsl(var(--primary))',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 700
+                            }}
+                        >
+                            <Plus size={16} />
+                            Add New
+                        </button>
                     </div>
 
                     {loading ? (
@@ -179,7 +243,7 @@ export default function PlatformManagement() {
                             {platforms.map(platform => (
                                 <div
                                     key={platform.id}
-                                    onClick={() => handleEdit(platform)}
+                                    onClick={() => handleSelect(platform)}
                                     className="nav-item"
                                     style={{
                                         display: 'flex',
@@ -188,7 +252,8 @@ export default function PlatformManagement() {
                                         padding: '0.75rem 1rem',
                                         background: platform.id === formData.id ? 'var(--accent-glow)' : 'var(--bg-overlay)',
                                         border: platform.id === formData.id ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        borderRadius: '10px'
                                     }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
@@ -229,7 +294,7 @@ export default function PlatformManagement() {
                 <form id="platform-form" onSubmit={handleSubmit} style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.5rem', alignItems: 'stretch' }}>
 
                     {/* Metadata Column (Now in the Middle) */}
-                    <div className="hero-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
+                    <div className="hero-card no-lift" style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
@@ -238,38 +303,68 @@ export default function PlatformManagement() {
                                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>Strategic Notes</h3>
                             </div>
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                {isEditing && (
-                                    <button type="button" onClick={handleCancel} className="hero-btn hero-btn-ghost">Cancel</button>
+                                {!viewMode ? (
+                                    <>
+                                        <button type="button" onClick={handleCancel} className="hero-btn hero-btn-ghost">Cancel</button>
+                                        <button type="submit" disabled={submitting} className="hero-btn hero-btn-primary">
+                                            {submitting ? 'Saving...' : (isEditing ? 'Update Platform' : 'Create Platform')}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewMode(false)}
+                                        className="hero-btn hero-btn-ghost"
+                                        style={{ fontSize: '0.8rem' }}
+                                    >
+                                        Edit Notes
+                                    </button>
                                 )}
-                                <button type="submit" disabled={submitting} className="hero-btn hero-btn-primary">
-                                    {submitting ? 'Saving...' : (isEditing ? 'Update Platform' : 'Create Platform')}
-                                </button>
                             </div>
                         </div>
 
                         <div className="filter-group" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Guidelines & Constraints</label>
-                            <textarea
-                                className="hero-input"
-                                name="metadata"
-                                value={formData.metadata}
-                                onChange={handleInputChange}
-                                placeholder="Enter best practices, rules, or constraints for this platform..."
-                                style={{
-                                    flex: 1,
-                                    minHeight: '300px',
-                                    padding: '1rem',
-                                    fontSize: '0.9rem',
-                                    lineHeight: '1.6',
-                                    marginTop: '0.5rem',
-                                    resize: 'none'
-                                }}
-                            />
+                            <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '1rem', display: 'block' }}>
+                                Guidelines & Constraints
+                            </label>
+
+                            {!viewMode ? (
+                                <div style={{ flex: 1 }}>
+                                    <RichTextEditor
+                                        value={formData.metadata}
+                                        onChange={(nextHtml) => setFormData((prev) => ({ ...prev, metadata: nextHtml }))}
+                                        placeholder="Enter best practices, rules, or constraints for this platform..."
+                                        minHeight={300}
+                                        maxHeight={540}
+                                    />
+                                </div>
+                            ) : (
+                                <div
+                                    className="hero-card"
+                                    onDoubleClick={() => setViewMode(false)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '1.5rem',
+                                        background: 'var(--bg-overlay)',
+                                        border: '1px solid var(--border-subtle)',
+                                        borderRadius: '1rem',
+                                        overflowY: 'auto',
+                                        cursor: 'text',
+                                        minHeight: '300px'
+                                    }}
+                                >
+                                    <div
+                                        className="note-content-html"
+                                        style={{ color: 'var(--text-main)', lineHeight: 1.8, fontSize: '0.95rem' }}
+                                        dangerouslySetInnerHTML={{ __html: formData.metadata || '<p style="color: var(--text-muted); font-style: italic;">No notes yet. Double-click to add.</p>' }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* Identity Column (Now on the Right) */}
-                    <div className="hero-card" style={{ padding: '2rem', border: isEditing ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)' }}>
+                    <div className="hero-card no-lift" style={{ padding: '2rem', border: isEditing ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
                             <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
                                 {isEditing ? <Palette size={20} /> : <Plus size={20} />}

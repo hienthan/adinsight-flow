@@ -115,6 +115,28 @@ body {
   padding: 1.25rem;
   box-shadow: var(--shadow-soft);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.priority-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  z-index: 10;
+}
+
+.priority-high {
+  background: #ef4444;
+  /* High Priority - Red */
+  box-shadow: 2px 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.priority-medium {
+  background: #facc15;
+  /* Medium Priority - Yellow */
 }
 
 .hero-card:hover {
@@ -135,6 +157,14 @@ body {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   border: 1px solid transparent;
+}
+
+.hero-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .hero-btn-primary {
@@ -397,6 +427,15 @@ body {
   letter-spacing: 0.05em;
 }
 
+.modal-layout .filter-group label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: none;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  opacity: 0.9;
+}
+
 .filter-group input,
 .filter-group select,
 .filter-group textarea {
@@ -506,4 +545,81 @@ h3.hero-section-title {
 
 .animate-fade {
   animation: fadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Rich text editor base */
+.ProseMirror {
+  outline: none;
+  color: var(--text-main);
+  line-height: 1.6;
+  font-size: var(--text-sm);
+  min-height: 100%;
+}
+
+.ProseMirror p {
+  margin: 0 0 0.5rem 0;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  margin: 0.6rem 0 0.45rem 0;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.ProseMirror h1 {
+  font-size: 1.2rem;
+}
+
+.ProseMirror h2 {
+  font-size: 1.08rem;
+}
+
+.ProseMirror h3 {
+  font-size: 0.98rem;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 0 0 0.5rem 1rem;
+}
+
+.ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 0.6rem 0;
+}
+
+.ProseMirror a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}
+
+.note-content-html h1,
+.note-content-html h2,
+.note-content-html h3 {
+  margin: 0.55rem 0 0.45rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.note-content-html p {
+  margin: 0 0 0.5rem;
+}
+
+.note-content-html ul,
+.note-content-html ol {
+  margin: 0 0 0.5rem 1rem;
+}
+
+.note-content-html hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 0.65rem 0;
+}
+
+.hero-card.no-lift:hover {
+  transform: none;
+  box-shadow: var(--shadow-soft);
 }

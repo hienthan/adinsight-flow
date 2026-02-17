@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // Layout Components
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
+import StickyNotesSidebar from './components/layout/StickyNotesSidebar';
 
 // Page Components - AdInsight
 import AdInsightPage from './pages/AdInsight/AdInsightPage';
@@ -23,6 +24,10 @@ import './App.css';
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [stickySidebarPinned, setStickySidebarPinned] = useState(() => {
+    return localStorage.getItem('stickySidebarPinned') === 'true';
+  });
+  const [stickySidebarOpen, setStickySidebarOpen] = useState(stickySidebarPinned);
   const [darkMode, setDarkMode] = useState(false); // Default light mode
 
   React.useEffect(() => {
@@ -33,14 +38,30 @@ function App() {
     }
   }, [darkMode]);
 
+  React.useEffect(() => {
+    localStorage.setItem('stickySidebarPinned', stickySidebarPinned.toString());
+    if (stickySidebarPinned) {
+      setStickySidebarOpen(true);
+    }
+  }, [stickySidebarPinned]);
+
   return (
     <div className="app-container">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
-      <main className={`main-wrapper ${sidebarCollapsed ? 'full' : ''}`}>
+      <main
+        className={`main-wrapper ${sidebarCollapsed ? 'full' : ''}`}
+        style={{ marginRight: stickySidebarOpen ? '420px' : '48px' }}
+      >
         <Header
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
+          stickySidebarOpen={stickySidebarOpen}
+          onToggleStickySidebar={() => {
+            if (!stickySidebarPinned) {
+              setStickySidebarOpen(!stickySidebarOpen);
+            }
+          }}
         />
 
         <Routes>
@@ -69,6 +90,17 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+
+      <StickyNotesSidebar
+        open={stickySidebarOpen}
+        pinned={stickySidebarPinned}
+        onToggle={() => {
+          if (!stickySidebarPinned) {
+            setStickySidebarOpen(!stickySidebarOpen);
+          }
+        }}
+        onPinToggle={() => setStickySidebarPinned(!stickySidebarPinned)}
+      />
     </div>
   );
 }
