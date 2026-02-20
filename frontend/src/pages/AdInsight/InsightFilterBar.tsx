@@ -25,6 +25,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
 }) => {
     // Local state for debouncing search
     const [searchInput, setSearchInput] = useState(currentValues.searchTerm || '');
+    const [excludeInput, setExcludeInput] = useState(currentValues.excludeTerm || '');
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -35,10 +36,20 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
         return () => clearTimeout(timer);
     }, [searchInput, onFilterChange, currentValues.searchTerm]);
 
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (excludeInput !== (currentValues.excludeTerm || '')) {
+                onFilterChange('excludeTerm', excludeInput);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [excludeInput, onFilterChange, currentValues.excludeTerm]);
+
     // Update local input if filters are reset from parent
     useEffect(() => {
         setSearchInput(currentValues.searchTerm || '');
-    }, [currentValues.searchTerm]);
+        setExcludeInput(currentValues.excludeTerm || '');
+    }, [currentValues.searchTerm, currentValues.excludeTerm]);
 
     return (
         <section className="filter-bar">
@@ -54,7 +65,34 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                                     placeholder={filter.placeholder}
                                     value={searchInput}
                                     onChange={(e) => setSearchInput(e.target.value)}
-                                    style={{ width: '400px', paddingLeft: '2.5rem' }}
+                                    style={{ width: '220px', paddingLeft: '2.5rem' }}
+                                />
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (filter.id === 'excludeTerm') {
+                    return (
+                        <div className="filter-group" key={filter.id}>
+                            <label>{filter.label}</label>
+                            <div style={{ position: 'relative' }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    left: '0.75rem',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: 'var(--text-dim)',
+                                    fontSize: '1.2rem',
+                                    fontWeight: 800,
+                                    lineHeight: 1
+                                }}>!</div>
+                                <input
+                                    type="text"
+                                    placeholder={filter.placeholder}
+                                    value={excludeInput}
+                                    onChange={(e) => setExcludeInput(e.target.value)}
+                                    style={{ width: '180px', paddingLeft: '2rem' }}
                                 />
                             </div>
                         </div>
@@ -68,6 +106,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                             <select
                                 value={currentValues[filter.id] || sitemapTags[0]}
                                 onChange={(e) => onFilterChange(filter.id, e.target.value)}
+                                style={{ width: '120px' }}
                             >
                                 {sitemapTags.map((tag) => (
                                     <option key={tag} value={tag}>
@@ -89,7 +128,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                                 value={currentValues[filter.id] || ''}
                                 onChange={(e) => onFilterChange(filter.id, e.target.value)}
                                 placeholder={filter.placeholder}
-                                style={{ width: '160px' }}
+                                style={{ width: '120px' }}
                             />
                             <datalist id="country-list">
                                 <option value="">Global / All</option>
@@ -106,6 +145,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                             <select
                                 value={currentValues[filter.id] || ''}
                                 onChange={(e) => onFilterChange(filter.id, e.target.value)}
+                                style={{ width: filter.id === 'language' ? '90px' : (filter.id === 'tier' ? '65px' : '140px') }}
                             >
                                 {filter.options?.map(opt => (
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -123,17 +163,17 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                             placeholder={filter.placeholder}
                             value={currentValues[filter.id] || ''}
                             onChange={(e) => onFilterChange(filter.id, e.target.value)}
-                            style={{ width: '120px' }}
+                            style={{ width: filter.id === 'city' ? '120px' : '100px' }}
                         />
                     </div>
                 );
             })}
 
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem', alignSelf: 'flex-end' }}>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.6rem', alignSelf: 'flex-end' }}>
                 <button
                     onClick={onReset}
                     className="hero-btn hero-btn-secondary"
-                    style={{ padding: '0.6rem 1.2rem' }}
+                    style={{ padding: '0.6rem 1rem', fontSize: '13px' }}
                 >
                     Reset
                 </button>
@@ -142,10 +182,10 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     onClick={onExport}
                     disabled={isExporting}
                     className="hero-btn hero-btn-primary"
-                    style={{ padding: '0.6rem 1.5rem', gap: '0.6rem' }}
+                    style={{ padding: '0.6rem 1.2rem', gap: '0.5rem', fontSize: '13px' }}
                 >
-                    <Download size={18} />
-                    {isExporting ? 'Exporting...' : 'Export DSA CSV'}
+                    <Download size={16} />
+                    {isExporting ? 'Exporting...' : 'CSV'}
                 </button>
             </div>
         </section>

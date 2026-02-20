@@ -17,7 +17,8 @@ export default function AdInsightPage() {
     const [perPage, setPerPage] = useState(100);
     const initialFilters = useMemo(() => ({
         sitemap_tag: config.defaultSitemapTags[0],
-        titleKey: config.titleKey
+        titleKey: config.titleKey,
+        activeFilterKey: config.activeFilterKey
     }), [config]);
 
     const {
@@ -75,14 +76,26 @@ export default function AdInsightPage() {
                 const url = record.url;
                 const labelParts: string[] = [];
 
+                // Helper to clean labels
+                const cleanLabel = (val: string) => String(val).toLowerCase().replace(/\s+/g, '-').replace(/,/g, '');
+
                 selectedFields.forEach(field => {
                     const value = record[field as keyof PageRecord];
-                    if (field === 'tier' && value) {
-                        labelParts.push(`Tier${value}`);
-                    } else if (value) {
-                        labelParts.push(String(value));
+                    if (value) {
+                        let prefix = '';
+                        if (field === 'country') prefix = 'geo=';
+                        else if (field === 'city') prefix = 'city=';
+                        else if (field === 'tier') prefix = 'tier=';
+                        else if (field === 'content_type') prefix = 'ctype=';
+                        else if (field === 'funnel_stage') prefix = 'funnel=';
+                        else if (field === 'sub_tag') prefix = 'tag=';
+
+                        labelParts.push(`${prefix}${cleanLabel(String(value))}`);
                     }
                 });
+
+                // Add platform identifier statically
+                labelParts.push(`platform=${platformId}`);
 
                 const labels = labelParts.join(';');
                 return `${url},${labels}`;

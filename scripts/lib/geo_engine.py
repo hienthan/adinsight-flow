@@ -249,7 +249,15 @@ class GeoEngine:
         # 4. Stop Words to avoid false positives (e.g., 'anak' in North Korea)
         self.geo_stop_words = {
             "anak", "dan", "untuk", "dari", "yang", "dengan", "pada", "ke", 
-            "itu", "ini", "bisa", "buat", "paling", "seru", "favorit"
+            "itu", "ini", "bisa", "buat", "paling", "seru", "favorit",
+            "wisata", "tur", "tiket", "masuk", "liburan", "murah", "promo", "jalan", 
+            "harga", "pesan", "beli", "jual", "paket", "hari", "malam", "terbaik", 
+            "terbaru", "populer", "lokasi", "tempat", "info", "lengkap", "panduan", 
+            "cara", "menuju", "tips", "rekomendasi", "daftar", "sewa", "rental", 
+            "mobil", "motor", "kamar", "hotel", "penginapan", "villa", "resort", 
+            "penerbangan", "pesawat", "bandara", "stasiun", "terminal", "pelabuhan", 
+            "kapal", "ferry", "jadwal", "rute", "peta", "objek", "destinasi",
+            "taman", "pantai", "gunung", "danau", "pulau", "candi", "museum", "kampung"
         }
 
     def normalize_country(self, val):
@@ -264,24 +272,39 @@ class GeoEngine:
         except: pass
         return val.title()
 
-    def detect_geo(self, slug):
+    def detect_geo(self, slug, title_en=""):
         slug_lower = slug.lower()
         slug_clean = slug_lower.replace('-', ' ').replace('_', ' ')
+        title_lower = title_en.lower() if title_en else ""
         
         # 0. Smart Pattern Matching (HIGHEST PRIORITY - Cultural/Language Keywords)
         if SMART_MATCHER_AVAILABLE:
             result = smart_matcher.detect(slug)
+            if not result and title_en:
+                result = smart_matcher.detect(title_en)
             if result:
                 country, city = result
                 return self.normalize_country(country), city
         
         # 1. Broad Phrase Search (KB Whitelist)
-        # Check for any KB or Whitelist key as a substring
+        # Check for any KB or Whitelist key as a complete phrase in slug OR title
+        slug_hyphens = slug_clean.replace(' ', '-')
+        padded_slug = f"-{slug_hyphens}-"
+        padded_title = f"-{title_lower.replace(' ', '-')}-"
+        
         for key, (co, ci) in self.kb.items():
-            if key in slug_lower or key.replace('-', ' ') in slug_clean:
-                return self.normalize_country(co), ci
+            if '*' in key:
+                # Handle wildcard patterns like "jr-*-pass" -> "-jr-.*-pass-"
+                regex_pattern = f"-{key.replace('*', '.*')}-"
+                if re.search(regex_pattern, padded_slug) or re.search(regex_pattern, padded_title):
+                    return self.normalize_country(co), ci
+            else:
+                padded_key = f"-{key}-"
+                # First check original slug, then check English translated title
+                if padded_key in padded_slug or padded_key in padded_title:
+                    return self.normalize_country(co), ci
 
-        # 2. Dynamic Phrase Scanning (Cities)
+        # 2. Dynamic Phrase Scanning (Cities) - using original slug first
         words = re.split(r'[-_\s]', slug_lower)
         found_cities = []
         # Try checking all 1-to-3 word combinations
@@ -297,11 +320,33 @@ class GeoEngine:
             top = sorted(found_cities, key=lambda x: x.get('population', 0), reverse=True)[0]
             return self.normalize_country(top['countrycode']), top['name']
 
+        # 2B. Dynamic Phrase Scanning (Cities) - using English title if slug failed
+        if title_lower:
+            words_title = re.split(r'[-\s]', title_lower)
+            for n in range(min(3, len(words_title)), 0, -1):
+                for i in range(len(words_title) - n + 1):
+                    phrase = " ".join(words_title[i:i+n])
+                    if len(phrase) < 3: continue
+                    if phrase in self.geo_stop_words: continue
+                    if phrase in self.city_lookup:
+                        found_cities.extend(self.city_lookup[phrase])
+            
+            if found_cities:
+                top = sorted(found_cities, key=lambda x: x.get('population', 0), reverse=True)[0]
+                return self.normalize_country(top['countrycode']), top['name']
+
         # 3. Country Keyword Scan
         for word in words:
             if len(word) < 3: continue
             if word in self.country_names:
                 return self.normalize_country(word), "Unknown"
+
+        # 3B. Country Keyword Scan - using English title
+        if title_lower:
+            for word in words_title:
+                if len(word) < 3: continue
+                if word in self.country_names:
+                    return self.normalize_country(word), "Unknown"
 
         # 4. Geopy Fallback (Smart Geocoding) - DISABLED during ingestion
         if ENABLE_GEOPY_FALLBACK and self.geolocator:

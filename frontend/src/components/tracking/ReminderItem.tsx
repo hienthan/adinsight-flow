@@ -30,6 +30,7 @@ export default function ReminderItem({
     };
 
     const style = getPriorityStyle(reminder.priority);
+    const isOverdue = reminder.status === 'pending' && new Date(reminder.reminder_date) < new Date();
 
     return (
         <div
@@ -39,8 +40,12 @@ export default function ReminderItem({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.25rem',
-                borderLeft: reminder.status === 'pending' ? `3px solid ${style.color}` : '1px solid var(--border-subtle)',
-                background: reminder.status === 'completed' ? 'var(--bg-main)' : 'var(--bg-content)',
+                borderLeft: reminder.status === 'pending'
+                    ? `3px solid ${isOverdue ? '#ef4444' : style.color}`
+                    : '1px solid var(--border-subtle)',
+                background: reminder.status === 'completed'
+                    ? 'var(--bg-main)'
+                    : isOverdue ? 'hsla(0, 84%, 60%, 0.05)' : 'var(--bg-content)',
                 opacity: reminder.status === 'completed' ? 0.8 : 1,
                 fontSize: '0.7rem',
                 boxShadow: 'var(--shadow-sm)',
@@ -113,13 +118,14 @@ export default function ReminderItem({
                         <span style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.2rem',
-                            color: 'var(--text-dim)',
+                            gap: '0.3rem',
+                            color: isOverdue ? '#ef4444' : 'var(--text-dim)',
                             fontSize: '0.6rem',
-                            fontWeight: 600,
+                            fontWeight: isOverdue ? 800 : 600,
                             flexShrink: 0,
                             marginTop: '0.1rem'
                         }}>
+                            {isOverdue && <span style={{ textTransform: 'uppercase' }}>Overdue</span>}
                             <Calendar size={10} />
                             {formatDate(reminder.reminder_date)}
                         </span>

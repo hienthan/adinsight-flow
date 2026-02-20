@@ -22,18 +22,34 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         }
     }
 
-    // 3. Search Term (Generic for Title)
+    // 3. Search Term & Exclude Term (Generic for Title)
     if (currentFilters.searchTerm && currentFilters.titleKey) {
-        parts.push(`${currentFilters.titleKey} ~ "${currentFilters.searchTerm}"`);
+        const terms = currentFilters.searchTerm.split(/[,|\s]+/).filter(t => t.trim().length > 0);
+        terms.forEach(term => {
+            parts.push(`${currentFilters.titleKey} ~ "${term.trim()}"`);
+        });
+    }
+
+    if (currentFilters.excludeTerm && currentFilters.titleKey) {
+        const terms = currentFilters.excludeTerm.split(/[,|\s]+/).filter(t => t.trim().length > 0);
+        terms.forEach(term => {
+            parts.push(`${currentFilters.titleKey} !~ "${term.trim()}"`);
+        });
     }
 
     // 4. Other basic filters
-    const basicFilters = ['tier', 'funnel_stage', 'country', 'city', 'sub_tag'];
+    const basicFilters = ['tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type'];
     basicFilters.forEach(key => {
         if (currentFilters[key]) {
             parts.push(`${key} = "${currentFilters[key]}"`);
         }
     });
+
+    // 5. Only show active records (if specified by platform)
+    // Removed to show all records (inactive will be styled specially in UI)
+    // if (currentFilters.activeFilterKey) {
+    //     parts.push(`${currentFilters.activeFilterKey} = true`);
+    // }
 
     return parts.join(' && ');
 };

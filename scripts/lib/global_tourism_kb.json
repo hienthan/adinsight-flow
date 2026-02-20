@@ -1,0 +1,334 @@
+{
+    "jr-*-pass": [
+        "Japan",
+        ""
+    ],
+    "jr-pass": [
+        "Japan",
+        ""
+    ],
+    "hokkaido-rail-pass": [
+        "Japan",
+        "Hokkaido"
+    ],
+    "kansai-thru-pass": [
+        "Japan",
+        "Kansai"
+    ],
+    "shinkansen": [
+        "Japan",
+        ""
+    ],
+    "mt-fuji": [
+        "Japan",
+        "Mount Fuji"
+    ],
+    "fuji": [
+        "Japan",
+        "Mount Fuji"
+    ],
+    "usj": [
+        "Japan",
+        "Osaka"
+    ],
+    "universal-studios-japan": [
+        "Japan",
+        "Osaka"
+    ],
+    "tokyo-disneyland": [
+        "Japan",
+        "Tokyo"
+    ],
+    "tokyo-disneysea": [
+        "Japan",
+        "Tokyo"
+    ],
+    "teamlab": [
+        "Japan",
+        "Tokyo"
+    ],
+    "kimono": [
+        "Japan",
+        ""
+    ],
+    "ryokan": [
+        "Japan",
+        ""
+    ],
+    "onsen": [
+        "Japan",
+        ""
+    ],
+    "shirakawago": [
+        "Japan",
+        "Shirakawa-go"
+    ],
+    "arashiyama": [
+        "Japan",
+        "Kyoto"
+    ],
+    "shinjuku": [
+        "Japan",
+        "Tokyo"
+    ],
+    "shibuya": [
+        "Japan",
+        "Tokyo"
+    ],
+    "akihabara": [
+        "Japan",
+        "Tokyo"
+    ],
+    "dotonbori": [
+        "Japan",
+        "Osaka"
+    ],
+    "harukas": [
+        "Japan",
+        "Osaka"
+    ],
+    "gangnam": [
+        "South Korea",
+        "Seoul"
+    ],
+    "myeongdong": [
+        "South Korea",
+        "Seoul"
+    ],
+    "hongdae": [
+        "South Korea",
+        "Seoul"
+    ],
+    "itaewon": [
+        "South Korea",
+        "Seoul"
+    ],
+    "hanbok": [
+        "South Korea",
+        ""
+    ],
+    "jeju": [
+        "South Korea",
+        "Jeju"
+    ],
+    "nami-island": [
+        "South Korea",
+        "Chuncheon"
+    ],
+    "kpop": [
+        "South Korea",
+        ""
+    ],
+    "k-pop": [
+        "South Korea",
+        ""
+    ],
+    "everland": [
+        "South Korea",
+        "Yongin"
+    ],
+    "lotte-world": [
+        "South Korea",
+        "Seoul"
+    ],
+    "arex": [
+        "South Korea",
+        "Seoul"
+    ],
+    "ktx": [
+        "South Korea",
+        ""
+    ],
+    "bukchon": [
+        "South Korea",
+        "Seoul"
+    ],
+    "sentosa": [
+        "Singapore",
+        "Singapore"
+    ],
+    "marina-bay": [
+        "Singapore",
+        "Singapore"
+    ],
+    "gardens-by-the-bay": [
+        "Singapore",
+        "Singapore"
+    ],
+    "changiville": [
+        "Singapore",
+        "Singapore"
+    ],
+    "changi": [
+        "Singapore",
+        "Singapore"
+    ],
+    "uss": [
+        "Singapore",
+        "Singapore"
+    ],
+    "universal-studios-singapore": [
+        "Singapore",
+        "Singapore"
+    ],
+    "taipei-101": [
+        "Taiwan",
+        "Taipei"
+    ],
+    "jiufen": [
+        "Taiwan",
+        "New Taipei City"
+    ],
+    "yehliu": [
+        "Taiwan",
+        "New Taipei City"
+    ],
+    "shifen": [
+        "Taiwan",
+        "New Taipei City"
+    ],
+    "alishan": [
+        "Taiwan",
+        "Chiayi"
+    ],
+    "sun-moon-lake": [
+        "Taiwan",
+        "Nantou"
+    ],
+    "taroko": [
+        "Taiwan",
+        "Hualien"
+    ],
+    "thsr": [
+        "Taiwan",
+        ""
+    ],
+    "hk-disneyland": [
+        "Hong Kong",
+        "Hong Kong"
+    ],
+    "hong-kong-disneyland": [
+        "Hong Kong",
+        "Hong Kong"
+    ],
+    "ocean-park": [
+        "Hong Kong",
+        "Hong Kong"
+    ],
+    "ngong-ping": [
+        "Hong Kong",
+        "Hong Kong"
+    ],
+    "peak-tram": [
+        "Hong Kong",
+        "Hong Kong"
+    ],
+    "victoria-peak": [
+        "Hong Kong",
+        "Hong Kong"
+    ],
+    "macarena": [
+        "Spain",
+        "Seville"
+    ],
+    "louvre": [
+        "France",
+        "Paris"
+    ],
+    "eiffel": [
+        "France",
+        "Paris"
+    ],
+    "versailles": [
+        "France",
+        "Versailles"
+    ],
+    "mont-saint-michel": [
+        "France",
+        "Normandy"
+    ],
+    "colosseum": [
+        "Italy",
+        "Rome"
+    ],
+    "vatican": [
+        "Italy",
+        "Vatican City"
+    ],
+    "pompeii": [
+        "Italy",
+        "Pompeii"
+    ],
+    "cinque-terre": [
+        "Italy",
+        "Cinque Terre"
+    ],
+    "jungfraujoch": [
+        "Switzerland",
+        "Jungfraujoch"
+    ],
+    "titlis": [
+        "Switzerland",
+        "Mount Titlis"
+    ],
+    "zermatt": [
+        "Switzerland",
+        "Zermatt"
+    ],
+    "matterhorn": [
+        "Switzerland",
+        "Zermatt"
+    ],
+    "grand-canyon": [
+        "United States",
+        "Arizona"
+    ],
+    "yosemite": [
+        "United States",
+        "California"
+    ],
+    "yellowstone": [
+        "United States",
+        "Wyoming"
+    ],
+    "niagara-falls": [
+        "United States",
+        "New York"
+    ],
+    "statue-of-liberty": [
+        "United States",
+        "New York"
+    ],
+    "disneyland-park": [
+        "United States",
+        "California"
+    ],
+    "disney-world": [
+        "United States",
+        "Florida"
+    ],
+    "universal-studios-hollywood": [
+        "United States",
+        "California"
+    ],
+    "great-barrier-reef": [
+        "Australia",
+        "Queensland"
+    ],
+    "sydney-opera-house": [
+        "Australia",
+        "Sydney"
+    ],
+    "blue-mountains": [
+        "Australia",
+        "New South Wales"
+    ],
+    "great-ocean-road": [
+        "Australia",
+        "Victoria"
+    ],
+    "phillip-island": [
+        "Australia",
+        "Victoria"
+    ]
+}

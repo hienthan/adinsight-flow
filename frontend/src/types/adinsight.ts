@@ -12,6 +12,7 @@ export interface PageRecord {
     is_private: boolean;
     languages: string[];
     content_type: string;
+    is_active: boolean;
     sub_tag?: string;
     translated_title_vi?: string;
     title_en?: string;
@@ -48,5 +49,6 @@ export interface PlatformConfig {
     defaultSitemapTags: string[];
     columns: ColumnDef[];
     filters: FilterDef[];
+    activeFilterKey?: keyof PageRecord;
     exportFields: { id: string; label: string; desc: string }[];
 }

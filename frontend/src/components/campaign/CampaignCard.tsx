@@ -136,24 +136,29 @@ export default function CampaignCard({
         },
     };
 
+    const isPaused = campaign.status === 'paused';
+
     return (
         <div
-            className="animate-fade hero-card"
+            className={`animate-fade hero-card ${isPaused ? 'paused-campaign' : ''}`}
             style={{
                 position: 'relative',
                 transition: 'all 0.2s ease',
-                cursor: 'pointer',
+                cursor: isPaused ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 padding: compactView ? '0.65rem' : '1rem',
                 background: reminderStyle.cardBackground,
                 border: `1px solid ${reminderStyle.cardBorder}`,
+                filter: isPaused ? 'grayscale(0.9) opacity(0.7)' : 'none',
             }}
             onMouseEnter={(e) => {
+                if (isPaused) return;
                 e.currentTarget.style.transform = 'translateY(-2px)';
                 e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
             }}
             onMouseLeave={(e) => {
+                if (isPaused) return;
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = 'var(--shadow-soft)';
             }}
@@ -251,7 +256,7 @@ export default function CampaignCard({
                                 e.stopPropagation();
                                 markReviewedMutation.mutate();
                             }}
-                            disabled={markReviewedMutation.isPending}
+                            disabled={markReviewedMutation.isPending || isPaused}
                             className="hero-btn-ghost"
                             style={{
                                 padding: compactView ? '0.15rem' : '0.2rem',
@@ -331,6 +336,25 @@ export default function CampaignCard({
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                        {isPaused && (
+                            <span
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: compactView ? '0.06rem 0.28rem' : '0.1rem 0.35rem',
+                                    borderRadius: '4px',
+                                    fontSize: compactView ? '0.54rem' : '0.6rem',
+                                    fontWeight: 800,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.03em',
+                                    color: 'var(--text-muted)',
+                                    background: 'var(--bg-overlay)',
+                                    border: '1px solid var(--border-subtle)',
+                                }}
+                            >
+                                Paused
+                            </span>
+                        )}
                         <span
                             style={{
                                 display: 'inline-flex',

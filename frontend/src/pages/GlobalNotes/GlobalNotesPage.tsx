@@ -7,7 +7,11 @@ import {
     Search,
     Pin,
     Trash2,
-    Monitor
+    Monitor,
+    PanelLeftClose,
+    PanelLeftOpen,
+    PanelRightClose,
+    PanelRightOpen
 } from 'lucide-react';
 import RichTextEditor from '../../components/common/RichTextEditor';
 import { htmlToPlainText, prepareNoteHtmlForRender } from '../../lib/noteHtml';
@@ -28,6 +32,8 @@ export default function GlobalNotesPage() {
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isEditing, setIsEditing] = useState(false);
+    const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
+    const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
 
     // Form state
     const [editTitle, setEditTitle] = useState('');
@@ -182,7 +188,11 @@ export default function GlobalNotesPage() {
 
             {/* Sidebar List */}
             <div style={{
-                width: '320px',
+                width: isLeftSidebarCollapsed ? '0' : '320px',
+                minWidth: isLeftSidebarCollapsed ? '0' : '320px',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                opacity: isLeftSidebarCollapsed ? 0 : 1,
+                pointerEvents: isLeftSidebarCollapsed ? 'none' : 'auto',
                 display: 'flex',
                 flexDirection: 'column',
                 background: 'var(--bg-card)',
@@ -294,11 +304,13 @@ export default function GlobalNotesPage() {
                 background: 'var(--bg-content)',
                 overflow: 'hidden',
                 marginTop: '1rem',
-                marginRight: '1rem',
+                marginRight: isRightSidebarCollapsed ? '1rem' : '0',
                 marginBottom: '1rem',
-                borderRadius: '0 1rem 1rem 0',
+                borderRadius: isLeftSidebarCollapsed ? '1rem' : '0 1rem 1rem 0',
                 border: '1px solid var(--border-subtle)',
-                borderLeft: 'none',
+                borderLeft: isLeftSidebarCollapsed ? '1px solid var(--border-subtle)' : 'none',
+                borderRight: isRightSidebarCollapsed ? '1px solid var(--border-subtle)' : 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 boxShadow: '10px 0 20px rgba(0,0,0,0.05)'
             }}>
                 {activeNote ? (
@@ -315,7 +327,18 @@ export default function GlobalNotesPage() {
                             top: 0,
                             zIndex: 10
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ display: 'flex', gap: '0.25rem', marginRight: '0.5rem' }}>
+                                    <button
+                                        onClick={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
+                                        className={`hero-btn-ghost ${isLeftSidebarCollapsed ? 'text-primary' : ''}`}
+                                        style={{ padding: '0.4rem', borderRadius: '8px' }}
+                                        title={isLeftSidebarCollapsed ? "Show Notes List" : "Hide Notes List"}
+                                    >
+                                        {isLeftSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                                    </button>
+                                </div>
+
                                 {isEditing ? (
                                     <input
                                         value={editTitle}
@@ -344,6 +367,15 @@ export default function GlobalNotesPage() {
                                         </button>
                                         <button onClick={() => { if (confirm('Delete this note?')) deleteMutation.mutate(activeNote.id) }} className="hero-btn-ghost text-destructive" title="Delete">
                                             <Trash2 size={18} />
+                                        </button>
+                                        <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
+                                        <button
+                                            onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+                                            className={`hero-btn-ghost ${isRightSidebarCollapsed ? 'text-primary' : ''}`}
+                                            style={{ padding: '0.4rem', borderRadius: '8px' }}
+                                            title={isRightSidebarCollapsed ? "Show Information" : "Hide Information"}
+                                        >
+                                            {isRightSidebarCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
                                         </button>
                                     </>
                                 )}
@@ -445,9 +477,13 @@ export default function GlobalNotesPage() {
 
                             {/* Sidebar Meta & TOC (Right) */}
                             <div style={{
-                                width: '280px',
-                                borderLeft: '1px solid var(--border-subtle)',
-                                padding: '2rem 1.5rem',
+                                width: isRightSidebarCollapsed ? '0' : '280px',
+                                minWidth: isRightSidebarCollapsed ? '0' : '280px',
+                                borderLeft: isRightSidebarCollapsed ? 'none' : '1px solid var(--border-subtle)',
+                                padding: isRightSidebarCollapsed ? '0' : '2rem 1.5rem',
+                                opacity: isRightSidebarCollapsed ? 0 : 1,
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                pointerEvents: isRightSidebarCollapsed ? 'none' : 'auto',
                                 background: 'var(--bg-card)',
                                 overflowY: 'auto',
                                 position: 'sticky',
@@ -456,7 +492,11 @@ export default function GlobalNotesPage() {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '2.5rem',
-                                boxShadow: '-5px 0 15px rgba(0,0,0,0.02)'
+                                boxShadow: '-5px 0 15px rgba(0,0,0,0.02)',
+                                marginTop: '1rem',
+                                marginRight: '1rem',
+                                marginBottom: '1rem',
+                                borderRadius: '0 1rem 1rem 0'
                             }}>
                                 {/* Meta Section */}
                                 <div>

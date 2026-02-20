@@ -8,12 +8,51 @@ import argparse
 from typing import List, Dict, Optional, Tuple
 from urllib.parse import unquote, urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
-# Add ./lib to path
+# Add global lib and local lib to path
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), 'lib'))
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib'))  # ../lib for geo_engine
+sys.path.append(os.path.join(os.path.dirname(__file__), 'lib'))                  # ./lib for tvlk specific
+
 from geo_engine import engine as geo_engine
-from tier_classifier import classify_tier
+from tvlk_tier_classifier import classify_tvlk_url
+
+# --- Constants ---
+TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single"
+SITEMAP_TAG = "activities" # Default for this file
+PLATFORM_NAME = "traveloka"
+COLLECTION_NAME = "tvlk_pages"
+
+# --- Load Translation Cache ---
+CACHE_FILE = os.path.join(os.path.dirname(__file__), 'lib', 'id_en_cache.json')
+TRANSLATION_CACHE = {}
+if os.path.exists(CACHE_FILE):
+    try:
+        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+            TRANSLATION_CACHE = json.load(f)
+    except Exception as e:
+        print(f"Warning: Failed to load translation cache: {e}")
+
+# Use a lock to prevent race conditions during cache updates
+cache_lock = threading.Lock()
+
+# Load exclude keywords
+EXCLUDE_KEYWORDS = []
+EXCLUDE_PATTERNS = []
+try:
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib', 'exclude_keywords.json'), 'r') as f:
+        exclude_data = json.load(f)
+        for category, words in exclude_data.items():
+            EXCLUDE_KEYWORDS.extend(words)
+            
+    # Pre-compile regex patterns for performance and better matching (handles plurals/possessives)
+    for kw in EXCLUDE_KEYWORDS:
+        escaped_kw = re.escape(kw).replace(r'\-', r'[\s\-]')
+        pattern = r'\b' + escaped_kw + r'(?:s|\'s|es)?\b'
+        EXCLUDE_PATTERNS.append(re.compile(pattern, re.IGNORECASE))
+except Exception as e:
+    print(f"Warning: Failed to load exclude_keywords.json - {e}")
 
 # --- Constants ---
 TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single"
@@ -48,6 +87,13 @@ def authenticate(pb_url, email, password):
 def translate_to_en(text: str, source_lang: str = "id") -> str:
     if not text:
         return ""
+        
+    # Check cache first (convert to lowercase for robust matching)
+    text_lower = text.lower()
+    with cache_lock:
+        if text_lower in TRANSLATION_CACHE:
+            return TRANSLATION_CACHE[text_lower]
+            
     params = {
         "client": "gtx",
         "sl": source_lang,
@@ -66,61 +112,66 @@ def translate_to_en(text: str, source_lang: str = "id") -> str:
                 for seg in data[0]:
                     if isinstance(seg, list) and seg:
                         translated_parts.append(seg[0] or "")
-            return "".join(translated_parts).strip()
+            
+            result = "".join(translated_parts).strip()
+            
+            # Save new translation to in-memory cache
+            if result:
+                with cache_lock:
+                    TRANSLATION_CACHE[text_lower] = result
+                    
+            return result
     except Exception:
         pass
     return ""
 
 def classify_content(title_en: str, slug: str) -> Dict[str, str]:
     """
-    Classify based on tvlk_taxonomy.md
+    Classify based on tvlk_tier_classifier tailored for Traveloka Indo.
     """
+    # Use the new DSA-focused classifier which returns tier, content_type, funnel, sub_tag
+    res = classify_tvlk_url(slug)
+    
+    # Keyword Overrides (still useful for some specific corner cases not caught by tier regex)
+    # E.g., if it's a guide/itinerary that somehow survived the junk filter
     title_lower = title_en.lower()
     slug_lower = slug.lower()
     
-    # 1. Default
-    result = {
-        "content_type": "activity_attraction",
-        "funnel_stage": "awareness",
-        "sub_tag": "attraction"
-    }
-
-    # 2. Suffix Based
-    if slug_lower.endswith("-ta"):
-        result["content_type"] = "activity_attraction"
-    elif slug_lower.endswith("-trp"):
-        result["content_type"] = "transport_tour"
-        result["funnel_stage"] = "planning"
-        result["sub_tag"] = "tour"
-    elif slug_lower.endswith("-acc"):
-        result["content_type"] = "accommodation"
-        result["funnel_stage"] = "planning"
-        result["sub_tag"] = "accommodation"
-
-    # 3. Keyword Overrides
     keywords = {
         "itinerary": ("travel_guide", "planning", "itinerary"),
         "visa": ("travel_document", "planning", "visa"),
         "paspor": ("travel_document", "planning", "visa"),
-        "bus": ("transport_guide", "readiness", "transport"),
-        "train": ("transport_guide", "readiness", "transport"),
+        "bus": ("transport_guide", "planning", "transport"),
+        "train": ("transport_guide", "planning", "transport"),
         "mrt": ("transport_guide", "readiness", "transport"),
         "lrt": ("transport_guide", "readiness", "transport"),
-        "tiket": ("activity_booking", "readiness", "booking"),
-        "harga": ("activity_booking", "readiness", "booking"),
         "kuliner": ("food_lifestyle", "awareness", "food"),
         "makanan": ("food_lifestyle", "awareness", "food"),
         "cafe": ("food_lifestyle", "awareness", "food"),
     }
 
     for kw, (ctype, funnel, stag) in keywords.items():
-        if kw in slug_lower or kw in title_lower:
-            result["content_type"] = ctype
-            result["funnel_stage"] = funnel
-            result["sub_tag"] = stag
+        # Override only if our base result was Tier 3 (Discovery/POI)
+        if (kw in slug_lower or kw in title_lower) and res["tier"] == "3":
+            res["content_type"] = ctype
+            res["funnel_stage"] = funnel
+            res["sub_tag"] = stag
             break
 
-    return result
+    return res
+
+def is_junk_url(slug: str, title_en: str) -> bool:
+    """
+    Check if the slug or English title contains any of the informational/SEO junk keywords.
+    Provides 2-layer verification for better accuracy using Regex for pluralization and word boundaries.
+    """
+    combined_text = f"{slug} {title_en}"
+    
+    for pattern in EXCLUDE_PATTERNS:
+        if pattern.search(combined_text):
+            return True
+            
+    return False
 
 # --- Core Enrichment ---
 
@@ -150,10 +201,22 @@ def process_url(url: str, platform_id: str) -> Optional[Dict]:
         title_en = translate_to_en(slug.replace('-', ' '))
         
         # Geo Detection
-        country, city = geo_engine.detect_geo(slug)
+        country, city = geo_engine.detect_geo(slug, title_en)
         
         # Classification
         taxo = classify_content(title_en, raw_slug)
+        
+        # Check Junk Content FIRST before taxonomy assignment
+        is_active = True
+        if is_junk_url(raw_slug, title_en):
+            is_active = False
+            # Force taxonomy for junk
+            taxo = {
+                "tier": "5", # Assign to unreachable tier
+                "content_type": "informational_junk",
+                "funnel_stage": "", # Schema is restricted to awareness/planning/readiness. Empty is allowed.
+                "sub_tag": "junk"
+            }
 
         return {
             "platform": platform_id,
@@ -170,8 +233,8 @@ def process_url(url: str, platform_id: str) -> Optional[Dict]:
             "sub_tag": taxo["sub_tag"],
             "canonical_id": canonical_id,
             "language": "id-id",
-            "is_active": True,
-            "tier": classify_tier(raw_slug),
+            "is_active": is_active,
+            "tier": taxo["tier"],
             "metadata": {
                 "raw_slug": raw_slug,
                 "processed_at": time.strftime("%Y-%m-%d %H:%M:%S")
@@ -255,17 +318,29 @@ def main():
                 if check_resp.status_code == 200 and check_resp.json().get('items'):
                     # Update
                     rec_id = check_resp.json()['items'][0]['id']
-                    requests.patch(f"{pb_url}/api/collections/{COLLECTION_NAME}/records/{rec_id}", 
+                    res = requests.patch(f"{pb_url}/api/collections/{COLLECTION_NAME}/records/{rec_id}", 
                                   json=item, headers=headers)
                 else:
                     # Create
-                    requests.post(f"{pb_url}/api/collections/{COLLECTION_NAME}/records", 
+                    res = requests.post(f"{pb_url}/api/collections/{COLLECTION_NAME}/records", 
                                  json=item, headers=headers)
-                success += 1
+                                 
+                if res.status_code >= 400:
+                    print(f"❌ API Error importing {item['url']}: {res.text}")
+                else:
+                    success += 1
             except Exception as e:
-                print(f"Error importing {item['url']}: {e}")
+                print(f"❌ Network Error importing {item['url']}: {e}")
 
     print(f"\n✅ Done! Successfully processed and imported {success} records.")
+    
+    # Save translation cache to disk
+    try:
+        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(TRANSLATION_CACHE, f, indent=2, ensure_ascii=False)
+        print(f"💾 Saved {len(TRANSLATION_CACHE)} translations to cache.")
+    except Exception as e:
+        print(f"Error saving translation cache: {e}")
 
 if __name__ == "__main__":
     main()

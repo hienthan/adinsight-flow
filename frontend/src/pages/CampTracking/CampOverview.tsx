@@ -85,6 +85,13 @@ const getDayDiff = (targetDate: Date, baseDate: Date): number => {
     return Math.round((getStartOfDay(targetDate).getTime() - getStartOfDay(baseDate).getTime()) / msInDay);
 };
 
+const STATUS_RANK: Record<string, number> = {
+    active: 0,
+    testing: 1,
+    archived: 2,
+    paused: 3,
+};
+
 export default function CampOverview() {
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -309,13 +316,21 @@ export default function CampOverview() {
 
     const sortCampaignsByReminder = (items: EnrichedCampaign[]) =>
         [...items].sort((a, b) => {
+            // Priority 0: Status (Active/Testing -> Archived -> Paused)
+            const statusRankA = STATUS_RANK[a.status] ?? 0;
+            const statusRankB = STATUS_RANK[b.status] ?? 0;
+            if (statusRankA !== statusRankB) return statusRankA - statusRankB;
+
+            // Priority 1: Reminder State
             const reminderRankDiff = REMINDER_STATE_RANK[a.reminderState] - REMINDER_STATE_RANK[b.reminderState];
             if (reminderRankDiff !== 0) return reminderRankDiff;
 
+            // Priority 2: Nearness
             const dueDiffA = a.nearestDueInDays ?? Number.MAX_SAFE_INTEGER;
             const dueDiffB = b.nearestDueInDays ?? Number.MAX_SAFE_INTEGER;
             if (dueDiffA !== dueDiffB) return dueDiffA - dueDiffB;
 
+            // Priority 3: Reminder Priority
             const priorityA = PRIORITY_RANK[a.highestPriority || 'low'];
             const priorityB = PRIORITY_RANK[b.highestPriority || 'low'];
             if (priorityA !== priorityB) return priorityA - priorityB;
