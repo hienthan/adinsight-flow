@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Globe } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { usePlatformAnalytics } from '../../hooks/usePlatformAnalytics';
@@ -11,15 +12,22 @@ import { buildFilterString } from './insightUtils';
 import { PageRecord } from '../../types/adinsight';
 
 export default function AdInsightPage() {
-    const [platformId, setPlatformId] = useState<'klook' | 'traveloka'>('klook');
+    const { platform } = useParams();
+    const navigate = useNavigate();
+    const platformId = (platform === 'traveloka' ? 'traveloka' : 'klook');
     const config = PLATFORMS[platformId];
 
     const [perPage, setPerPage] = useState(100);
-    const initialFilters = useMemo(() => ({
-        sitemap_tag: config.defaultSitemapTags[0],
-        titleKey: config.titleKey,
-        activeFilterKey: config.activeFilterKey
-    }), [config]);
+    const initialFilters = useMemo(() => {
+        const filters: Record<string, string> = {
+            sitemap_tag: config.defaultSitemapTags[0],
+            titleKey: config.titleKey as string,
+        };
+        if (config.activeFilterKey) {
+            filters.activeFilterKey = config.activeFilterKey as string;
+        }
+        return filters;
+    }, [config]);
 
     const {
         records,
@@ -49,7 +57,7 @@ export default function AdInsightPage() {
     };
 
     const handlePlatformSwitch = (id: 'klook' | 'traveloka') => {
-        setPlatformId(id);
+        navigate(`/adinsight/${id}`);
     };
 
     const handleExport = async (selectedFields: string[], customFileName: string) => {

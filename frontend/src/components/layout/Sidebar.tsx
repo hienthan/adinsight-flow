@@ -45,8 +45,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     }, []);
 
     const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
-    const isTrendSignalsActive = isActive('/adinsight/trends');
-    const isPlatformKlookActive = isActive('/adinsight') && !isTrendSignalsActive;
 
     const NavLink = ({ to, icon: Icon, children, badgeCount, activeCondition }: any) => {
         const active = activeCondition !== undefined ? activeCondition : isActive(to);
@@ -125,9 +123,20 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     Trend Signals
                 </NavLink>
 
-                <NavLink to="/adinsight" icon={Globe} activeCondition={isPlatformKlookActive}>
-                    Platform: Klook
-                </NavLink>
+                <div style={{ padding: '0.65rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-dim)', fontWeight: 500 }}>
+                    <Globe size={18} strokeWidth={2} />
+                    {!collapsed && <span style={{ fontSize: '0.875rem' }}>Platform</span>}
+                </div>
+
+                <div style={{ paddingLeft: collapsed ? '0' : '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                    <NavLink to="/adinsight/klook" icon={Target} activeCondition={isActive('/adinsight/klook')}>
+                        Klook
+                    </NavLink>
+
+                    <NavLink to="/adinsight/traveloka" icon={Target} activeCondition={isActive('/adinsight/traveloka')}>
+                        Traveloka
+                    </NavLink>
+                </div>
 
             </nav>
         </aside>

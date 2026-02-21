@@ -61,9 +61,11 @@ interface RichTextEditorProps {
     value: string;
     onChange: (nextHtml: string) => void;
     placeholder?: string;
-    minHeight?: number;
-    maxHeight?: number;
+    minHeight?: number | string;
+    maxHeight?: number | string;
     disabled?: boolean;
+    style?: React.CSSProperties;
+    contentStyle?: React.CSSProperties;
 }
 
 export default function RichTextEditor({
@@ -73,6 +75,8 @@ export default function RichTextEditor({
     minHeight = 180,
     maxHeight = 360,
     disabled = false,
+    style,
+    contentStyle,
 }: RichTextEditorProps) {
     const initialHtml = useMemo(() => toEditorHtml(value || ''), [value]);
 
@@ -137,6 +141,7 @@ export default function RichTextEditor({
                 borderRadius: '12px',
                 background: 'var(--bg-content)',
                 overflow: 'hidden',
+                ...style
             }}
         >
             <div
@@ -241,6 +246,7 @@ export default function RichTextEditor({
                     overflowY: 'auto',
                     padding: '0.85rem 0.95rem',
                     cursor: 'text',
+                    ...contentStyle
                 }}
                 onMouseDown={(e) => {
                     if (e.target === e.currentTarget) {

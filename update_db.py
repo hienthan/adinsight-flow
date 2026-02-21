@@ -27,12 +27,14 @@ def main():
     for r in all_records:
         raw_slug = r.get('slug', '').replace(' ', '-')
         title_en = r.get('title_en', '')
+        city = r.get('city', '')
+        country = r.get('country', '')
         
         # New classification
         taxo = classify_content(title_en, raw_slug)
         is_active = True
         
-        is_junk, is_protected = is_junk_url(raw_slug, title_en)
+        is_junk, is_protected = is_junk_url(raw_slug, title_en, city, country)
         
         if is_junk:
             is_active = False

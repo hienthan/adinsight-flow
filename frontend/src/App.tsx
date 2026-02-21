@@ -69,8 +69,9 @@ function App() {
           <Route path="/" element={<Navigate to="/camp-tracking" replace />} />
 
           {/* AdInsight Routes */}
-          <Route path="/adinsight" element={<AdInsightPage />} />
+          <Route path="/adinsight" element={<Navigate to="/adinsight/klook" replace />} />
           <Route path="/adinsight/trends" element={<TrendSignalsPage />} />
+          <Route path="/adinsight/:platform" element={<AdInsightPage />} />
           <Route path="/adinsight/:platform/:content" element={<AdInsightPage />} />
 
           {/* Camp Tracking Routes */}

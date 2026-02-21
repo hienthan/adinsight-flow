@@ -26,6 +26,7 @@ export interface Campaign {
     max_daily_budget?: number;
     keywords?: string;
     chatgpt_metadata?: string;
+    metadata?: string;
     description?: string;
     general_notes?: string;
     is_dsa: boolean;

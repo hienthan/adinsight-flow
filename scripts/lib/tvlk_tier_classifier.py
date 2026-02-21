@@ -25,8 +25,18 @@ def classify_tvlk_url(slug):
             "sub_tag": "ticket"
         }
         
+    # 1A_2. Mega Brand Theme Parks
+    RE_T1_BRAND = r'disneyland|disneysea|universal-studio|universal-studios|jatim-park|trans-studio|waterbom|dufan|madame-tussauds|legoland|sea-aquarium'
+    if re.search(RE_T1_BRAND, slug_lower):
+        return {
+            "tier": "1",
+            "content_type": "activity_attraction",
+            "funnel_stage": "readiness",
+            "sub_tag": "ticket"
+        }
+        
     # 1B. Transport & Rentals (High intent in Indo)
-    RE_T1_TRANSPORT = r'sewa-mobil|car-rental|rental-mobil|motor|scooter|bandara|airport|transfer|shuttle|jemputan'
+    RE_T1_TRANSPORT = r'sewa-mobil|car-rental|rental-mobil|motor|scooter|bandara|airport|transfer|shuttle|jemputan|express|route|rute|schedule|jadwal-kereta|transit|mrt|lrt|train|kereta'
     if re.search(RE_T1_TRANSPORT, slug_lower):
         return {
             "tier": "1",
@@ -90,7 +100,7 @@ def classify_tvlk_url(slug):
         }
 
     # 2D. Spa, Beauty & Pampering
-    RE_T2_BEAUTY = r'spa|massage|pijat|salon|klinik|clinic|perawatan|hifu|meso|facial|nail|manicure|pedicure|relaksasi|reflexology'
+    RE_T2_BEAUTY = r'spa|massage|pijat|salon|klinik|clinic|perawatan|hifu|meso|facial|nail|manicure|pedicure|relaksasi|reflexology|filler|botox|treatment|hair-removal'
     if re.search(RE_T2_BEAUTY, slug_lower):
         return {
             "tier": "2",
@@ -105,13 +115,33 @@ def classify_tvlk_url(slug):
     # ---------------------------------------------------------
     
     # 3A. POI / Landmark exploration
-    RE_T3_LANDMARK = r'candi|pantai|gunung|taman|museum|kuil|temple|island|pulau|curug|air-terjun|danau|lake|goa|cave|monumen|monument'
+    RE_T3_LANDMARK = r'candi|pantai|gunung|taman|museum|kuil|temple|island|pulau|curug|air-terjun|danau|lake|goa|cave|monumen|monument|wisata|tourist|tourism|attraction|tempat|destinasi'
     if re.search(RE_T3_LANDMARK, slug_lower):
         return {
             "tier": "3",
             "content_type": "poi_exploration",
             "funnel_stage": "awareness",
             "sub_tag": "landmark"
+        }
+        
+    # 3B. Food & Restaurant
+    RE_T3_FOOD = r'restoran|restaurant|kuliner|makanan|cafe|makan|food|beverage|minuman|street-food'
+    if re.search(RE_T3_FOOD, slug_lower):
+        return {
+            "tier": "3",
+            "content_type": "food_lifestyle",
+            "funnel_stage": "awareness",
+            "sub_tag": "food"
+        }
+        
+    # 3C. Generic Activities / Travel Guides
+    RE_T3_GUIDE = r'aktivitas|activities|seru|exciting|fun|hal-yang-bisa-dilakukan|things-to-do'
+    if re.search(RE_T3_GUIDE, slug_lower):
+        return {
+            "tier": "3",
+            "content_type": "travel_guide",
+            "funnel_stage": "awareness",
+            "sub_tag": "itinerary"
         }
 
     # 3B. Unknown / Others (Fallbacks for URLs without explicit action words)

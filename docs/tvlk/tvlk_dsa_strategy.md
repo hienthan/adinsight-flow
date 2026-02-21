@@ -17,13 +17,21 @@ Documenting the key strategies, technical decisions, and file paths for the Goog
 
 **Solution:**
 *   **Comprehensive Blacklist (`exclude_keywords.json`):** Contains highly specific, non-transactional keywords grouped by category (Greetings, Entertainment, Health, Academic, B2B, Outdated Events).
-*   **Advanced 2-Layer Exclusion Logic:**
-    *   *Regex Pluralization Support:* Switched to Regex-based word boundary matching (`\b(keyword)(?:s|'s|es)?\b`) to catch plural variations (*valentines*) and prevent false substring matches (e.g., preventing "smart" from matching "mrt").
-    *   *Cross-lingual Checks:* The regex engine checks BOTH the original Indonesian `slug` and the translated English `title_en`, allowing us to use powerful English multi-word concepts (e.g., `difference-between`, `how-to-make`, `managing-your-money`) to filter complex SEO content.
-*   **Safe Keywords Allowlist (`safe_travel_keywords.json`):** 
-    *   To prevent aggressive keywords (like `what-is`, `how-to`, `tips`, `cara`) from accidentally blocking valid travel guides, an Allowlist checks for TOFU "immunity" keywords (e.g., `visa`, `suica`, `airport`, `jr-pass`, `travel`, `holiday`, `tour`, `tiket`).
-    *   If a URL triggers an Exclude keyword but contains a Safe keyword, the Junk status is overridden. The URL remains active and is classified specifically as TOFU (Top of Funnel).
-*   **Implementation:** The script `tvlk_enrich_and_import.py` runs these checks. Junk URLs are flagged with `is_active: false` and pushed to `Tier 5`. Their original `content_type` and `sub_tag` are preserved for easier manual auditing in the AdInsight dashboard. Protected TOFU URLs are pushed to `Tier 4` with `travel_guide` classification.
+*   **Advanced 3-Layer Exclusion Logic:**
+    *   **Layer 1: Regex Exclude List (`exclude_keywords.json`):** Regex-based word boundary matching (`\b(keyword)(?:s|'s|es)?\b`) prevents false substring matches. It checks BOTH the original `slug` and the translated `title_en`, allowing powerful English multi-word concepts (e.g., `difference-between`, `how-to-make`) to filter complex SEO content.
+    *   **Layer 2: Safe Keywords Allowlist (`safe_travel_keywords.json`):** Prevents broad TOFU keywords (like `what-is`, `how-to`, `tips`, `cara`, `guide`, `recommendation`) from accidentally blocking valid travel content. An Allowlist checks for "immunity" keywords (e.g., `visa`, `airport`, `pantai`, `stadium`, `salon`, `cafe`). If matched, the Junk status is overridden.
+    *   **Layer 3: Dynamic Geo Engine Override:** Integrates directly with `geo_engine.py`. If a URL is flagged as junk by Layer 1, but the geo-engine successfully detects a valid **City** (e.g., "Kyoto", "Bandung", "Sapporo"), the URL is automatically rescued. This dynamic layer saves hundreds of niche location URLs without requiring manual hardcoding in the allowlist. *(Note: Generic 'Country' matches like "Indonesia" or "Unknown" cities are explicitly ignored to prevent rescuing broad domestic junk).*
+*   **Implementation:** The script `tvlk_enrich_and_import.py` runs these 3 layers of checks. Junk URLs are flagged with `is_active: false` and pushed to `Tier 5`. Their original metadata is preserved for auditing. Protected TOFU URLs (rescued by Layer 2 or 3) are pushed to `Tier 4` with `travel_guide` classification.
+
+## 2.5. Zero-ROAS "Budget Drain" Traps
+
+**Problem:** Traveloka app contains non-travel, high-volume search services that drain Google Ads budgets because they have **zero cross-sell potential** (no hotel or flight booking intent) and extremely low transaction values.
+*   **Local Commuter Transport:** Local city trains like `KRL Solo-Jogja`, `MRT Jakarta`, `LRT`, and `Angkot`. Commuters search for schedules heavily, driving up clicks, but they take day-trips and do not book hotels. (Distinct from High-Value Intercity/Airport trains like `Whoosh` or `Kereta Api` which are kept).
+*   **Utility & Bill Payments:** `Token Listrik` (Electricity), `BPJS` (Health Insurance), `Pajak Motor` (Taxes). High search volume, zero travel intent.
+*   **Gaming Top-ups:** `Top-up FF`, `Diamond Mobile Legends`. Attracts cheap clicks from gamers without travel budget.
+*   **Local Cinema:** `Jadwal CGV`, `Cinema XXI`. Friday night mall-goers, not tourists.
+
+**Solution:** These keyword groups are hard-excluded in `exclude_keywords.json`. Note: Care must be taken so that names containing cities (like `mrt-jakarta`) are not accidentally rescued by Geo Engine overrides.
 
 ## 3. DSA Tier & Taxonomy Classification
 

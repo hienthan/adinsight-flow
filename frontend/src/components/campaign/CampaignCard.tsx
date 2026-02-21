@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, Key, History, CheckCircle2 } from 'lucide-react';
+import { ArrowUpRight, Key, History, CheckCircle2, FileText } from 'lucide-react';
 import { Campaign, CampaignPlatform, CampaignChange } from '../../types/campaign';
 import { pb } from '../../lib/pocketbase';
 import { formatDate } from '../../lib/utils';
 import { htmlToPlainText } from '../../lib/noteHtml';
+import MetadataModal from './MetadataModal';
 
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type ViewMode = 'comfortable' | 'compact' | 'alert';
@@ -87,6 +88,7 @@ export default function CampaignCard({
     const location = useLocation();
     const queryClient = useQueryClient();
     const [showCPCTooltip, setShowCPCTooltip] = React.useState(false);
+    const [isMetadataModalOpen, setIsMetadataModalOpen] = React.useState(false);
 
     const { data: cpcChanges = [] } = useQuery<CampaignChange[]>({
         queryKey: ['campaign-cpc-changes', campaign.id],
@@ -254,6 +256,21 @@ export default function CampaignCard({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
+                                setIsMetadataModalOpen(true);
+                            }}
+                            className="hero-btn-ghost"
+                            style={{ padding: compactView ? '0.15rem' : '0.2rem', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            title={campaign.metadata ? "View/Edit Metadata" : "Add Metadata"}
+                        >
+                            <FileText size={compactView ? 12 : 13} style={{
+                                opacity: campaign.metadata ? 1 : 0.7,
+                                color: campaign.metadata ? 'hsl(var(--primary))' : 'inherit'
+                            }} />
+                        </button>
+
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 markReviewedMutation.mutate();
                             }}
                             disabled={markReviewedMutation.isPending || isPaused}
@@ -397,6 +414,15 @@ export default function CampaignCard({
                     {notesPreview || 'Define optimization notes...'}
                 </div>
             </div>
+
+            {isMetadataModalOpen && (
+                <MetadataModal
+                    isOpen={isMetadataModalOpen}
+                    onClose={() => setIsMetadataModalOpen(false)}
+                    campaignId={campaign.id}
+                    initialContent={campaign.metadata || ''}
+                />
+            )}
         </div>
     );
 }

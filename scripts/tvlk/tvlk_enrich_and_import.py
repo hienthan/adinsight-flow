@@ -38,19 +38,23 @@ if os.path.exists(CACHE_FILE):
 cache_lock = threading.Lock()
 
 # Load exclude keywords
-EXCLUDE_KEYWORDS = []
 EXCLUDE_PATTERNS = []
+FATAL_PATTERNS = []
+FATAL_CATEGORIES = {"local_commuter_transport", "utility_and_bills", "gaming_topup", "local_cinema"}
+
 try:
     with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib', 'exclude_keywords.json'), 'r') as f:
         exclude_data = json.load(f)
         for category, words in exclude_data.items():
-            EXCLUDE_KEYWORDS.extend(words)
-            
-    # Pre-compile regex patterns for performance and better matching (handles plurals/possessives)
-    for kw in EXCLUDE_KEYWORDS:
-        escaped_kw = re.escape(kw).replace(r'\-', r'[\s\-]')
-        pattern = r'\b' + escaped_kw + r'(?:s|\'s|es)?\b'
-        EXCLUDE_PATTERNS.append(re.compile(pattern, re.IGNORECASE))
+            for kw in words:
+                escaped_kw = re.escape(kw).replace(r'\-', r'[\s\-]')
+                pattern = r'\b' + escaped_kw + r'(?:s|\'s|es)?\b'
+                compiled = re.compile(pattern, re.IGNORECASE)
+                
+                if category in FATAL_CATEGORIES:
+                    FATAL_PATTERNS.append(compiled)
+                else:
+                    EXCLUDE_PATTERNS.append(compiled)
 except Exception as e:
     print(f"Warning: Failed to load exclude_keywords.json - {e}")
 
@@ -170,14 +174,21 @@ def classify_content(title_en: str, slug: str) -> Dict[str, str]:
 
     return res
 
-def is_junk_url(slug: str, title_en: str) -> Tuple[bool, bool]:
+def is_junk_url(slug: str, title_en: str, detected_city: str = "", detected_country: str = "") -> Tuple[bool, bool]:
     """
     Check if the slug or English title contains any of the informational/SEO junk keywords.
-    Provides 2-layer verification for better accuracy using Regex for pluralization and word boundaries.
-    Also implements an Allowlist (Safe Keywords) to protect valid travel content matching bad rules like 'what-is'.
+    Provides 3-layer verification for better accuracy:
+    1. Regex check against EXCLUDE_PATTERNS
+    2. Overrides using SAFE_KEYWORDS
+    3. Overrides using detected Geo Engine locations (City/Country)
     """
     combined_text = f"{slug} {title_en}"
     combined_lower = combined_text.lower()
+    
+    # Layer 0: Fatal Exclude Patterns (Absolute Kill - NO RESCUE ALLOWED)
+    for pattern in FATAL_PATTERNS:
+        if pattern.search(combined_text):
+            return True, False
     
     # Layer 1: Check against Exclude Patterns
     is_junk = False
@@ -198,6 +209,17 @@ def is_junk_url(slug: str, title_en: str) -> Tuple[bool, bool]:
                 is_junk = False
                 break
                 
+    # Layer 3: Geo Engine Override (Protect any URL that explicitly mentions a real city)
+    if is_junk and not is_protected:
+        valid_geo_found = False
+        # We only use 'City' because 'Country' (like 'Indonesia') is too broad and triggers on almost all ID articles
+        if detected_city and detected_city.lower() not in ["", "global", "international", "unknown"]:
+            valid_geo_found = True
+            
+        if valid_geo_found:
+            is_protected = True
+            is_junk = False
+
     return is_junk, is_protected
 
 # --- Core Enrichment ---
@@ -239,7 +261,7 @@ def process_url(url: str, platform_id: str) -> Optional[Dict]:
         
         # Check Junk Content FIRST before taxonomy assignment
         is_active = True
-        is_junk, is_protected = is_junk_url(raw_slug, title_en)
+        is_junk, is_protected = is_junk_url(raw_slug, title_en, city, country)
         
         if is_junk:
             is_active = False

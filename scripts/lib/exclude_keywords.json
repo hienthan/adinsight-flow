@@ -56,7 +56,6 @@
         "keong-mas",
         "klasemen",
         "komik",
-        "konser",
         "kunci-gitar",
         "lagu",
         "legenda",
@@ -93,7 +92,6 @@
         "roro-jonggrang",
         "sea-games",
         "sinopsis",
-        "tiket-konser",
         "timun-mas",
         "valentine",
         "world-cup",
@@ -286,6 +284,7 @@
         "differences-between",
         "facts-about",
         "fakta",
+        "guide",
         "guide-to-buying",
         "hari-apa",
         "history-of",
@@ -321,6 +320,7 @@
         "meaning",
         "meaning-of",
         "painting",
+        "panduan",
         "pembahasan",
         "pengertian",
         "peraturan",
@@ -333,6 +333,8 @@
         "profile",
         "proposal",
         "provinsi-di-indonesia",
+        "recommendation",
+        "rekomendasi",
         "resume",
         "rumus",
         "sbmptn",
@@ -450,5 +452,46 @@
         "shio",
         "zodiac",
         "zodiak"
+    ],
+    "local_commuter_transport": [
+        "angkot",
+        "busway",
+        "commuter",
+        "krl",
+        "lrt-jakarta",
+        "lrt-jabodebek",
+        "mrt-jakarta",
+        "prameks",
+        "tj",
+        "transjakarta",
+        "trans-jakarta"
+    ],
+    "utility_and_bills": [
+        "bayar-pdam",
+        "bayar-pln",
+        "bpjs",
+        "bpjs-kesehatan",
+        "pajak-motor",
+        "paket-data",
+        "pulsa",
+        "tagihan",
+        "token-listrik"
+    ],
+    "gaming_topup": [
+        "harga-diamond",
+        "top-up",
+        "top-up-ff",
+        "top-up-mobile-legends",
+        "topup",
+        "voucher-game"
+    ],
+    "local_cinema": [
+        "cgv",
+        "cinema-xxi",
+        "cinemas",
+        "jadwal-cgv",
+        "jadwal-xxi",
+        "tiket-bioskop",
+        "xxi"
     ]
 }
