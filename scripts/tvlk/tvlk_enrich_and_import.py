@@ -54,6 +54,16 @@ try:
 except Exception as e:
     print(f"Warning: Failed to load exclude_keywords.json - {e}")
 
+# Load safe (allowlist) keywords
+SAFE_KEYWORDS = []
+try:
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib', 'safe_travel_keywords.json'), 'r') as f:
+        safe_data = json.load(f)
+        for category, words in safe_data.items():
+            SAFE_KEYWORDS.extend(words)
+except Exception as e:
+    print(f"Warning: Failed to load safe_travel_keywords.json - {e}")
+
 # --- Constants ---
 TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single"
 SITEMAP_TAG = "activities" # Default for this file
@@ -160,18 +170,35 @@ def classify_content(title_en: str, slug: str) -> Dict[str, str]:
 
     return res
 
-def is_junk_url(slug: str, title_en: str) -> bool:
+def is_junk_url(slug: str, title_en: str) -> Tuple[bool, bool]:
     """
     Check if the slug or English title contains any of the informational/SEO junk keywords.
     Provides 2-layer verification for better accuracy using Regex for pluralization and word boundaries.
+    Also implements an Allowlist (Safe Keywords) to protect valid travel content matching bad rules like 'what-is'.
     """
     combined_text = f"{slug} {title_en}"
+    combined_lower = combined_text.lower()
     
+    # Layer 1: Check against Exclude Patterns
+    is_junk = False
     for pattern in EXCLUDE_PATTERNS:
         if pattern.search(combined_text):
-            return True
+            is_junk = True
+            break
             
-    return False
+    # Layer 2: Safe Keywords Allowlist Override
+    is_protected = False
+    if is_junk:
+        for safe_kw in SAFE_KEYWORDS:
+            # We use simple substring match for the safe keywords against the combined text,
+            # converting hyphens to spaces to match both title_en and slug formats.
+            safe_spaced = safe_kw.replace('-', ' ')
+            if f"-{safe_kw}-" in f"-{slug.lower()}-" or f" {safe_spaced} " in f" {title_en.lower()} ":
+                is_protected = True
+                is_junk = False
+                break
+                
+    return is_junk, is_protected
 
 # --- Core Enrichment ---
 
@@ -191,14 +218,18 @@ def process_url(url: str, platform_id: str) -> Optional[Dict]:
         
         # Extract suffix if exists
         suffix = ""
+        slug_for_translation = slug
         if '-' in raw_slug:
             potential_suffix = raw_slug.split('-')[-1]
             if len(potential_suffix) <= 5 and not potential_suffix.isdigit():
                 suffix = f"-{potential_suffix}"
+                # Remove useless Traveloka internal suffixes before translation
+                if suffix.lower() in ['-ta', '-trp', '-acc']:
+                    slug_for_translation = slug[:-len(suffix)]
 
         # Translation
         # logic from 01_TVLK_PAGES.md: if slug is enough, use it for title
-        title_en = translate_to_en(slug.replace('-', ' '))
+        title_en = translate_to_en(slug_for_translation.replace('-', ' '))
         
         # Geo Detection
         country, city = geo_engine.detect_geo(slug, title_en)
@@ -208,15 +239,20 @@ def process_url(url: str, platform_id: str) -> Optional[Dict]:
         
         # Check Junk Content FIRST before taxonomy assignment
         is_active = True
-        if is_junk_url(raw_slug, title_en):
+        is_junk, is_protected = is_junk_url(raw_slug, title_en)
+        
+        if is_junk:
             is_active = False
-            # Force taxonomy for junk
-            taxo = {
-                "tier": "5", # Assign to unreachable tier
-                "content_type": "informational_junk",
-                "funnel_stage": "", # Schema is restricted to awareness/planning/readiness. Empty is allowed.
-                "sub_tag": "junk"
-            }
+            # We don't overwrite content_type or sub_tag anymore, so it's easier to audit
+            # We just push it to tier 5 to hide it from DSA campaigns
+            taxo["tier"] = "5"
+        elif is_protected:
+            # This is TOFU content protected by Allowlist - Push to Tier 4
+            taxo["tier"] = "4"
+            taxo["funnel_stage"] = "awareness"
+            taxo["content_type"] = "travel_guide"
+            taxo["sub_tag"] = "tips_and_tricks"
+
 
         return {
             "platform": platform_id,

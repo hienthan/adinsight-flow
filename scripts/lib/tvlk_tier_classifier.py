@@ -15,8 +15,8 @@ def classify_tvlk_url(slug):
     # TIER 1: HIGH ROAS / FAST PURCHASE INTENT
     # ---------------------------------------------------------
     
-    # 1A. Direct Admission & Tickets
-    RE_T1_TICKET = r'tiket|ticket|pass|masuk|karcis|voucher|admission|fast-track|skip-the-line'
+    # 1A. Direct Admission & Tickets (Including Theme Parks & Zoos)
+    RE_T1_TICKET = r'tiket|ticket|pass|masuk|karcis|voucher|admission|fast-track|skip-the-line|theme-park|amusement-park|waterpark|zoo|kebun-binatang|playground|aquarium'
     if re.search(RE_T1_TICKET, slug_lower):
         return {
             "tier": "1",
@@ -35,18 +35,25 @@ def classify_tvlk_url(slug):
             "sub_tag": "transport"
         }
         
-    # 1C. Quick Services & Connectivity
-    # Reject things like baby-spa, review-spa, etc if possible, but the junk filter should catch 'review' and 'manfaat'
-    RE_T1_SERVICE = r'sim-card|wifi|pocket-wifi|esim|\bpijat\b|\bmassage\b|\bspa\b|\bsalon\b|\bperawatan\b'
-    if re.search(RE_T1_SERVICE, slug_lower):
-        # Explicit exception for Baby Spa (usually not high ROAS inbound tourism)
-        if 'baby' not in slug_lower:
-            return {
-                "tier": "1",
-                "content_type": "service_essential",
-                "funnel_stage": "readiness",
-                "sub_tag": "service"
-            }
+    # 1C. Connectivity & Essential Services
+    RE_T1_CONNECTIVITY = r'sim-card|wifi|pocket-wifi|esim|roaming'
+    if re.search(RE_T1_CONNECTIVITY, slug_lower):
+        return {
+            "tier": "1",
+            "content_type": "service_essential",
+            "funnel_stage": "readiness",
+            "sub_tag": "connectivity"
+        }
+        
+    # 1D. Events, Concerts & Exhibitions
+    RE_T1_EVENT = r'konser|festival|pertunjukan|exhibition'
+    if re.search(RE_T1_EVENT, slug_lower):
+        return {
+            "tier": "1",
+            "content_type": "activity_attraction",
+            "funnel_stage": "readiness",
+            "sub_tag": "event"
+        }
 
     # ---------------------------------------------------------
     # TIER 2: HIGH AOV / CONSIDERATION INTENT
@@ -82,12 +89,23 @@ def classify_tvlk_url(slug):
             "sub_tag": "class"
         }
 
+    # 2D. Spa, Beauty & Pampering
+    RE_T2_BEAUTY = r'spa|massage|pijat|salon|klinik|clinic|perawatan|hifu|meso|facial|nail|manicure|pedicure|relaksasi|reflexology'
+    if re.search(RE_T2_BEAUTY, slug_lower):
+        return {
+            "tier": "2",
+            "content_type": "service_beauty",
+            # We introduce "consideration" funnel stage for treatments
+            "funnel_stage": "consideration", 
+            "sub_tag": "beauty_spa"
+        }
+
     # ---------------------------------------------------------
     # TIER 3: DISCOVERY / EXPLORATION INTENT
     # ---------------------------------------------------------
     
     # 3A. POI / Landmark exploration
-    RE_T3_LANDMARK = r'candi|pantai|gunung|taman|museum|kebun-binatang|zoo|waterpark|kuil|temple|island|pulau|curug|air-terjun|danau|lake|goa|cave|monumen|monument'
+    RE_T3_LANDMARK = r'candi|pantai|gunung|taman|museum|kuil|temple|island|pulau|curug|air-terjun|danau|lake|goa|cave|monumen|monument'
     if re.search(RE_T3_LANDMARK, slug_lower):
         return {
             "tier": "3",
@@ -111,6 +129,7 @@ if __name__ == "__main__":
         ("tiket-masuk-dufan-ancol", "1", "activity_attraction", "readiness", "ticket"),
         ("sewa-mobil-lepas-kunci-bali", "1", "transport_rental", "readiness", "transport"),
         ("paket-tour-nusa-penida-1-hari", "2", "activity_tour", "planning", "tour"),
+        ("hifu-treatment-jakarta", "2", "service_beauty", "consideration", "beauty_spa"),
         ("snorkeling-nusa-lembongan", "2", "activity_outdoor", "planning", "outdoor"),
         ("candi-prambanan-yogyakarta", "3", "poi_exploration", "awareness", "landmark"),
     ]

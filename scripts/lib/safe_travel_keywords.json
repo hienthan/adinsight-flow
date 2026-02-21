@@ -1,0 +1,84 @@
+{
+    "immigration_visas": [
+        "visa",
+        "paspor",
+        "passport",
+        "imigrasi",
+        "immigration",
+        "arrival-card",
+        "customs",
+        "bea-cukai",
+        "kedutaan",
+        "embassy"
+    ],
+    "transport_passes": [
+        "suica",
+        "icoca",
+        "pasmo",
+        "jr-pass",
+        "t-money",
+        "ez-link",
+        "nol-card",
+        "mrt",
+        "lrt",
+        "bts",
+        "shinkansen",
+        "sleeper-bus",
+        "kereta",
+        "train",
+        "ferry"
+    ],
+    "aviation_airport": [
+        "airport",
+        "bandara",
+        "changi",
+        "haneda",
+        "flight",
+        "pesawat",
+        "penerbangan",
+        "baggage",
+        "luggage",
+        "bagasi",
+        "transit",
+        "terminal",
+        "layover"
+    ],
+    "logistics_money": [
+        "money-changer",
+        "tukar-uang",
+        "exchange-rate",
+        "sim-card",
+        "esim",
+        "pocket-wifi",
+        "check-in",
+        "check-out",
+        "itinerary",
+        "itinerari"
+    ],
+    "travel_intent": [
+        "backpacker",
+        "cruise",
+        "holiday",
+        "itinerari",
+        "itinerary",
+        "jalan-jalan",
+        "liburan",
+        "tour",
+        "travel",
+        "traveling",
+        "trip",
+        "wisata"
+    ],
+    "accommodation": [
+        "hotel",
+        "penginapan",
+        "resort",
+        "staycation",
+        "villa"
+    ],
+    "booking": [
+        "ticket",
+        "tiket",
+        "transportasi"
+    ]
+}

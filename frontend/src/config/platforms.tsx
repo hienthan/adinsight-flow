@@ -100,6 +100,10 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                     { label: 'Outdoor', value: 'outdoor' },
                     { label: 'Service', value: 'service' },
                     { label: 'Class', value: 'class' },
+                    { label: 'Beauty & Spa', value: 'beauty_spa' },
+                    { label: 'Connectivity', value: 'connectivity' },
+                    { label: 'Event', value: 'event' },
+                    { label: 'Tips & Tricks', value: 'tips_and_tricks' },
                     { label: 'Others', value: 'others' }
                 ]
             },
@@ -116,6 +120,7 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                     { label: 'Transport Guide', value: 'transport_guide' },
                     { label: 'Activity/Outdoor', value: 'activity_outdoor' },
                     { label: 'Service/Essential', value: 'service_essential' },
+                    { label: 'Service/Beauty', value: 'service_beauty' },
                     { label: 'Activity/Workshop', value: 'activity_workshop' },
                     { label: 'Transport/Rental', value: 'transport_rental' },
                     { label: 'Others', value: 'others' }
@@ -126,6 +131,7 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                     { label: 'All Stages', value: '' },
                     { label: 'Awareness', value: 'awareness' },
                     { label: 'Planning', value: 'planning' },
+                    { label: 'Consideration', value: 'consideration' },
                     { label: 'Readiness', value: 'readiness' }
                 ]
             },

@@ -16,12 +16,14 @@ Documenting the key strategies, technical decisions, and file paths for the Goog
 **Problem:** Traveloka generates massive amounts of informational content (lifestyle, greetings, tutorials, finance) to capture cheap top-of-funnel SEO traffic. Serving DSA ads on these pages drains budget with zero return on ad spend (ROAS).
 
 **Solution:**
-*   **Comprehensive Blacklist:** Created `scripts/lib/exclude_keywords.json` containing highly specific, non-transactional keywords grouped by category (Greetings, Entertainment, Health, Academic, B2B, Outdated Events).
-*   **Strategic Keyword Selection:**
-    *   *Used specific unigrams:* `skripsi`, `chord`, `cpns` (Safe, 100% non-travel).
-    *   *Used bigrams/trigrams for ambiguous contexts:* Instead of banning "korea" (which would kill "visa korea" or "tour korea"), we ban `drama-korea` and `drakor`. Instead of "jadwal", we ban `jadwal-sholat`.
-    *   *Addressed Platform Nuances:* Blocked B2B registration pages (`mitra`, `korporat`) and outdated event years (`2019`-`2024`) to avoid "Sold out" landing pages.
-*   **Implementation:** The script `tvlk_enrich_and_import.py` checks slugs against this blacklist using exact word boundary matching (preventing "sim" from matching "simbah"). Matched URLs are flagged with `is_active: false` and classified as `informational_junk`.
+*   **Comprehensive Blacklist (`exclude_keywords.json`):** Contains highly specific, non-transactional keywords grouped by category (Greetings, Entertainment, Health, Academic, B2B, Outdated Events).
+*   **Advanced 2-Layer Exclusion Logic:**
+    *   *Regex Pluralization Support:* Switched to Regex-based word boundary matching (`\b(keyword)(?:s|'s|es)?\b`) to catch plural variations (*valentines*) and prevent false substring matches (e.g., preventing "smart" from matching "mrt").
+    *   *Cross-lingual Checks:* The regex engine checks BOTH the original Indonesian `slug` and the translated English `title_en`, allowing us to use powerful English multi-word concepts (e.g., `difference-between`, `how-to-make`, `managing-your-money`) to filter complex SEO content.
+*   **Safe Keywords Allowlist (`safe_travel_keywords.json`):** 
+    *   To prevent aggressive keywords (like `what-is`, `how-to`, `tips`, `cara`) from accidentally blocking valid travel guides, an Allowlist checks for TOFU "immunity" keywords (e.g., `visa`, `suica`, `airport`, `jr-pass`, `travel`, `holiday`, `tour`, `tiket`).
+    *   If a URL triggers an Exclude keyword but contains a Safe keyword, the Junk status is overridden. The URL remains active and is classified specifically as TOFU (Top of Funnel).
+*   **Implementation:** The script `tvlk_enrich_and_import.py` runs these checks. Junk URLs are flagged with `is_active: false` and pushed to `Tier 5`. Their original `content_type` and `sub_tag` are preserved for easier manual auditing in the AdInsight dashboard. Protected TOFU URLs are pushed to `Tier 4` with `travel_guide` classification.
 
 ## 3. DSA Tier & Taxonomy Classification
 
@@ -29,11 +31,16 @@ Documenting the key strategies, technical decisions, and file paths for the Goog
 
 **Solution:**
 *   **Traveloka-Specific Classifier:** Created `scripts/lib/tvlk_tier_classifier.py` to map Indonesian URL patterns to practical bidding tiers and automatic taxonomy (`content_type`, `funnel_stage`, `sub_tag`).
-*   **The 3-Tier Bidding Strategy:**
-    1.  **Tier 1 (High ROAS / Fast Purchase):** Tickets, passes, car rentals, airport transfers, essential services. *Focus: Maximize Clicks / Low tCPA.*
-    2.  **Tier 2 (High AOV / Consideration):** Multi-day tours, packages, glamping, cruises. *Focus: Maximize Conversion Value.*
-    3.  **Tier 3 (Discovery / Exploration):** General POIs, temples, landmarks without explicit booking verbs. *Focus: Low bid DSA to capture branch traffic.*
-*   **Funnel Stage Validation:** Validated that the 3 PocketBase `funnel_stage` options (`readiness`, `planning`, `awareness`) are optimal for organizing ad groups and structuring remarketing campaigns in Google Ads. They should remain as Selection (Enum) types to ensure data integrity for custom label generation.
+*   **The 4-Tier Bidding Strategy:**
+    1.  **Tier 1 (High ROAS / Fast Purchase):** Tickets, passes, SIM/Wifi (`connectivity`), concerts/events (`event`), car rentals. *Focus: Maximize Clicks / Low tCPA.*
+    2.  **Tier 2 (High AOV / Consideration):** Multi-day tours, packages, cruises, and Beauty/Spa services (`beauty_spa`). *Focus: Maximize Conversion Value.*
+    3.  **Tier 3 (Discovery / Exploration):** General POIs, temples, natural landmarks without explicit booking verbs (`landmark`). *Focus: Low bid DSA to capture branch traffic.*
+    4.  **Tier 4 (TOFU / Cookie Seeding):** Travel guides, tips, and informational content protected by the Allowlist. Structured with `content_type=travel_guide` and `sub_tag=tips_and_tricks`. *Focus: Ultra-low bid for Outbound campaigns to seed cheap cookies.*
+*   **Funnel Stage Validations:** The system categorizes user intent across four funnel stages:
+    *   `readiness`: Immediate purchase intent (Tier 1).
+    *   `consideration`: High-value services needing research before booking, like Beauty & Spa (Tier 2).
+    *   `planning`: Multi-day trips or complex activities (Tier 2).
+    *   `awareness`: Non-transactional exploration and TOFU guides (Tier 3 & 4).
 
 ## 4. DSA Page Feed Export Best Practices
 
@@ -45,9 +52,10 @@ Documenting the key strategies, technical decisions, and file paths for the Goog
 
 ## 5. Translation Memory Caching (Speed & API Optimization)
 
-**Problem:** Hitting the Google Translate API for every single URL (e.g., 3,000+ times) causes severe bottlenecks (taking 5+ minutes) and risks an IP ban (`429 Too Many Requests`).
+**Problem:** Hitting the Google Translate API for every single URL (e.g., 3,000+ times) causes severe bottlenecks (taking 5+ minutes) and risks an IP ban (`429 Too Many Requests`). Also, Traveloka's internal URL suffixes (`-ta` for Tourist Attraction, `-trp` for Transport, `-acc` for Accommodation) get literally translated, polluting the English results and breaking keyword matching rules.
 
 **Solution:**
+*   **Suffix Stripping:** The script intercepts useless internal suffixes (`-ta`, `-trp`, `-acc`) and completely strips them from the string *before* sending them to the translation engine. This guarantees `title_en` generates clean English sentences rather than inserting "TA" or "TRP" randomly.
 *   **ID-EN Local Cache:** Implemented a thread-safe memory dictionary (`scripts/tvlk/lib/id_en_cache.json`).
 *   **Seeding:** The cache is pre-seeded with 55+ common Indonesian travel phrases (e.g., `"tiket masuk"`, `"sewa mobil"`, `"paket tour"`).
 *   **Auto-Learning:** When the script encounters an unknown word, it calls the Google Translate API once, saves the result to memory, and dumps the expanded dictionary back to disk at the end of the batch. This drops subsequent import times from minutes to literal seconds and completely eliminates API limits.
@@ -66,6 +74,7 @@ scripts/
 │   └── lib/                         # TVLK specific rules
 │       ├── indo_geo_kb.json         
 │       ├── exclude_keywords.json    
+│       ├── safe_travel_keywords.json
 │       ├── id_en_cache.json         
 │       └── tvlk_tier_classifier.py  
 ├── klook/                   # KLOOK SPECIFIC
