@@ -4,6 +4,7 @@ import { X, Save } from 'lucide-react';
 import RichTextEditor from '../common/RichTextEditor';
 import { pb } from '../../lib/pocketbase';
 import { useQueryClient } from '@tanstack/react-query';
+import { normalizeHtmlForCompare } from '../../lib/noteHtml';
 
 interface MetadataModalProps {
     isOpen: boolean;
@@ -11,7 +12,7 @@ interface MetadataModalProps {
     campaignId?: string;
     initialContent?: string;
     onSave?: (newContent: string) => void;
-    title?: string;
+    campaignName?: string;
 }
 
 export default function MetadataModal({
@@ -20,11 +21,14 @@ export default function MetadataModal({
     campaignId,
     initialContent = '',
     onSave,
-    title = 'Campaign Metadata'
+    campaignName
 }: MetadataModalProps) {
     const [content, setContent] = useState(initialContent);
     const [isSaving, setIsSaving] = useState(false);
     const queryClient = useQueryClient();
+
+    const displayTitle = campaignName ? `${campaignName} Metadata` : 'Campaign Metadata';
+    const hasChanges = normalizeHtmlForCompare(content) !== normalizeHtmlForCompare(initialContent);
 
     useEffect(() => {
         if (isOpen) {
@@ -88,7 +92,7 @@ export default function MetadataModal({
                 onClick={e => e.stopPropagation()}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                    <h3 className="hero-section-title" style={{ marginBottom: 0, fontSize: '0.9rem' }}>{title}</h3>
+                    <h3 className="hero-section-title" style={{ marginBottom: 0, fontSize: '0.9rem' }}>{displayTitle}</h3>
                     <button onClick={onClose} className="hero-btn hero-btn-ghost" style={{ padding: '0.1rem' }}>
                         <X size={18} />
                     </button>
@@ -109,7 +113,7 @@ export default function MetadataModal({
                     <button onClick={onClose} className="hero-btn hero-btn-ghost" style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}>
                         Cancel
                     </button>
-                    <button onClick={handleSave} disabled={isSaving} className="hero-btn hero-btn-primary" style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}>
+                    <button onClick={handleSave} disabled={isSaving || !hasChanges} className="hero-btn hero-btn-primary" style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}>
                         <Save size={12} style={{ marginRight: '0.25rem' }} />
                         {isSaving ? 'Saving...' : 'Save Metadata'}
                     </button>

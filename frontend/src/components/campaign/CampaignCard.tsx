@@ -420,6 +420,7 @@ export default function CampaignCard({
                     isOpen={isMetadataModalOpen}
                     onClose={() => setIsMetadataModalOpen(false)}
                     campaignId={campaign.id}
+                    campaignName={campaign.name}
                     initialContent={campaign.metadata || ''}
                 />
             )}

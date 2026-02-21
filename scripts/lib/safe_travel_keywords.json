@@ -160,5 +160,17 @@
         "transportasi",
         "rental",
         "charter"
+    ],
+    "premium_intercity_transport": [
+        "bus-jakarta-bali",
+        "damri",
+        "kereta-api",
+        "kereta-api-eksekutif",
+        "kereta-cepat",
+        "pahala-kencana",
+        "po-haryanto",
+        "rosalia-indah",
+        "shuttle-jakarta-bandung",
+        "whoosh"
     ]
 }

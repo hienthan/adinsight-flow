@@ -460,6 +460,7 @@ export default function CampaignForm({
                 <MetadataModal
                     isOpen={isMetadataModalOpen}
                     onClose={() => setIsMetadataModalOpen(false)}
+                    campaignName={formData.name}
                     initialContent={(formData.metadata || '').toString()}
                     onSave={(newContent) => setFormData(prev => ({ ...prev, metadata: newContent }))}
                 />

@@ -21,6 +21,16 @@ interface SidebarProps {
     onToggle: () => void;
 }
 
+const KlookIcon = () => (
+    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#ff5b00', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800 }}>K</div>
+);
+
+const TravelokaIcon = () => (
+    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#1ba0e2', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800 }}>TK</div>
+);
+
+
+
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const location = useLocation();
     const [pendingRemindersCount, setPendingRemindersCount] = useState(0);
@@ -58,7 +68,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     background: active ? 'var(--accent-glow)' : 'transparent', fontWeight: active ? 700 : 500
                 }}
             >
-                <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+                {Icon && typeof Icon !== 'function' ? <Icon size={18} strokeWidth={active ? 2.5 : 2} /> : <Icon />}
                 {!collapsed && <span style={{ fontSize: '0.875rem' }}>{children}</span>}
                 {!collapsed && badgeCount > 0 && (
                     <span style={{
@@ -129,11 +139,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </div>
 
                 <div style={{ paddingLeft: collapsed ? '0' : '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                    <NavLink to="/adinsight/klook" icon={Target} activeCondition={isActive('/adinsight/klook')}>
+                    <NavLink to="/adinsight/klook" icon={KlookIcon} activeCondition={isActive('/adinsight/klook')}>
                         Klook
                     </NavLink>
 
-                    <NavLink to="/adinsight/traveloka" icon={Target} activeCondition={isActive('/adinsight/traveloka')}>
+                    <NavLink to="/adinsight/traveloka" icon={TravelokaIcon} activeCondition={isActive('/adinsight/traveloka')}>
                         Traveloka
                     </NavLink>
                 </div>

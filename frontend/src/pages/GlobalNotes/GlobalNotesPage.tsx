@@ -11,10 +11,11 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     PanelRightClose,
-    PanelRightOpen
+    PanelRightOpen,
+    StickyNote
 } from 'lucide-react';
 import RichTextEditor from '../../components/common/RichTextEditor';
-import { htmlToPlainText, prepareNoteHtmlForRender } from '../../lib/noteHtml';
+import { htmlToPlainText, prepareNoteHtmlForRender, normalizeHtmlForCompare } from '../../lib/noteHtml';
 
 interface Note {
     id: string;
@@ -22,7 +23,7 @@ interface Note {
     content: string;
     tags: string[];
     is_pinned: boolean;
-    platform: 'Klook' | 'Trip' | 'General';
+    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka';
     created: string;
     updated: string;
 }
@@ -33,7 +34,7 @@ export default function GlobalNotesPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
-    const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+    const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
 
     // Form state
     const [editTitle, setEditTitle] = useState('');
@@ -137,6 +138,28 @@ export default function GlobalNotesPage() {
         () => prepareNoteHtmlForRender(activeNote?.content || ''),
         [activeNote?.id, activeNote?.content] // Added activeNote?.id to ensure refresh
     );
+
+    // Compute changes for Save button
+    const hasChanges = useMemo(() => {
+        if (!activeNote) return false;
+
+        // Title comparison
+        const titleChanged = (activeNote.title || '') !== (editTitle || '');
+
+        // Use normalized HTML for content comparison
+        const contentChanged = normalizeHtmlForCompare(activeNote.content || '') !== normalizeHtmlForCompare(editContent || '');
+
+        // Tags comparison (ignore order and empty strings)
+        const currentTagsStr = (activeNote.tags || []).map(t => t.trim()).filter(Boolean).sort().join(',');
+        const editTagsStr = editTags.split(',').map(t => t.trim()).filter(Boolean).sort().join(',');
+        const tagsChanged = currentTagsStr !== editTagsStr;
+
+        // Platform comparison
+        const currentPlatform = String(activeNote.platform || 'General');
+        const platformChanged = currentPlatform !== editPlatform;
+
+        return titleChanged || contentChanged || tagsChanged || platformChanged;
+    }, [activeNote, editTitle, editContent, editTags, editPlatform]);
 
     // ESC support for editing
     useEffect(() => {
@@ -270,18 +293,34 @@ export default function GlobalNotesPage() {
                             }}
                             className="note-item-hover"
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, overflow: 'hidden' }}>
-                                {note.is_pinned && <Pin size={10} style={{ flexShrink: 0, color: 'var(--accent)', fill: 'var(--accent)' }} />}
-                                <span style={{
-                                    fontWeight: selectedNoteId === note.id ? 700 : 500,
-                                    fontSize: '0.85rem',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    color: selectedNoteId === note.id ? 'hsl(var(--primary))' : 'var(--text-main)'
-                                }}>
-                                    {note.title}
-                                </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, overflow: 'hidden' }}>
+                                {String(note.platform || '').toLowerCase() === 'klook' && (
+                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#ff5b00', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800 }}>K</div>
+                                )}
+                                {(String(note.platform || '').toLowerCase() === 'traveloka' || String(note.platform || '').toLowerCase() === 'tvlk') && (
+                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#1ba0e2', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800 }}>TK</div>
+                                )}
+                                {String(note.platform || '').toLowerCase() === 'trip' && (
+                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#0e2b5c', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800 }}>T</div>
+                                )}
+                                {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip'].includes(String(note.platform || '').toLowerCase())) && (
+                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: 'var(--bg-subtle)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <StickyNote size={10} />
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', overflow: 'hidden', flex: 1 }}>
+                                    {note.is_pinned && <Pin size={10} style={{ flexShrink: 0, color: 'var(--accent)', fill: 'var(--accent)' }} />}
+                                    <span style={{
+                                        fontWeight: selectedNoteId === note.id ? 700 : 500,
+                                        fontSize: '0.85rem',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        color: selectedNoteId === note.id ? 'hsl(var(--primary))' : 'var(--text-main)'
+                                    }}>
+                                        {note.title}
+                                    </span>
+                                </div>
                             </div>
                             <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', flexShrink: 0, fontWeight: 600 }}>
                                 {new Date(note.updated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
@@ -357,7 +396,13 @@ export default function GlobalNotesPage() {
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 {isEditing ? (
                                     <>
-                                        <button onClick={() => updateMutation.mutate(activeNote.id)} className="hero-btn hero-btn-primary">Save Changes</button>
+                                        <button
+                                            onClick={() => updateMutation.mutate(activeNote.id)}
+                                            disabled={!hasChanges}
+                                            className="hero-btn hero-btn-primary"
+                                        >
+                                            Save
+                                        </button>
                                         <button onClick={() => setIsEditing(false)} className="hero-btn hero-btn-ghost">Cancel</button>
                                     </>
                                 ) : (
@@ -406,45 +451,44 @@ export default function GlobalNotesPage() {
                                         overflow: 'hidden'
                                     }}>
                                         {isEditing ? (
-                                            <div style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
-                                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                                            <div style={{ padding: '3.5rem 4rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
                                                             Platform
-                                                        </div>
-                                                        <div className="filter-group">
-                                                            <select
-                                                                value={editPlatform || 'General'}
-                                                                onChange={e => setEditPlatform(e.target.value)}
-                                                                style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-main)' }}
-                                                            >
-                                                                <option value="General">General</option>
-                                                                <option value="Klook">Klook</option>
-                                                                <option value="Trip">Trip</option>
-                                                            </select>
-                                                        </div>
+                                                        </span>
+                                                        <select
+                                                            value={editPlatform || 'General'}
+                                                            onChange={e => setEditPlatform(e.target.value)}
+                                                            style={{ padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-subtle)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
+                                                        >
+                                                            <option value="General">General</option>
+                                                            <option value="Klook">Klook</option>
+                                                            <option value="Trip">Trip</option>
+                                                            <option value="Traveloka">TVLK</option>
+                                                        </select>
                                                     </div>
-                                                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
-                                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                                                            Tags (comma separated)
-                                                        </div>
-                                                        <div className="filter-group">
-                                                            <input
-                                                                value={editTags}
-                                                                onChange={e => setEditTags(e.target.value)}
-                                                                placeholder="e.g. Strategy, Q1, Planning"
-                                                                style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-main)' }}
-                                                            />
-                                                        </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+                                                            Tags
+                                                        </span>
+                                                        <input
+                                                            value={editTags}
+                                                            onChange={e => setEditTags(e.target.value)}
+                                                            placeholder="Comma separated, e.g. Strategy, Q1"
+                                                            style={{ flex: 1, padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-subtle)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
+                                                        />
                                                     </div>
                                                 </div>
-                                                <div className="filter-group" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                                    <label style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Content</label>
+
+                                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                                                     <RichTextEditor
                                                         value={editContent}
                                                         onChange={setEditContent}
                                                         placeholder="Write your note..."
-                                                        minHeight={450}
+                                                        style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+                                                        contentStyle={{ flex: 1 }}
+                                                        maxHeight="100%"
                                                     />
                                                 </div>
                                             </div>
@@ -506,7 +550,7 @@ export default function GlobalNotesPage() {
                                         <div>
                                             <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Platform</div>
                                             <span className="hero-badge" style={{ background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontWeight: 700 }}>
-                                                {activeNote.platform}
+                                                {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : activeNote.platform || 'General'}
                                             </span>
                                         </div>
 

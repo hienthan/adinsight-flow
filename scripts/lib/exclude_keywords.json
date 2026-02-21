@@ -455,16 +455,22 @@
     ],
     "local_commuter_transport": [
         "angkot",
+        "brt",
         "busway",
         "commuter",
+        "damri-bandara",
+        "jadwal-krl",
         "krl",
-        "lrt-jakarta",
         "lrt-jabodebek",
+        "lrt-jakarta",
         "mrt-jakarta",
         "prameks",
+        "rute-krl",
+        "sepur-kluthuk",
         "tj",
+        "trans-jakarta",
         "transjakarta",
-        "trans-jakarta"
+        "transjogja"
     ],
     "utility_and_bills": [
         "bayar-pdam",
