@@ -100,7 +100,7 @@ def classify_tvlk_url(slug):
         }
 
     # 2D. Spa, Beauty & Pampering
-    RE_T2_BEAUTY = r'spa|massage|pijat|salon|klinik|clinic|perawatan|hifu|meso|facial|nail|manicure|pedicure|relaksasi|reflexology|filler|botox|treatment|hair-removal'
+    RE_T2_BEAUTY = r'\b(spa|massage|pijat|salon|klinik|clinic|perawatan|hifu|meso|facial|nail|manicure|pedicure|relaksasi|reflexology|filler|botox|treatment|hair-removal)\b'
     if re.search(RE_T2_BEAUTY, slug_lower):
         return {
             "tier": "2",

@@ -34,12 +34,31 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
     const availableMetrics = ['traffic', 'conversions', 'IS (Impression Share)', 'CPC', 'ROAS', 'Budget Burn Rate'];
 
     const toggleMetric = (metric: string) => {
-        setFormData(prev => ({
-            ...prev,
-            check_metrics: prev.check_metrics.includes(metric)
+        setFormData(prev => {
+            const isSelected = prev.check_metrics.includes(metric);
+            const newMetrics = isSelected
                 ? prev.check_metrics.filter(m => m !== metric)
-                : [...prev.check_metrics, metric]
-        }));
+                : [...prev.check_metrics, metric];
+
+            let newMessage = prev.message.trim();
+            if (!isSelected) {
+                if (newMessage) {
+                    newMessage = newMessage.endsWith(',') ? `${newMessage} ${metric}` : `${newMessage}, ${metric}`;
+                } else {
+                    newMessage = metric;
+                }
+            } else {
+                const escapedMetric = metric.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                newMessage = newMessage.replace(new RegExp(escapedMetric, 'gi'), '').trim();
+                newMessage = newMessage.replace(/,\s*,/g, ',').replace(/^,\s*/, '').replace(/,\s*$/, '').trim();
+            }
+
+            return {
+                ...prev,
+                check_metrics: newMetrics,
+                message: newMessage
+            };
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

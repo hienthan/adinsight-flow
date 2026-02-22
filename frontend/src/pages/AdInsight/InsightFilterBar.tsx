@@ -147,23 +147,11 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
 
                 if (filter.type === 'select') {
                     if (filter.multiple && filter.options) {
-                        // Dynamic validation for sub_tag and content_type based on active tiers
-                        let visibleOptions = filter.options;
-                        const activeTiers = currentValues.tier ? currentValues.tier.split(',').filter(Boolean) : [];
-
-                        if ((filter.id === 'sub_tag' || filter.id === 'content_type') && activeTiers.length > 0) {
-                            visibleOptions = visibleOptions.filter(opt => {
-                                if (!opt.value) return true; // keep 'All' or empty
-                                if (!opt.validTiers || opt.validTiers.length === 0) return true; // generic options
-                                return activeTiers.some(t => opt.validTiers!.includes(t));
-                            });
-                        }
-
                         return (
                             <div className="filter-group" key={filter.id}>
                                 <label>{filter.label}</label>
                                 <MultiSelectDropdown
-                                    options={visibleOptions}
+                                    options={filter.options}
                                     value={currentValues[filter.id] || ''}
                                     onChange={(val) => onFilterChange(filter.id, val)}
                                     placeholder="All"

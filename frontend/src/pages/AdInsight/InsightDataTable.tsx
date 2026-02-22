@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, MapPin } from 'lucide-react';
+import { ExternalLink, MapPin, ArrowUp, ArrowDown } from 'lucide-react';
 import { PageRecord, ColumnDef } from '../../types/adinsight';
 import { getTierStyle, getFunnelStyle } from './styles';
 
@@ -7,24 +7,81 @@ interface InsightDataTableProps {
     records: PageRecord[];
     columns: ColumnDef[];
     loading: boolean;
+    sortField?: string;
+    sortDirection?: 'asc' | 'desc';
+    onSort?: (field: string) => void;
+    selectedIds?: string[];
+    onSelect?: (id: string) => void;
+    onSelectAll?: (ids: string[], isSelected: boolean) => void;
 }
 
-export const InsightDataTable: React.FC<InsightDataTableProps> = ({ records, columns, loading }) => {
+export const InsightDataTable: React.FC<InsightDataTableProps> = ({
+    records,
+    columns,
+    loading,
+    sortField,
+    sortDirection,
+    onSort,
+    selectedIds = [],
+    onSelect,
+    onSelectAll
+}) => {
+    const allSelected = records.length > 0 && records.every(r => selectedIds.includes(r.id));
+
     return (
         <div className="data-table-container hero-card" style={{ padding: 0 }}>
             <table className="data-table">
                 <thead>
                     <tr>
-                        {columns.map((col, idx) => (
-                            <th key={idx} style={{ width: col.width }}>{col.header}</th>
-                        ))}
+                        {onSelect && onSelectAll && (
+                            <th style={{ width: '40px', textAlign: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    onChange={(e) => onSelectAll(records.map(r => r.id), e.target.checked)}
+                                    style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
+                                />
+                            </th>
+                        )}
+                        {columns.map((col, idx) => {
+                            const sortKey = col.key === 'location' ? 'country' : col.key;
+                            return (
+                                <th
+                                    key={idx}
+                                    style={{ width: col.width, cursor: onSort ? 'pointer' : 'default', userSelect: 'none' }}
+                                    onClick={() => onSort && onSort(sortKey)}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {col.header}
+                                        {sortField === sortKey && (
+                                            sortDirection === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                                        )}
+                                    </div>
+                                </th>
+                            );
+                        })}
                     </tr>
                 </thead>
                 <tbody>
                     {records.map((record) => {
                         const isActive = record.is_active !== false && record.include_for_dsa !== false;
+                        const isSelected = selectedIds.includes(record.id);
                         return (
-                            <tr key={record.id} style={{ opacity: isActive ? 1 : 0.45, background: isActive ? 'inherit' : 'var(--bg-overlay)' }}>
+                            <tr key={record.id} style={{
+                                opacity: isActive ? 1 : 0.45,
+                                background: isSelected ? 'hsla(var(--primary)/0.05)' : (isActive ? 'inherit' : 'var(--bg-overlay)'),
+                                borderLeft: isSelected ? '3px solid hsl(var(--primary))' : '3px solid transparent'
+                            }}>
+                                {onSelect && (
+                                    <td style={{ textAlign: 'center' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() => onSelect(record.id)}
+                                            style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
+                                        />
+                                    </td>
+                                )}
                                 {columns.map((col, idx) => {
                                     if (col.key === 'canonical_id') {
                                         return (

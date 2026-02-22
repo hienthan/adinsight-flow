@@ -172,7 +172,7 @@ export default function CampaignForm({
             let savedRecord: Campaign;
 
             if (campaignId && existingCampaign) {
-                const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'keywords', 'description', 'metadata', 'general_notes'];
+                const trackedFields: (keyof Campaign)[] = ['cpc', 'description'];
                 const changes: any[] = [];
                 trackedFields.forEach((field) => {
                     const oldValue = existingCampaign[field];

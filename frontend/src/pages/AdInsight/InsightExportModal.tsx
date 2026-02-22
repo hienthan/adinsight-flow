@@ -24,7 +24,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
     totalCount,
     isExporting
 }) => {
-    const [selectedFields, setSelectedFields] = useState<string[]>(['country', 'city', 'tier', 'funnel_stage']);
+    const [selectedFields, setSelectedFields] = useState<string[]>(['country', 'city', 'tier', 'funnel_stage', 'sub_tag']);
     const [fileName, setFileName] = useState('');
     const [customLabel, setCustomLabel] = useState('');
 

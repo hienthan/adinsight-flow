@@ -8,6 +8,7 @@ import { PLATFORMS } from '../../config/platforms';
 import { InsightDataTable } from './InsightDataTable';
 import { InsightFilterBar } from './InsightFilterBar';
 import { InsightExportModal } from './InsightExportModal';
+import { InsightActionBar } from './InsightActionBar';
 import { buildFilterString } from './insightUtils';
 import { PageRecord } from '../../types/adinsight';
 
@@ -37,6 +38,9 @@ export default function AdInsightPage() {
         currentPage,
         filters,
         setFilters,
+        sortField,
+        sortDirection,
+        handleSortChange,
         fetchPages
     } = usePlatformAnalytics({
         collection: config.collection,
@@ -47,6 +51,51 @@ export default function AdInsightPage() {
     const { countries, sitemapTags } = usePlatformMeta(config.defaultSitemapTags);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [exporting, setExporting] = useState(false);
+
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+
+    // Get predefined sub tags from config to populate the bulk update dropdown
+    const availableSubTags = useMemo(() => {
+        const subTagFilter = config.filters.find(f => f.id === 'sub_tag');
+        if (!subTagFilter || !subTagFilter.options) return [];
+        return subTagFilter.options
+            .filter(opt => opt.value !== '') // Exclude "All" option
+            .map(opt => ({ label: opt.label, value: opt.value }));
+    }, [config.filters]);
+
+    const handleSelect = useCallback((id: string) => {
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    }, []);
+
+    const handleSelectAll = useCallback((ids: string[], isSelected: boolean) => {
+        if (isSelected) {
+            // Add all visible IDs that aren't already selected
+            setSelectedIds(prev => Array.from(new Set([...prev, ...ids])));
+        } else {
+            // Remove visible IDs from selection
+            setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
+        }
+    }, []);
+
+    const handleBulkUpdate = async (payload: Partial<PageRecord>) => {
+        if (selectedIds.length === 0) return;
+        setIsBulkUpdating(true);
+        try {
+            // Execute in parallel
+            const promises = selectedIds.map(id =>
+                pb.collection(config.collection).update(id, payload)
+            );
+            await Promise.all(promises);
+            // Refresh table
+            await fetchPages(currentPage);
+        } catch (err) {
+            console.error('Bulk update failed', err);
+            alert('Failed to update some records. Please check the network log.');
+        } finally {
+            setIsBulkUpdating(false);
+        }
+    };
 
     const handleFilterChange = useCallback((id: string, value: string) => {
         setFilters(prev => ({ ...prev, [id]: value }));
@@ -70,7 +119,7 @@ export default function AdInsightPage() {
 
             while (hasMore) {
                 const result = await pb.collection(config.collection).getList<PageRecord>(page, 500, {
-                    sort: 'tier',
+                    sort: 'sub_tag,tier',
                     filter: filterString,
                 });
 
@@ -226,7 +275,13 @@ export default function AdInsightPage() {
                 <InsightDataTable
                     records={records}
                     columns={config.columns}
-                    loading={loading}
+                    loading={loading || isBulkUpdating}
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSortChange}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelect}
+                    onSelectAll={handleSelectAll}
                 />
 
                 {/* Pagination */}
@@ -299,6 +354,20 @@ export default function AdInsightPage() {
                 fields={config.exportFields}
                 totalCount={totalCount}
                 isExporting={exporting}
+            />
+
+            {/* Bulk Action Bar */}
+            <InsightActionBar
+                selectedCount={selectedIds.length}
+                onClear={() => setSelectedIds([])}
+                onUpdateTier={(tier) => handleBulkUpdate({ tier: String(tier) })}
+                onUpdateSubTag={(subTag) => handleBulkUpdate({ sub_tag: subTag })}
+                onUpdateStatus={(isActive) => handleBulkUpdate({
+                    is_active: isActive,
+                    include_for_dsa: isActive
+                })}
+                availableSubTags={availableSubTags}
+                isUpdating={isBulkUpdating}
             />
         </div>
     );

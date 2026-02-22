@@ -33,18 +33,36 @@ const TravelokaIcon = () => (
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const location = useLocation();
-    const [pendingRemindersCount, setPendingRemindersCount] = useState(0);
+    const [reminderCounts, setReminderCounts] = useState({ overdue: 0, today: 0 });
+
+    const getLocalDateString = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
 
 
     useEffect(() => {
         const fetchRemindersCount = async () => {
             try {
-                const today = new Date().toISOString().split('T')[0];
-                const records = await pb.collection('campaign_reminders').getList<CampaignReminder>(1, 1, {
+                const today = getLocalDateString();
+                const records = await pb.collection('campaign_reminders').getFullList<CampaignReminder>({
                     filter: `reminder_date <= "${today}" && status = "pending"`,
                 });
-                setPendingRemindersCount(records.totalItems);
+
+                let overdue = 0;
+                let todayCount = 0;
+
+                records.forEach(r => {
+                    const rDateStr = r.reminder_date.slice(0, 10);
+                    if (rDateStr < today) overdue++;
+                    else if (rDateStr === today) todayCount++;
+                });
+
+                setReminderCounts({ overdue, today: todayCount });
             } catch (error) {
                 console.error('Failed to fetch reminders:', error);
             }
@@ -56,8 +74,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
     const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
-    const NavLink = ({ to, icon: Icon, children, badgeCount, activeCondition }: any) => {
+    const NavLink = ({ to, icon: Icon, children, badgeCount, badgeText, activeCondition }: any) => {
         const active = activeCondition !== undefined ? activeCondition : isActive(to);
+        const hasBadge = badgeCount > 0 || !!badgeText;
         return (
             <Link
                 to={to}
@@ -70,7 +89,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             >
                 {Icon && typeof Icon !== 'function' ? <Icon size={18} strokeWidth={active ? 2.5 : 2} /> : <Icon />}
                 {!collapsed && <span style={{ fontSize: '0.875rem' }}>{children}</span>}
-                {!collapsed && badgeCount > 0 && (
+                {!collapsed && hasBadge && (
                     <span style={{
                         marginLeft: 'auto',
                         background: 'hsl(3 85% 56%)',
@@ -82,7 +101,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         borderRadius: '10px',
                         fontWeight: 800
                     }}>
-                        {badgeCount}
+                        {badgeText || badgeCount}
                     </span>
                 )}
             </Link>
@@ -118,7 +137,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     Manage Platforms
                 </NavLink>
 
-                <NavLink to="/camp-tracking/reminders" icon={Bell} badgeCount={pendingRemindersCount}>
+                <NavLink
+                    to="/camp-tracking/reminders"
+                    icon={Bell}
+                    badgeText={(reminderCounts.overdue > 0 || reminderCounts.today > 0) ? `${reminderCounts.overdue}/${reminderCounts.today}` : undefined}
+                >
                     Reminders
                 </NavLink>
                 <NavLink to="/camp-tracking/changes" icon={History}>

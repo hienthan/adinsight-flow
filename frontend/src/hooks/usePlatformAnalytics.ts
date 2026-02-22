@@ -7,12 +7,16 @@ interface UsePlatformAnalyticsProps {
     collection: string;
     perPage: number;
     initialFilters?: Record<string, string>;
+    initialSortField?: string;
+    initialSortDirection?: 'asc' | 'desc';
 }
 
 export function usePlatformAnalytics({
     collection,
     perPage,
-    initialFilters = {}
+    initialFilters = {},
+    initialSortField = 'tier',
+    initialSortDirection = 'asc'
 }: UsePlatformAnalyticsProps) {
     const [records, setRecords] = useState<PageRecord[]>([]);
     const [totalCount, setTotalCount] = useState(0);
@@ -20,13 +24,15 @@ export function usePlatformAnalytics({
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState<Record<string, string>>(initialFilters);
+    const [sortField, setSortField] = useState(initialSortField);
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(initialSortDirection);
 
-    const fetchPages = useCallback(async (pageNum: number, currentFilters: Record<string, string>) => {
+    const fetchPages = useCallback(async (pageNum: number, currentFilters: Record<string, string>, currentSort: string) => {
         setLoading(true);
         try {
             const filterStr = buildFilterString(currentFilters);
             const result = await pb.collection(collection).getList<PageRecord>(pageNum, perPage, {
-                sort: 'tier',
+                sort: currentSort,
                 filter: filterStr,
             });
 
@@ -49,8 +55,18 @@ export function usePlatformAnalytics({
 
     useEffect(() => {
         setCurrentPage(1);
-        fetchPages(1, filters);
-    }, [filters, perPage, fetchPages]);
+        const sortStr = (sortDirection === 'desc' ? '-' : '') + sortField;
+        fetchPages(1, filters, sortStr);
+    }, [filters, perPage, sortField, sortDirection, fetchPages]);
+
+    const handleSortChange = (field: string) => {
+        if (sortField === field) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
 
     return {
         records,
@@ -60,7 +76,10 @@ export function usePlatformAnalytics({
         currentPage,
         filters,
         setFilters,
-        fetchPages: (page: number) => fetchPages(page, filters),
-        refresh: () => fetchPages(currentPage, filters)
+        sortField,
+        sortDirection,
+        handleSortChange,
+        fetchPages: (page: number) => fetchPages(page, filters, (sortDirection === 'desc' ? '-' : '') + sortField),
+        refresh: () => fetchPages(currentPage, filters, (sortDirection === 'desc' ? '-' : '') + sortField)
     };
 }
