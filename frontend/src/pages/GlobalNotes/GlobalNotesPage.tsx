@@ -12,7 +12,8 @@ import {
     PanelLeftOpen,
     PanelRightClose,
     PanelRightOpen,
-    StickyNote
+    StickyNote,
+    AlertCircle
 } from 'lucide-react';
 import RichTextEditor from '../../components/common/RichTextEditor';
 import { htmlToPlainText, prepareNoteHtmlForRender, normalizeHtmlForCompare } from '../../lib/noteHtml';
@@ -23,6 +24,7 @@ interface Note {
     content: string;
     tags: string[];
     is_pinned: boolean;
+    priority: 'high' | 'medium' | 'normal';
     platform: 'Klook' | 'Trip' | 'General' | 'Traveloka';
     created: string;
     updated: string;
@@ -41,6 +43,7 @@ export default function GlobalNotesPage() {
     const [editContent, setEditContent] = useState('');
     const [editTags, setEditTags] = useState('');
     const [editPlatform, setEditPlatform] = useState<string>('General');
+    const [editPriority, setEditPriority] = useState<'high' | 'medium' | 'normal'>('normal');
 
     // Fetch notes
     const { data: notes = [] } = useQuery<Note[]>({
@@ -56,6 +59,7 @@ export default function GlobalNotesPage() {
                 content: r.content,
                 tags: r.tags,
                 is_pinned: r.is_pinned,
+                priority: r.priority || 'normal',
                 platform: r.platform,
                 created: r.created,
                 updated: r.updated
@@ -79,6 +83,7 @@ export default function GlobalNotesPage() {
                 title: 'New Note',
                 content: '<h1>New Note</h1><p>Start writing...</p>',
                 platform: 'General',
+                priority: 'normal',
                 is_pinned: false,
                 tags: []
             };
@@ -97,7 +102,8 @@ export default function GlobalNotesPage() {
                 title: editTitle,
                 content: editContent,
                 tags: editTags.split(',').map(t => t.trim()).filter(t => t),
-                platform: editPlatform
+                platform: editPlatform,
+                priority: editPriority
             });
         },
         onSuccess: () => {
@@ -132,7 +138,17 @@ export default function GlobalNotesPage() {
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         htmlToPlainText(note.content).toLowerCase().includes(searchTerm.toLowerCase()) ||
         note.tags?.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    ).sort((a, b) => {
+        if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+
+        const priorityScore = { high: 3, medium: 2, normal: 1 };
+        const aScore = priorityScore[a.priority || 'normal'];
+        const bScore = priorityScore[b.priority || 'normal'];
+
+        if (aScore !== bScore) return bScore - aScore;
+
+        return new Date(b.updated).getTime() - new Date(a.updated).getTime();
+    });
 
     const renderedNote = useMemo(
         () => prepareNoteHtmlForRender(activeNote?.content || ''),
@@ -158,8 +174,12 @@ export default function GlobalNotesPage() {
         const currentPlatform = String(activeNote.platform || 'General');
         const platformChanged = currentPlatform !== editPlatform;
 
-        return titleChanged || contentChanged || tagsChanged || platformChanged;
-    }, [activeNote, editTitle, editContent, editTags, editPlatform]);
+        // Priority comparison
+        const currentPriority = activeNote.priority || 'normal';
+        const priorityChanged = currentPriority !== editPriority;
+
+        return titleChanged || contentChanged || tagsChanged || platformChanged || priorityChanged;
+    }, [activeNote, editTitle, editContent, editTags, editPlatform, editPriority]);
 
     // ESC support for editing
     useEffect(() => {
@@ -202,6 +222,7 @@ export default function GlobalNotesPage() {
         setEditContent(note.content);
         setEditTags(note.tags?.join(', ') || '');
         setEditPlatform(String(note.platform || 'General'));
+        setEditPriority(note.priority || 'normal');
         setIsEditing(true);
         setSelectedNoteId(note.id);
     };
@@ -284,8 +305,12 @@ export default function GlobalNotesPage() {
                                 padding: '0.85rem 1.25rem',
                                 borderBottom: '1px solid var(--border-subtle)',
                                 cursor: 'pointer',
-                                background: selectedNoteId === note.id ? 'var(--accent-glow)' : 'transparent',
-                                borderLeft: selectedNoteId === note.id ? '4px solid hsl(var(--primary))' : '4px solid transparent',
+                                background: selectedNoteId === note.id
+                                    ? 'var(--accent-glow)'
+                                    : (note.priority === 'high' ? 'hsla(0, 84%, 60%, 0.05)' : note.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.05)' : 'transparent'),
+                                borderLeft: selectedNoteId === note.id
+                                    ? '4px solid hsl(var(--primary))'
+                                    : (note.priority === 'high' ? '4px solid #ef4444' : note.priority === 'medium' ? '4px solid #f59e0b' : '4px solid transparent'),
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
@@ -322,9 +347,13 @@ export default function GlobalNotesPage() {
                                     </span>
                                 </div>
                             </div>
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', flexShrink: 0, fontWeight: 600 }}>
-                                {new Date(note.updated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                                {note.priority === 'high' && <AlertCircle size={10} color="#ef4444" />}
+                                {note.priority === 'medium' && <span style={{ color: '#f59e0b', fontSize: '10px', fontWeight: 800 }}>M</span>}
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                    {new Date(note.updated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                </span>
+                            </div>
                         </div>
                     ))}
                     {filteredNotes.length === 0 && (
@@ -468,6 +497,27 @@ export default function GlobalNotesPage() {
                                                             <option value="Traveloka">TVLK</option>
                                                         </select>
                                                     </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+                                                            Priority
+                                                        </span>
+                                                        <select
+                                                            value={editPriority || 'normal'}
+                                                            onChange={e => setEditPriority(e.target.value as 'high' | 'medium' | 'normal')}
+                                                            style={{
+                                                                padding: '0.35rem 0.5rem',
+                                                                borderRadius: '6px',
+                                                                border: editPriority === 'high' ? '1px solid #ef4444' : editPriority === 'medium' ? '1px solid #f59e0b' : '1px solid var(--border-subtle)',
+                                                                background: editPriority === 'high' ? 'hsla(0, 84%, 60%, 0.05)' : editPriority === 'medium' ? 'hsla(38, 92%, 50%, 0.05)' : 'var(--bg-main)',
+                                                                color: editPriority === 'high' ? '#ef4444' : editPriority === 'medium' ? '#f59e0b' : 'var(--text-main)',
+                                                                fontSize: '0.8rem', outline: 'none', fontWeight: 600
+                                                            }}
+                                                        >
+                                                            <option value="normal">Normal</option>
+                                                            <option value="medium">Medium</option>
+                                                            <option value="high">High</option>
+                                                        </select>
+                                                    </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
                                                         <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
                                                             Tags
@@ -552,6 +602,19 @@ export default function GlobalNotesPage() {
                                             <span className="hero-badge" style={{ background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontWeight: 700 }}>
                                                 {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : activeNote.platform || 'General'}
                                             </span>
+                                        </div>
+
+                                        <div>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Priority</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                <span className="hero-badge" style={{
+                                                    background: activeNote.priority === 'high' ? 'hsla(0, 84%, 60%, 0.1)' : activeNote.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.1)' : 'var(--bg-subtle)',
+                                                    color: activeNote.priority === 'high' ? '#ef4444' : activeNote.priority === 'medium' ? '#f59e0b' : 'var(--text-dim)',
+                                                    fontWeight: 700
+                                                }}>
+                                                    {activeNote.priority === 'high' ? 'High' : activeNote.priority === 'medium' ? 'Medium' : 'Normal'}
+                                                </span>
+                                            </div>
                                         </div>
 
                                         <div>
