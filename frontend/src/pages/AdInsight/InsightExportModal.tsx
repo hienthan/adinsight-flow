@@ -10,7 +10,7 @@ interface ExportField {
 interface InsightExportModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onExport: (selectedFields: string[], fileName: string) => void;
+    onExport: (selectedFields: string[], fileName: string, customLabel?: string) => void;
     fields: ExportField[];
     totalCount: number;
     isExporting: boolean;
@@ -26,6 +26,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
 }) => {
     const [selectedFields, setSelectedFields] = useState<string[]>(['country', 'city', 'tier', 'funnel_stage']);
     const [fileName, setFileName] = useState('');
+    const [customLabel, setCustomLabel] = useState('');
 
     const toggleField = (id: string) => {
         setSelectedFields(prev =>
@@ -89,7 +90,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                             Export Configuration
                         </h4>
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', margin: '0.25rem 0 0 0' }}>
-                            Choose fields to include in 'Custom Label'
+                            Choose how to build the 'Custom Label' column
                         </p>
                     </div>
                     <button
@@ -141,35 +142,69 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                 </div>
 
                 {/* Modal Body */}
-                <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {fields.map(field => (
-                            <label
-                                key={field.id}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '1rem',
-                                    cursor: 'pointer',
-                                    padding: '1rem',
-                                    borderRadius: '12px',
-                                    border: '1px solid var(--border-subtle)',
-                                    background: 'var(--bg-content)',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={selectedFields.includes(field.id)}
-                                    onChange={() => toggleField(field.id)}
-                                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'hsl(var(--primary))' }}
-                                />
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>{field.label}</span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{field.desc}</span>
-                                </div>
-                            </label>
-                        ))}
+                <div style={{ padding: '0 2rem 2rem 2rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                    {/* Custom Label Text */}
+                    <div>
+                        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
+                            <span>Custom Suffix (Optional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Enter additional text (e.g. tier1-event)"
+                            value={customLabel}
+                            onChange={(e) => setCustomLabel(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.85rem 1rem',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border-subtle)',
+                                background: 'var(--bg-content)',
+                                fontSize: '0.95rem',
+                                color: 'var(--text-main)',
+                                outline: 'none',
+                                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                            }}
+                        />
+                        <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+                            This text will be appended to the end of your dynamic labels.
+                        </p>
+                    </div>
+
+                    {/* Dynamic Fields */}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
+                            Dynamic Fields
+                        </label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {fields.map(field => (
+                                <label
+                                    key={field.id}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '1rem',
+                                        cursor: 'pointer',
+                                        padding: '0.75rem 1rem',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-content)',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedFields.includes(field.id)}
+                                        onChange={() => toggleField(field.id)}
+                                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'hsl(var(--primary))' }}
+                                    />
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{field.label}</span>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{field.desc}</span>
+                                    </div>
+                                </label>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -189,8 +224,8 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                         Cancel
                     </button>
                     <button
-                        onClick={() => onExport(selectedFields, fileName)}
-                        disabled={isExporting || selectedFields.length === 0}
+                        onClick={() => onExport(selectedFields, fileName, customLabel)}
+                        disabled={isExporting || (selectedFields.length === 0 && !customLabel.trim())}
                         className="hero-btn hero-btn-primary"
                         style={{ flex: 2, padding: '0.85rem', gap: '0.6rem' }}
                     >

@@ -34,7 +34,7 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                 ]
             },
             {
-                id: 'tier', label: 'Tier', type: 'select', options: [
+                id: 'tier', label: 'Tier', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
                     { label: '1', value: '1' },
                     { label: '2', value: '2' },
@@ -87,42 +87,42 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
             { id: 'country', label: 'Country', type: 'datalist', placeholder: 'Global / All' },
             { id: 'city', label: 'City', type: 'text', placeholder: 'Any City' },
             {
-                id: 'sub_tag', label: 'Sub Tag', type: 'select', options: [
+                id: 'sub_tag', label: 'Sub Tag', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
-                    { label: 'Landmark', value: 'landmark' },
-                    { label: 'Tour', value: 'tour' },
-                    { label: 'Ticket', value: 'ticket' },
-                    { label: 'Visa', value: 'visa' },
-                    { label: 'Junk', value: 'junk' },
-                    { label: 'Food', value: 'food' },
-                    { label: 'Itinerary', value: 'itinerary' },
-                    { label: 'Transport', value: 'transport' },
-                    { label: 'Outdoor', value: 'outdoor' },
-                    { label: 'Service', value: 'service' },
-                    { label: 'Class', value: 'class' },
-                    { label: 'Beauty & Spa', value: 'beauty_spa' },
-                    { label: 'Connectivity', value: 'connectivity' },
-                    { label: 'Event', value: 'event' },
-                    { label: 'Tips & Tricks', value: 'tips_and_tricks' },
+                    { label: 'Landmark', value: 'landmark', validTiers: ['3'] },
+                    { label: 'Tour', value: 'tour', validTiers: ['2'] },
+                    { label: 'Ticket', value: 'ticket', validTiers: ['1'] },
+                    { label: 'Visa', value: 'visa', validTiers: ['1', '3'] },
+                    { label: 'Junk', value: 'junk', validTiers: ['3'] },
+                    { label: 'Food', value: 'food', validTiers: ['1', '2', '3'] },
+                    { label: 'Itinerary', value: 'itinerary', validTiers: ['2', '3'] },
+                    { label: 'Transport', value: 'transport', validTiers: ['1'] },
+                    { label: 'Outdoor', value: 'outdoor', validTiers: ['2'] },
+                    { label: 'Service', value: 'service', validTiers: ['1'] },
+                    { label: 'Class', value: 'class', validTiers: ['2'] },
+                    { label: 'Beauty & Spa', value: 'beauty_spa', validTiers: ['1'] },
+                    { label: 'Connectivity', value: 'connectivity', validTiers: ['1'] },
+                    { label: 'Event', value: 'event', validTiers: ['1', '2'] },
+                    { label: 'Tips & Tricks', value: 'tips_and_tricks', validTiers: ['3'] },
                     { label: 'Others', value: 'others' }
                 ]
             },
             {
-                id: 'content_type', label: 'Content Type', type: 'select', options: [
+                id: 'content_type', label: 'Content Type', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
-                    { label: 'POI Exploration', value: 'poi_exploration' },
-                    { label: 'Activity/Tour', value: 'activity_tour' },
-                    { label: 'Activity/Attraction', value: 'activity_attraction' },
-                    { label: 'Travel Document', value: 'travel_document' },
-                    { label: 'Informational Junk', value: 'informational_junk' },
-                    { label: 'Food & Lifestyle', value: 'food_lifestyle' },
-                    { label: 'Travel Guide', value: 'travel_guide' },
-                    { label: 'Transport Guide', value: 'transport_guide' },
-                    { label: 'Activity/Outdoor', value: 'activity_outdoor' },
-                    { label: 'Service/Essential', value: 'service_essential' },
-                    { label: 'Service/Beauty', value: 'service_beauty' },
-                    { label: 'Activity/Workshop', value: 'activity_workshop' },
-                    { label: 'Transport/Rental', value: 'transport_rental' },
+                    { label: 'POI Exploration', value: 'poi_exploration', validTiers: ['3'] },
+                    { label: 'Activity/Tour', value: 'activity_tour', validTiers: ['2'] },
+                    { label: 'Activity/Attraction', value: 'activity_attraction', validTiers: ['1'] },
+                    { label: 'Travel Document', value: 'travel_document', validTiers: ['1', '3'] },
+                    { label: 'Informational Junk', value: 'informational_junk', validTiers: ['3'] },
+                    { label: 'Food & Lifestyle', value: 'food_lifestyle', validTiers: ['1', '2', '3'] },
+                    { label: 'Travel Guide', value: 'travel_guide', validTiers: ['3'] },
+                    { label: 'Transport Guide', value: 'transport_guide', validTiers: ['3'] },
+                    { label: 'Activity/Outdoor', value: 'activity_outdoor', validTiers: ['2'] },
+                    { label: 'Service/Essential', value: 'service_essential', validTiers: ['1'] },
+                    { label: 'Service/Beauty', value: 'service_beauty', validTiers: ['1'] },
+                    { label: 'Activity/Workshop', value: 'activity_workshop', validTiers: ['2'] },
+                    { label: 'Transport/Rental', value: 'transport_rental', validTiers: ['1'] },
                     { label: 'Others', value: 'others' }
                 ]
             },
@@ -136,7 +136,7 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                 ]
             },
             {
-                id: 'tier', label: 'Tier', type: 'select', options: [
+                id: 'tier', label: 'Tier', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
                     { label: '1', value: '1' },
                     { label: '2', value: '2' },

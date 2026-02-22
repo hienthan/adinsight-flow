@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Download } from 'lucide-react';
 import { FilterDef } from '../../types/adinsight';
+import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown';
 
 interface InsightFilterBarProps {
     filters: FilterDef[];
@@ -119,26 +120,59 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                 }
 
                 if (filter.id === 'country') {
+                    const sortedCountries = [...countries].sort((a, b) => a.localeCompare(b));
+                    const hasUnknown = sortedCountries.includes('Unknown');
+                    const filteredCountries = sortedCountries.filter(c => c !== 'Unknown');
+
+                    const countryOptions = [
+                        { label: 'All', value: '' },
+                        ...(hasUnknown ? [{ label: 'Unknown', value: 'Unknown' }] : []),
+                        ...filteredCountries.map(c => ({ label: c, value: c }))
+                    ];
+
                     return (
                         <div className="filter-group" key={filter.id}>
                             <label>{filter.label}</label>
-                            <input
-                                type="text"
-                                list="country-list"
+                            <MultiSelectDropdown
+                                options={countryOptions}
                                 value={currentValues[filter.id] || ''}
-                                onChange={(e) => onFilterChange(filter.id, e.target.value)}
-                                placeholder={filter.placeholder}
-                                style={{ width: '120px' }}
+                                onChange={(val) => onFilterChange(filter.id, val)}
+                                placeholder="Global / All"
+                                width="160px"
+                                showSearch
                             />
-                            <datalist id="country-list">
-                                <option value="">Global / All</option>
-                                {countries.map(c => <option key={c} value={c} />)}
-                            </datalist>
                         </div>
                     );
                 }
 
                 if (filter.type === 'select') {
+                    if (filter.multiple && filter.options) {
+                        // Dynamic validation for sub_tag and content_type based on active tiers
+                        let visibleOptions = filter.options;
+                        const activeTiers = currentValues.tier ? currentValues.tier.split(',').filter(Boolean) : [];
+
+                        if ((filter.id === 'sub_tag' || filter.id === 'content_type') && activeTiers.length > 0) {
+                            visibleOptions = visibleOptions.filter(opt => {
+                                if (!opt.value) return true; // keep 'All' or empty
+                                if (!opt.validTiers || opt.validTiers.length === 0) return true; // generic options
+                                return activeTiers.some(t => opt.validTiers!.includes(t));
+                            });
+                        }
+
+                        return (
+                            <div className="filter-group" key={filter.id}>
+                                <label>{filter.label}</label>
+                                <MultiSelectDropdown
+                                    options={visibleOptions}
+                                    value={currentValues[filter.id] || ''}
+                                    onChange={(val) => onFilterChange(filter.id, val)}
+                                    placeholder="All"
+                                    width={filter.id === 'content_type' ? '180px' : '150px'}
+                                />
+                            </div>
+                        );
+                    }
+
                     return (
                         <div className="filter-group" key={filter.id}>
                             <label>{filter.label}</label>

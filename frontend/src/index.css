@@ -411,6 +411,8 @@ body {
   backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
   border-radius: 1rem;
+  position: relative;
+  z-index: 50;
 }
 
 .filter-group {
@@ -622,4 +624,27 @@ h3.hero-section-title {
 .hero-card.no-lift:hover {
   transform: none;
   box-shadow: var(--shadow-soft);
+}
+
+/* MultiSelectDropdown Option Hover Fix */
+.multiselect-option {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+  color: var(--text-main);
+  background: transparent;
+}
+
+.multiselect-option:hover {
+  background: var(--accent-glow) !important;
+  color: hsl(var(--primary)) !important;
+}
+
+.multiselect-option.selected {
+  background: var(--accent-glow);
+  color: hsl(var(--primary));
 }

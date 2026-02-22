@@ -11,7 +11,14 @@ export function usePlatformMeta(defaultSitemapTags: string[]) {
                 const records = await pb.collection('platform_metadata').getFullList({
                     sort: 'value'
                 });
-                const uniqueCountries = Array.from(new Set(records.filter(r => r.type === 'country').map(r => r.value))).sort();
+                const uniqueCountries = Array.from(new Set(
+                    records.filter(r => r.type === 'country').map(r => {
+                        const val = r.value.trim();
+                        // Deduplicate common variations
+                        if (val === 'Viet Nam') return 'Vietnam';
+                        return val;
+                    })
+                )).sort();
                 const metadataTags = Array.from(
                     new Set(
                         records

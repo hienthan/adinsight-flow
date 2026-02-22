@@ -60,7 +60,7 @@ export default function AdInsightPage() {
         navigate(`/adinsight/${id}`);
     };
 
-    const handleExport = async (selectedFields: string[], customFileName: string) => {
+    const handleExport = async (selectedFields: string[], customFileName: string, customLabel?: string) => {
         try {
             setExporting(true);
             const filterString = buildFilterString(filters);
@@ -82,6 +82,7 @@ export default function AdInsightPage() {
             const csvHeader = 'Page URL,Custom Label\n';
             const csvRows = allRecords.map(record => {
                 const url = record.url;
+
                 const labelParts: string[] = [];
 
                 // Helper to clean labels
@@ -104,6 +105,11 @@ export default function AdInsightPage() {
 
                 // Add platform identifier statically
                 labelParts.push(`platform=${platformId}`);
+
+                // Append custom label suffix if provided
+                if (customLabel && customLabel.trim() !== '') {
+                    labelParts.push(customLabel.trim());
+                }
 
                 const labels = labelParts.join(';');
                 return `${url},${labels}`;

@@ -37,11 +37,20 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         });
     }
 
-    // 4. Other basic filters
     const basicFilters = ['tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type'];
     basicFilters.forEach(key => {
         if (currentFilters[key]) {
-            parts.push(`${key} = "${currentFilters[key]}"`);
+            const values = currentFilters[key].split(',').filter(Boolean);
+            if (values.length > 0) {
+                const subQueries = values.map(v => {
+                    const cleanVal = v.trim();
+                    if (key === 'country' && cleanVal === 'Vietnam') {
+                        return `(${key} = "Vietnam" || ${key} = "Viet Nam")`;
+                    }
+                    return `${key} = "${cleanVal}"`;
+                });
+                parts.push(`(${subQueries.join(' || ')})`);
+            }
         }
     });
 

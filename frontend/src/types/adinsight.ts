@@ -33,11 +33,18 @@ export interface ColumnDef {
     render?: (record: PageRecord) => React.ReactNode;
 }
 
+export interface FilterOption {
+    label: string;
+    value: string;
+    validTiers?: string[];
+}
+
 export interface FilterDef {
     id: string;
     label: string;
     type: 'text' | 'select' | 'datalist';
-    options?: { label: string; value: string }[];
+    multiple?: boolean;
+    options?: FilterOption[];
     placeholder?: string;
 }
 
