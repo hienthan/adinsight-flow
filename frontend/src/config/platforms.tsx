@@ -24,7 +24,6 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
             { id: 'excludeTerm', label: 'Exclude Title', type: 'text', placeholder: 'Exclude keywords...' },
             { id: 'sitemap_tag', label: 'Sitemap Tag', type: 'select' },
             { id: 'country', label: 'Country', type: 'datalist', placeholder: 'Global / All' },
-            { id: 'city', label: 'City', type: 'text', placeholder: 'Any City' },
             {
                 id: 'funnel_stage', label: 'Funnel Stage', type: 'select', options: [
                     { label: 'All Stages', value: '' },
@@ -85,7 +84,6 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
             { id: 'excludeTerm', label: 'Exclude Title', type: 'text', placeholder: 'Exclude (e.g. ticket, pass)...' },
             { id: 'sitemap_tag', label: 'Sitemap Tag', type: 'select' },
             { id: 'country', label: 'Country', type: 'datalist', placeholder: 'Global / All' },
-            { id: 'city', label: 'City', type: 'text', placeholder: 'Any City' },
             {
                 id: 'sub_tag', label: 'Sub Tag', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },

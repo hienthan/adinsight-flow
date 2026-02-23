@@ -189,6 +189,21 @@ export default function AdInsightPage() {
 
     return (
         <div className="page-container">
+            {/* Bulk Action Bar at the top to ensure dropdowns have space */}
+            <InsightActionBar
+                selectedCount={selectedIds.length}
+                onClear={() => setSelectedIds([])}
+                onApply={(payload) => {
+                    const finalPayload: any = { ...payload };
+                    if (payload.is_active !== undefined) {
+                        finalPayload.include_for_dsa = payload.is_active;
+                    }
+                    handleBulkUpdate(finalPayload);
+                }}
+                availableSubTags={availableSubTags}
+                isUpdating={isBulkUpdating}
+            />
+
             {/* Header / Platform Switcher */}
             <div style={{
                 display: 'flex',
@@ -356,19 +371,7 @@ export default function AdInsightPage() {
                 isExporting={exporting}
             />
 
-            {/* Bulk Action Bar */}
-            <InsightActionBar
-                selectedCount={selectedIds.length}
-                onClear={() => setSelectedIds([])}
-                onUpdateTier={(tier) => handleBulkUpdate({ tier: String(tier) })}
-                onUpdateSubTag={(subTag) => handleBulkUpdate({ sub_tag: subTag })}
-                onUpdateStatus={(isActive) => handleBulkUpdate({
-                    is_active: isActive,
-                    include_for_dsa: isActive
-                })}
-                availableSubTags={availableSubTags}
-                isUpdating={isBulkUpdating}
-            />
+
         </div>
     );
 }

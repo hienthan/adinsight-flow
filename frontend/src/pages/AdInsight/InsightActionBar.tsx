@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { X, Eye, EyeOff } from 'lucide-react';
+import { X, Eye, EyeOff, Check } from 'lucide-react';
 import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown';
 
 interface InsightActionBarProps {
     selectedCount: number;
     onClear: () => void;
-    onUpdateTier: (tier: number) => void;
-    onUpdateSubTag: (subTag: string) => void;
-    onUpdateStatus: (isActive: boolean) => void;
+    onApply: (payload: { tier?: string; sub_tag?: string; is_active?: boolean }) => void;
     availableSubTags: { label: string, value: string }[];
     isUpdating: boolean;
 }
@@ -15,35 +13,33 @@ interface InsightActionBarProps {
 export const InsightActionBar: React.FC<InsightActionBarProps> = ({
     selectedCount,
     onClear,
-    onUpdateTier,
-    onUpdateSubTag,
-    onUpdateStatus,
+    onApply,
     availableSubTags,
     isUpdating
 }) => {
     const [selectedTier, setSelectedTier] = useState<string>('');
     const [selectedSubTag, setSelectedSubTag] = useState<string>('');
+    const [selectedStatus, setSelectedStatus] = useState<boolean | null>(null);
 
     if (selectedCount === 0) return null;
 
     const tierOptions = [1, 2, 3, 4, 5].map(t => ({ label: `Tier ${t}`, value: String(t) }));
 
-    const handleTierChange = (val: string) => {
-        setSelectedTier(val);
-        // Only trigger update if a single valid tier is selected (prevent commas from multi-select)
-        if (val && !val.includes(',')) {
-            onUpdateTier(Number(val));
-            setSelectedTier(''); // Reset after action
+    const handleApply = () => {
+        const payload: { tier?: string; sub_tag?: string; is_active?: boolean } = {};
+        if (selectedTier) payload.tier = selectedTier;
+        if (selectedSubTag) payload.sub_tag = selectedSubTag;
+        if (selectedStatus !== null) payload.is_active = selectedStatus;
+
+        if (Object.keys(payload).length > 0) {
+            onApply(payload);
+            setSelectedTier('');
+            setSelectedSubTag('');
+            setSelectedStatus(null);
         }
     };
 
-    const handleSubTagChange = (val: string) => {
-        setSelectedSubTag(val);
-        if (val && !val.includes(',')) {
-            onUpdateSubTag(val);
-            setSelectedSubTag('');
-        }
-    };
+    const hasSelection = selectedTier || selectedSubTag || selectedStatus !== null;
 
     return (
         <div style={{
@@ -58,11 +54,11 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
             padding: '0.75rem 1.25rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '1.5rem',
+            gap: '1.25rem',
             zIndex: 1000,
             animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderRight: '1px solid var(--border-subtle)', paddingRight: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderRight: '1px solid var(--border-subtle)', paddingRight: '1.25rem' }}>
                 <div style={{
                     background: 'hsl(var(--primary))',
                     color: 'white',
@@ -81,9 +77,9 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                     <MultiSelectDropdown
                         options={tierOptions}
                         value={selectedTier}
-                        onChange={handleTierChange}
+                        onChange={setSelectedTier}
                         placeholder="Set Tier..."
-                        width="130px"
+                        width="125px"
                     />
                 </div>
 
@@ -91,32 +87,63 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                     <MultiSelectDropdown
                         options={availableSubTags}
                         value={selectedSubTag}
-                        onChange={handleSubTagChange}
+                        onChange={setSelectedSubTag}
                         placeholder="Set Sub Tag..."
                         width="160px"
                     />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '1px solid var(--border-subtle)', paddingLeft: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '1px solid var(--border-subtle)', borderRight: '1px solid var(--border-subtle)', paddingLeft: '1rem', paddingRight: '1rem' }}>
                     <button
-                        onClick={() => onUpdateStatus(true)}
+                        onClick={() => setSelectedStatus(true)}
                         disabled={isUpdating}
-                        className="hero-btn-secondary"
-                        style={{ padding: '0.45rem', fontSize: '0.8rem', borderRadius: '8px', display: 'flex' }}
+                        className={`hero-btn-secondary ${selectedStatus === true ? 'active' : ''}`}
+                        style={{
+                            padding: '0.45rem',
+                            fontSize: '0.8rem',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            background: selectedStatus === true ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                            color: selectedStatus === true ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                            border: selectedStatus === true ? '1px solid hsl(var(--primary))' : '1px solid transparent'
+                        }}
                         title="Set Active"
                     >
                         <Eye size={16} />
                     </button>
                     <button
-                        onClick={() => onUpdateStatus(false)}
+                        onClick={() => setSelectedStatus(false)}
                         disabled={isUpdating}
-                        className="hero-btn-secondary"
-                        style={{ padding: '0.45rem', fontSize: '0.8rem', color: 'var(--danger-text)', background: 'var(--danger-bg)', borderRadius: '8px', display: 'flex' }}
+                        className={`hero-btn-secondary ${selectedStatus === false ? 'active' : ''}`}
+                        style={{
+                            padding: '0.45rem',
+                            fontSize: '0.8rem',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            background: selectedStatus === false ? 'var(--danger-bg)' : 'transparent',
+                            color: selectedStatus === false ? 'var(--danger-text)' : 'var(--text-dim)',
+                            border: selectedStatus === false ? '1px solid var(--danger-text)' : '1px solid transparent'
+                        }}
                         title="Set Inactive"
                     >
                         <EyeOff size={16} />
                     </button>
                 </div>
+
+                <button
+                    onClick={handleApply}
+                    disabled={!hasSelection || isUpdating}
+                    className="hero-btn hero-btn-primary"
+                    style={{
+                        padding: '0.5rem 0.85rem',
+                        fontSize: '0.8rem',
+                        height: '38px',
+                        borderRadius: '10px',
+                        opacity: hasSelection ? 1 : 0.5
+                    }}
+                >
+                    {isUpdating ? 'Updating...' : <><Check size={16} /> Update</>}
+                </button>
             </div>
 
             <button
@@ -132,7 +159,7 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                     height: '32px',
                     cursor: 'pointer',
                     color: 'var(--text-dim)',
-                    marginLeft: '0.5rem'
+                    marginLeft: '0.25rem'
                 }}
                 title="Clear Selection"
             >

@@ -37,19 +37,39 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         });
     }
 
-    const basicFilters = ['tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type'];
-    basicFilters.forEach(key => {
-        if (currentFilters[key]) {
-            const values = currentFilters[key].split(',').filter(Boolean);
+    const basicFields = ['tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type'];
+
+    Object.keys(currentFilters).forEach(key => {
+        const value = currentFilters[key];
+        if (!value) return;
+
+        // Skip internal/special keys
+        if (['sitemap_tag', 'language', 'searchTerm', 'excludeTerm', 'titleKey'].includes(key)) return;
+
+        const isExclusion = key.startsWith('!');
+        const baseKey = isExclusion ? key.slice(1) : key;
+
+        if (basicFields.includes(baseKey)) {
+            const values = value.split(',').filter(Boolean);
             if (values.length > 0) {
+                const operator = isExclusion ? '!=' : '=';
+                const joinner = isExclusion ? ' && ' : ' || ';
+
                 const subQueries = values.map(v => {
                     const cleanVal = v.trim();
-                    if (key === 'country' && cleanVal === 'Vietnam') {
-                        return `(${key} = "Vietnam" || ${key} = "Viet Nam")`;
+                    if (baseKey === 'country' && cleanVal === 'Vietnam') {
+                        return isExclusion
+                            ? `(${baseKey} != "Vietnam" && ${baseKey} != "Viet Nam")`
+                            : `(${baseKey} = "Vietnam" || ${baseKey} = "Viet Nam")`;
                     }
-                    return `${key} = "${cleanVal}"`;
+                    return `${baseKey} ${operator} "${cleanVal}"`;
                 });
-                parts.push(`(${subQueries.join(' || ')})`);
+
+                if (subQueries.length > 1) {
+                    parts.push(`(${subQueries.join(joinner)})`);
+                } else {
+                    parts.push(subQueries[0]);
+                }
             }
         }
     });
