@@ -22,11 +22,37 @@ interface SidebarProps {
 }
 
 const KlookIcon = () => (
-    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#ff5b00', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800 }}>K</div>
+    <div style={{
+        flexShrink: 0,
+        width: 18,
+        height: 18,
+        borderRadius: 5,
+        background: '#ff5b00',
+        boxShadow: '0 2px 8px rgba(255, 91, 0, 0.3)',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '0.6rem',
+        fontWeight: 900
+    }}>K</div>
 );
 
 const TravelokaIcon = () => (
-    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#1ba0e2', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800 }}>TK</div>
+    <div style={{
+        flexShrink: 0,
+        width: 18,
+        height: 18,
+        borderRadius: 5,
+        background: '#1ba0e2',
+        boxShadow: '0 2px 8px rgba(27, 160, 226, 0.3)',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '0.55rem',
+        fontWeight: 900
+    }}>TK</div>
 );
 
 
@@ -77,29 +103,51 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const NavLink = ({ to, icon: Icon, children, badgeCount, badgeText, activeCondition }: any) => {
         const active = activeCondition !== undefined ? activeCondition : isActive(to);
         const hasBadge = badgeCount > 0 || !!badgeText;
+
         return (
             <Link
                 to={to}
                 className={cn("nav-item", active && "active")}
-                style={{
-                    display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.85rem',
-                    textDecoration: 'none', color: active ? 'hsl(var(--primary))' : 'var(--text-dim)',
-                    background: active ? 'var(--accent-glow)' : 'transparent', fontWeight: active ? 700 : 500
-                }}
             >
-                {Icon && typeof Icon !== 'function' ? <Icon size={18} strokeWidth={active ? 2.5 : 2} /> : <Icon />}
-                {!collapsed && <span style={{ fontSize: '0.875rem' }}>{children}</span>}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: active ? 'white' : 'var(--accent-glow)',
+                    color: active ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                    boxShadow: active ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+                    transition: 'all 0.3s ease',
+                    flexShrink: 0
+                }}>
+                    {Icon && typeof Icon !== 'function' ? <Icon size={18} strokeWidth={active ? 2.5 : 2} /> : <Icon />}
+                </div>
+
+                {!collapsed && (
+                    <span style={{
+                        fontSize: '0.875rem',
+                        fontWeight: active ? 700 : 500,
+                        color: active ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                        whiteSpace: 'nowrap'
+                    }}>
+                        {children}
+                    </span>
+                )}
+
                 {!collapsed && hasBadge && (
                     <span style={{
                         marginLeft: 'auto',
                         background: 'hsl(3 85% 56%)',
                         color: 'var(--text-on-accent)',
                         border: '1px solid hsla(3 85% 40% / 0.45)',
-                        boxShadow: '0 0 0 2px hsla(3 85% 56% / 0.18)',
+                        boxShadow: '0 0 10px hsla(3 85% 56% / 0.25)',
                         fontSize: '10px',
-                        padding: '2px 6px',
-                        borderRadius: '10px',
-                        fontWeight: 800
+                        padding: '2px 7px',
+                        borderRadius: '12px',
+                        fontWeight: 800,
+                        transform: 'scale(0.9)'
                     }}>
                         {badgeText || badgeCount}
                     </span>
@@ -114,9 +162,26 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
             </button>
 
-            <div className="logo" style={{ marginBottom: '1rem' }}>
-                <Layers size={22} strokeWidth={2.5} />
-                {!collapsed && <span>AdInsight Flow</span>}
+            <div className="logo" style={{ marginBottom: '1.5rem', padding: '0 0.5rem' }}>
+                <div style={{
+                    padding: '8px',
+                    background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, #3b82f6 100%)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    boxShadow: '0 8px 16px -4px hsla(var(--primary) / 0.4)'
+                }}>
+                    <Layers size={20} strokeWidth={3} />
+                </div>
+                {!collapsed && (
+                    <span style={{
+                        marginLeft: '4px',
+                        fontWeight: 900,
+                        fontSize: '1.2rem',
+                        letterSpacing: '-0.04em'
+                    }}>
+                        AdInsight
+                    </span>
+                )}
             </div>
 
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', overflowY: 'auto', flex: 1 }}>
@@ -156,8 +221,29 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     Trend Signals
                 </NavLink>
 
-                <div style={{ padding: '0.65rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-dim)', fontWeight: 500 }}>
-                    <Globe size={18} strokeWidth={2} />
+                <div style={{
+                    padding: '0.7rem 1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.85rem',
+                    color: 'var(--text-dim)',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    opacity: 0.8
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: 'var(--accent-glow)',
+                        color: 'var(--text-dim)',
+                        flexShrink: 0
+                    }}>
+                        <Globe size={18} strokeWidth={2} />
+                    </div>
                     {!collapsed && <span style={{ fontSize: '0.875rem' }}>Platform</span>}
                 </div>
 

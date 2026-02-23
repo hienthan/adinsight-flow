@@ -32,33 +32,33 @@ const REMINDER_STYLES: Record<ReminderState, {
         cardBackground: 'var(--bg-content)',
         cardBorder: 'var(--border-subtle)',
         badgeColor: 'hsl(var(--primary))',
-        badgeBackground: 'hsla(var(--primary) / 0.08)',
-        badgeBorder: 'hsla(var(--primary) / 0.2)',
+        badgeBackground: 'var(--accent-glow)',
+        badgeBorder: 'hsla(var(--primary) / 0.15)',
         alertColor: 'hsl(var(--primary))',
     },
     upcoming: {
-        cardBackground: 'hsla(var(--primary) / 0.07)',
-        cardBorder: 'hsla(var(--primary) / 0.3)',
+        cardBackground: 'hsla(var(--primary) / 0.05)',
+        cardBorder: 'hsla(var(--primary) / 0.25)',
         badgeColor: 'hsl(var(--primary))',
-        badgeBackground: 'hsla(var(--primary) / 0.14)',
+        badgeBackground: 'var(--accent-glow-strong)',
         badgeBorder: 'hsla(var(--primary) / 0.3)',
         alertColor: 'hsl(var(--primary))',
     },
     today: {
-        cardBackground: 'hsla(38 95% 55% / 0.13)',
-        cardBorder: 'hsla(38 95% 55% / 0.45)',
+        cardBackground: 'hsla(38 95% 55% / 0.1)',
+        cardBorder: 'hsla(38 95% 55% / 0.4)',
         badgeColor: 'hsl(38 95% 35%)',
-        badgeBackground: 'hsla(38 95% 55% / 0.23)',
-        badgeBorder: 'hsla(38 95% 45% / 0.45)',
+        badgeBackground: 'rgba(245, 158, 11, 0.15)',
+        badgeBorder: 'rgba(245, 158, 11, 0.3)',
         alertColor: 'hsl(38 95% 40%)',
     },
     overdue: {
-        cardBackground: 'hsla(3 85% 58% / 0.16)',
-        cardBorder: 'hsla(3 85% 58% / 0.5)',
-        badgeColor: 'hsl(3 85% 38%)',
-        badgeBackground: 'hsla(3 85% 58% / 0.24)',
-        badgeBorder: 'hsla(3 85% 48% / 0.45)',
-        alertColor: 'hsl(3 85% 42%)',
+        cardBackground: 'hsla(3 85% 58% / 0.1)',
+        cardBorder: 'hsla(3 85% 58% / 0.45)',
+        badgeColor: '#ef4444',
+        badgeBackground: 'rgba(239, 68, 68, 0.12)',
+        badgeBorder: 'rgba(239, 68, 68, 0.25)',
+        alertColor: '#ef4444',
     },
 };
 
@@ -114,6 +114,10 @@ export default function CampaignCard({
         },
     });
 
+
+
+
+
     const compactView = viewMode === 'compact' || viewMode === 'alert';
     const notesPreview = htmlToPlainText(campaign.general_notes || '');
     const reminderStyle = REMINDER_STYLES[reminderState];
@@ -145,24 +149,28 @@ export default function CampaignCard({
             className={`animate-fade hero-card ${isPaused ? 'paused-campaign' : ''}`}
             style={{
                 position: 'relative',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                 cursor: isPaused ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
-                padding: compactView ? '0.65rem' : '1rem',
+                padding: compactView ? '0.75rem' : '1.25rem',
                 background: reminderStyle.cardBackground,
                 border: `1px solid ${reminderStyle.cardBorder}`,
+                boxShadow: 'var(--shadow-subtle)',
                 filter: isPaused ? 'grayscale(0.9) opacity(0.7)' : 'none',
+                ...(reminderState !== 'none' && { boxShadow: 'var(--shadow-glass)' })
             }}
             onMouseEnter={(e) => {
                 if (isPaused) return;
-                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.transform = 'translateY(-3px)';
                 e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
+                e.currentTarget.style.borderColor = 'hsla(var(--primary) / 0.25)';
             }}
             onMouseLeave={(e) => {
                 if (isPaused) return;
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-soft)';
+                e.currentTarget.style.boxShadow = reminderState !== 'none' ? 'var(--shadow-glass)' : 'var(--shadow-subtle)';
+                e.currentTarget.style.borderColor = reminderStyle.cardBorder;
             }}
         >
             {/* Priority Indicator Line */}
@@ -197,6 +205,7 @@ export default function CampaignCard({
                         >
                             {campaign.name}
                         </h3>
+
                         {campaign.is_dsa === false && (
                             <Key size={compactView ? 11 : 12} style={{ color: '#facc15', flexShrink: 0 }} />
                         )}
@@ -260,11 +269,11 @@ export default function CampaignCard({
                             }}
                             className="hero-btn-ghost"
                             style={{ padding: compactView ? '0.15rem' : '0.2rem', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            title={campaign.metadata ? "View/Edit Metadata" : "Add Metadata"}
+                            title={htmlToPlainText(campaign.metadata || '').trim().length > 0 ? "View/Edit Metadata" : "Add Metadata"}
                         >
                             <FileText size={compactView ? 12 : 13} style={{
-                                opacity: campaign.metadata ? 1 : 0.7,
-                                color: campaign.metadata ? 'hsl(var(--primary))' : 'inherit'
+                                opacity: htmlToPlainText(campaign.metadata || '').trim().length > 0 ? 1 : 0.4,
+                                color: htmlToPlainText(campaign.metadata || '').trim().length > 0 ? 'hsl(var(--primary))' : 'inherit'
                             }} />
                         </button>
 

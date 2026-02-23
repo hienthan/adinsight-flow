@@ -59,8 +59,8 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    backdropFilter: 'blur(8px)',
+                    background: 'rgba(2, 6, 23, 0.45)', // Slightly deeper slate
+                    backdropFilter: 'blur(12px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -89,7 +89,8 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                         maxHeight: '90vh',
                         overflowY: 'auto',
                         position: 'relative',
-                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
+                        boxShadow: 'var(--shadow-large)',
+                        borderRadius: '2rem'
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -273,7 +274,8 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             padding: '1.5rem',
                             background: 'var(--bg-content)',
                             position: 'relative',
-                            boxShadow: 'var(--shadow-2xl)',
+                            boxShadow: 'var(--shadow-large)',
+                            borderRadius: '2rem',
                             overflow: 'hidden'
                         }}
                         onClick={(e) => e.stopPropagation()}

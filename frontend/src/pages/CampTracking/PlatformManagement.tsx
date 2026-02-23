@@ -214,23 +214,62 @@ export default function PlatformManagement() {
 
     return (
         <div className="page-container" style={{ background: 'var(--bg-main)', minHeight: '100vh', padding: '1rem 2rem 4rem 2rem' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '2.5rem' }}>
-                <button
-                    onClick={() => navigate('/camp-tracking')}
-                    className="hero-btn-ghost"
-                    style={{ padding: '0.6rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card)' }}
-                >
-                    <ChevronLeft size={20} />
-                </button>
-                <div>
-                    <h1 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.04em', color: 'hsl(var(--primary))', margin: 0 }}>
-                        Platforms
-                    </h1>
-                    <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.2rem' }}>
-                        Governance & Guidelines
-                    </p>
+            {/* Header Area */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2.5rem',
+                marginTop: '1rem',
+                padding: '0 0.5rem'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <button
+                        onClick={() => navigate('/camp-tracking')}
+                        className="hero-btn-ghost"
+                        style={{ padding: '0.65rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', background: 'var(--bg-overlay)', backdropFilter: 'var(--glass-blur)' }}
+                    >
+                        <ChevronLeft size={22} />
+                    </button>
+                    <div>
+                        <h1 style={{
+                            fontSize: '2.5rem',
+                            fontWeight: 900,
+                            color: 'hsl(var(--primary))',
+                            letterSpacing: '-0.05em',
+                            margin: 0,
+                            lineHeight: 1
+                        }}>
+                            Platforms
+                        </h1>
+                        <p style={{
+                            color: 'var(--text-dim)',
+                            fontSize: '0.95rem',
+                            fontWeight: 600,
+                            marginTop: '0.4rem',
+                            opacity: 0.8
+                        }}>
+                            Governance & Strategic Attribution Guidelines
+                        </p>
+                    </div>
                 </div>
+
+                <button
+                    className="hero-btn hero-btn-primary"
+                    onClick={() => {
+                        setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
+                        setIsEditing(false);
+                        setViewMode(false);
+                    }}
+                    style={{
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '14px',
+                        fontSize: '0.95rem'
+                    }}
+                >
+                    <Plus size={20} strokeWidth={3} />
+                    Add Platform
+                </button>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'start' }}>
@@ -239,29 +278,18 @@ export default function PlatformManagement() {
                     width: '320px',
                     flexShrink: 0,
                     padding: '1.5rem',
-                    background: 'var(--bg-card)',
+                    background: 'var(--bg-content)',
                     border: '1px solid var(--border-subtle)',
+                    boxShadow: 'var(--shadow-glass)',
+                    borderRadius: '1.5rem',
                     position: 'sticky',
                     top: '1rem'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ padding: '0.5rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
-                                <Globe size={18} />
-                            </div>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>Channels</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                        <div style={{ padding: '0.5rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
+                            <Globe size={20} strokeWidth={2.5} />
                         </div>
-                        <button
-                            onClick={() => {
-                                setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
-                                setIsEditing(false);
-                                setViewMode(false);
-                            }}
-                            className="hero-btn-ghost"
-                            style={{ color: 'hsl(var(--primary))', fontWeight: 700, fontSize: '0.75rem' }}
-                        >
-                            <Plus size={16} />
-                        </button>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Channels</h3>
                     </div>
 
                     {loading ? (
@@ -292,17 +320,17 @@ export default function PlatformManagement() {
                                                             cursor: 'grab'
                                                         }}
                                                     >
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
-                                                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: platform.color, flexShrink: 0 }} />
-                                                            <span style={{ fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
+                                                            <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: platform.color, flexShrink: 0, boxShadow: `0 0 10px ${platform.color}44` }} />
+                                                            <span style={{ fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: platform.id === formData.id ? 'hsl(var(--primary))' : 'var(--text-main)' }}>
                                                                 {platform.display_name}
                                                             </span>
                                                         </div>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); handleDelete(platform.id, platform.display_name); }}
-                                                            style={{ border: 'none', background: 'none', color: '#ef4444', opacity: 0.6, cursor: 'pointer' }}
+                                                            style={{ border: 'none', background: 'none', color: '#ef4444', opacity: 0.5, cursor: 'pointer', padding: '4px' }}
                                                         >
-                                                            <Trash2 size={14} />
+                                                            <Trash2 size={13} />
                                                         </button>
                                                     </div>
                                                 )}
@@ -327,21 +355,23 @@ export default function PlatformManagement() {
                 }}>
                     <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
 
-                        {/* 1. Identity Card (Minimal width, row 1) */}
+                        {/* 1. Identity Card */}
                         <div className="hero-card no-lift" style={{
-                            flex: '0 1 400px', // Don't grow too much, shrink down to 400px
+                            flex: '0 1 400px',
                             padding: '2rem',
-                            border: isEditing ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)',
-                            background: 'var(--bg-card)',
+                            border: isEditing ? '1px solid hsla(var(--primary) / 0.25)' : '1px solid var(--border-subtle)',
+                            background: 'var(--bg-content)',
+                            boxShadow: 'var(--shadow-glass)',
+                            borderRadius: '1.5rem',
                             display: 'flex',
                             flexDirection: 'column'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
-                                        <Palette size={20} />
+                                        <Palette size={22} strokeWidth={2.5} />
                                     </div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Identity</h3>
+                                    <h3 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.03em' }}>Identity</h3>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px' }}>
                                     {!viewMode && (
@@ -384,21 +414,23 @@ export default function PlatformManagement() {
                             </div>
                         </div>
 
-                        {/* 2. Strategic Notes (Grows to fill Row 1, or wraps to Row 2 at 100%) */}
+                        {/* 2. Strategic Notes */}
                         <div className="hero-card no-lift" style={{
-                            flex: '1 1 600px', // Fill remaining space in Row 1, but prefer 600px width. If it wraps, flex-grow: 1 will make it span 100%.
+                            flex: '1 1 600px',
                             padding: '2rem',
-                            background: 'var(--bg-card)',
+                            background: 'var(--bg-content)',
                             border: '1px solid var(--border-subtle)',
+                            boxShadow: 'var(--shadow-glass)',
+                            borderRadius: '1.5rem',
                             display: 'flex',
                             flexDirection: 'column'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
-                                        <Globe size={20} />
+                                        <Globe size={22} strokeWidth={2.5} />
                                     </div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Strategic Notes</h3>
+                                    <h3 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.03em' }}>Strategic Notes</h3>
                                 </div>
                                 {viewMode && isEditing && (
                                     <button type="button" onClick={() => setViewMode(false)} className="hero-btn-ghost" style={{ fontSize: '0.8rem' }}>

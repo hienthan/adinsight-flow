@@ -110,9 +110,9 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'var(--bg-card-glass)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
+            background: 'rgba(2, 6, 23, 0.5)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -137,7 +137,8 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                     padding: 0,
                     overflow: 'hidden',
                     background: 'var(--bg-content)',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    borderRadius: '2rem',
+                    boxShadow: 'var(--shadow-large)'
                 }}
                 onClick={e => e.stopPropagation()}
             >
