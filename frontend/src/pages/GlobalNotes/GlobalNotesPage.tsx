@@ -13,7 +13,8 @@ import {
     PanelRightClose,
     PanelRightOpen,
     StickyNote,
-    AlertCircle
+    AlertCircle,
+    Settings
 } from 'lucide-react';
 import RichTextEditor from '../../components/common/RichTextEditor';
 import { htmlToPlainText, prepareNoteHtmlForRender, normalizeHtmlForCompare } from '../../lib/noteHtml';
@@ -25,7 +26,7 @@ interface Note {
     tags: string[];
     is_pinned: boolean;
     priority: 'high' | 'medium' | 'normal';
-    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka';
+    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System';
     created: string;
     updated: string;
 }
@@ -139,14 +140,28 @@ export default function GlobalNotesPage() {
         htmlToPlainText(note.content).toLowerCase().includes(searchTerm.toLowerCase()) ||
         note.tags?.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
     ).sort((a, b) => {
+        // 1. Pinned status (true > false)
         if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
 
+        // 2. Priority (high > medium > normal)
         const priorityScore = { high: 3, medium: 2, normal: 1 };
-        const aScore = priorityScore[a.priority || 'normal'];
-        const bScore = priorityScore[b.priority || 'normal'];
+        const aPriority = priorityScore[a.priority || 'normal'];
+        const bPriority = priorityScore[b.priority || 'normal'];
+        if (aPriority !== bPriority) return bPriority - aPriority;
 
-        if (aScore !== bScore) return bScore - aScore;
+        // 3. Platform (Traveloka > Klook > System > General)
+        const getPlatformScore = (platform?: string) => {
+            const p = String(platform || '').toLowerCase();
+            if (p === 'traveloka' || p === 'tvlk') return 4;
+            if (p === 'klook') return 3;
+            if (p === 'system') return 2;
+            return 1; // General and others
+        };
+        const aPlatform = getPlatformScore(a.platform);
+        const bPlatform = getPlatformScore(b.platform);
+        if (aPlatform !== bPlatform) return bPlatform - aPlatform;
 
+        // 4. Updated time (newest first)
         return new Date(b.updated).getTime() - new Date(a.updated).getTime();
     });
 
@@ -328,7 +343,12 @@ export default function GlobalNotesPage() {
                                 {String(note.platform || '').toLowerCase() === 'trip' && (
                                     <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#0e2b5c', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800 }}>T</div>
                                 )}
-                                {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip'].includes(String(note.platform || '').toLowerCase())) && (
+                                {String(note.platform || '').toLowerCase() === 'system' && (
+                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: 'var(--text-dim)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800 }}>
+                                        <Settings size={10} />
+                                    </div>
+                                )}
+                                {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip', 'system'].includes(String(note.platform || '').toLowerCase())) && (
                                     <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: 'var(--bg-subtle)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <StickyNote size={10} />
                                     </div>
@@ -492,6 +512,7 @@ export default function GlobalNotesPage() {
                                                             style={{ padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-subtle)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
                                                         >
                                                             <option value="General">General</option>
+                                                            <option value="System">System</option>
                                                             <option value="Klook">Klook</option>
                                                             <option value="Trip">Trip</option>
                                                             <option value="Traveloka">TVLK</option>
@@ -600,7 +621,7 @@ export default function GlobalNotesPage() {
                                         <div>
                                             <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Platform</div>
                                             <span className="hero-badge" style={{ background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontWeight: 700 }}>
-                                                {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : activeNote.platform || 'General'}
+                                                {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : (String(activeNote.platform || '').toLowerCase() === 'system' ? 'System' : activeNote.platform || 'General')}
                                             </span>
                                         </div>
 

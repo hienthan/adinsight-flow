@@ -72,11 +72,68 @@ export const htmlToPlainText = (value: string): string => {
     return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
 };
 
+/**
+ * Collapse runs of consecutive empty <p> elements.
+ * Keeps at most `maxGap` empty paragraphs between content blocks.
+ */
+const collapseEmptyParagraphs = (container: HTMLElement, maxGap = 1): void => {
+    const isEmptyParagraph = (el: Element): boolean => {
+        if (el.tagName !== 'P') return false;
+        const text = (el.textContent || '').trim();
+        if (text) return false;
+        // A <p> with only <br> or nothing inside counts as empty
+        const childNodes = Array.from(el.childNodes);
+        return childNodes.every(
+            n => n.nodeType === Node.TEXT_NODE || (n.nodeType === Node.ELEMENT_NODE && (n as Element).tagName === 'BR')
+        );
+    };
+
+    const children = Array.from(container.children);
+    let consecutiveEmpty = 0;
+    const toRemove: Element[] = [];
+
+    for (const child of children) {
+        if (isEmptyParagraph(child)) {
+            consecutiveEmpty++;
+            if (consecutiveEmpty > maxGap) {
+                toRemove.push(child);
+            }
+        } else {
+            consecutiveEmpty = 0;
+        }
+    }
+
+    // Also remove leading and trailing empty paragraphs
+    // Leading
+    for (const child of children) {
+        if (isEmptyParagraph(child) && !toRemove.includes(child)) {
+            toRemove.push(child);
+        } else if (!isEmptyParagraph(child)) {
+            break;
+        }
+    }
+    // Trailing
+    for (let i = children.length - 1; i >= 0; i--) {
+        if (isEmptyParagraph(children[i]) && !toRemove.includes(children[i])) {
+            toRemove.push(children[i]);
+        } else if (!isEmptyParagraph(children[i])) {
+            break;
+        }
+    }
+
+    for (const el of toRemove) {
+        el.remove();
+    }
+};
+
 export const prepareNoteHtmlForRender = (value: string): { html: string; headings: NoteHeading[] } => {
     const html = sanitizeNoteHtml(toEditorHtml(value || ''));
     if (typeof window === 'undefined') return { html, headings: [] };
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    // Auto-clean excessive line breaks for professional layout
+    collapseEmptyParagraphs(doc.body);
     const headings: NoteHeading[] = [];
     // Select standard headings AND paragraphs that look like section titles
     const els = doc.body.querySelectorAll('h1, h2, h3, h4, h5, h6, p');
