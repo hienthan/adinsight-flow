@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { useQueryClient } from '@tanstack/react-query';
 import {
     ChevronLeft,
     Plus,
@@ -15,25 +17,29 @@ import { CampaignPlatform } from '../../types/campaign';
 import RichTextEditor from '../../components/common/RichTextEditor';
 
 const COLOR_PRESETS = [
-    '#3b82f6', // blue
-    '#ef4444', // red
-    '#10b981', // green
-    '#f59e0b', // amber
-    '#8b5cf6', // violet
-    '#ec4899', // pink
-    '#06b6d4', // cyan
-    '#f97316', // orange
-    '#6366f1', // indigo
-    '#14b8a6', // teal
+    '#2563eb', // Vivid Blue
+    '#dc2626', // Bright Red
+    '#059669', // Emerald Green
+    '#d97706', // Amber Orange
+    '#7c3aed', // Deep Violet
+    '#db2777', // Rose Pink
+    '#0891b2', // Cyan Blue
+    '#ea580c', // Pure Orange
+    '#4f46e5', // Royal Indigo
+    '#0d9488', // Dark Teal
+    '#1e293b', // Slate Black
+    '#be123c', // Crimson
 ];
 
 export default function PlatformManagement() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [platforms, setPlatforms] = useState<CampaignPlatform[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const persistenceTimeoutRef = useRef<any>(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -44,7 +50,7 @@ export default function PlatformManagement() {
         metadata: ''
     });
     const [isEditing, setIsEditing] = useState(false);
-    const [viewMode, setViewMode] = useState(true); // Default to view mode
+    const [viewMode, setViewMode] = useState(true);
 
     useEffect(() => {
         fetchPlatforms();
@@ -55,9 +61,8 @@ export default function PlatformManagement() {
         if (platforms.length === 0) return;
         if (formData.id) return;
         handleSelect(platforms[0]);
-    }, [loading, platforms, formData.id]);
+    }, [loading, platforms]);
 
-    // ESC support
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && !viewMode) {
@@ -69,21 +74,26 @@ export default function PlatformManagement() {
         return () => window.removeEventListener('keydown', handleEsc);
     }, [viewMode]);
 
+    useEffect(() => {
+        return () => {
+            if (persistenceTimeoutRef.current) clearTimeout(persistenceTimeoutRef.current);
+        };
+    }, []);
+
     const fetchPlatforms = async () => {
         try {
             setLoading(true);
             const records = await pb.collection('campaign_platforms').getFullList<CampaignPlatform>({
-                sort: 'display_name',
+                sort: 'order,display_name',
             });
             setPlatforms(records);
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to fetch platforms:', err);
-            setError('Failed to load platforms');
+            setError('Could not load platforms.');
         } finally {
             setLoading(false);
         }
     };
-
 
     const handleSelect = (platform: CampaignPlatform) => {
         setFormData({
@@ -93,15 +103,14 @@ export default function PlatformManagement() {
             color: platform.color,
             metadata: platform.metadata || ''
         });
-        setIsEditing(false);
+        setIsEditing(true);
         setViewMode(true);
+        setError(null);
+        setSuccess(null);
     };
 
     const handleCancel = () => {
-        if (formData.id) {
-            setViewMode(true);
-            setIsEditing(false);
-            // Reset to current platform data
+        if (isEditing) {
             const current = platforms.find(p => p.id === formData.id);
             if (current) {
                 setFormData({
@@ -125,9 +134,39 @@ export default function PlatformManagement() {
         setFormData(prev => ({
             ...prev,
             [name]: value,
-            // Only auto-gen slug for NEW platforms
             ...(name === 'display_name' && !isEditing ? { platform_name: value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') } : {})
         }));
+    };
+
+    const onDragEnd = (result: any) => {
+        if (!result.destination) return;
+
+        const items = Array.from(platforms);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+
+        setPlatforms(items);
+
+        // Persistence logic
+        if (persistenceTimeoutRef.current) clearTimeout(persistenceTimeoutRef.current);
+        persistenceTimeoutRef.current = setTimeout(async () => {
+            try {
+                const updates = items.map((platform, index) => {
+                    const newPos = index + 1;
+                    if (platform.order !== newPos) {
+                        return pb.collection('campaign_platforms').update(platform.id, { order: newPos });
+                    }
+                    return null;
+                }).filter(Boolean);
+
+                if (updates.length > 0) {
+                    await Promise.all(updates);
+                    queryClient.invalidateQueries({ queryKey: ['platforms'] });
+                }
+            } catch (err) {
+                console.error('Failed to sync order:', err);
+            }
+        }, 500);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -142,70 +181,75 @@ export default function PlatformManagement() {
                 setPlatforms(prev => prev.map(p => p.id === formData.id ? updated as any : p));
                 setSuccess(`Platform "${formData.display_name}" updated.`);
             } else {
-                const newPlatform = await pb.collection('campaign_platforms').create(formData);
-                setPlatforms(prev => [...prev, newPlatform as any].sort((a, b) => a.display_name.localeCompare(b.display_name)));
+                const maxOrder = platforms.length > 0 ? Math.max(...platforms.map(p => p.order || 0)) : 0;
+                const newPlatform = await pb.collection('campaign_platforms').create({ ...formData, order: maxOrder + 1 });
+                setPlatforms(prev => [...prev, newPlatform as any]);
                 setSuccess(`Platform "${formData.display_name}" created.`);
+                handleSelect(newPlatform as any);
             }
-
-            setSuccess(null);
-            setViewMode(true);
-            setIsEditing(false);
-            setTimeout(() => setSuccess(null), 3000);
+            queryClient.invalidateQueries({ queryKey: ['platforms'] });
         } catch (err: any) {
-            console.error('Failed to save platform:', err);
-            setError(err.message || 'Failed to save platform');
+            setError(err.message || 'Failed to save platform.');
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleDelete = async (id: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to delete "${name}"? This might affect existing campaigns.`)) {
-            return;
-        }
+        if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
 
         try {
             await pb.collection('campaign_platforms').delete(id);
             setPlatforms(prev => prev.filter(p => p.id !== id));
+            if (formData.id === id) {
+                setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
+                setIsEditing(false);
+            }
             setSuccess(`Platform "${name}" deleted.`);
-            if (isEditing && formData.id === id) handleCancel();
-            setTimeout(() => setSuccess(null), 3000);
+            queryClient.invalidateQueries({ queryKey: ['platforms'] });
         } catch (err: any) {
-            console.error('Failed to delete platform:', err);
-            setError('Failed to delete platform. It might be in use.');
+            setError(err.message || 'Failed to delete platform.');
         }
     };
 
     return (
-        <div className="page-container">
+        <div className="page-container" style={{ background: 'var(--bg-main)', minHeight: '100vh', padding: '1rem 2rem 4rem 2rem' }}>
             {/* Header */}
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '2.5rem' }}>
                 <button
-                    onClick={() => navigate(-1)}
-                    className="hero-btn hero-btn-ghost"
-                    style={{ padding: '0.4rem 0.75rem', marginLeft: '-0.75rem', marginBottom: '1rem' }}
+                    onClick={() => navigate('/camp-tracking')}
+                    className="hero-btn-ghost"
+                    style={{ padding: '0.6rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', background: 'var(--bg-card)' }}
                 >
-                    <ChevronLeft size={18} />
-                    <span>Back to Overview</span>
+                    <ChevronLeft size={20} />
                 </button>
-
-                <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, letterSpacing: '-0.03em', color: 'hsl(var(--primary))' }}>
-                    Platform Governance
-                </h1>
-                <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-                    Manage delivery channels and global strategic documentation
-                </p>
+                <div>
+                    <h1 style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.04em', color: 'hsl(var(--primary))', margin: 0 }}>
+                        Platforms
+                    </h1>
+                    <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.2rem' }}>
+                        Governance & Guidelines
+                    </p>
+                </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr 380px', gap: '1.5rem', alignItems: 'flex-start' }}>
-                {/* Platform List */}
-                <div className="hero-card no-lift" style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'start' }}>
+                {/* Sidebar: Platform List - Fixed width */}
+                <div className="hero-card no-lift" style={{
+                    width: '320px',
+                    flexShrink: 0,
+                    padding: '1.5rem',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
+                    position: 'sticky',
+                    top: '1rem'
+                }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <div style={{ padding: '0.5rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
                                 <Globe size={18} />
                             </div>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>Channels</h3>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>Channels</h3>
                         </div>
                         <button
                             onClick={() => {
@@ -214,235 +258,180 @@ export default function PlatformManagement() {
                                 setViewMode(false);
                             }}
                             className="hero-btn-ghost"
-                            style={{
-                                padding: '0.4rem',
-                                borderRadius: '8px',
-                                color: 'hsl(var(--primary))',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.4rem',
-                                fontSize: '0.75rem',
-                                fontWeight: 700
-                            }}
+                            style={{ color: 'hsl(var(--primary))', fontWeight: 700, fontSize: '0.75rem' }}
                         >
                             <Plus size={16} />
-                            Add New
                         </button>
                     </div>
 
                     {loading ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-                            <Loader2 size={24} className="animate-spin" style={{ color: 'hsl(var(--primary))' }} />
-                        </div>
-                    ) : platforms.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
-                            No platforms found.
-                        </div>
+                        <div style={{ padding: '2rem', display: 'flex', justifyContent: 'center' }}><Loader2 className="animate-spin" /></div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            {platforms.map(platform => (
-                                <div
-                                    key={platform.id}
-                                    onClick={() => handleSelect(platform)}
-                                    className="nav-item"
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '0.75rem 1rem',
-                                        background: platform.id === formData.id ? 'var(--accent-glow)' : 'var(--bg-overlay)',
-                                        border: platform.id === formData.id ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)',
-                                        cursor: 'pointer',
-                                        borderRadius: '10px'
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
-                                        <div
-                                            style={{
-                                                width: '10px',
-                                                height: '10px',
-                                                borderRadius: '50%',
-                                                background: platform.color,
-                                                flexShrink: 0
-                                            }}
-                                        />
-                                        <span style={{
-                                            fontWeight: 700,
-                                            fontSize: '0.9rem',
-                                            color: platform.id === formData.id ? 'hsl(var(--primary))' : 'var(--text-main)',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap'
-                                        }}>
-                                            {platform.display_name}
-                                        </span>
+                        <DragDropContext onDragEnd={onDragEnd}>
+                            <Droppable droppableId="platforms-list" direction="vertical">
+                                {(provided) => (
+                                    <div {...provided.droppableProps} ref={provided.innerRef} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {platforms.map((platform, index) => (
+                                            <Draggable key={platform.id} draggableId={platform.id} index={index}>
+                                                {(provided, snapshot) => (
+                                                    <div
+                                                        ref={provided.innerRef}
+                                                        {...provided.draggableProps}
+                                                        {...provided.dragHandleProps}
+                                                        onClick={() => handleSelect(platform)}
+                                                        style={{
+                                                            ...provided.draggableProps.style,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            padding: '0.75rem 1rem',
+                                                            background: platform.id === formData.id ? 'var(--accent-glow)' : 'var(--bg-overlay)',
+                                                            border: platform.id === formData.id ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)',
+                                                            borderRadius: '12px',
+                                                            boxShadow: snapshot.isDragging ? 'var(--shadow-lg)' : 'none',
+                                                            cursor: 'grab'
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                                                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: platform.color, flexShrink: 0 }} />
+                                                            <span style={{ fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                {platform.display_name}
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleDelete(platform.id, platform.display_name); }}
+                                                            style={{ border: 'none', background: 'none', color: '#ef4444', opacity: 0.6, cursor: 'pointer' }}
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </Draggable>
+                                        ))}
+                                        {provided.placeholder}
                                     </div>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleDelete(platform.id, platform.display_name); }}
-                                        className="hero-btn-ghost"
-                                        style={{ padding: '0.4rem', borderRadius: '0.5rem', color: '#ef4444', opacity: 0.6 }}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                                )}
+                            </Droppable>
+                        </DragDropContext>
                     )}
                 </div>
 
-                {/* Form Wrapper (Spans Notes + Identity) */}
-                <form id="platform-form" onSubmit={handleSubmit} style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.5rem', alignItems: 'stretch' }}>
+                {/* Content Area - Responsive Wrapping */}
+                <div style={{
+                    flex: 1,
+                    minWidth: '400px',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '1.5rem',
+                    alignItems: 'start'
+                }}>
+                    <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
 
-                    {/* Metadata Column (Now in the Middle) */}
-                    <div className="hero-card no-lift" style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
-                                    <Globe size={20} />
+                        {/* 1. Identity Card (Minimal width, row 1) */}
+                        <div className="hero-card no-lift" style={{
+                            flex: '0 1 400px', // Don't grow too much, shrink down to 400px
+                            padding: '2rem',
+                            border: isEditing ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)',
+                            background: 'var(--bg-card)',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
+                                        <Palette size={20} />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Identity</h3>
                                 </div>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>Strategic Notes</h3>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    {!viewMode && (
+                                        <>
+                                            <button type="button" onClick={handleCancel} className="hero-btn-ghost">Cancel</button>
+                                            <button type="submit" disabled={submitting} className="hero-btn-primary" style={{ padding: '0.6rem 1.2rem', borderRadius: '10px' }}>
+                                                {submitting ? 'Saving' : 'Save'}
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                {!viewMode ? (
-                                    <>
-                                        <button type="button" onClick={handleCancel} className="hero-btn hero-btn-ghost">Cancel</button>
-                                        <button type="submit" disabled={submitting} className="hero-btn hero-btn-primary">
-                                            {submitting ? 'Saving...' : (isEditing ? 'Update Platform' : 'Create Platform')}
-                                        </button>
-                                    </>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={() => setViewMode(false)}
-                                        className="hero-btn hero-btn-ghost"
-                                        style={{ fontSize: '0.8rem' }}
-                                    >
-                                        Edit Notes
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                <div className="filter-group">
+                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Name</label>
+                                    <input type="text" name="display_name" value={formData.display_name} onChange={handleInputChange} className="hero-input" style={{ width: '100%' }} />
+                                </div>
+                                <div className="filter-group">
+                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Slug</label>
+                                    <input type="text" name="platform_name" value={formData.platform_name} onChange={handleInputChange} disabled={isEditing} className="hero-input" style={{ width: '100%' }} />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Brand Color</label>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
+                                        {COLOR_PRESETS.map(c => (
+                                            <button
+                                                key={c}
+                                                type="button"
+                                                onClick={() => setFormData(p => ({ ...p, color: c }))}
+                                                style={{
+                                                    width: '32px', height: '32px', borderRadius: '8px', background: c,
+                                                    border: formData.color === c ? '3px solid var(--text-main)' : '1px solid var(--border-subtle)',
+                                                    cursor: 'pointer'
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2. Strategic Notes (Grows to fill Row 1, or wraps to Row 2 at 100%) */}
+                        <div className="hero-card no-lift" style={{
+                            flex: '1 1 600px', // Fill remaining space in Row 1, but prefer 600px width. If it wraps, flex-grow: 1 will make it span 100%.
+                            padding: '2rem',
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border-subtle)',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
+                                        <Globe size={20} />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Strategic Notes</h3>
+                                </div>
+                                {viewMode && isEditing && (
+                                    <button type="button" onClick={() => setViewMode(false)} className="hero-btn-ghost" style={{ fontSize: '0.8rem' }}>
+                                        Edit Alignment
                                     </button>
                                 )}
                             </div>
-                        </div>
 
-                        <div className="filter-group" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '1rem', display: 'block' }}>
-                                Guidelines & Constraints
-                            </label>
-
-                            {!viewMode ? (
-                                <div style={{ flex: 1 }}>
-                                    <RichTextEditor
-                                        value={formData.metadata}
-                                        onChange={(nextHtml) => setFormData((prev) => ({ ...prev, metadata: nextHtml }))}
-                                        placeholder="Enter best practices, rules, or constraints for this platform..."
-                                        minHeight={300}
-                                        maxHeight={540}
-                                    />
-                                </div>
-                            ) : (
+                            {viewMode ? (
                                 <div
-                                    className="hero-card"
                                     onDoubleClick={() => setViewMode(false)}
                                     style={{
                                         flex: 1,
-                                        padding: '1.5rem',
-                                        background: 'var(--bg-overlay)',
-                                        border: '1px solid var(--border-subtle)',
-                                        borderRadius: '1rem',
-                                        overflowY: 'auto',
-                                        cursor: 'text',
-                                        minHeight: '300px'
+                                        padding: '1.5rem', background: 'var(--bg-overlay)', borderRadius: '1rem', border: '1px solid var(--border-subtle)',
+                                        minHeight: '260px', cursor: 'text', lineHeight: 1.6
                                     }}
-                                >
-                                    <div
-                                        className="note-content-html"
-                                        style={{ color: 'var(--text-main)', lineHeight: 1.8, fontSize: '0.95rem' }}
-                                        dangerouslySetInnerHTML={{ __html: formData.metadata || '<p style="color: var(--text-muted); font-style: italic;">No notes yet. Double-click to add.</p>' }}
+                                    dangerouslySetInnerHTML={{ __html: formData.metadata || '<p style="font-style:italic; opacity:0.5">Double click to add strategic guidelines...</p>' }}
+                                />
+                            ) : (
+                                <div style={{ flex: 1 }}>
+                                    <RichTextEditor
+                                        value={formData.metadata}
+                                        onChange={html => setFormData(p => ({ ...p, metadata: html }))}
+                                        minHeight={300}
                                     />
                                 </div>
                             )}
                         </div>
-                    </div>
-
-                    {/* Identity Column (Now on the Right) */}
-                    <div className="hero-card no-lift" style={{ padding: '2rem', border: isEditing ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-                            <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
-                                {isEditing ? <Palette size={20} /> : <Plus size={20} />}
-                            </div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>
-                                {isEditing ? 'Identity' : 'Add Channel'}
-                            </h3>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            {error && (
-                                <div className="hero-badge animate-fade" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '100%', textTransform: 'none', padding: '0.8rem 1rem', display: 'flex', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}>
-                                    <AlertTriangle size={16} />
-                                    {error}
-                                </div>
-                            )}
-
-                            {success && (
-                                <div className="hero-badge animate-fade" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.2)', width: '100%', textTransform: 'none', padding: '0.8rem 1rem', display: 'flex', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}>
-                                    <CheckCircle2 size={16} />
-                                    {success}
-                                </div>
-                            )}
-
-                            <div className="filter-group">
-                                <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Channel Name</label>
-                                <input
-                                    type="text"
-                                    className="hero-input"
-                                    name="display_name"
-                                    value={formData.display_name}
-                                    onChange={handleInputChange}
-                                    placeholder="e.g. Google Ads"
-                                    required
-                                />
-                            </div>
-
-                            <div className="filter-group">
-                                <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Internal Slug</label>
-                                <input
-                                    type="text"
-                                    className="hero-input"
-                                    name="platform_name"
-                                    value={formData.platform_name}
-                                    onChange={handleInputChange}
-                                    placeholder="e.g. google_ads"
-                                    required
-                                    disabled={isEditing}
-                                />
-                            </div>
-
-                            <div className="filter-group">
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
-                                    <Palette size={14} />
-                                    Visual Identity
-                                </label>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                    {COLOR_PRESETS.map(c => (
-                                        <button
-                                            key={c}
-                                            type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, color: c }))}
-                                            style={{
-                                                height: '2rem',
-                                                borderRadius: '0.5rem',
-                                                background: c,
-                                                border: formData.color === c ? '2px solid var(--text-main)' : '1px solid var(--border-subtle)',
-                                                cursor: 'pointer',
-                                                boxShadow: formData.color === c ? `0 0 10px ${c}60` : 'none'
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
+            {error && <div className="hero-badge animate-fade" style={{ marginTop: '1rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>{error}</div>}
+            {success && <div className="hero-badge animate-fade" style={{ marginTop: '1rem', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>{success}</div>}
         </div>
     );
 }

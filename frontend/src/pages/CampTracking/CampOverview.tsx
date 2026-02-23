@@ -11,7 +11,7 @@ type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type OverviewMode = 'comfortable' | 'compact' | 'alert';
 type ReminderQuickFilter = 'all' | 'overdue' | 'today' | 'upcoming';
 type FreshnessState = 'fresh' | 'watch' | 'stale';
-type ReminderPriority = 'low' | 'medium' | 'high';
+type ReminderPriority = 'low' | 'medium' | 'high' | 'critical';
 type EnrichedCampaign = Campaign & {
     platformData?: CampaignPlatform;
     reminderState: ReminderState;
@@ -36,10 +36,12 @@ const QUICK_FILTERS: Array<{ id: ReminderQuickFilter; label: string }> = [
     { id: 'upcoming', label: 'Next 3 days' },
 ];
 
-const PRIORITY_RANK: Record<'low' | 'medium' | 'high', number> = {
-    high: 0,
-    medium: 1,
-    low: 2,
+const PRIORITY_RANK: Record<string, number> = {
+    critical: 0,
+    high: 1,
+    medium: 2,
+    normal: 3,
+    low: 4,
 };
 
 const REMINDER_STATE_RANK: Record<ReminderState, number> = {
@@ -99,6 +101,7 @@ export default function CampOverview() {
     const filterPriority = searchParams.get('priority') || 'all';
     const filterName = searchParams.get('q') || '';
     const filterReminders = searchParams.get('reminders') === 'true';
+    const filterShowAll = searchParams.get('all') === 'true';
     const viewMode = (searchParams.get('view') as OverviewMode) || 'comfortable';
     const reminderQuickFilter = (searchParams.get('due') as ReminderQuickFilter) || 'all';
     const compactCards = viewMode === 'compact' || viewMode === 'alert';
@@ -142,6 +145,14 @@ export default function CampOverview() {
         });
     };
 
+    const setToggleShowAll = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterShowAll) prev.delete('all');
+            else prev.set('all', 'true');
+            return prev;
+        });
+    };
+
     const setViewMode = (mode: OverviewMode) => {
         setSearchParams((prev: URLSearchParams) => {
             if (mode === 'comfortable') prev.delete('view');
@@ -174,7 +185,7 @@ export default function CampOverview() {
         queryKey: ['platforms'],
         queryFn: async () => {
             return await pb.collection('campaign_platforms').getFullList<CampaignPlatform>({
-                sort: 'display_name',
+                sort: 'order,display_name',
             });
         },
     });
@@ -234,7 +245,7 @@ export default function CampOverview() {
 
         let reminderState: ReminderState = 'none';
         let nearestDueInDays: number | null = null;
-        let priority: 'low' | 'medium' | 'high' = 'low';
+        let priority: ReminderPriority = 'low';
         let hasActionableReminder = false;
 
         for (const reminder of campaignReminders) {
@@ -301,6 +312,7 @@ export default function CampOverview() {
         if (nameKeyword && !campaign.name.toLowerCase().includes(nameKeyword)) return false;
         if (alertsOnlyEnabled && !campaign.hasPendingReminders) return false;
         if (reminderQuickFilter !== 'all' && campaign.reminderState !== reminderQuickFilter) return false;
+        if (!filterShowAll && campaign.status === 'paused') return false;
         return true;
     });
 
@@ -316,25 +328,31 @@ export default function CampOverview() {
 
     const sortCampaignsByReminder = (items: EnrichedCampaign[]) =>
         [...items].sort((a, b) => {
-            // Priority 0: Status (Active/Testing -> Archived -> Paused)
+            // 1. Status (Active/Testing -> Archived -> Paused)
             const statusRankA = STATUS_RANK[a.status] ?? 0;
             const statusRankB = STATUS_RANK[b.status] ?? 0;
             if (statusRankA !== statusRankB) return statusRankA - statusRankB;
 
-            // Priority 1: Reminder State
+            // 2. Campaign Priority (Critical first)
+            const campPriorityA = PRIORITY_RANK[a.priority || 'normal'];
+            const campPriorityB = PRIORITY_RANK[b.priority || 'normal'];
+            if (campPriorityA !== campPriorityB) return campPriorityA - campPriorityB;
+
+            // 3. Reminder State (Overdue first)
             const reminderRankDiff = REMINDER_STATE_RANK[a.reminderState] - REMINDER_STATE_RANK[b.reminderState];
             if (reminderRankDiff !== 0) return reminderRankDiff;
 
-            // Priority 2: Nearness
+            // 4. Nearness
             const dueDiffA = a.nearestDueInDays ?? Number.MAX_SAFE_INTEGER;
             const dueDiffB = b.nearestDueInDays ?? Number.MAX_SAFE_INTEGER;
             if (dueDiffA !== dueDiffB) return dueDiffA - dueDiffB;
 
-            // Priority 3: Reminder Priority
-            const priorityA = PRIORITY_RANK[a.highestPriority || 'low'];
-            const priorityB = PRIORITY_RANK[b.highestPriority || 'low'];
-            if (priorityA !== priorityB) return priorityA - priorityB;
+            // 5. Highst Priority from Reminders
+            const hPriorityA = PRIORITY_RANK[a.highestPriority || 'low'];
+            const hPriorityB = PRIORITY_RANK[b.highestPriority || 'low'];
+            if (hPriorityA !== hPriorityB) return hPriorityA - hPriorityB;
 
+            // 6. Alphabetical
             return a.name.localeCompare(b.name);
         });
 
@@ -367,6 +385,7 @@ export default function CampOverview() {
         || filterPriority !== 'all'
         || !!filterName.trim()
         || filterReminders
+        || filterShowAll
         || viewMode !== 'comfortable'
         || reminderQuickFilter !== 'all';
 
@@ -440,14 +459,15 @@ export default function CampOverview() {
                             onChange={(e) => setFilterPriority(e.target.value)}
                             style={{
                                 minWidth: '140px',
-                                color: filterPriority === 'high' ? '#ef4444' : (filterPriority === 'medium' ? '#f59e0b' : 'inherit'),
+                                color: filterPriority === 'critical' ? '#d946ef' : (filterPriority === 'high' ? '#ef4444' : (filterPriority === 'medium' ? '#f59e0b' : 'inherit')),
                                 fontWeight: filterPriority !== 'all' && filterPriority !== 'normal' ? 700 : 500
                             }}
                         >
-                            <option value="all">Any Priority</option>
-                            <option value="normal">Nor (Normal)</option>
-                            <option value="medium">Med (Watch)</option>
-                            <option value="high">Hi (Critical)</option>
+                            <option value="all">Any</option>
+                            <option value="normal">Normal</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
                         </select>
                     </div>
                 </div>
@@ -500,7 +520,44 @@ export default function CampOverview() {
                                 {alertsOnlyEnabled && <Check size={10} strokeWidth={4} />}
                             </div>
                             <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: alertsOnlyEnabled ? 'hsl(var(--primary))' : 'var(--text-dim)' }}>
-                                Alerts Only
+                                Alerts
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="filter-group">
+                        <label style={{ opacity: 0 }}>&nbsp;</label>
+                        <div
+                            onClick={setToggleShowAll}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.6rem',
+                                padding: '0.5rem 0.85rem',
+                                background: filterShowAll ? 'var(--accent-glow)' : 'var(--bg-content)',
+                                border: `1px solid ${filterShowAll ? 'hsl(var(--primary))' : 'var(--border-subtle)'}`,
+                                borderRadius: '0.65rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                userSelect: 'none',
+                                height: '40px'
+                            }}
+                        >
+                            <div style={{
+                                width: '14px',
+                                height: '14px',
+                                borderRadius: '4px',
+                                border: '1px solid var(--border-subtle)',
+                                background: filterShowAll ? 'hsl(var(--primary))' : 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white'
+                            }}>
+                                {filterShowAll && <Check size={10} strokeWidth={4} />}
+                            </div>
+                            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: filterShowAll ? 'hsl(var(--primary))' : 'var(--text-dim)' }}>
+                                All
                             </span>
                         </div>
                     </div>

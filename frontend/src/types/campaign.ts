@@ -10,6 +10,7 @@ export interface CampaignPlatform {
     metadata?: string;
     sticky_note?: string;
     is_pinned?: boolean;
+    order?: number;
     created: string;
     updated: string;
 }
@@ -30,7 +31,7 @@ export interface Campaign {
     description?: string;
     general_notes?: string;
     is_dsa: boolean;
-    priority?: 'normal' | 'medium' | 'high';
+    priority?: 'normal' | 'medium' | 'high' | 'critical';
     custom_fields?: Record<string, any>;
     created: string;
     updated: string;
@@ -64,7 +65,7 @@ export interface CampaignReminder {
     message: string;
     check_metrics?: string[];
     status: 'pending' | 'completed' | 'dismissed' | 'snoozed';
-    priority?: 'low' | 'medium' | 'high';
+    priority?: 'low' | 'medium' | 'high' | 'critical';
     completion_notes?: string;
     snooze_until?: string;
     metadata?: Record<string, any>;

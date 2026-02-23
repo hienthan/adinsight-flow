@@ -299,13 +299,14 @@ export default function CampaignForm({
                             value={formData.priority || 'normal'}
                             onChange={handleChange}
                             style={{
-                                color: formData.priority === 'high' ? '#ef4444' : (formData.priority === 'medium' ? '#f59e0b' : 'inherit'),
+                                color: formData.priority === 'critical' ? '#d946ef' : (formData.priority === 'high' ? '#ef4444' : (formData.priority === 'medium' ? '#f59e0b' : 'inherit')),
                                 fontWeight: formData.priority !== 'normal' ? 800 : 500
                             }}
                         >
-                            <option value="normal">Nor</option>
-                            <option value="medium">Med</option>
-                            <option value="high">Hi</option>
+                            <option value="normal">Normal</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
                         </select>
                     </div>
                 </div>

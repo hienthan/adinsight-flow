@@ -66,7 +66,7 @@ interface CampaignCardProps {
     campaign: Campaign;
     platform?: CampaignPlatform;
     hasPendingReminders?: boolean;
-    highestPriority?: 'low' | 'medium' | 'high';
+    highestPriority?: 'low' | 'medium' | 'high' | 'critical';
     reminderState?: ReminderState;
     freshnessState?: FreshnessState;
     hasReviewed?: boolean;

@@ -139,6 +139,12 @@ body {
   /* Medium Priority - Yellow */
 }
 
+.priority-critical {
+  background: #d946ef;
+  /* Critical Priority - Fuchsia/Deep Purple */
+  box-shadow: 2px 0 12px rgba(217, 70, 239, 0.5);
+}
+
 .hero-card:hover {
   box-shadow: var(--shadow-medium);
   border-color: hsla(var(--primary) / 0.4);

@@ -50,9 +50,10 @@ export default function PlatformCampaigns() {
         const campaignReminders = reminders.filter((r) => r.campaign === campaign.id);
         const hasPendingReminders = campaignReminders.length > 0;
 
-        let priority: 'low' | 'medium' | 'high' = 'low';
+        let priority: 'low' | 'medium' | 'high' | 'critical' = 'low';
         if (hasPendingReminders) {
-            if (campaignReminders.some(r => r.priority === 'high')) priority = 'high';
+            if (campaignReminders.some(r => r.priority === 'critical')) priority = 'critical';
+            else if (campaignReminders.some(r => r.priority === 'high')) priority = 'high';
             else if (campaignReminders.some(r => r.priority === 'medium')) priority = 'medium';
         }
 
