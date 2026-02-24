@@ -477,7 +477,7 @@ export default function GlobalNotesPage() {
                         </div>
 
                         {/* Editor / Viewer Container */}
-                        <div className="note-content-area" style={{ flex: 1, display: 'flex', background: 'var(--bg-main)', overflow: 'hidden' }}>
+                        <div className="note-content-area" style={{ flex: 1, display: 'flex', background: 'var(--bg-main)', overflow: 'hidden', minWidth: 0 }}>
                             <div className="note-scroll-container" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
                                 <div style={{
                                     maxWidth: '920px',
@@ -611,7 +611,8 @@ export default function GlobalNotesPage() {
                                 marginTop: '1rem',
                                 marginRight: '1rem',
                                 marginBottom: '1rem',
-                                borderRadius: '0 1rem 1rem 0'
+                                borderRadius: '0 1rem 1rem 0',
+                                flexShrink: 0
                             }}>
                                 {/* Meta Section */}
                                 <div>

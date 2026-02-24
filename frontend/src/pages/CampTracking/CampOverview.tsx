@@ -441,7 +441,7 @@ export default function CampOverview() {
                 </div>
 
                 <button
-                    onClick={() => openEdit('new')}
+                    onClick={() => (openEdit as any)(null)}
                     className="hero-btn hero-btn-primary"
                     style={{
                         padding: '0.75rem 1.5rem',
