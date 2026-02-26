@@ -27,7 +27,7 @@ function App() {
   const [stickySidebarPinned, setStickySidebarPinned] = useState(() => {
     return localStorage.getItem('stickySidebarPinned') === 'true';
   });
-  const [stickySidebarOpen, setStickySidebarOpen] = useState(stickySidebarPinned);
+  const [stickySidebarOpen, setStickySidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false); // Default light mode
 
   React.useEffect(() => {

@@ -8,7 +8,6 @@ import {
     Target,
     Bell,
     History,
-    BookOpen,
     Settings,
     TrendingUp // Import
 } from 'lucide-react';
@@ -60,6 +59,7 @@ const TravelokaIcon = () => (
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const location = useLocation();
     const [reminderCounts, setReminderCounts] = useState({ overdue: 0, today: 0 });
+    const [platformsExpanded, setPlatformsExpanded] = useState(true);
 
     const getLocalDateString = () => {
         const now = new Date();
@@ -115,10 +115,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     justifyContent: 'center',
                     width: '32px',
                     height: '32px',
-                    borderRadius: '8px',
-                    background: active ? 'white' : 'var(--accent-glow)',
-                    color: active ? 'hsl(var(--primary))' : 'var(--text-dim)',
-                    boxShadow: active ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+                    borderRadius: collapsed ? '50%' : '8px',
+                    background: active ? (collapsed ? 'hsl(var(--primary))' : 'white') : 'var(--accent-glow)',
+                    color: active ? (collapsed ? 'white' : 'hsl(var(--primary))') : 'var(--text-dim)',
+                    boxShadow: active ? (collapsed ? '0 4px 12px hsla(var(--primary) / 0.3)' : '0 4px 12px rgba(0,0,0,0.05)') : 'none',
                     transition: 'all 0.3s ease',
                     flexShrink: 0
                 }}>
@@ -184,15 +184,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 )}
             </div>
 
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', overflowY: 'auto', flex: 1 }}>
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', overflowY: 'auto', flex: 1, padding: '0 0.5rem' }}>
                 {/* Knowledge Base Section - Moved to Top */}
-                {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.65rem 0.5rem', textTransform: 'uppercase' }}>Knowledge</div>}
-                <NavLink to="/global-notes" icon={BookOpen}>
+                {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>Knowledge</div>}
+                <NavLink to="/global-notes" icon={Globe}>
                     General Notes
                 </NavLink>
 
                 {/* Section Header */}
-                {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.75rem 0.5rem 0.65rem 0.5rem', textTransform: 'uppercase' }}>Tracking Core</div>}
+                {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>Tracking Core</div>}
 
                 <NavLink to="/camp-tracking" icon={Target} activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes'].some(p => location.pathname.includes(p))}>
                     Overview
@@ -214,23 +214,30 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </NavLink>
 
                 {/* Ad Insight Section */}
-                {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.75rem 0.5rem 0.65rem 0.5rem', textTransform: 'uppercase' }}>DSA Analytics</div>}
+                {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>DSA Analytics</div>}
 
                 {/* NEW: Trend Signals Link */}
                 <NavLink to="/adinsight/trends" icon={TrendingUp}>
                     Trend Signals
                 </NavLink>
 
-                <div style={{
-                    padding: '0.7rem 1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.85rem',
-                    color: 'var(--text-dim)',
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
-                    opacity: 0.8
-                }}>
+                <div
+                    onClick={() => setPlatformsExpanded(!platformsExpanded)}
+                    style={{
+                        padding: collapsed ? '0.7rem 0' : '0.6rem 1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: collapsed ? 'center' : 'flex-start',
+                        gap: '0.85rem',
+                        color: 'var(--text-dim)',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        borderRadius: '0.85rem',
+                        transition: 'all 0.2s ease'
+                    }}
+                    className="nav-item-header"
+                >
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -244,18 +251,32 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     }}>
                         <Globe size={18} strokeWidth={2} />
                     </div>
-                    {!collapsed && <span style={{ fontSize: '0.875rem' }}>Platform</span>}
+                    {!collapsed && (
+                        <>
+                            <span style={{ fontSize: '0.875rem', flex: 1 }}>Platform</span>
+                            <ChevronRight
+                                size={14}
+                                style={{
+                                    transform: platformsExpanded ? 'rotate(90deg)' : 'none',
+                                    transition: 'transform 0.3s ease',
+                                    opacity: 0.5
+                                }}
+                            />
+                        </>
+                    )}
                 </div>
 
-                <div style={{ paddingLeft: collapsed ? '0' : '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                    <NavLink to="/adinsight/klook" icon={KlookIcon} activeCondition={isActive('/adinsight/klook')}>
-                        Klook
-                    </NavLink>
+                {platformsExpanded && (
+                    <div style={{ paddingLeft: collapsed ? '0' : '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                        <NavLink to="/adinsight/klook" icon={KlookIcon} activeCondition={isActive('/adinsight/klook')}>
+                            Klook
+                        </NavLink>
 
-                    <NavLink to="/adinsight/traveloka" icon={TravelokaIcon} activeCondition={isActive('/adinsight/traveloka')}>
-                        Traveloka
-                    </NavLink>
-                </div>
+                        <NavLink to="/adinsight/traveloka" icon={TravelokaIcon} activeCondition={isActive('/adinsight/traveloka')}>
+                            Traveloka
+                        </NavLink>
+                    </div>
+                )}
 
             </nav>
         </aside>

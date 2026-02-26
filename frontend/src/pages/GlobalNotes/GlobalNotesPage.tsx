@@ -12,7 +12,7 @@ import {
     PanelLeftOpen,
     PanelRightClose,
     PanelRightOpen,
-    StickyNote,
+    Globe,
     AlertCircle,
     Settings,
     Loader2
@@ -214,10 +214,11 @@ export default function GlobalNotesPage() {
         // 3. Platform (Traveloka > Klook > System > General)
         const getPlatformScore = (platform?: string) => {
             const p = String(platform || '').toLowerCase();
+            if (p === 'general' || !p || !['klook', 'traveloka', 'tvlk', 'trip', 'system'].includes(p)) return 5;
             if (p === 'traveloka' || p === 'tvlk') return 4;
             if (p === 'klook') return 3;
             if (p === 'system') return 2;
-            return 1; // General and others
+            return 1;
         };
         const aPlatform = getPlatformScore(a.platform);
         const bPlatform = getPlatformScore(b.platform);
@@ -412,8 +413,19 @@ export default function GlobalNotesPage() {
                                     </div>
                                 )}
                                 {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip', 'system'].includes(String(note.platform || '').toLowerCase())) && (
-                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: 'var(--bg-subtle)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <StickyNote size={8} />
+                                    <div style={{
+                                        flexShrink: 0,
+                                        width: 14,
+                                        height: 14,
+                                        borderRadius: 3,
+                                        background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
+                                        color: 'white',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 1px 3px rgba(79, 70, 229, 0.4)'
+                                    }}>
+                                        <Globe size={9} strokeWidth={3} />
                                     </div>
                                 )}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', overflow: 'hidden', flex: 1 }}>
@@ -500,7 +512,18 @@ export default function GlobalNotesPage() {
                                     <input
                                         value={editTitle}
                                         onChange={e => setEditTitle(e.target.value)}
-                                        style={{ fontSize: '1.25rem', fontWeight: 700, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', outline: 'none', color: 'var(--text-main)', width: '300px' }}
+                                        style={{
+                                            fontSize: '1.25rem',
+                                            fontWeight: 700,
+                                            background: 'transparent',
+                                            border: 'none',
+                                            borderBottom: '1px solid var(--primary)',
+                                            outline: 'none',
+                                            color: 'var(--text-main)',
+                                            flex: 1,
+                                            maxWidth: '500px',
+                                            paddingBottom: '2px'
+                                        }}
                                         placeholder="Note Title"
                                         autoFocus
                                     />
@@ -644,9 +667,9 @@ export default function GlobalNotesPage() {
                                                 <div
                                                     style={{
                                                         color: 'var(--text-main)',
-                                                        lineHeight: 1.85,
+                                                        lineHeight: 1.6,
                                                         cursor: 'text',
-                                                        fontSize: '1.05rem'
+                                                        fontSize: 'var(--text-sm)'
                                                     }}
                                                     onDoubleClick={() => startEditing(activeNote)}
                                                 >

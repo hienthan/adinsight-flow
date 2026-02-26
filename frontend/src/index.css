@@ -452,6 +452,12 @@ body {
   background: hsl(var(--primary));
   border-radius: 0 4px 4px 0;
   box-shadow: 2px 0 10px hsla(var(--primary) / 0.5);
+  transition: opacity 0.3s ease;
+}
+
+.sidebar.collapsed .nav-item.active::before {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Filter Bar */
@@ -656,9 +662,22 @@ h3.hero-section-title {
 .note-content-html h1,
 .note-content-html h2,
 .note-content-html h3 {
-  margin: 0.55rem 0 0.45rem;
+  margin: 0.6rem 0 0.45rem;
   font-weight: 800;
   color: var(--text-main);
+  line-height: 1.3;
+}
+
+.note-content-html h1 {
+  font-size: 1.2rem;
+}
+
+.note-content-html h2 {
+  font-size: 1.08rem;
+}
+
+.note-content-html h3 {
+  font-size: 0.98rem;
 }
 
 .note-content-html p {
