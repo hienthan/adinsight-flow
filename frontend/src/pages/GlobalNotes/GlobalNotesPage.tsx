@@ -14,7 +14,8 @@ import {
     PanelRightOpen,
     StickyNote,
     AlertCircle,
-    Settings
+    Settings,
+    Loader2
 } from 'lucide-react';
 import RichTextEditor from '../../components/common/RichTextEditor';
 import { htmlToPlainText, prepareNoteHtmlForRender, normalizeHtmlForCompare } from '../../lib/noteHtml';
@@ -27,6 +28,7 @@ interface Note {
     is_pinned: boolean;
     priority: 'high' | 'medium' | 'normal';
     platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System';
+    images: string[];
     created: string;
     updated: string;
 }
@@ -45,6 +47,8 @@ export default function GlobalNotesPage() {
     const [editTags, setEditTags] = useState('');
     const [editPlatform, setEditPlatform] = useState<string>('General');
     const [editPriority, setEditPriority] = useState<'high' | 'medium' | 'normal'>('normal');
+    const [confirmingDeleteNote, setConfirmingDeleteNote] = useState(false);
+    const [confirmingDeleteImage, setConfirmingDeleteImage] = useState<string | null>(null);
 
     // Fetch notes
     const { data: notes = [] } = useQuery<Note[]>({
@@ -62,6 +66,7 @@ export default function GlobalNotesPage() {
                 is_pinned: r.is_pinned,
                 priority: r.priority || 'normal',
                 platform: r.platform,
+                images: r.images || [],
                 created: r.created,
                 updated: r.updated
             })) as Note[];
@@ -119,7 +124,64 @@ export default function GlobalNotesPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['global-notes'] });
-            if (activeNote?.id === selectedNoteId) setSelectedNoteId(null);
+            setSelectedNoteId(null);
+            setIsEditing(false);
+            setConfirmingDeleteNote(false);
+        }
+    });
+
+    const handleDeleteNote = (id: string) => {
+        if (!confirmingDeleteNote) {
+            setConfirmingDeleteNote(true);
+            setTimeout(() => setConfirmingDeleteNote(false), 3000);
+            return;
+        }
+        deleteMutation.mutate(id);
+    };
+
+    const handleImageUpload = async (file: File): Promise<string> => {
+        if (!selectedNoteId) throw new Error('No note selected');
+
+        const formData = new FormData();
+        formData.append('images', file);
+
+        const updatedRecord = await pb.collection('general_notes').update(selectedNoteId, formData);
+        queryClient.invalidateQueries({ queryKey: ['global-notes'] });
+
+        // Get the filename of the last uploaded image
+        const filename = updatedRecord.images[updatedRecord.images.length - 1];
+        return pb.files.getUrl(updatedRecord, filename);
+    };
+
+    const deleteImageMutation = useMutation({
+        mutationFn: async (filename: string) => {
+            if (!selectedNoteId || !activeNote) return;
+
+            // Remove from PB
+            await pb.collection('general_notes').update(selectedNoteId, {
+                'images-': [filename]
+            });
+            return filename;
+        },
+        onSuccess: (filename) => {
+            if (!filename) return;
+
+            // Get URL for cleanup
+            const imageUrl = pb.files.getUrl(activeNote as any, filename);
+
+            // Escape special chars for regex
+            const escapedUrl = imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const contentCleanup = editContent.replace(new RegExp(`<img[^>]*src=["']${escapedUrl}["'][^>]*>`, 'g'), '');
+
+            if (contentCleanup !== editContent) {
+                setEditContent(contentCleanup);
+                if (!isEditing) {
+                    pb.collection('general_notes').update(selectedNoteId!, {
+                        content: contentCleanup
+                    }).then(() => queryClient.invalidateQueries({ queryKey: ['global-notes'] }));
+                }
+            }
+            queryClient.invalidateQueries({ queryKey: ['global-notes'] });
         }
     });
 
@@ -317,60 +379,67 @@ export default function GlobalNotesPage() {
                                 setIsEditing(false);
                             }}
                             style={{
-                                padding: '0.85rem 1.25rem',
+                                padding: '0.6rem 0.85rem',
                                 borderBottom: '1px solid var(--border-subtle)',
                                 cursor: 'pointer',
                                 background: selectedNoteId === note.id
                                     ? 'var(--accent-glow)'
-                                    : (note.priority === 'high' ? 'hsla(0, 84%, 60%, 0.05)' : note.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.05)' : 'transparent'),
+                                    : (note.priority === 'high' ? 'hsla(0, 84%, 60%, 0.03)' : note.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.03)' : 'transparent'),
                                 borderLeft: selectedNoteId === note.id
-                                    ? '4px solid hsl(var(--primary))'
-                                    : (note.priority === 'high' ? '4px solid #ef4444' : note.priority === 'medium' ? '4px solid #f59e0b' : '4px solid transparent'),
+                                    ? '3px solid hsl(var(--primary))'
+                                    : (note.priority === 'high' ? '3px solid #ef4444' : note.priority === 'medium' ? '3px solid #f59e0b' : '3px solid transparent'),
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                transition: 'all 0.15s ease'
+                                transition: 'all 0.1s ease',
+                                gap: '0.5rem'
                             }}
                             className="note-item-hover"
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flex: 1, overflow: 'hidden' }}>
                                 {String(note.platform || '').toLowerCase() === 'klook' && (
-                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#ff5b00', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800 }}>K</div>
+                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: '#ff5b00', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800 }}>K</div>
                                 )}
                                 {(String(note.platform || '').toLowerCase() === 'traveloka' || String(note.platform || '').toLowerCase() === 'tvlk') && (
-                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#1ba0e2', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800 }}>TK</div>
+                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: '#1ba0e2', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.45rem', fontWeight: 800 }}>TK</div>
                                 )}
                                 {String(note.platform || '').toLowerCase() === 'trip' && (
-                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: '#0e2b5c', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800 }}>T</div>
+                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: '#0e2b5c', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800 }}>T</div>
                                 )}
                                 {String(note.platform || '').toLowerCase() === 'system' && (
-                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: 'var(--text-dim)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800 }}>
-                                        <Settings size={10} />
+                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: 'var(--text-dim)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800 }}>
+                                        <Settings size={8} />
                                     </div>
                                 )}
                                 {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip', 'system'].includes(String(note.platform || '').toLowerCase())) && (
-                                    <div style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 4, background: 'var(--bg-subtle)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <StickyNote size={10} />
+                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: 'var(--bg-subtle)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <StickyNote size={8} />
                                     </div>
                                 )}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', overflow: 'hidden', flex: 1 }}>
-                                    {note.is_pinned && <Pin size={10} style={{ flexShrink: 0, color: 'var(--accent)', fill: 'var(--accent)' }} />}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', overflow: 'hidden', flex: 1 }}>
+                                    {note.is_pinned && <Pin size={9} style={{ flexShrink: 0, color: 'var(--accent)', fill: 'var(--accent)' }} />}
                                     <span style={{
-                                        fontWeight: selectedNoteId === note.id ? 700 : 500,
-                                        fontSize: '0.85rem',
+                                        fontWeight: selectedNoteId === note.id ? 600 : 400,
+                                        fontSize: '0.78rem',
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
-                                        color: selectedNoteId === note.id ? 'hsl(var(--primary))' : 'var(--text-main)'
+                                        color: selectedNoteId === note.id ? 'hsl(var(--primary))' : 'var(--text-main)',
+                                        letterSpacing: '-0.01em'
                                     }}>
                                         {note.title}
                                     </span>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-                                {note.priority === 'high' && <AlertCircle size={10} color="#ef4444" />}
-                                {note.priority === 'medium' && <span style={{ color: '#f59e0b', fontSize: '10px', fontWeight: 800 }}>M</span>}
-                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                                {note.images && note.images.length > 0 && (
+                                    <div title="Contains images" style={{ display: 'flex', alignItems: 'center' }}>
+                                        <Monitor size={12} style={{ color: 'hsl(var(--primary))' }} />
+                                    </div>
+                                )}
+                                {note.priority === 'high' && <AlertCircle size={9} color="#ef4444" />}
+                                {note.priority === 'medium' && <span style={{ color: '#f59e0b', fontSize: '9px', fontWeight: 800 }}>M</span>}
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: 500, opacity: 0.8 }}>
                                     {new Date(note.updated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                 </span>
                             </div>
@@ -459,8 +528,14 @@ export default function GlobalNotesPage() {
                                         <button onClick={() => togglePinMutation.mutate(activeNote)} className="hero-btn-ghost" title={activeNote.is_pinned ? "Unpin" : "Pin"}>
                                             <Pin size={18} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />
                                         </button>
-                                        <button onClick={() => { if (confirm('Delete this note?')) deleteMutation.mutate(activeNote.id) }} className="hero-btn-ghost text-destructive" title="Delete">
+                                        <button
+                                            onClick={() => handleDeleteNote(activeNote.id)}
+                                            className={`hero-btn-ghost ${confirmingDeleteNote ? 'bg-destructive text-white' : 'text-destructive'}`}
+                                            title={confirmingDeleteNote ? "Confirm Delete" : "Delete"}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                                        >
                                             <Trash2 size={18} />
+                                            {confirmingDeleteNote && <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Confirm?</span>}
                                         </button>
                                         <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
                                         <button
@@ -560,6 +635,7 @@ export default function GlobalNotesPage() {
                                                         style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
                                                         contentStyle={{ flex: 1 }}
                                                         maxHeight="100%"
+                                                        onUploadImage={handleImageUpload}
                                                     />
                                                 </div>
                                             </div>
@@ -614,50 +690,141 @@ export default function GlobalNotesPage() {
                                 borderRadius: '0 1rem 1rem 0',
                                 flexShrink: 0
                             }}>
-                                {/* Meta Section */}
+                                {/* Meta Section - Minimalized */}
                                 <div>
-                                    <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', letterSpacing: '0.05em' }}>Information</h4>
+                                    <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.8rem', letterSpacing: '0.05em' }}>Information</h4>
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        <div>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Platform</div>
-                                            <span className="hero-badge" style={{ background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontWeight: 700 }}>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(2, 1fr)',
+                                        gap: '0.75rem',
+                                        background: 'var(--bg-main)',
+                                        padding: '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid var(--border-subtle)'
+                                    }}>
+                                        <div style={{ gridColumn: 'span 1' }}>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.2rem', textTransform: 'uppercase', opacity: 0.7 }}>Platform</div>
+                                            <span className="hero-badge" style={{ background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontWeight: 700, fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
                                                 {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : (String(activeNote.platform || '').toLowerCase() === 'system' ? 'System' : activeNote.platform || 'General')}
                                             </span>
                                         </div>
 
-                                        <div>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Priority</div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        <div style={{ gridColumn: 'span 1' }}>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.2rem', textTransform: 'uppercase', opacity: 0.7 }}>Priority</div>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
                                                 <span className="hero-badge" style={{
                                                     background: activeNote.priority === 'high' ? 'hsla(0, 84%, 60%, 0.1)' : activeNote.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.1)' : 'var(--bg-subtle)',
                                                     color: activeNote.priority === 'high' ? '#ef4444' : activeNote.priority === 'medium' ? '#f59e0b' : 'var(--text-dim)',
-                                                    fontWeight: 700
+                                                    fontWeight: 700,
+                                                    fontSize: '0.65rem',
+                                                    padding: '0.1rem 0.4rem'
                                                 }}>
                                                     {activeNote.priority === 'high' ? 'High' : activeNote.priority === 'medium' ? 'Medium' : 'Normal'}
                                                 </span>
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Tags</div>
-                                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                                {activeNote.tags?.length ? activeNote.tags.map(t => (
-                                                    <span key={t} className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-dim)', fontSize: '0.7rem' }}>#{t}</span>
-                                                )) : (
-                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontStyle: 'italic' }}>No tags</span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Last Updated</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                                        <div style={{ gridColumn: 'span 2' }}>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.2rem', textTransform: 'uppercase', opacity: 0.7 }}>Last Updated</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 500 }}>
                                                 {new Date(activeNote.updated).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                                             </div>
                                         </div>
+
+                                        {activeNote.tags && activeNote.tags.length > 0 && (
+                                            <div style={{ gridColumn: 'span 2', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                                                <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                                                    {activeNote.tags.map(t => (
+                                                        <span key={t} style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 600 }}>#{t}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
+
+                                {/* Attachments Section */}
+                                {activeNote.images && activeNote.images.length > 0 && (
+                                    <div>
+                                        <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', letterSpacing: '0.05em' }}>Attachments</h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.6rem' }}>
+                                            {activeNote.images.map((img: string) => (
+                                                <div key={img} style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.75rem',
+                                                    padding: '0.5rem',
+                                                    borderRadius: '0.75rem',
+                                                    background: 'var(--bg-main)',
+                                                    border: '1px solid var(--border-subtle)',
+                                                }}>
+                                                    <div style={{
+                                                        width: '40px',
+                                                        height: '40px',
+                                                        borderRadius: '0.4rem',
+                                                        overflow: 'hidden',
+                                                        background: 'var(--bg-subtle)',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        <img
+                                                            src={pb.files.getUrl(activeNote as any, img, { thumb: '100x100' })}
+                                                            alt={img}
+                                                            onError={(e) => {
+                                                                (e.target as HTMLImageElement).src = 'https://placehold.co/40x40?text=IMG';
+                                                            }}
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                        />
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{
+                                                            fontSize: '0.65rem',
+                                                            color: 'var(--text-main)',
+                                                            fontWeight: 600,
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis'
+                                                        }}>
+                                                            {img.split('_').pop()}
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (confirmingDeleteImage === img) {
+                                                                    deleteImageMutation.mutate(img);
+                                                                    setConfirmingDeleteImage(null);
+                                                                } else {
+                                                                    setConfirmingDeleteImage(img);
+                                                                    setTimeout(() => setConfirmingDeleteImage(null), 3000);
+                                                                }
+                                                            }}
+                                                            disabled={deleteImageMutation.isPending}
+                                                            className={`hero-btn-ghost ${confirmingDeleteImage === img ? 'bg-destructive text-white' : 'text-destructive'}`}
+                                                            style={{
+                                                                padding: '0.2rem 0.5rem',
+                                                                marginTop: '0.2rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.25rem',
+                                                                borderRadius: '0.4rem',
+                                                                background: confirmingDeleteImage === img ? 'var(--destructive)' : 'transparent'
+                                                            }}
+                                                        >
+                                                            {deleteImageMutation.isPending ? (
+                                                                <Loader2 size={10} className="animate-spin" />
+                                                            ) : (
+                                                                <Trash2 size={10} />
+                                                            )}
+                                                            <span style={{ fontSize: '0.6rem', fontWeight: 700 }}>
+                                                                {deleteImageMutation.isPending ? 'Removing...' : (confirmingDeleteImage === img ? 'Confirm?' : 'Remove')}
+                                                            </span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* TOC Section */}
                                 {!isEditing && (

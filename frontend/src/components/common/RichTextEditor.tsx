@@ -4,8 +4,9 @@ import StarterKit from '@tiptap/starter-kit';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Placeholder from '@tiptap/extension-placeholder';
+import Image from '@tiptap/extension-image';
 import { Extension } from '@tiptap/core';
-import { Bold, Italic, Minus, Pilcrow } from 'lucide-react';
+import { Bold, Italic, Minus, Pilcrow, ImageIcon } from 'lucide-react';
 import { normalizeHtmlForCompare, toEditorHtml } from '../../lib/noteHtml';
 
 const MIN_FONT_SIZE = 12;
@@ -66,6 +67,7 @@ interface RichTextEditorProps {
     disabled?: boolean;
     style?: React.CSSProperties;
     contentStyle?: React.CSSProperties;
+    onUploadImage?: (file: File) => Promise<string>;
 }
 
 export default function RichTextEditor({
@@ -77,6 +79,7 @@ export default function RichTextEditor({
     disabled = false,
     style,
     contentStyle,
+    onUploadImage,
 }: RichTextEditorProps) {
     const initialHtml = useMemo(() => toEditorHtml(value || ''), [value]);
 
@@ -90,6 +93,10 @@ export default function RichTextEditor({
             TextStyle,
             Color,
             FontSize,
+            Image.configure({
+                inline: true,
+                allowBase64: true,
+            }),
             Placeholder.configure({
                 placeholder,
             }),
@@ -99,6 +106,52 @@ export default function RichTextEditor({
         onUpdate: ({ editor: currentEditor }) => {
             onChange(currentEditor.getHTML());
         },
+        editorProps: {
+            handlePaste: (view, event) => {
+                const items = event.clipboardData?.items;
+                if (!items) return false;
+
+                const files = [];
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') === 0) {
+                        const file = items[i].getAsFile();
+                        if (file) files.push(file);
+                    }
+                }
+
+                if (files.length > 0 && onUploadImage) {
+                    files.forEach(async (file) => {
+                        const url = await onUploadImage(file);
+                        view.dispatch(view.state.tr.replaceSelectionWith(
+                            view.state.schema.nodes.image.create({ src: url })
+                        ));
+                    });
+                    return true;
+                }
+                return false;
+            },
+            handleDrop: (view, event) => {
+                const files = event.dataTransfer?.files;
+                if (!files || files.length === 0) return false;
+
+                const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+                if (imageFiles.length > 0 && onUploadImage) {
+                    event.preventDefault();
+                    imageFiles.forEach(async (file) => {
+                        const url = await onUploadImage(file);
+                        const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+                        if (coordinates) {
+                            view.dispatch(view.state.tr.insert(
+                                coordinates.pos,
+                                view.state.schema.nodes.image.create({ src: url })
+                            ));
+                        }
+                    });
+                    return true;
+                }
+                return false;
+            }
+        }
     });
 
     useEffect(() => {
@@ -237,6 +290,40 @@ export default function RichTextEditor({
                     </button>
                 ))}
 
+                <div style={{ width: '1px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
+
+                <button
+                    type="button"
+                    className="hero-btn hero-btn-ghost"
+                    style={{ padding: '0.25rem 0.45rem' }}
+                    onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = async () => {
+                            if (input.files?.length) {
+                                const file = input.files[0];
+                                if (onUploadImage) {
+                                    const url = await onUploadImage(file);
+                                    editor.chain().focus().setImage({ src: url }).run();
+                                } else {
+                                    // Fallback to base64 if no upload handler provided
+                                    const reader = new FileReader();
+                                    reader.onload = () => {
+                                        editor.chain().focus().setImage({ src: reader.result as string }).run();
+                                    };
+                                    reader.readAsDataURL(file);
+                                }
+                            }
+                        };
+                        input.click();
+                    }}
+                    title="Upload Image"
+                >
+                    <ImageIcon size={13} style={{ marginRight: '0.35rem' }} />
+                    <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700 }}>Image</span>
+                </button>
+
             </div>
 
             <div
@@ -257,6 +344,6 @@ export default function RichTextEditor({
             >
                 <EditorContent editor={editor} />
             </div>
-        </div>
+        </div >
     );
 }

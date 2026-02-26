@@ -8,8 +8,6 @@ import {
     Trash2,
     Globe,
     Palette,
-    AlertTriangle,
-    CheckCircle2,
     Loader2
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';

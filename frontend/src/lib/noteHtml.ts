@@ -10,10 +10,10 @@ export interface NoteHeading {
 const ALLOWED_TAGS = [
     'p', 'br', 'strong', 'em', 'u', 's', 'span',
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'ol', 'li', 'blockquote', 'hr', 'a',
+    'ul', 'ol', 'li', 'blockquote', 'hr', 'a', 'img',
 ];
 
-const ALLOWED_ATTR = ['href', 'target', 'rel', 'style', 'data-note-heading-id'];
+const ALLOWED_ATTR = ['href', 'target', 'rel', 'style', 'data-note-heading-id', 'src', 'alt', 'width', 'height'];
 
 const sanitizeConfig = {
     ALLOWED_TAGS,
