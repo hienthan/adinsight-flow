@@ -4,7 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Placeholder from '@tiptap/extension-placeholder';
-import Image from '@tiptap/extension-image';
+import ImageResize from 'tiptap-extension-resize-image';
 import { Extension } from '@tiptap/core';
 import { Bold, Italic, Minus, Pilcrow, ImageIcon } from 'lucide-react';
 import { normalizeHtmlForCompare, toEditorHtml } from '../../lib/noteHtml';
@@ -58,6 +58,10 @@ const FontSize = Extension.create({
     },
 });
 
+const ResizableImage = (ImageResize as any).extend({
+    name: 'image',
+});
+
 interface RichTextEditorProps {
     value: string;
     onChange: (nextHtml: string) => void;
@@ -93,10 +97,9 @@ export default function RichTextEditor({
             TextStyle,
             Color,
             FontSize,
-            Image.configure({
+            ResizableImage.configure({
                 inline: true,
-                allowBase64: true,
-            }),
+            } as any),
             Placeholder.configure({
                 placeholder,
             }),
@@ -305,12 +308,12 @@ export default function RichTextEditor({
                                 const file = input.files[0];
                                 if (onUploadImage) {
                                     const url = await onUploadImage(file);
-                                    editor.chain().focus().setImage({ src: url }).run();
+                                    editor.chain().focus().insertContent({ type: 'image', attrs: { src: url } }).run();
                                 } else {
                                     // Fallback to base64 if no upload handler provided
                                     const reader = new FileReader();
                                     reader.onload = () => {
-                                        editor.chain().focus().setImage({ src: reader.result as string }).run();
+                                        editor.chain().focus().insertContent({ type: 'image', attrs: { src: reader.result as string } }).run();
                                     };
                                     reader.readAsDataURL(file);
                                 }

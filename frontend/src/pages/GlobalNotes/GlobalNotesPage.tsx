@@ -429,7 +429,6 @@ export default function GlobalNotesPage() {
                                     </div>
                                 )}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', overflow: 'hidden', flex: 1 }}>
-                                    {note.is_pinned && <Pin size={9} style={{ flexShrink: 0, color: 'var(--accent)', fill: 'var(--accent)' }} />}
                                     <span style={{
                                         fontWeight: selectedNoteId === note.id ? 600 : 400,
                                         fontSize: '0.78rem',
@@ -443,7 +442,7 @@ export default function GlobalNotesPage() {
                                     </span>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
                                 {note.images && note.images.length > 0 && (
                                     <div title="Contains images" style={{ display: 'flex', alignItems: 'center' }}>
                                         <Monitor size={12} style={{ color: 'hsl(var(--primary))' }} />
@@ -451,6 +450,7 @@ export default function GlobalNotesPage() {
                                 )}
                                 {note.priority === 'high' && <AlertCircle size={9} color="#ef4444" />}
                                 {note.priority === 'medium' && <span style={{ color: '#f59e0b', fontSize: '9px', fontWeight: 800 }}>M</span>}
+                                {note.is_pinned && <Pin size={10} style={{ flexShrink: 0, color: 'var(--accent)', fill: 'var(--accent)', opacity: 0.9 }} />}
                                 <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: 500, opacity: 0.8 }}>
                                     {new Date(note.updated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                 </span>
