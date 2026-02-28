@@ -15,8 +15,10 @@ import {
     Globe,
     AlertCircle,
     Settings,
-    Loader2
+    Loader2,
+    Copy
 } from 'lucide-react';
+import { toast } from 'sonner';
 import RichTextEditor from '../../components/common/RichTextEditor';
 import { htmlToPlainText, prepareNoteHtmlForRender, normalizeHtmlForCompare } from '../../lib/noteHtml';
 
@@ -305,6 +307,38 @@ export default function GlobalNotesPage() {
         setSelectedNoteId(note.id);
     };
 
+    const handleCopyToClipboard = () => {
+        if (!activeNote) return;
+        const plainText = htmlToPlainText(activeNote.content);
+        const htmlContent = `<h1 style="font-size: 1.75rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem;">${activeNote.title}</h1>${activeNote.content}`;
+        const fullPlainText = `${activeNote.title}\n\n${plainText}`;
+
+        // Attempt to copy as rich text (HTML + Plain)
+        try {
+            const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+            const blobText = new Blob([fullPlainText], { type: 'text/plain' });
+            const data = [new ClipboardItem({
+                'text/html': blobHtml,
+                'text/plain': blobText,
+            })];
+
+            navigator.clipboard.write(data).then(() => {
+                toast.success('Note copied as Rich Text');
+            }).catch(err => {
+                console.error('Clipboard API error:', err);
+                // Fallback to legacy plain text copy
+                navigator.clipboard.writeText(fullPlainText).then(() => {
+                    toast.success('Copied as Plain Text');
+                });
+            });
+        } catch (err) {
+            console.error('Clipboard error:', err);
+            navigator.clipboard.writeText(fullPlainText).then(() => {
+                toast.success('Copied as Plain Text');
+            });
+        }
+    };
+
     return (
         <div className="page-container" style={{ height: 'calc(100vh - 2rem)', display: 'flex', overflow: 'hidden', padding: 0, gap: 0 }}>
 
@@ -548,6 +582,13 @@ export default function GlobalNotesPage() {
                                     </>
                                 ) : (
                                     <>
+                                        <button
+                                            onClick={handleCopyToClipboard}
+                                            className="hero-btn-ghost"
+                                            title="Copy to Clipboard"
+                                        >
+                                            <Copy size={18} />
+                                        </button>
                                         <button onClick={() => togglePinMutation.mutate(activeNote)} className="hero-btn-ghost" title={activeNote.is_pinned ? "Unpin" : "Pin"}>
                                             <Pin size={18} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />
                                         </button>

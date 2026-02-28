@@ -6,7 +6,7 @@ import Color from '@tiptap/extension-color';
 import Placeholder from '@tiptap/extension-placeholder';
 import ImageResize from 'tiptap-extension-resize-image';
 import { Extension } from '@tiptap/core';
-import { Bold, Italic, Minus, Pilcrow, ImageIcon } from 'lucide-react';
+import { Bold, Italic, Minus, Pilcrow, ImageIcon, List, ListOrdered } from 'lucide-react';
 import { normalizeHtmlForCompare, toEditorHtml } from '../../lib/noteHtml';
 
 const MIN_FONT_SIZE = 12;
@@ -221,6 +221,12 @@ export default function RichTextEditor({
                 </button>
                 <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
                     <Minus size={13} />
+                </button>
+                <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', color: editor.isActive('bulletList') ? 'hsl(var(--primary))' : 'inherit' }} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+                    <List size={13} />
+                </button>
+                <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', color: editor.isActive('orderedList') ? 'hsl(var(--primary))' : 'inherit' }} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+                    <ListOrdered size={13} />
                 </button>
                 <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().unsetColor().unsetFontSize().run()}>
                     <Pilcrow size={13} />
