@@ -15,18 +15,18 @@ import { CampaignPlatform } from '../../types/campaign';
 import RichTextEditor from '../../components/common/RichTextEditor';
 
 const COLOR_PRESETS = [
-    '#2563eb', // Vivid Blue
-    '#dc2626', // Bright Red
-    '#059669', // Emerald Green
-    '#d97706', // Amber Orange
-    '#7c3aed', // Deep Violet
-    '#db2777', // Rose Pink
-    '#0891b2', // Cyan Blue
-    '#ea580c', // Pure Orange
-    '#4f46e5', // Royal Indigo
-    '#0d9488', // Dark Teal
-    '#1e293b', // Slate Black
-    '#be123c', // Crimson
+    '#3b82f6', // Bright Blue
+    '#ef4444', // Red
+    '#10b981', // Emerald
+    '#f59e0b', // Amber
+    '#8b5cf6', // Violet
+    '#ec4899', // Pink
+    '#06b6d4', // Cyan
+    '#f97316', // Orange
+    '#6366f1', // Indigo
+    '#14b8a6', // Teal
+    '#334155', // Slate
+    '#e11d48', // Crimson
 ];
 
 export default function PlatformManagement() {

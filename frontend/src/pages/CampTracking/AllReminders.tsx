@@ -51,7 +51,8 @@ export default function AllReminders() {
                 sort: 'reminder_date',
                 expand: 'campaign,campaign.platform'
             });
-        }
+        },
+        staleTime: 1000 * 60 * 60 * 4, // 4 hours
     });
 
     // Grouping logic

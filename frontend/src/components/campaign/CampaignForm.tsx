@@ -88,7 +88,7 @@ export default function CampaignForm({
         queryKey: ['platforms'],
         queryFn: async () => {
             return await pb.collection('campaign_platforms').getFullList<CampaignPlatform>({
-                sort: 'display_name',
+                sort: 'order,display_name',
             });
         },
     });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Download, AlertCircle } from 'lucide-react';
+import { Search, AlertCircle } from 'lucide-react';
 import { FilterDef } from '../../types/adinsight';
 import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown';
 
@@ -7,22 +7,16 @@ interface InsightFilterBarProps {
     filters: FilterDef[];
     currentValues: Record<string, string>;
     onFilterChange: (id: string, value: string) => void;
-    onReset: () => void;
-    onExport: () => void;
     countries: string[];
     sitemapTags: string[];
-    isExporting: boolean;
 }
 
 export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
     filters,
     currentValues,
     onFilterChange,
-    onReset,
-    onExport,
     countries,
     sitemapTags,
-    isExporting
 }) => {
     // Local state for debouncing search
     const [searchInput, setSearchInput] = useState(currentValues.searchTerm || '');
@@ -215,26 +209,6 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                 >
                     <AlertCircle size={20} className="exclude-icon" />
                 </button>
-
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.6rem', alignSelf: 'flex-end' }}>
-                    <button
-                        onClick={onReset}
-                        className="hero-btn hero-btn-secondary"
-                        style={{ padding: '0.6rem 1rem', fontSize: '13px' }}
-                    >
-                        Reset
-                    </button>
-
-                    <button
-                        onClick={onExport}
-                        disabled={isExporting}
-                        className="hero-btn hero-btn-primary"
-                        style={{ padding: '0.6rem 1.2rem', gap: '0.5rem', fontSize: '13px' }}
-                    >
-                        <Download size={16} />
-                        {isExporting ? 'Exporting...' : 'CSV'}
-                    </button>
-                </div>
             </div>
 
             {isExcludeVisible && (

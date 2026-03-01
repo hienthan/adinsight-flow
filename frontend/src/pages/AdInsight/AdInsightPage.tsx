@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Globe } from 'lucide-react';
+import { Globe, Download } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { usePlatformAnalytics } from '../../hooks/usePlatformAnalytics';
 import { usePlatformMeta } from '../../hooks/usePlatformMeta';
@@ -216,7 +216,8 @@ export default function AdInsightPage() {
                 borderRadius: '12px',
                 boxShadow: 'var(--shadow-soft)'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                {/* Left: Platform Switcher */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
                     <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-overlay)', padding: '0.4rem', borderRadius: '12px' }}>
                         {(['klook', 'traveloka'] as const).map(id => (
                             <button
@@ -263,13 +264,48 @@ export default function AdInsightPage() {
                     </div>
                 </div>
 
-                <div style={{ textAlign: 'right' }}>
+                {/* Center: Record Count */}
+                <div style={{ textAlign: 'center', flex: 1 }}>
                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))', lineHeight: 1 }}>
                         {totalCount.toLocaleString()}
                     </div>
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginTop: '0.25rem' }}>
                         {isFiltered ? 'Matching Records' : 'Total Records'}
                     </div>
+                </div>
+
+                {/* Right: Actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, justifyContent: 'flex-end' }}>
+                    <button
+                        onClick={handleReset}
+                        className="hero-btn"
+                        style={{
+                            padding: '0.6rem 1rem',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            visibility: isFiltered ? 'visible' : 'hidden',
+                            border: '1px solid var(--border-subtle)',
+                            background: 'var(--bg-overlay)',
+                            borderRadius: '10px'
+                        }}
+                    >
+                        Reset
+                    </button>
+
+                    <button
+                        onClick={() => setIsExportModalOpen(true)}
+                        disabled={exporting}
+                        className="hero-btn hero-btn-primary"
+                        style={{
+                            padding: '0.6rem 1.2rem',
+                            gap: '0.5rem',
+                            fontSize: '13px',
+                            borderRadius: '10px'
+                        }}
+                    >
+                        <Download size={16} />
+                        {exporting ? 'Exporting...' : 'CSV'}
+                    </button>
                 </div>
             </div>
 
@@ -278,11 +314,8 @@ export default function AdInsightPage() {
                 filters={config.filters}
                 currentValues={filters}
                 onFilterChange={handleFilterChange}
-                onReset={handleReset}
-                onExport={() => setIsExportModalOpen(true)}
                 countries={countries}
                 sitemapTags={sitemapTags}
-                isExporting={exporting}
             />
 
             {/* Main Content Table */}

@@ -59,7 +59,8 @@ export interface CampaignChange {
 
 export interface CampaignReminder {
     id: string;
-    campaign: string;
+    campaign: string | null;
+    platform?: string;
     related_change?: string;
     reminder_date: string;
     message: string;
@@ -88,4 +89,17 @@ export interface ReminderTemplate {
     active?: boolean;
     created: string;
     updated: string;
+}
+export interface CampaignNote {
+    id: string;
+    platform: string;
+    message: string;
+    status: 'pending' | 'completed' | 'dismissed';
+    priority?: 'low' | 'medium' | 'high' | 'critical';
+    due_date?: string;
+    created: string;
+    updated: string;
+    expand?: {
+        platform?: CampaignPlatform;
+    };
 }

@@ -218,16 +218,19 @@ export default function CampOverview() {
                 sort: 'reminder_date',
             });
         },
+        staleTime: 1000 * 60 * 60 * 4, // 4 hours
     });
 
     const now = useMemo(() => getStartOfDay(new Date()), []);
     const reminderByCampaign = useMemo(() => {
         const bucket = new Map<string, CampaignReminder[]>();
         reminders.forEach((reminder) => {
-            if (!bucket.has(reminder.campaign)) {
-                bucket.set(reminder.campaign, []);
+            if (reminder.campaign) {
+                if (!bucket.has(reminder.campaign)) {
+                    bucket.set(reminder.campaign, []);
+                }
+                bucket.get(reminder.campaign)!.push(reminder);
             }
-            bucket.get(reminder.campaign)!.push(reminder);
         });
         return bucket;
     }, [reminders]);
@@ -439,23 +442,46 @@ export default function CampOverview() {
                         Monitoring {filteredCampaigns.length} active monitors across all channels
                     </p>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <button
+                        onClick={() => {
+                            setSearchParams({});
+                        }}
+                        className="hero-btn"
+                        style={{
+                            padding: '0.65rem 1.25rem',
+                            fontSize: '0.85rem',
+                            fontWeight: 800,
+                            background: hasActiveFilters ? 'hsl(var(--primary))' : 'var(--bg-content)',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: '12px',
+                            visibility: hasActiveFilters ? 'visible' : 'hidden',
+                            pointerEvents: hasActiveFilters ? 'auto' : 'none',
+                            color: hasActiveFilters ? 'white' : 'var(--text-dim)',
+                            transition: 'all 0.2s',
+                            boxShadow: hasActiveFilters ? '0 4px 12px hsla(var(--primary) / 0.3)' : 'var(--shadow-subtle)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        Reset Filters
+                    </button>
 
-                <button
-                    onClick={() => (openEdit as any)(null)}
-                    className="hero-btn hero-btn-primary"
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        borderRadius: '14px',
-                        fontSize: '0.95rem'
-                    }}
-                >
-                    <Plus size={20} strokeWidth={3} />
-                    New Campaign
-                </button>
+                    <button
+                        onClick={() => openEdit(null as any)}
+                        className="hero-btn hero-btn-primary"
+                        style={{
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '14px',
+                            fontSize: '0.95rem'
+                        }}
+                    >
+                        <Plus size={20} strokeWidth={3} />
+                        New Campaign
+                    </button>
+                </div>
             </div>
-
-
-
             {/* Filters Cluster */}
             <div style={{ marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '1rem' }}>
                 <div style={{
@@ -617,49 +643,21 @@ export default function CampOverview() {
                 </div>
 
                 <div style={{ flex: 1 }} />
-
-                <button
-                    onClick={() => {
-                        setSearchParams({});
-                    }}
-                    className="hero-btn"
-                    style={{
-                        alignSelf: 'flex-end',
-                        padding: '0.6rem 1rem',
-                        fontSize: '0.8rem',
-                        fontWeight: 800,
-                        background: hasActiveFilters ? 'hsl(var(--primary))' : 'var(--bg-content)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '12px',
-                        visibility: hasActiveFilters ? 'visible' : 'hidden',
-                        pointerEvents: hasActiveFilters ? 'auto' : 'none',
-                        color: hasActiveFilters ? 'white' : 'var(--text-dim)',
-                        transition: 'all 0.2s',
-                        boxShadow: hasActiveFilters ? '0 4px 12px hsla(var(--primary) / 0.3)' : 'var(--shadow-subtle)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                    }}
-                >
-                    Reset Filters
-                </button>
             </div>
 
             {/* Status Dashboard Row */}
-            <div
-                style={{
-                    marginBottom: '1.5rem',
-                    padding: '0.65rem 1.25rem',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    background: 'var(--bg-content)',
-                    border: '1px solid hsla(var(--primary) / 0.1)',
-                    boxShadow: 'var(--shadow-glass)',
-                    borderRadius: '1.25rem'
-                }}
-            >
+            <div style={{
+                marginBottom: '1.5rem',
+                padding: '0.65rem 1.25rem',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: '0.6rem',
+                background: 'var(--bg-content)',
+                border: '1px solid hsla(var(--primary) / 0.1)',
+                boxShadow: 'var(--shadow-glass)',
+                borderRadius: '1.25rem'
+            }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center' }}>
                     {/* Review Rate */}
                     <div style={{
@@ -815,134 +813,136 @@ export default function CampOverview() {
                         Next 3 days: {summary.upcoming}
                     </div>
                 </div>
-            </div>
+            </div >
 
             {/* Campaign Cards Grid */}
-            {isLoading ? (
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                    gap: '1.25rem'
-                }}>
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className=" hero-card" style={{
-                            height: compactCards ? '180px' : '260px',
-                            background: 'var(--bg-content)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '1rem',
-                            position: 'relative',
-                            overflow: 'hidden'
-                        }}>
-                            <div className="shimmer" style={{
-                                position: 'absolute',
-                                top: 0, left: 0, width: '100%', height: '100%',
-                            }} />
-                            <div style={{ padding: '1.25rem' }}>
-                                <div style={{ width: '60%', height: '14px', background: 'var(--bg-overlay)', borderRadius: '4px', marginBottom: '1rem' }} />
-                                <div style={{ width: '40%', height: '10px', background: 'var(--bg-overlay)', borderRadius: '4px', marginBottom: '2rem' }} />
-                                <div style={{ width: '100%', height: '60px', background: 'var(--bg-overlay)', borderRadius: '8px' }} />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : filteredCampaigns.length === 0 ? (
-                <div style={{
-                    padding: '4rem 2rem',
-                    textAlign: 'center',
-                    background: 'var(--bg-content)',
-                    borderRadius: '2rem',
-                    border: '1px dashed var(--border-subtle)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '1.5rem'
-                }}>
-                    <div style={{ fontSize: '3rem' }}>🔍</div>
-                    <div>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.5rem' }}>No campaigns found</h3>
-                        <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>Try adjusting your filters or search keywords.</p>
-                    </div>
-                    <button
-                        onClick={() => setSearchParams({})}
-                        className="hero-btn hero-btn-primary"
-                        style={{ padding: '0.75rem 1.75rem', borderRadius: '12px' }}
-                    >
-                        Clear All Filters
-                    </button>
-                </div>
-            ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {groupedCampaigns.map((group) => {
-                        const isCollapsed = collapsedSections[group.platform.id];
-                        return (
-                            <div key={group.platform.id} className="animate-fade">
-                                <div
-                                    onClick={() => toggleSection(group.platform.id)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.75rem',
-                                        marginBottom: isCollapsed ? '0' : '1.25rem',
-                                        cursor: 'pointer',
-                                        padding: '0.5rem',
-                                        borderRadius: '8px',
-                                        transition: 'all 0.2s',
-                                        userSelect: 'none'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'var(--bg-overlay)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'transparent';
-                                    }}
-                                >
-                                    {isCollapsed ? (
-                                        <ChevronRight size={18} className="text-muted" />
-                                    ) : (
-                                        <ChevronDown size={18} className="text-muted" />
-                                    )}
-                                    <div style={{ width: '8px', height: '24px', background: group.platform.color, borderRadius: '4px' }} />
-                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', textTransform: 'uppercase', margin: 0 }}>
-                                        {group.platform.display_name}
-                                    </h3>
-                                    <div style={{ height: '1px', flex: 1, background: 'var(--border-subtle)', marginLeft: '0.5rem', opacity: 0.5 }} />
-                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>{group.campaigns.length} campaigns</span>
+            {
+                isLoading ? (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                        gap: '1.25rem'
+                    }}>
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className=" hero-card" style={{
+                                height: compactCards ? '180px' : '260px',
+                                background: 'var(--bg-content)',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '1rem',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}>
+                                <div className="shimmer" style={{
+                                    position: 'absolute',
+                                    top: 0, left: 0, width: '100%', height: '100%',
+                                }} />
+                                <div style={{ padding: '1.25rem' }}>
+                                    <div style={{ width: '60%', height: '14px', background: 'var(--bg-overlay)', borderRadius: '4px', marginBottom: '1rem' }} />
+                                    <div style={{ width: '40%', height: '10px', background: 'var(--bg-overlay)', borderRadius: '4px', marginBottom: '2rem' }} />
+                                    <div style={{ width: '100%', height: '60px', background: 'var(--bg-overlay)', borderRadius: '8px' }} />
                                 </div>
-
-                                {!isCollapsed && (
+                            </div>
+                        ))}
+                    </div>
+                ) : filteredCampaigns.length === 0 ? (
+                    <div style={{
+                        padding: '4rem 2rem',
+                        textAlign: 'center',
+                        background: 'var(--bg-content)',
+                        borderRadius: '2rem',
+                        border: '1px dashed var(--border-subtle)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '1.5rem'
+                    }}>
+                        <div style={{ fontSize: '3rem' }}>🔍</div>
+                        <div>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.5rem' }}>No campaigns found</h3>
+                            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>Try adjusting your filters or search keywords.</p>
+                        </div>
+                        <button
+                            onClick={() => setSearchParams({})}
+                            className="hero-btn hero-btn-primary"
+                            style={{ padding: '0.75rem 1.75rem', borderRadius: '12px' }}
+                        >
+                            Clear All Filters
+                        </button>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {groupedCampaigns.map((group) => {
+                            const isCollapsed = collapsedSections[group.platform.id];
+                            return (
+                                <div key={group.platform.id} className="animate-fade">
                                     <div
-                                        className="animate-fade"
+                                        onClick={() => toggleSection(group.platform.id)}
                                         style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: compactCards
-                                                ? 'repeat(auto-fill, minmax(220px, 1fr))'
-                                                : 'repeat(auto-fill, minmax(300px, 1fr))',
-                                            gap: compactCards ? '0.8rem' : '1.5rem',
-                                            padding: '0 0.5rem'
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            marginBottom: isCollapsed ? '0' : '1.25rem',
+                                            cursor: 'pointer',
+                                            padding: '0.5rem',
+                                            borderRadius: '8px',
+                                            transition: 'all 0.2s',
+                                            userSelect: 'none'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'var(--bg-overlay)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'transparent';
                                         }}
                                     >
-                                        {group.campaigns.map((campaign: any) => (
-                                            <CampaignCard
-                                                key={campaign.id}
-                                                campaign={campaign}
-                                                platform={campaign.platform_data}
-                                                hasPendingReminders={campaign.hasPendingReminders}
-                                                highestPriority={campaign.highestPriority}
-                                                reminderState={campaign.reminderState}
-                                                freshnessState={campaign.freshnessState}
-                                                hasReviewed={campaign.hasReviewed}
-                                                reviewStatusLabel={campaign.reviewStatusLabel}
-                                                viewMode={viewMode}
-                                                onEdit={openEdit}
-                                            />
-                                        ))}
+                                        {isCollapsed ? (
+                                            <ChevronRight size={18} className="text-muted" />
+                                        ) : (
+                                            <ChevronDown size={18} className="text-muted" />
+                                        )}
+                                        <div style={{ width: '8px', height: '24px', background: group.platform.color, borderRadius: '4px' }} />
+                                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', textTransform: 'uppercase', margin: 0 }}>
+                                            {group.platform.display_name}
+                                        </h3>
+                                        <div style={{ height: '1px', flex: 1, background: 'var(--border-subtle)', marginLeft: '0.5rem', opacity: 0.5 }} />
+                                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>{group.campaigns.length} campaigns</span>
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+
+                                    {!isCollapsed && (
+                                        <div
+                                            className="animate-fade"
+                                            style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: compactCards
+                                                    ? 'repeat(auto-fill, minmax(220px, 1fr))'
+                                                    : 'repeat(auto-fill, minmax(300px, 1fr))',
+                                                gap: compactCards ? '0.8rem' : '1.5rem',
+                                                padding: '0 0.5rem'
+                                            }}
+                                        >
+                                            {group.campaigns.map((campaign: any) => (
+                                                <CampaignCard
+                                                    key={campaign.id}
+                                                    campaign={campaign}
+                                                    platform={campaign.platform_data}
+                                                    hasPendingReminders={campaign.hasPendingReminders}
+                                                    highestPriority={campaign.highestPriority}
+                                                    reminderState={campaign.reminderState}
+                                                    freshnessState={campaign.freshnessState}
+                                                    hasReviewed={campaign.hasReviewed}
+                                                    reviewStatusLabel={campaign.reviewStatusLabel}
+                                                    viewMode={viewMode}
+                                                    onEdit={openEdit}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )
+            }
 
             <EditCampaignModal
                 campaignId={editingId || undefined}
@@ -950,6 +950,6 @@ export default function CampOverview() {
                 onClose={() => setIsEditModalOpen(false)}
                 onSuccess={() => refetch()}
             />
-        </div>
+        </div >
     );
 }

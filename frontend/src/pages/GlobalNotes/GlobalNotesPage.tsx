@@ -29,7 +29,7 @@ interface Note {
     tags: string[];
     is_pinned: boolean;
     priority: 'high' | 'medium' | 'normal';
-    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System';
+    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System' | 'RSA';
     images: string[];
     created: string;
     updated: string;
@@ -216,9 +216,10 @@ export default function GlobalNotesPage() {
         // 3. Platform (Traveloka > Klook > System > General)
         const getPlatformScore = (platform?: string) => {
             const p = String(platform || '').toLowerCase();
-            if (p === 'general' || !p || !['klook', 'traveloka', 'tvlk', 'trip', 'system'].includes(p)) return 5;
-            if (p === 'traveloka' || p === 'tvlk') return 4;
-            if (p === 'klook') return 3;
+            if (p === 'rsa') return 6;
+            if (p === 'traveloka' || p === 'tvlk') return 5;
+            if (p === 'klook') return 4;
+            if (p === 'trip') return 3;
             if (p === 'system') return 2;
             return 1;
         };
@@ -433,31 +434,33 @@ export default function GlobalNotesPage() {
                         >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flex: 1, overflow: 'hidden' }}>
                                 {String(note.platform || '').toLowerCase() === 'klook' && (
-                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: '#ff5b00', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800 }}>K</div>
+                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(255, 91, 0, 0.1)', color: '#ff5b00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>K</div>
                                 )}
                                 {(String(note.platform || '').toLowerCase() === 'traveloka' || String(note.platform || '').toLowerCase() === 'tvlk') && (
-                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: '#1ba0e2', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.45rem', fontWeight: 800 }}>TK</div>
+                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(27, 160, 226, 0.1)', color: '#1ba0e2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.45rem', fontWeight: 800, padding: '0 3px' }}>TK</div>
+                                )}
+                                {String(note.platform || '').toLowerCase() === 'rsa' && (
+                                    <div style={{ flexShrink: 0, minWidth: 24, height: 14, borderRadius: 3, background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800, padding: '0 4px' }}>RSA</div>
                                 )}
                                 {String(note.platform || '').toLowerCase() === 'trip' && (
-                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: '#0e2b5c', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800 }}>T</div>
+                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(14, 43, 92, 0.1)', color: '#0e2b5c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>T</div>
                                 )}
                                 {String(note.platform || '').toLowerCase() === 'system' && (
-                                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 3, background: 'var(--text-dim)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800 }}>
+                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'var(--bg-subtle)', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>
                                         <Settings size={8} />
                                     </div>
                                 )}
-                                {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip', 'system'].includes(String(note.platform || '').toLowerCase())) && (
+                                {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa'].includes(String(note.platform || '').toLowerCase())) && (
                                     <div style={{
                                         flexShrink: 0,
                                         width: 14,
                                         height: 14,
                                         borderRadius: 3,
-                                        background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
-                                        color: 'white',
+                                        background: 'hsla(243, 75%, 59%, 0.1)',
+                                        color: '#4f46e5',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center',
-                                        boxShadow: '0 1px 3px rgba(79, 70, 229, 0.4)'
+                                        justifyContent: 'center'
                                     }}>
                                         <Globe size={9} strokeWidth={3} />
                                     </div>
@@ -651,6 +654,7 @@ export default function GlobalNotesPage() {
                                                             style={{ padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-subtle)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
                                                         >
                                                             <option value="General">General</option>
+                                                            <option value="RSA">RSA</option>
                                                             <option value="System">System</option>
                                                             <option value="Klook">Klook</option>
                                                             <option value="Trip">Trip</option>
@@ -769,8 +773,16 @@ export default function GlobalNotesPage() {
                                     }}>
                                         <div style={{ gridColumn: 'span 1' }}>
                                             <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.2rem', textTransform: 'uppercase', opacity: 0.7 }}>Platform</div>
-                                            <span className="hero-badge" style={{ background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontWeight: 700, fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
-                                                {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : (String(activeNote.platform || '').toLowerCase() === 'system' ? 'System' : activeNote.platform || 'General')}
+                                            <span style={{
+                                                background: 'var(--accent-glow)',
+                                                color: 'hsl(var(--primary))',
+                                                fontWeight: 800,
+                                                fontSize: '0.65rem',
+                                                padding: '0.2rem 0.5rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid hsla(var(--primary) / 0.2)'
+                                            }}>
+                                                {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : (String(activeNote.platform || '').toLowerCase() === 'system' ? 'System' : (String(activeNote.platform || '').toLowerCase() === 'rsa' ? 'RSA' : activeNote.platform || 'General'))}
                                             </span>
                                         </div>
 
