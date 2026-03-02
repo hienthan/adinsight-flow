@@ -103,9 +103,10 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                             fontSize: '0.8rem',
                             borderRadius: '8px',
                             display: 'flex',
-                            background: selectedStatus === true ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                            background: selectedStatus === true ? 'hsla(var(--primary) / 0.15)' : 'transparent',
                             color: selectedStatus === true ? 'hsl(var(--primary))' : 'var(--text-dim)',
-                            border: selectedStatus === true ? '1px solid hsl(var(--primary))' : '1px solid transparent'
+                            border: selectedStatus === true ? '1px solid hsla(var(--primary) / 0.4)' : '1px solid transparent',
+                            transition: 'all 0.2s ease'
                         }}
                         title="Set Active"
                     >
@@ -120,9 +121,10 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                             fontSize: '0.8rem',
                             borderRadius: '8px',
                             display: 'flex',
-                            background: selectedStatus === false ? 'var(--danger-bg)' : 'transparent',
-                            color: selectedStatus === false ? 'var(--danger-text)' : 'var(--text-dim)',
-                            border: selectedStatus === false ? '1px solid var(--danger-text)' : '1px solid transparent'
+                            background: selectedStatus === false ? 'hsla(var(--destructive) / 0.15)' : 'transparent',
+                            color: selectedStatus === false ? 'hsl(var(--destructive))' : 'var(--text-dim)',
+                            border: selectedStatus === false ? '1px solid hsla(var(--destructive) / 0.4)' : '1px solid transparent',
+                            transition: 'all 0.2s ease'
                         }}
                         title="Set Inactive"
                     >

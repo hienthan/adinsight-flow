@@ -185,7 +185,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
     const exclusionBaseFilters = filters.filter(f => excludeIds.includes(f.id));
 
     return (
-        <section className="filter-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--bg-card)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-soft)', marginBottom: '1.5rem' }}>
+        <section className="filter-container" style={{ position: 'relative', zIndex: 60, display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--bg-card)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-soft)', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
                 {mainFilters.map(f => renderFilter(f))}
 
@@ -221,8 +221,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     borderRadius: '16px',
                     animation: 'fadeIn 0.3s ease-out',
                     marginTop: '0.75rem',
-                    position: 'relative',
-                    overflow: 'hidden'
+                    position: 'relative'
                 }}>
                     {exclusionBaseFilters.map(f => renderFilter(f, true))}
                 </div>

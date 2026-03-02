@@ -56,6 +56,24 @@ const FontSize = Extension.create({
                         chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run(),
         } as any;
     },
+    addKeyboardShortcuts() {
+        return {
+            'Mod-[': () => {
+                const current = (this.editor.getAttributes('textStyle').fontSize as string | undefined);
+                const parsed = Number(current);
+                const size = Number.isFinite(parsed) ? parsed : 14; // Default
+                const next = Math.max(12, size - 2);
+                return this.editor.commands.setFontSize(String(next));
+            },
+            'Mod-]': () => {
+                const current = (this.editor.getAttributes('textStyle').fontSize as string | undefined);
+                const parsed = Number(current);
+                const size = Number.isFinite(parsed) ? parsed : 14; // Default
+                const next = Math.min(24, size + 2);
+                return this.editor.commands.setFontSize(String(next));
+            },
+        };
+    },
 });
 
 const ResizableImage = (ImageResize as any).extend({
@@ -304,10 +322,11 @@ export default function RichTextEditor({
                                 width: 12,
                                 height: 12,
                                 borderRadius: '999px',
-                                border: '1px solid var(--border-subtle)',
-                                background: swatch.value || 'transparent',
+                                border: swatch.value ? 'none' : '1px solid var(--border-subtle)',
+                                background: swatch.value || 'var(--text-main)',
                                 display: 'inline-block',
                                 marginRight: isMinimal ? '0' : '0.35rem',
+                                opacity: swatch.value ? 1 : 0.8
                             }}
                         />
                         {!isMinimal && swatch.label}

@@ -49,6 +49,23 @@ export default function PlatformManagement() {
     });
     const [isEditing, setIsEditing] = useState(false);
     const [viewMode, setViewMode] = useState(true);
+    const [isDirty, setIsDirty] = useState(false);
+
+    useEffect(() => {
+        if (!isEditing) {
+            setIsDirty(formData.display_name !== '' || formData.platform_name !== '');
+            return;
+        }
+
+        const original = platforms.find(p => p.id === formData.id);
+        if (original) {
+            const dirty =
+                formData.display_name !== original.display_name ||
+                formData.platform_name !== original.platform_name ||
+                formData.color !== original.color;
+            setIsDirty(dirty);
+        }
+    }, [formData, platforms, isEditing]);
 
     useEffect(() => {
         fetchPlatforms();
@@ -372,11 +389,27 @@ export default function PlatformManagement() {
                                     <h3 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.03em' }}>Identity</h3>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px' }}>
-                                    {!viewMode && (
+                                    {(!viewMode || isDirty || !isEditing) && (
                                         <>
-                                            <button type="button" onClick={handleCancel} className="hero-btn-ghost">Cancel</button>
-                                            <button type="submit" disabled={submitting} className="hero-btn-primary" style={{ padding: '0.6rem 1.2rem', borderRadius: '10px' }}>
-                                                {submitting ? 'Saving' : 'Save'}
+                                            <button
+                                                type="button"
+                                                onClick={handleCancel}
+                                                className="hero-btn-ghost"
+                                                style={{ padding: '0.6rem 1.2rem', borderRadius: '10px' }}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={submitting || (isEditing && !isDirty)}
+                                                className="hero-btn-primary"
+                                                style={{
+                                                    padding: '0.6rem 1.2rem',
+                                                    borderRadius: '10px',
+                                                    opacity: (submitting || (isEditing && !isDirty)) ? 0.6 : 1
+                                                }}
+                                            >
+                                                {submitting ? 'Saving' : (isEditing ? 'Update' : 'Save')}
                                             </button>
                                         </>
                                     )}

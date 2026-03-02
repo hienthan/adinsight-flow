@@ -158,7 +158,8 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
             { id: 'city', label: 'City Name', desc: 'Included if present' },
             { id: 'tier', label: 'Tier (1,2,3,4,5)', desc: 'Adds Tier prefix' },
             { id: 'funnel_stage', label: 'Funnel Stage', desc: 'awareness/planning/readiness' },
-            { id: 'sub_tag', label: 'Sub-tag', desc: 'Optional taxonomy field' }
+            { id: 'sub_tag', label: 'Sub-tag', desc: 'Optional taxonomy field' },
+            { id: 'title_en', label: 'English Title', desc: 'Page title in English' }
         ]
     }
 };

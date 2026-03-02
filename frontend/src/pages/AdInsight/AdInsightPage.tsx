@@ -147,13 +147,12 @@ export default function AdInsightPage() {
                         else if (field === 'content_type') prefix = 'ctype=';
                         else if (field === 'funnel_stage') prefix = 'funnel=';
                         else if (field === 'sub_tag') prefix = 'tag=';
+                        else if (field === 'title_en') prefix = 'title=';
 
                         labelParts.push(`${prefix}${cleanLabel(String(value))}`);
                     }
                 });
 
-                // Add platform identifier statically
-                labelParts.push(`platform=${platformId}`);
 
                 // Append custom label suffix if provided
                 if (customLabel && customLabel.trim() !== '') {
@@ -165,12 +164,36 @@ export default function AdInsightPage() {
             }).join('\n');
 
             const csv = csvHeader + csvRows;
+            const defaultName = `${platformId}-${filters.sitemap_tag || 'all'}-${allRecords.length}`;
+            const fileNameToUse = `${customFileName || defaultName}.csv`;
+
+            // Support for File System Access API (Persistent Path)
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await (window as any).showSaveFilePicker({
+                        suggestedName: fileNameToUse,
+                        id: 'adinsight-export',
+                        types: [{
+                            description: 'CSV File',
+                            accept: { 'text/csv': ['.csv'] },
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(csv);
+                    await writable.close();
+                    setIsExportModalOpen(false);
+                    return;
+                } catch (err: any) {
+                    if (err.name === 'AbortError') return;
+                    console.error('File Picker error, falling back:', err);
+                }
+            }
+
+            // Fallback for unsupported browsers or errors
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const urlObj = URL.createObjectURL(blob);
             const a = document.createElement('a');
-
-            const defaultName = `${platformId}-${filters.sitemap_tag || 'all'}-${allRecords.length}`;
-            a.download = `${customFileName || defaultName}.csv`;
+            a.download = fileNameToUse;
             a.href = urlObj;
             a.click();
 

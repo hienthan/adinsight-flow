@@ -31,7 +31,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
         enabled: !!campaignId && isOpen
     });
 
-    const availableMetrics = ['traffic', 'conversions', 'IS (Impression Share)', 'CPC', 'ROAS', 'Budget Burn Rate'];
+    const availableMetrics = ['TRAFFIC', 'CONVERSIONS', 'IS', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC KEYS'];
 
     const toggleMetric = (metric: string) => {
         setFormData(prev => {
