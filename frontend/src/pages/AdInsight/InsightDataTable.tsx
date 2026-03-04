@@ -1,7 +1,7 @@
 import React from 'react';
 import { ExternalLink, MapPin, ArrowUp, ArrowDown } from 'lucide-react';
 import { PageRecord, ColumnDef } from '../../types/adinsight';
-import { getTierStyle, getFunnelStyle } from './styles';
+import { getTierStyle, getFunnelStyle, getScoreStyle } from './styles';
 
 interface InsightDataTableProps {
     records: PageRecord[];
@@ -69,7 +69,7 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                         return (
                             <tr key={record.id} style={{
                                 opacity: isActive ? 1 : 0.45,
-                                background: isSelected ? 'hsla(var(--primary)/0.05)' : (isActive ? 'inherit' : 'var(--bg-overlay)'),
+                                background: isSelected ? 'hsla(var(--primary)/0.03)' : (isActive ? 'inherit' : 'var(--bg-overlay)'),
                                 borderLeft: isSelected ? '3px solid hsl(var(--primary))' : '3px solid transparent'
                             }}>
                                 {onSelect && (
@@ -117,28 +117,75 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                             </td>
                                         );
                                     }
-                                    if (col.key === 'tier') {
+                                    if (col.key === 'tier' || col.key === 'affiliate_tier') {
+                                        const rawTier = String(record[col.key as keyof PageRecord] || '');
+                                        let tierVal = rawTier;
+                                        if (rawTier === 'excluded') tierVal = '!';
+                                        else if (rawTier.startsWith('a') && rawTier.length > 1) {
+                                            tierVal = rawTier.slice(1);
+                                        }
+
                                         return (
                                             <td key={idx} style={{ width: col.width }}>
                                                 <div className="hero-badge" style={{
                                                     textTransform: 'none', padding: '0.2rem 0.5rem', fontSize: '0.75rem',
                                                     fontWeight: 800, borderRadius: '6px', minWidth: '24px', justifyContent: 'center',
-                                                    ...getTierStyle(record.tier)
+                                                    ...(rawTier === 'excluded'
+                                                        ? { background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }
+                                                        : getTierStyle(rawTier))
                                                 }}>
-                                                    {record.tier}
+                                                    {tierVal}
+                                                </div>
+                                            </td>
+                                        );
+                                    }
+                                    if (col.key === 'affiliate_score') {
+                                        const score = record.affiliate_score || 0;
+                                        return (
+                                            <td key={idx} style={{ width: col.width }}>
+                                                <div className="hero-badge" style={{
+                                                    padding: '0.25rem 0.6rem',
+                                                    fontSize: '0.85rem',
+                                                    borderRadius: '8px',
+                                                    justifyContent: 'center',
+                                                    ...getScoreStyle(score)
+                                                }}>
+                                                    {score}
                                                 </div>
                                             </td>
                                         );
                                     }
                                     if (col.key === 'location') {
+                                        const isTraveloka = !!record.title_en;
                                         return (
-                                            <td key={idx} style={{ minWidth: '150px' }}>
+                                            <td key={idx} style={{ minWidth: col.width || '150px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                     <MapPin size={12} style={{ color: 'hsl(var(--primary))', opacity: 0.8 }} />
-                                                    <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)', fontWeight: 500 }}>
-                                                        {record.city}, {record.country}
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                                                        {isTraveloka
+                                                            ? [record.sub_city, record.city, record.province].filter(Boolean).join(' / ')
+                                                            : `${record.city}, ${record.country}`
+                                                        }
                                                     </span>
                                                 </div>
+                                            </td>
+                                        );
+                                    }
+                                    if (col.key === 'dsa_campaign' || col.key === 'geo_category') {
+                                        const val = String(record[col.key as keyof PageRecord] || '');
+                                        return (
+                                            <td key={idx} style={{ width: col.width }}>
+                                                <span style={{
+                                                    fontSize: '0.75rem',
+                                                    color: 'var(--text-main)',
+                                                    fontWeight: 700,
+                                                    display: 'block',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis'
+                                                }} title={val}>
+                                                    {val || '-'}
+                                                </span>
                                             </td>
                                         );
                                     }
@@ -168,7 +215,29 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                             </td>
                                         );
                                     }
-                                    // Default text rendering for other keys (like title_en, translated_title_vi)
+                                    if (col.key === 'title_en' || col.key === 'translated_title_vi') {
+                                        return (
+                                            <td key={idx} style={{ minWidth: col.width || '200px' }}>
+                                                <a
+                                                    href={record.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        fontWeight: 700,
+                                                        color: 'hsl(var(--primary))',
+                                                        textDecoration: 'none',
+                                                        display: 'block',
+                                                        lineHeight: 1.4,
+                                                        fontSize: '0.9rem'
+                                                    }}
+                                                    className="title-link"
+                                                >
+                                                    {String(record[col.key as keyof PageRecord] || '')}
+                                                </a>
+                                            </td>
+                                        );
+                                    }
+                                    // Default text rendering for other keys
                                     return (
                                         <td key={idx} style={{ fontWeight: 600, color: 'var(--text-main)', minWidth: '200px' }}>
                                             {String(record[col.key as keyof PageRecord] || '')}

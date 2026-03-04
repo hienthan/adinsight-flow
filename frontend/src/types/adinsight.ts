@@ -16,6 +16,17 @@ export interface PageRecord {
     sub_tag?: string;
     translated_title_vi?: string;
     title_en?: string;
+    affiliate_tier?: string;
+    affiliate_score?: number;
+    intent_score?: number;
+    cookie_score?: number;
+    cpc_risk_score?: number;
+    dsa_campaign?: string;
+    geo_category?: string;
+    sub_city?: string;
+    province?: string;
+    display_name?: string;
+    time_sensitive?: string;
     metadata?: {
         funnel_rule_hit?: string;
         tier_source?: string;

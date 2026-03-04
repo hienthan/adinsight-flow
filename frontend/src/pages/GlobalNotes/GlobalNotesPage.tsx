@@ -29,7 +29,7 @@ interface Note {
     tags: string[];
     is_pinned: boolean;
     priority: 'high' | 'medium' | 'normal';
-    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System' | 'RSA';
+    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System' | 'RSA' | 'DSA';
     images: string[];
     created: string;
     updated: string;
@@ -216,10 +216,11 @@ export default function GlobalNotesPage() {
         // 3. Platform (Traveloka > Klook > System > General)
         const getPlatformScore = (platform?: string) => {
             const p = String(platform || '').toLowerCase();
-            if (p === 'rsa') return 6;
-            if (p === 'traveloka' || p === 'tvlk') return 5;
-            if (p === 'klook') return 4;
-            if (p === 'trip') return 3;
+            if (p === 'rsa') return 8;
+            if (p === 'dsa') return 7;
+            if (p === 'traveloka' || p === 'tvlk') return 6;
+            if (p === 'klook') return 5;
+            if (p === 'trip') return 4;
             if (p === 'system') return 2;
             return 1;
         };
@@ -442,6 +443,9 @@ export default function GlobalNotesPage() {
                                 {String(note.platform || '').toLowerCase() === 'rsa' && (
                                     <div style={{ flexShrink: 0, minWidth: 24, height: 14, borderRadius: 3, background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800, padding: '0 4px' }}>RSA</div>
                                 )}
+                                {String(note.platform || '').toLowerCase() === 'dsa' && (
+                                    <div style={{ flexShrink: 0, minWidth: 24, height: 14, borderRadius: 3, background: 'hsla(271, 81%, 56%, 0.1)', color: 'hsla(271, 81%, 56%, 1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800, padding: '0 4px' }}>DSA</div>
+                                )}
                                 {String(note.platform || '').toLowerCase() === 'trip' && (
                                     <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(14, 43, 92, 0.1)', color: '#0e2b5c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>T</div>
                                 )}
@@ -450,7 +454,7 @@ export default function GlobalNotesPage() {
                                         <Settings size={8} />
                                     </div>
                                 )}
-                                {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa'].includes(String(note.platform || '').toLowerCase())) && (
+                                {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa', 'dsa'].includes(String(note.platform || '').toLowerCase())) && (
                                     <div style={{
                                         flexShrink: 0,
                                         width: 14,
@@ -655,6 +659,7 @@ export default function GlobalNotesPage() {
                                                         >
                                                             <option value="General">General</option>
                                                             <option value="RSA">RSA</option>
+                                                            <option value="DSA">DSA</option>
                                                             <option value="System">System</option>
                                                             <option value="Klook">Klook</option>
                                                             <option value="Trip">Trip</option>
@@ -782,7 +787,7 @@ export default function GlobalNotesPage() {
                                                 borderRadius: '6px',
                                                 border: '1px solid hsla(var(--primary) / 0.2)'
                                             }}>
-                                                {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : (String(activeNote.platform || '').toLowerCase() === 'system' ? 'System' : (String(activeNote.platform || '').toLowerCase() === 'rsa' ? 'RSA' : activeNote.platform || 'General'))}
+                                                {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : (String(activeNote.platform || '').toLowerCase() === 'system' ? 'System' : (String(activeNote.platform || '').toLowerCase() === 'rsa' ? 'RSA' : (String(activeNote.platform || '').toLowerCase() === 'dsa' ? 'DSA' : activeNote.platform || 'General')))}
                                             </span>
                                         </div>
 

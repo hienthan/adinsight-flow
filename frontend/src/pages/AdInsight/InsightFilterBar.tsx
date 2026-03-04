@@ -142,7 +142,10 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                             value={currentValue}
                             onChange={(val) => onFilterChange(fieldId, val)}
                             placeholder="All"
-                            width={filter.id === 'content_type' ? '180px' : (filter.id === 'tier' ? '100px' : '150px')}
+                            width={
+                                filter.id === 'content_type' || filter.id === 'dsa_campaign' ? '180px' :
+                                    (filter.id === 'tier' || filter.id === 'affiliate_tier' ? '100px' : '150px')
+                            }
                         />
                     </div>
                 );
@@ -154,7 +157,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     <select
                         value={currentValue}
                         onChange={(e) => onFilterChange(fieldId, e.target.value)}
-                        style={{ width: filter.id === 'tier' ? '65px' : '140px' }}
+                        style={{ width: filter.id === 'tier' || filter.id === 'affiliate_tier' ? '65px' : '140px' }}
                     >
                         {filter.options?.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -178,7 +181,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
         );
     };
 
-    const mainFilters = filters.filter(f => ['searchTerm', 'sitemap_tag', 'country', 'sub_tag', 'content_type', 'funnel_stage', 'tier'].includes(f.id));
+    const mainFilters = filters.filter(f => ['searchTerm', 'sitemap_tag', 'country', 'sub_tag', 'content_type', 'funnel_stage', 'tier', 'affiliate_tier', 'geo_category', 'province', 'dsa_campaign'].includes(f.id));
 
     // For logical exclusion filters, we find the base definitions and map them
     const excludeIds = ['searchTerm', 'country', 'sub_tag', 'tier'];

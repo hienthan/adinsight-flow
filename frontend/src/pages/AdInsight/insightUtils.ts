@@ -37,7 +37,10 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         });
     }
 
-    const basicFields = ['tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type'];
+    const basicFields = [
+        'tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type',
+        'affiliate_tier', 'affiliate_score', 'dsa_campaign', 'geo_category', 'province'
+    ];
 
     Object.keys(currentFilters).forEach(key => {
         const value = currentFilters[key];

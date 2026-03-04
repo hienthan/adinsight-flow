@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Globe, Download } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { usePlatformAnalytics } from '../../hooks/usePlatformAnalytics';
@@ -14,7 +14,6 @@ import { PageRecord } from '../../types/adinsight';
 
 export default function AdInsightPage() {
     const { platform } = useParams();
-    const navigate = useNavigate();
     const platformId = (platform === 'traveloka' ? 'traveloka' : 'klook');
     const config = PLATFORMS[platformId];
 
@@ -27,8 +26,11 @@ export default function AdInsightPage() {
         if (config.activeFilterKey) {
             filters.activeFilterKey = config.activeFilterKey as string;
         }
+        if (platformId === 'traveloka') {
+            filters.country = 'Indonesia';
+        }
         return filters;
-    }, [config]);
+    }, [config, platformId]);
 
     const {
         records,
@@ -45,7 +47,9 @@ export default function AdInsightPage() {
     } = usePlatformAnalytics({
         collection: config.collection,
         perPage: perPage,
-        initialFilters
+        initialFilters,
+        initialSortField: platformId === 'traveloka' ? 'province' : 'id',
+        initialSortDirection: platformId === 'traveloka' ? 'asc' : 'desc'
     });
 
     const { countries, sitemapTags } = usePlatformMeta(config.defaultSitemapTags);
@@ -105,9 +109,7 @@ export default function AdInsightPage() {
         setFilters(initialFilters);
     };
 
-    const handlePlatformSwitch = (id: 'klook' | 'traveloka') => {
-        navigate(`/adinsight/${id}`);
-    };
+
 
     const handleExport = async (selectedFields: string[], customFileName: string, customLabel?: string) => {
         try {
@@ -119,7 +121,7 @@ export default function AdInsightPage() {
 
             while (hasMore) {
                 const result = await pb.collection(config.collection).getList<PageRecord>(page, 500, {
-                    sort: 'sub_tag,tier',
+                    sort: (sortDirection === 'desc' ? '-' : '') + sortField,
                     filter: filterString,
                 });
 
@@ -241,28 +243,6 @@ export default function AdInsightPage() {
             }}>
                 {/* Left: Platform Switcher */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-overlay)', padding: '0.4rem', borderRadius: '12px' }}>
-                        {(['klook', 'traveloka'] as const).map(id => (
-                            <button
-                                key={id}
-                                onClick={() => handlePlatformSwitch(id)}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '8px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    background: platformId === id ? 'hsl(var(--primary))' : 'transparent',
-                                    color: platformId === id ? '#fff' : 'var(--text-dim)'
-                                }}
-                            >
-                                {id.toUpperCase()}
-                            </button>
-                        ))}
-                    </div>
-
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
                             width: '36px',

@@ -15,8 +15,8 @@ export function usePlatformAnalytics({
     collection,
     perPage,
     initialFilters = {},
-    initialSortField = 'tier',
-    initialSortDirection = 'asc'
+    initialSortField = 'id',
+    initialSortDirection = 'desc'
 }: UsePlatformAnalyticsProps) {
     const [records, setRecords] = useState<PageRecord[]>([]);
     const [totalCount, setTotalCount] = useState(0);
