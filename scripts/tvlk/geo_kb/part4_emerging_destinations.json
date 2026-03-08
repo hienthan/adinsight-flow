@@ -1,0 +1,232 @@
+{
+  "labuan-bajo": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "bajo"
+    ],
+    "parent": "flores"
+  },
+  "raja-ampat": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "papua"
+  },
+  "alor": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "alor-island"
+    ],
+    "parent": "flores"
+  },
+  "pantar": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "pantar-island"
+    ],
+    "parent": "flores"
+  },
+  "rote": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "rote-island"
+    ],
+    "parent": "flores"
+  },
+  "sabu": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "sabu-island"
+    ],
+    "parent": "flores"
+  },
+  "sumbawa": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "sumbawa-island"
+    ],
+    "parent": "west-nusa-tenggara"
+  },
+  "moyo": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "moyo-island"
+    ],
+    "parent": "sumbawa"
+  },
+  "banda-neira": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "banda-islands"
+    ],
+    "parent": "maluku"
+  },
+  "kei-islands": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "kei"
+    ],
+    "parent": "maluku"
+  },
+  "tanimbar": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "tanimbar-islands"
+    ],
+    "parent": "maluku"
+  },
+  "seram": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "seram-island"
+    ],
+    "parent": "maluku"
+  },
+  "halmahera": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "halmahera-island"
+    ],
+    "parent": "north-maluku"
+  },
+  "morotai": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "morotai-island"
+    ],
+    "parent": "north-maluku"
+  },
+  "labengki": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "labengki-island"
+    ],
+    "parent": "sulawesi"
+  },
+  "sombori": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "sombori-islands"
+    ],
+    "parent": "sulawesi"
+  },
+  "banggai": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "banggai-islands"
+    ],
+    "parent": "sulawesi"
+  },
+  "togian": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "togian-islands"
+    ],
+    "parent": "sulawesi"
+  },
+  "selayar": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "selayar-islands"
+    ],
+    "parent": "sulawesi"
+  },
+  "mentawai": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "mentawai-islands"
+    ],
+    "parent": "sumatra"
+  },
+  "niase": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "nias-island"
+    ],
+    "parent": "sumatra"
+  },
+  "simeulue": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "simeulue-island"
+    ],
+    "parent": "sumatra"
+  },
+  "derawan": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "derawan-islands"
+    ],
+    "parent": "kalimantan"
+  },
+  "maratua": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "maratua-island"
+    ],
+    "parent": "derawan"
+  },
+  "kakaban": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "kakaban-island"
+    ],
+    "parent": "derawan"
+  },
+  "waigeo": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "waigeo-island"
+    ],
+    "parent": "raja-ampat"
+  },
+  "misool": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "misool-island"
+    ],
+    "parent": "raja-ampat"
+  },
+  "salawati": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "salawati-island"
+    ],
+    "parent": "raja-ampat"
+  },
+  "batanta": {
+    "type": "emerging_destination",
+    "geo_score": 7,
+    "aliases": [
+      "batanta-island"
+    ],
+    "parent": "raja-ampat"
+  }
+}

@@ -597,17 +597,20 @@ h3.hero-section-title {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(8px) translateZ(0);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) translateZ(0);
   }
 }
 
 .animate-fade {
   animation: fadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  /* NOTE: Do NOT add transform: translateZ(0) here — it would create a permanent GPU
+   * compositor layer on every rendered element, saturating Chrome's layer budget and
+   * causing the macOS WebKit hit-testing freeze/cursor-lock bug. */
 }
 
 /* Rich text editor base */

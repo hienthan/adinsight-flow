@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Trash2, Calendar, CheckCircle, AlertCircle, Send } from 'lucide-react';
+import { CampaignReminder } from '../../types/campaign';
 import { formatDate } from '../../lib/utils';
 
 interface ReminderItemProps {
-    reminder: any;
+    reminder: CampaignReminder;
     onToggle?: (id: string, status: string, note?: string) => void;
     onDelete?: (id: string) => void;
     showCampaignName?: boolean;
@@ -49,6 +50,7 @@ export default function ReminderItem({
                 opacity: reminder.status === 'completed' ? 0.8 : 1,
                 fontSize: '0.7rem',
                 boxShadow: 'var(--shadow-sm)',
+                transform: 'translateZ(0)', // GPU Layer Promotion to prevent flicker
             }}
         >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
@@ -85,7 +87,7 @@ export default function ReminderItem({
                 <div style={{ flex: 1, minWidth: 0 }}>
                     {showCampaignName && reminder.expand?.campaign && (
                         <div
-                            onClick={() => onCampaignClick?.(reminder.campaign)}
+                            onClick={() => onCampaignClick?.(reminder.campaign || '')}
                             style={{
                                 fontWeight: 800,
                                 color: platformColor || 'hsl(var(--primary))',
@@ -134,9 +136,11 @@ export default function ReminderItem({
                     {isCompleting && (
                         <div className="animate-fade" style={{ marginTop: '0.5rem', display: 'flex', gap: '0.4rem' }}>
                             <input
+                                id={`note-input-${reminder.id}`}
                                 autoFocus
                                 className="hero-input"
                                 placeholder="Add notes..."
+                                aria-label="Completion notes"
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
                                 style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem', height: 'auto' }}
@@ -150,6 +154,7 @@ export default function ReminderItem({
                             <button
                                 className="hero-btn hero-btn-primary"
                                 style={{ padding: '0.2rem 0.6rem', height: 'auto' }}
+                                aria-label="Send notes"
                                 onClick={() => {
                                     onToggle?.(reminder.id, 'completed', note);
                                     setIsCompleting(false);

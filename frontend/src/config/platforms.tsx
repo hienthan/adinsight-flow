@@ -103,9 +103,15 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
             {
                 id: 'dsa_campaign', label: 'Campaign', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
-                    { label: 'Discovery_Broad', value: 'Discovery_Broad' },
-                    { label: 'Discovery_Exact', value: 'Discovery_Exact' },
-                    { label: 'Discovery_Phrase', value: 'Discovery_Phrase' }
+                    { label: 'Transit Hubs', value: 'TVLK_ID_Transit_Hubs' },
+                    { label: 'Leisure Hotspots', value: 'TVLK_ID_Leisure_Hotspots' },
+                    { label: 'Cultural/Family', value: 'TVLK_ID_Cultural_Family' },
+                    { label: 'Shopping/Business', value: 'TVLK_ID_Shopping_Business' },
+                    { label: 'General Provinces', value: 'TVLK_ID_General_Provinces' },
+                    { label: 'CatchAll No Geo', value: 'TVLK_ID_CatchAll_NoGeo' },
+                    { label: 'General DSA', value: 'TVLK_ID_General_DSA' },
+                    { label: 'Exclude System', value: 'TVLK_ID_Exclude_System' },
+                    { label: 'Exclude Low Perf', value: 'TVLK_ID_Exclude_LowPerformance' }
                 ]
             },
             {

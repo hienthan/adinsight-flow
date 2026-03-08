@@ -1,0 +1,202 @@
+{
+  "pura-uluwatu": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "uluwatu-temple"
+    ],
+    "parent": "bali"
+  },
+  "pura-tirta-empul": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "tirta-empul-temple"
+    ],
+    "parent": "bali"
+  },
+  "pura-besakih": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "besakih-temple"
+    ],
+    "parent": "bali"
+  },
+  "pura-tanah-lot": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "tanah-lot-temple"
+    ],
+    "parent": "bali"
+  },
+  "pura-goa-gajah": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "goa-gajah-temple"
+    ],
+    "parent": "bali"
+  },
+  "masjid-istiqlal": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "istiqlal-mosque"
+    ],
+    "parent": "jakarta"
+  },
+  "masjid-agung-demak": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "demak-grand-mosque"
+    ],
+    "parent": "central-java"
+  },
+  "masjid-agung-banten": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "banten-grand-mosque"
+    ],
+    "parent": "banten"
+  },
+  "masjid-raya-bandung": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "bandung-grand-mosque"
+    ],
+    "parent": "bandung"
+  },
+  "vihara-dharma-bhakti": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "jin-de-yuan-temple"
+    ],
+    "parent": "jakarta"
+  },
+  "gereja-katedral-jakarta": {
+    "type": "spiritual_root",
+    "geo_score": 6,
+    "aliases": [
+      "jakarta-cathedral"
+    ],
+    "parent": "jakarta"
+  },
+  "malioboro": {
+    "type": "commercial_root",
+    "geo_score": 6,
+    "aliases": [
+      "malioboro-street"
+    ],
+    "parent": "yogyakarta"
+  },
+  "tanah-abang-market": {
+    "type": "commercial_root",
+    "geo_score": 6,
+    "aliases": [
+      "tanah-abang"
+    ],
+    "parent": "jakarta"
+  },
+  "glodok": {
+    "type": "commercial_root",
+    "geo_score": 6,
+    "aliases": [
+      "glodok-chinatown"
+    ],
+    "parent": "jakarta"
+  },
+  "senayan": {
+    "type": "commercial_root",
+    "geo_score": 6,
+    "aliases": [
+      "senayan-shopping"
+    ],
+    "parent": "jakarta"
+  },
+  "thrinity-market": {
+    "type": "commercial_root",
+    "geo_score": 6,
+    "aliases": [
+      "pasar-trinity"
+    ],
+    "parent": "surabaya"
+  },
+  "pasar-baru": {
+    "type": "commercial_root",
+    "geo_score": 6,
+    "aliases": [
+      "pasar-baru-bandung"
+    ],
+    "parent": "bandung"
+  },
+  "bencoolen-street": {
+    "type": "commercial_root",
+    "geo_score": 6,
+    "aliases": [
+      "jalan-bencoolen"
+    ],
+    "parent": "bengkulu"
+  },
+  "ampera-bridge": {
+    "type": "iconic_root",
+    "geo_score": 6,
+    "aliases": [
+      "jembatan-ampera"
+    ],
+    "parent": "palembang"
+  },
+  "suramadu-bridge": {
+    "type": "iconic_root",
+    "geo_score": 6,
+    "aliases": [
+      "jembatan-suramadu"
+    ],
+    "parent": "surabaya"
+  },
+  "bundaran-hi": {
+    "type": "iconic_root",
+    "geo_score": 6,
+    "aliases": [
+      "hotel-indonesia-roundabout"
+    ],
+    "parent": "jakarta"
+  },
+  "monas": {
+    "type": "iconic_root",
+    "geo_score": 6,
+    "aliases": [
+      "national-monument-jakarta"
+    ],
+    "parent": "jakarta"
+  },
+  "tugu-yogyakarta": {
+    "type": "iconic_root",
+    "geo_score": 6,
+    "aliases": [
+      "yogyakarta-monument"
+    ],
+    "parent": "yogyakarta"
+  },
+  "alun-alun-bandung": {
+    "type": "iconic_root",
+    "geo_score": 6,
+    "aliases": [
+      "bandung-square"
+    ],
+    "parent": "bandung"
+  },
+  "alun-alun-kidul": {
+    "type": "iconic_root",
+    "geo_score": 6,
+    "aliases": [
+      "south-square-yogyakarta"
+    ],
+    "parent": "yogyakarta"
+  }
+}

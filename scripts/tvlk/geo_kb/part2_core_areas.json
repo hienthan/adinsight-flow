@@ -1,0 +1,185 @@
+{
+  "version": "1.0",
+  "section": "core_areas",
+
+  "entities": {
+
+    "bali": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "indonesia",
+      "requires_context": false
+    },
+
+    "jakarta": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "indonesia",
+      "requires_context": false
+    },
+
+    "yogyakarta": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": ["jogja"],
+      "parent": "indonesia",
+      "requires_context": false
+    },
+
+    "bandung": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "indonesia",
+      "requires_context": false
+    },
+
+    "lombok": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "indonesia",
+      "requires_context": false
+    },
+
+    "surabaya": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "indonesia",
+      "requires_context": false
+    },
+
+    "medan": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "indonesia",
+      "requires_context": false
+    },
+
+    "batam": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "indonesia",
+      "requires_context": false
+    },
+
+    "labuan-bajo": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "flores",
+      "requires_context": false
+    },
+
+    "raja-ampat": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "papua",
+      "requires_context": false
+    },
+
+
+    "denpasar": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "bali",
+      "requires_context": false
+    },
+
+    "malang": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "east-java",
+      "requires_context": true
+    },
+
+    "solo": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": ["surakarta"],
+      "parent": "central-java",
+      "requires_context": true
+    },
+
+    "banyuwangi": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "east-java",
+      "requires_context": false
+    },
+
+    "makassar": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "south-sulawesi",
+      "requires_context": false
+    },
+
+    "balikpapan": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "east-kalimantan",
+      "requires_context": false
+    },
+
+    "manado": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "north-sulawesi",
+      "requires_context": false
+    },
+
+    "padang": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "west-sumatra",
+      "requires_context": true
+    },
+
+    "bogor": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "west-java",
+      "requires_context": false
+    },
+
+    "depok": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "west-java",
+      "requires_context": false
+    },
+
+    "tangerang": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "banten",
+      "requires_context": false
+    },
+
+    "bekasi": {
+      "type": "core_area",
+      "geo_score": 10,
+      "aliases": [],
+      "parent": "west-java",
+      "requires_context": false
+    }
+
+  }
+}

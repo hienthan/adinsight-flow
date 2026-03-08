@@ -1,0 +1,235 @@
+{
+  "version": "1.0",
+  "section": "root_infrastructure",
+
+  "entities": {
+
+    "soekarno-hatta": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["soetta", "cgk"],
+      "parent": "jakarta",
+      "requires_context": false
+    },
+
+    "halim": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["halim-perdanakusuma"],
+      "parent": "jakarta",
+      "requires_context": false
+    },
+
+    "ngurah-rai": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["dps"],
+      "parent": "bali",
+      "requires_context": false
+    },
+
+    "yia": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["kulon-progo-airport"],
+      "parent": "yogyakarta",
+      "requires_context": false
+    },
+
+    "juanda": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["sub"],
+      "parent": "surabaya",
+      "requires_context": false
+    },
+
+    "kualanamu": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["kno"],
+      "parent": "medan",
+      "requires_context": false
+    },
+
+    "komodo-airport": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["lbj"],
+      "parent": "labuan-bajo",
+      "requires_context": false
+    },
+
+    "lombok-airport": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["lop"],
+      "parent": "lombok",
+      "requires_context": false
+    },
+
+
+    "manggarai": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": [],
+      "parent": "jakarta",
+      "requires_context": false
+    },
+
+    "gambir": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": [],
+      "parent": "jakarta",
+      "requires_context": false
+    },
+
+    "pasar-senen": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": [],
+      "parent": "jakarta",
+      "requires_context": false
+    },
+
+    "yogyakarta-station": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["tugu-station"],
+      "parent": "yogyakarta",
+      "requires_context": false
+    },
+
+    "solo-balapan": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": [],
+      "parent": "solo",
+      "requires_context": false
+    },
+
+    "bandung-station": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["bandung"],
+      "parent": "bandung",
+      "requires_context": false
+    },
+
+
+    "merak": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["pelabuhan-merak"],
+      "parent": "banten",
+      "requires_context": false
+    },
+
+    "bakauheni": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["pelabuhan-bakauheni"],
+      "parent": "lampung",
+      "requires_context": false
+    },
+
+    "ketapang": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["pelabuhan-ketapang"],
+      "parent": "banyuwangi",
+      "requires_context": false
+    },
+
+    "gilimanuk": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["pelabuhan-gilimanuk"],
+      "parent": "bali",
+      "requires_context": false
+    },
+
+    "padangbai": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["padang-bai"],
+      "parent": "bali",
+      "requires_context": false
+    },
+
+    "benoa": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["pelabuhan-benoa"],
+      "parent": "bali",
+      "requires_context": false
+    },
+
+    "sanur-harbor": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["sanur-port"],
+      "parent": "bali",
+      "requires_context": false
+    },
+
+    "batam-center": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": ["batam-centre", "batamcenter"],
+      "parent": "batam",
+      "requires_context": false
+    },
+
+    "sekupang": {
+      "type": "transport_hub",
+      "geo_score": 8,
+      "aliases": [],
+      "parent": "batam",
+      "requires_context": false
+    },
+
+
+    "whoosh": {
+      "type": "transport_system",
+      "geo_score": 8,
+      "aliases": ["kereta-cepat-jakarta-bandung"],
+      "parent": "jakarta",
+      "requires_context": false
+    },
+
+    "krl": {
+      "type": "transport_system",
+      "geo_score": 8,
+      "aliases": ["commuter-line"],
+      "parent": "jakarta",
+      "requires_context": false
+    },
+
+    "mrt-jakarta": {
+      "type": "transport_system",
+      "geo_score": 8,
+      "aliases": ["mrt"],
+      "parent": "jakarta",
+      "requires_context": false
+    },
+
+    "lrt-jakarta": {
+      "type": "transport_system",
+      "geo_score": 8,
+      "aliases": ["lrt"],
+      "parent": "jakarta",
+      "requires_context": false
+    },
+
+    "kereta-bandara": {
+      "type": "transport_system",
+      "geo_score": 8,
+      "aliases": ["airport-train"],
+      "parent": null,
+      "requires_context": false
+    }
+
+  }
+}

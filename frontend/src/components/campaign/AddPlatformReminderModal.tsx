@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Bell, Save, AlertTriangle } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
@@ -87,16 +88,15 @@ export default function AddPlatformReminderModal({ platformId, isOpen, onClose }
 
     if (!isOpen) return null;
 
-    return (
+    const modalContent = (
         <div style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(2, 6, 23, 0.5)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
+            background: 'rgba(2, 6, 23, 0.75)',
+            transform: 'translateZ(0)', // GPU Composite fix
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -122,7 +122,9 @@ export default function AddPlatformReminderModal({ platformId, isOpen, onClose }
                     overflow: 'hidden',
                     background: 'var(--bg-content)',
                     borderRadius: '2rem',
-                    boxShadow: 'var(--shadow-large)'
+                    boxShadow: 'var(--shadow-large)',
+                    pointerEvents: 'auto',
+                    transform: 'translateZ(0)'
                 }}
                 onClick={e => e.stopPropagation()}
             >
@@ -254,4 +256,6 @@ export default function AddPlatformReminderModal({ platformId, isOpen, onClose }
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 }

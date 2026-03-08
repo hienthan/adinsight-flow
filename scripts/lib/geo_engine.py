@@ -221,7 +221,17 @@ class GeoEngine:
                 except Exception as e:
                     print(f"⚠️ Warning: Failed to load KB {filename}: {e}")
 
-        # 2. City Inventory (Multi-word support)
+        # 2A. Structured KB for Affiliate Strategy
+        self.structured_kb = {}
+        try:
+            structured_kb_path = os.path.join(lib_dir, '..', 'tvlk', 'lib', 'indo_geo_master.json')
+            if os.path.exists(structured_kb_path):
+                with open(structured_kb_path, 'r', encoding='utf-8') as f:
+                    self.structured_kb = json.load(f)
+        except Exception as e:
+            print(f"⚠️ Warning: Failed to load structured KB: {e}")
+
+        # 2B. City Inventory (Multi-word support)
         self.city_lookup = {}
         if self.gnc:
             for uid, city in self.gnc.get_cities().items():
@@ -382,5 +392,38 @@ class GeoEngine:
                 pass  # Silently fail and return Unknown
 
         return "Unknown", "Unknown"
+
+    def detect_geo_structured(self, slug, title_en=""):
+        slug_lower = slug.lower()
+        slug_clean = slug_lower.replace('-', ' ').replace('_', ' ')
+        slug_hyphens = slug_clean.replace(' ', '-')
+        padded_slug = f"-{slug_hyphens}-"
+        
+        # 1. Check Structured KB first (Highest Priority for DSA)
+        # We sort keys by length descending to match longest phrases first (e.g. "nusa-penida" before "nusa")
+        sorted_keys = sorted(self.structured_kb.keys(), key=len, reverse=True)
+        for key in sorted_keys:
+            padded_key = f"-{key}-"
+            if padded_key in padded_slug:
+                data = self.structured_kb[key]
+                return {
+                    "country": (data.get("country") or "Unknown").title(),
+                    "city": (data.get("city") or "Unknown").title(),
+                    "sub_city": (data.get("sub_city") or "").title(),
+                    "province": (data.get("province") or "").title(),
+                    "geo_category": data.get("category", ""),
+                    "display_name": data.get("display_name", "")
+                }
+                
+        # 2. Fallback to classic detection
+        country, city = self.detect_geo(slug, title_en)
+        return {
+            "country": country,
+            "city": city,
+            "sub_city": "",
+            "province": "",
+            "geo_category": "city" if city != "Unknown" else "", # Default generic category if city found
+            "display_name": ""
+        }
 
 engine = GeoEngine()

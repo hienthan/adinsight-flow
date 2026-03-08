@@ -16,7 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib'))
 sys.path.append(os.path.join(os.path.dirname(__file__), 'lib'))                  # ./lib for tvlk specific
 
 from geo_engine import engine as geo_engine
-from tvlk_tier_classifier import classify_tvlk_url
+from tvlk_affiliate_scorer import evaluate_url
 
 # --- Constants ---
 TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single"
@@ -139,40 +139,60 @@ def translate_to_en(text: str, source_lang: str = "id") -> str:
         pass
     return ""
 
-def classify_content(title_en: str, slug: str) -> Dict[str, str]:
+def get_taxonomy(slug: str, title_en: str, geo_category: str) -> Dict[str, str]:
     """
-    Classify based on tvlk_tier_classifier tailored for Traveloka Indo.
+    Determine content_type and sub_tag using a mix of Geo category overrides and keyword spotting.
     """
-    # Use the new DSA-focused classifier which returns tier, content_type, funnel, sub_tag
-    res = classify_tvlk_url(slug)
-    
-    # Keyword Overrides (still useful for some specific corner cases not caught by tier regex)
-    # E.g., if it's a guide/itinerary that somehow survived the junk filter
-    title_lower = title_en.lower()
     slug_lower = slug.lower()
+    title_lower = title_en.lower()
     
-    keywords = {
-        "itinerary": ("travel_guide", "planning", "itinerary"),
-        "visa": ("travel_document", "planning", "visa"),
-        "paspor": ("travel_document", "planning", "visa"),
-        "bus": ("transport_guide", "planning", "transport"),
-        "train": ("transport_guide", "planning", "transport"),
-        "mrt": ("transport_guide", "readiness", "transport"),
-        "lrt": ("transport_guide", "readiness", "transport"),
-        "kuliner": ("food_lifestyle", "awareness", "food"),
-        "makanan": ("food_lifestyle", "awareness", "food"),
-        "cafe": ("food_lifestyle", "awareness", "food"),
-    }
-
-    for kw, (ctype, funnel, stag) in keywords.items():
-        # Override only if our base result was Tier 3 (Discovery/POI)
-        if (kw in slug_lower or kw in title_lower) and res["tier"] == "3":
-            res["content_type"] = ctype
-            res["funnel_stage"] = funnel
-            res["sub_tag"] = stag
-            break
-
-    return res
+    content_type = "poi_landmark"
+    sub_tag = "general"
+    
+    # Geo category overrides
+    if geo_category == 'airport':
+        content_type = "airport_transfer_or_service"
+    elif geo_category == 'station':
+        content_type = "train_station"
+    elif geo_category == 'seaport':
+        content_type = "seaport"
+    elif geo_category == 'landmark':
+        content_type = "poi_landmark"
+    elif geo_category == 'resort_area':
+        content_type = "resort"
+    elif geo_category == 'shopping_district':
+        content_type = "shopping"
+        
+    # Keyword overrides
+    if "itinerary" in slug_lower or "itinerary" in title_lower:
+        content_type = "travel_guide"
+        sub_tag = "itinerary"
+    elif "visa" in slug_lower or "paspor" in slug_lower:
+        content_type = "travel_document"
+        sub_tag = "visa"
+    elif "bus" in title_lower or "-trp" in slug_lower[-5:]:
+        content_type = "transport_guide"
+        sub_tag = "bus"
+    elif "train" in title_lower or "kereta" in slug_lower:
+        content_type = "transport_guide"
+        sub_tag = "train"
+    elif "mrt" in slug_lower or "lrt" in slug_lower:
+        content_type = "transport_guide"
+        sub_tag = "local_transit"
+    elif "kuliner" in slug_lower or "makanan" in slug_lower or "cafe" in slug_lower:
+        content_type = "food_lifestyle"
+        sub_tag = "food"
+    elif "spa" in slug_lower or "massage" in slug_lower:
+        content_type = "beauty_spa"
+        sub_tag = "spa"
+    elif "tour" in slug_lower or "-ta" in slug_lower[-4:]:
+        content_type = "tour_activity"
+        sub_tag = "tour"
+    elif "hotel" in slug_lower or "-acc" in slug_lower[-5:]:
+        content_type = "accommodation"
+        sub_tag = "hotel"
+        
+    return {"content_type": content_type, "sub_tag": sub_tag}
 
 def is_junk_url(slug: str, title_en: str, detected_city: str = "", detected_country: str = "") -> Tuple[bool, bool]:
     """
@@ -250,49 +270,58 @@ def process_url(url: str, platform_id: str) -> Optional[Dict]:
                     slug_for_translation = slug[:-len(suffix)]
 
         # Translation
-        # logic from 01_TVLK_PAGES.md: if slug is enough, use it for title
         title_en = translate_to_en(slug_for_translation.replace('-', ' '))
         
         # Geo Detection
-        country, city = geo_engine.detect_geo(slug, title_en)
+        geo_data = geo_engine.detect_geo_structured(slug, title_en)
         
-        # Classification
-        taxo = classify_content(title_en, raw_slug)
+        # Classification & Math
+        taxo = get_taxonomy(raw_slug, title_en, geo_data.get('geo_category', ''))
+        scores = evaluate_url(url, raw_slug, geo_data)
         
         # Check Junk Content FIRST before taxonomy assignment
         is_active = True
-        is_junk, is_protected = is_junk_url(raw_slug, title_en, city, country)
+        is_junk, is_protected = is_junk_url(raw_slug, title_en, geo_data.get('city', ''), geo_data.get('country', ''))
         
         if is_junk:
             is_active = False
-            # We don't overwrite content_type or sub_tag anymore, so it's easier to audit
-            # We just push it to tier 5 to hide it from DSA campaigns
-            taxo["tier"] = "5"
+            scores["affiliate_tier"] = "excluded"
+            scores["dsa_campaign"] = "Exclude_System"
         elif is_protected:
-            # This is TOFU content protected by Allowlist - Push to Tier 4
-            taxo["tier"] = "4"
-            taxo["funnel_stage"] = "awareness"
+            # Protected TOFU content -> Push to A3/Cookie Dropping if not already high score
+            if scores["affiliate_score"] < 2.0:
+                scores["affiliate_tier"] = "a3"
+                scores["dsa_campaign"] = "Discovery_Broad"
+                scores["affiliate_score"] = 2.0
             taxo["content_type"] = "travel_guide"
             taxo["sub_tag"] = "tips_and_tricks"
-
 
         return {
             "platform": platform_id,
             "url": url,
             "url_suffix": suffix,
             "slug": slug,
-            "slug_en": "", # We might not need separate slug_en for TVLK as per notes
+            "slug_en": "", 
             "title_en": title_en,
-            "city": city,
-            "country": country,
+            "city": geo_data.get('city', ''),
+            "sub_city": geo_data.get('sub_city', ''),
+            "province": geo_data.get('province', ''),
+            "country": geo_data.get('country', ''),
+            "geo_category": geo_data.get('geo_category', ''),
+            "display_name": geo_data.get('display_name', ''),
             "sitemap_tag": SITEMAP_TAG,
             "content_type": taxo["content_type"],
-            "funnel_stage": taxo["funnel_stage"],
             "sub_tag": taxo["sub_tag"],
             "canonical_id": canonical_id,
             "language": "id-id",
             "is_active": is_active,
-            "tier": taxo["tier"],
+            "affiliate_tier": scores["affiliate_tier"],
+            "cpc_risk_score": scores["cpc_risk_score"],
+            "cookie_score": scores["cookie_score"],
+            "intent_score": scores["intent_score"],
+            "affiliate_score": scores["affiliate_score"],
+            "time_sensitive": scores["time_sensitive"],
+            "dsa_campaign": scores["dsa_campaign"],
             "metadata": {
                 "raw_slug": raw_slug,
                 "processed_at": time.strftime("%Y-%m-%d %H:%M:%S")

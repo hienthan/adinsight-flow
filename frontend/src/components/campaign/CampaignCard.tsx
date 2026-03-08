@@ -150,7 +150,7 @@ export default function CampaignCard({
             style={{
                 position: 'relative',
                 transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                cursor: isPaused ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 padding: compactView ? '0.75rem' : '1.25rem',
@@ -161,13 +161,11 @@ export default function CampaignCard({
                 ...(reminderState !== 'none' && { boxShadow: 'var(--shadow-glass)' })
             }}
             onMouseEnter={(e) => {
-                if (isPaused) return;
                 e.currentTarget.style.transform = 'translateY(-3px)';
                 e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
                 e.currentTarget.style.borderColor = 'hsla(var(--primary) / 0.25)';
             }}
             onMouseLeave={(e) => {
-                if (isPaused) return;
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = reminderState !== 'none' ? 'var(--shadow-glass)' : 'var(--shadow-subtle)';
                 e.currentTarget.style.borderColor = reminderStyle.cardBorder;
@@ -282,7 +280,7 @@ export default function CampaignCard({
                                 e.stopPropagation();
                                 markReviewedMutation.mutate();
                             }}
-                            disabled={markReviewedMutation.isPending || isPaused}
+                            disabled={markReviewedMutation.isPending}
                             className="hero-btn-ghost"
                             style={{
                                 padding: compactView ? '0.15rem' : '0.2rem',

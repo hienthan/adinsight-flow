@@ -50,8 +50,10 @@ export function usePlatformAnalytics({
 
     useEffect(() => {
         setFilters(initialFilters);
+        setSortField(initialSortField);
+        setSortDirection(initialSortDirection);
         setCurrentPage(1);
-    }, [collection]); // Reset filters when platform/collection changes
+    }, [collection, initialSortField, initialSortDirection, JSON.stringify(initialFilters)]); // Reset filters when platform/collection changes
 
     useEffect(() => {
         setCurrentPage(1);

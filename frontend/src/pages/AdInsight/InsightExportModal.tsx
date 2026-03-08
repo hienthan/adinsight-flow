@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Download, X } from 'lucide-react';
 
 interface ExportField {
@@ -44,15 +45,15 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
 
     if (!isOpen) return null;
 
-    return (
+    const modalContent = (
         <div style={{
             position: 'fixed',
             top: 0,
             left: 0,
             width: '100vw',
             height: '100vh',
-            background: 'rgba(0, 0, 0, 0.25)',
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(0, 0, 0, 0.65)',
+            transform: 'translateZ(0)', // GPU Composite fix
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -72,7 +73,9 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                     display: 'flex',
                     flexDirection: 'column',
                     maxHeight: '85vh',
-                    position: 'relative'
+                    position: 'relative',
+                    pointerEvents: 'auto',
+                    transform: 'translateZ(0)'
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -240,4 +243,6 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 };

@@ -46,8 +46,6 @@ def test_pb_setup():
         resp = requests.get(f"{pb_url}/api/collections/{collection_name}", headers=headers, timeout=10)
         if resp.status_code == 404:
             print(f"❌ Collection '{collection_name}' NOT FOUND.")
-            print("   Please create it in PocketBase Admin UI with the following fields:")
-            print("   platform, url, url_suffix, slug, slug_en, title_en, city, country, sitemap_tag, content_type, language, tier, funnel_stage, sub_tag, metadata, is_active, canonical_id")
             return
         elif resp.status_code != 200:
             print(f"❌ Error accessing collection: {resp.status_code}")
@@ -63,20 +61,34 @@ def test_pb_setup():
     # 3. Verify Fields
     required_fields = [
         'platform', 'url', 'url_suffix', 'slug', 'slug_en', 'title_en', 
-        'city', 'country', 'sitemap_tag', 'content_type', 'language', 
-        'tier', 'funnel_stage', 'sub_tag', 'metadata', 'is_active', 'canonical_id'
+        'city', 'sub_city', 'province', 'country', 'geo_category', 'display_name',
+        'sitemap_tag', 'content_type', 'language', 'sub_tag', 'metadata', 
+        'is_active', 'canonical_id', 'affiliate_tier', 'cpc_risk_score',
+        'cookie_score', 'intent_score', 'affiliate_score', 'time_sensitive',
+        'dsa_campaign'
     ]
     
+    outdated_fields = ['tier', 'funnel_stage']
+
     missing = []
     for field in required_fields:
         if field not in existing_fields:
             missing.append(field)
     
+    still_present = []
+    for field in outdated_fields:
+        if field in existing_fields:
+            still_present.append(field)
+            
     if missing:
         print(f"❌ Missing fields in '{collection_name}': {missing}")
         print("   Please add these fields in the PocketBase Admin UI.")
+    elif still_present:
+        print(f"❌ OUTDATED fields still present in '{collection_name}': {still_present}")
+        print("   Please REMOVE these fields in the PocketBase Admin UI.")
     else:
         print(f"✅ All {len(required_fields)} required fields are present.")
+        print(f"✅ Outdated fields successfully removed.")
         print("\n--- ALL TESTS PASSED ---")
 
 if __name__ == "__main__":
