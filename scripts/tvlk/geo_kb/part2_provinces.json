@@ -8,20 +8,20 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "sumatera-utara": {
+  "north-sumatra": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "north-sumatra"
+      "sumatera-utara"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "sumatera-barat": {
+  "west-sumatra": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "west-sumatra"
+      "sumatera-barat"
     ],
     "parent": "indonesia",
     "requires_context": false
@@ -33,12 +33,12 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "kepulauan-riau": {
+  "riau-islands": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
       "kepri",
-      "riau-islands"
+      "kepulauan-riau"
     ],
     "parent": "indonesia",
     "requires_context": false
@@ -50,11 +50,11 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "sumatera-selatan": {
+  "south-sumatra": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "south-sumatra"
+      "sumatera-selatan"
     ],
     "parent": "indonesia",
     "requires_context": false
@@ -73,11 +73,11 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "kepulauan-bangka-belitung": {
+  "bangka-belitung": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "bangka-belitung"
+      "kepulauan-bangka-belitung"
     ],
     "parent": "indonesia",
     "requires_context": false
@@ -98,20 +98,20 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "jawa-barat": {
+  "west-java": {
     "type": "province",
     "geo_score": 10,
     "aliases": [
-      "west-java"
+      "jawa-barat"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "jawa-tengah": {
+  "central-java": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "central-java"
+      "jawa-tengah"
     ],
     "parent": "indonesia",
     "requires_context": false
@@ -126,11 +126,12 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "jawa-timur": {
+  "east-java": {
     "type": "province",
     "geo_score": 10,
     "aliases": [
-      "east-java"
+      "jawa-timur",
+      "jatim"
     ],
     "parent": "indonesia",
     "requires_context": false
@@ -142,7 +143,7 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "nusa-tenggara-barat": {
+  "west-nusa-tenggara": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
@@ -151,7 +152,7 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "nusa-tenggara-timur": {
+  "east-nusa-tenggara": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
@@ -160,56 +161,56 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "kalimantan-barat": {
+  "west-kalimantan": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "west-kalimantan"
+      "kalimantan-barat"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "kalimantan-tengah": {
+  "central-kalimantan": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "central-kalimantan"
+      "kalimantan-tengah"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "kalimantan-selatan": {
+  "south-kalimantan": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "south-kalimantan"
+      "kalimantan-selatan"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "kalimantan-timur": {
+  "east-kalimantan": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "east-kalimantan"
+      "kalimantan-timur"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "kalimantan-utara": {
+  "north-kalimantan": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "north-kalimantan"
+      "kalimantan-utara"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "sulawesi-utara": {
+  "north-sulawesi": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "north-sulawesi"
+      "sulawesi-utara"
     ],
     "parent": "indonesia",
     "requires_context": false
@@ -221,70 +222,71 @@
     "parent": "indonesia",
     "requires_context": false
   },
-  "sulawesi-tengah": {
+  "central-sulawesi": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "central-sulawesi"
+      "sulawesi-tengah"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "sulawesi-barat": {
+  "west-sulawesi": {
     "type": "province",
     "geo_score": 8,
     "aliases": [
-      "west-sulawesi"
+      "sulawesi-barat"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "sulawesi-selatan": {
+  "south-sulawesi": {
     "type": "province",
     "geo_score": 9,
     "aliases": [
-      "south-sulawesi"
+      "sulawesi-selatan",
+      "sulsel"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
-  "sulawesi-tenggara": {
+  "southeast-sulawesi": {
     "type": "province",
     "geo_score": 8,
     "aliases": [
-      "southeast-sulawesi"
+      "sulawesi-tenggara"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
   "maluku": {
-    "type": "province",
-    "geo_score": 8,
+    "type": "island",
+    "geo_score": 7,
     "aliases": [],
     "parent": "indonesia",
     "requires_context": false
   },
-  "maluku-utara": {
+  "north-maluku": {
     "type": "province",
     "geo_score": 8,
     "aliases": [
-      "north-maluku"
+      "maluku-utara"
     ],
     "parent": "indonesia",
     "requires_context": false
   },
   "papua": {
-    "type": "province",
-    "geo_score": 8,
+    "type": "island",
+    "geo_score": 7,
     "aliases": [],
     "parent": "indonesia",
     "requires_context": false
   },
-  "papua-barat": {
+  "west-papua": {
     "type": "province",
     "geo_score": 8,
     "aliases": [
-      "west-papua"
+      "papua-barat"
     ],
     "parent": "indonesia",
     "requires_context": false
@@ -321,6 +323,43 @@
     "geo_score": 8,
     "aliases": [
       "southwest-papua"
+    ],
+    "parent": "indonesia",
+    "requires_context": false
+  },
+  "java": {
+    "type": "island",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "indonesia",
+    "requires_context": false
+  },
+  "sumatra": {
+    "type": "island",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "indonesia",
+    "requires_context": false
+  },
+  "kalimantan": {
+    "type": "island",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "indonesia",
+    "requires_context": false
+  },
+  "sulawesi": {
+    "type": "island",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "indonesia",
+    "requires_context": false
+  },
+  "nusa-tenggara": {
+    "type": "island",
+    "geo_score": 7,
+    "aliases": [
+      "lesser-sunda"
     ],
     "parent": "indonesia",
     "requires_context": false

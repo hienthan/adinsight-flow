@@ -15,6 +15,29 @@ interface InsightDataTableProps {
     onSelectAll?: (ids: string[], isSelected: boolean) => void;
 }
 
+const formatLocationValue = (val: string | undefined, fullFormatting = false) => {
+    if (!val) return val || '';
+    let result = val.toLowerCase();
+
+    // 1. Shorthand replacement (always done)
+    result = result.replace(/daerah-istimewa-yogyakarta/g, 'DIY');
+
+    if (!fullFormatting) {
+        // For Campaign/Geo Entity, we just want the replacement if it occurs
+        return val.replace(/daerah-istimewa-yogyakarta/gi, 'DIY');
+    }
+
+    // 2. For Location specifically: Title Case and remove dashes
+    return result
+        .split(/[-\s]+/)
+        .map(part => {
+            if (part === 'diy') return 'DIY';
+            if (part === 'jakarta') return 'Jakarta';
+            return part.charAt(0).toUpperCase() + part.slice(1);
+        })
+        .join(' ');
+};
+
 export const InsightDataTable: React.FC<InsightDataTableProps> = ({
     records,
     columns,
@@ -156,11 +179,13 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                         let displayText = '';
 
                                         if (isTraveloka) {
-                                            const parts = [record.city, record.province].filter(p => p && p.toLowerCase() !== 'unknown');
+                                            const parts = [record.city, record.province]
+                                                .filter(p => p && p.toLowerCase() !== 'unknown')
+                                                .map(p => formatLocationValue(p, true));
                                             displayText = parts.join(' / ');
                                             if (!displayText) displayText = '-';
                                         } else {
-                                            displayText = `${record.city}, ${record.country}`;
+                                            displayText = `${formatLocationValue(record.city, true)}, ${record.country}`;
                                         }
 
                                         return (
@@ -174,8 +199,9 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                             </td>
                                         );
                                     }
-                                    if (col.key === 'dsa_campaign') {
+                                    if (col.key === 'dsa_campaign' || col.key === 'geo_entity') {
                                         const val = String(record[col.key as keyof PageRecord] || '');
+                                        const formattedVal = formatLocationValue(val, false);
                                         return (
                                             <td key={idx} style={{ width: col.width }}>
                                                 <span style={{
@@ -186,8 +212,8 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                                     whiteSpace: 'nowrap',
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis'
-                                                }} title={val}>
-                                                    {val || '-'}
+                                                }} title={formattedVal}>
+                                                    {formattedVal || '-'}
                                                 </span>
                                             </td>
                                         );

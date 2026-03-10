@@ -155,7 +155,7 @@
     "aliases": [
       "mentawai-islands"
     ],
-    "parent": "sumatra"
+    "parent": "west-sumatra"
   },
   "niase": {
     "type": "emerging_destination",
@@ -163,7 +163,7 @@
     "aliases": [
       "nias-island"
     ],
-    "parent": "sumatra"
+    "parent": "west-sumatra"
   },
   "simeulue": {
     "type": "emerging_destination",
@@ -171,15 +171,16 @@
     "aliases": [
       "simeulue-island"
     ],
-    "parent": "sumatra"
+    "parent": "west-sumatra"
   },
-  "derawan": {
+  "east-kalimantan": {
     "type": "emerging_destination",
     "geo_score": 7,
     "aliases": [
-      "derawan-islands"
+      "derawan-islands",
+      "derawan"
     ],
-    "parent": "kalimantan"
+    "parent": "indonesia"
   },
   "maratua": {
     "type": "emerging_destination",
@@ -187,7 +188,7 @@
     "aliases": [
       "maratua-island"
     ],
-    "parent": "derawan"
+    "parent": "east-kalimantan"
   },
   "kakaban": {
     "type": "emerging_destination",
@@ -195,7 +196,7 @@
     "aliases": [
       "kakaban-island"
     ],
-    "parent": "derawan"
+    "parent": "east-kalimantan"
   },
   "waigeo": {
     "type": "emerging_destination",

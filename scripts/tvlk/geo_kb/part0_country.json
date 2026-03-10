@@ -1,14 +1,14 @@
 {
-    "entities": {
-        "indonesia": {
-            "type": "country",
-            "geo_score": 10,
-            "aliases": [
-                "indo",
-                "id"
-            ],
-            "parent": null,
-            "requires_context": false
-        }
+  "entities": {
+    "indonesia": {
+      "type": "country",
+      "geo_score": 10,
+      "aliases": [
+        "indo",
+        "id"
+      ],
+      "parent": null,
+      "requires_context": false
     }
+  }
 }

@@ -185,13 +185,33 @@ class EntityDetector:
             infra_type = canonical_id
 
         # Walk up the parent chain
+        seen_parents = {canonical_id}
+        
         while current_entity and current_entity.get("parent"):
             parent_id = current_entity["parent"]
-            if parent_id not in self.entities:
-                # Missing parent link in dataset, stop
+            
+            if parent_id in seen_parents:
+                # Infinite loop protection
                 break
+            seen_parents.add(parent_id)
+            
+            if parent_id in self.entities:
+                # Exact canonical key match
+                parent_entity = self.entities[parent_id]
+            else:
+                # Fallback: check if parent_id is an alias (safeguard for manual JSON edits)
+                found_by_alias = False
+                for k, v in self.entities.items():
+                    if parent_id in v.get("aliases", []):
+                        parent_id = k
+                        parent_entity = v
+                        found_by_alias = True
+                        break
                 
-            parent_entity = self.entities[parent_id]
+                if not found_by_alias:
+                    # Missing parent link in dataset
+                    break
+                    
             p_type = parent_entity.get("type")
             
             if p_type in ["city", "core_area", "regency", "sub_area"] and not city:

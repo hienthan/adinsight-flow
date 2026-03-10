@@ -201,7 +201,7 @@
       "jakarta-bandung-hsr",
       "whoosh-train"
     ],
-    "parent": "java"
+    "parent": "west-java"
   },
   "jakarta-mrt": {
     "type": "transport_system",
