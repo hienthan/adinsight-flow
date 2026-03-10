@@ -1,4 +1,6 @@
-import { Moon, Sun, Layout } from 'lucide-react';
+import { Moon, Sun, Layout, TrendingUp, Zap, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTrendCounts } from '../../hooks/useTrendCounts';
 
 interface HeaderProps {
     darkMode: boolean;
@@ -13,6 +15,8 @@ export default function Header({
     stickySidebarOpen,
     onToggleStickySidebar
 }: HeaderProps) {
+    const { active, preAlert, upcoming, loading } = useTrendCounts();
+
     return (
         <div className="header-wrapper">
             <header className="top-bar">
@@ -22,6 +26,87 @@ export default function Header({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <AnimatePresence>
+                        {!loading && (active > 0 || preAlert > 0 || upcoming > 0) && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginRight: '0.5rem', background: 'var(--bg-overlay)', padding: '0.35rem 0.75rem', borderRadius: '14px', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 0 12px rgba(0,0,0,0.02)' }}>
+                                {active > 0 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
+                                        title={`${active} Active Trends`}
+                                    >
+                                        <motion.div
+                                            animate={{
+                                                scale: [1, 1.15, 1],
+                                                opacity: [0.8, 1, 0.8]
+                                            }}
+                                            transition={{
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                ease: "easeInOut"
+                                            }}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
+                                        >
+                                            <TrendingUp size={14} style={{ color: '#10b981' }} />
+                                        </motion.div>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>{active}</span>
+                                    </motion.div>
+                                )}
+
+                                {active > 0 && (preAlert > 0 || upcoming > 0) && (
+                                    <div style={{ width: '1px', height: '12px', background: 'var(--border-subtle)' }} />
+                                )}
+
+                                {preAlert > 0 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
+                                        title={`${preAlert} Pre-alerts`}
+                                    >
+                                        <motion.div
+                                            animate={{
+                                                boxShadow: [
+                                                    "0 0 0px rgba(245, 158, 11, 0)",
+                                                    "0 0 8px rgba(245, 158, 11, 0.4)",
+                                                    "0 0 0px rgba(245, 158, 11, 0)"
+                                                ]
+                                            }}
+                                            transition={{
+                                                duration: 3,
+                                                repeat: Infinity,
+                                                ease: "easeInOut"
+                                            }}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
+                                        >
+                                            <Zap size={14} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                                        </motion.div>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>{preAlert}</span>
+                                    </motion.div>
+                                )}
+
+                                {preAlert > 0 && upcoming > 0 && (
+                                    <div style={{ width: '1px', height: '12px', background: 'var(--border-subtle)' }} />
+                                )}
+
+                                {upcoming > 0 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
+                                        title={`${upcoming} Upcoming Trends`}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }} >
+                                            <Calendar size={14} style={{ color: '#3b82f6' }} />
+                                        </div>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#3b82f6', fontVariantNumeric: 'tabular-nums' }}>{upcoming}</span>
+                                    </motion.div>
+                                )}
+                            </div>
+                        )}
+                    </AnimatePresence>
+
                     <button
                         onClick={onToggleStickySidebar}
                         className="theme-toggle"
