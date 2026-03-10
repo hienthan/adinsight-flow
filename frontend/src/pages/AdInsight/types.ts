@@ -40,4 +40,6 @@ export interface TrendSignal {
     updated: string;
 }
 
+export type Market = "HK" | "TW" | "ID" | "SG" | "MY" | "AU";
+export type Priority = "high" | "medium";
 export type SignalState = 'UPCOMING_PREALERT' | 'IN_PREALERT' | 'ACTIVE' | 'PEAK' | 'ENDED';

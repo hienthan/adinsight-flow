@@ -1,5 +1,26 @@
 import { TrendSignal, TrendType, SignalState } from './types';
 
+export function addDays(d: Date, days: number) {
+    const x = new Date(d);
+    x.setDate(x.getDate() + days);
+    return x;
+}
+
+export function startOfDay(d: Date) {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+}
+
+export function intersects(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
+    return aStart <= bEnd && aEnd >= bStart;
+}
+
+function parseLocalYYYYMMDD(dateStr: string): Date {
+    const [y, m, d] = dateStr.split("-").map((x) => parseInt(x, 10));
+    return new Date(y, m - 1, d);
+}
+
 export const getStateColor = (state: SignalState): "danger" | "success" | "warning" | "primary" | "default" => {
     switch (state) {
         case 'PEAK': return 'danger';        // ROSE (mapped to danger in HeroUI)
@@ -106,10 +127,34 @@ export const formatKeyDate = (state: SignalState, start: Date, end: Date, pre_al
     if (state === 'PEAK') return `Ends ${formatDate(end)}`;
     if (state === 'ACTIVE') return `Ends ${formatDate(end)}`;
     if (state === 'IN_PREALERT' || state === 'UPCOMING_PREALERT') {
-        // Calculate days remaining
         const diff = Math.ceil((pre_alert_date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
         if (diff > 0) return `Alert in ${diff}d`;
         return `Starts ${formatDate(start)}`;
     }
     return formatDate(start);
 };
+
+export function resolveSignalDates(signal: TrendSignal, today: Date, preAlertDays: number) {
+    if (signal.mode === "one_off") {
+        if (!signal.start_date || !signal.end_date) return null;
+        const start = parseLocalYYYYMMDD(signal.start_date);
+        const end = parseLocalYYYYMMDD(signal.end_date);
+        const preAlert = addDays(start, -preAlertDays);
+
+        const peakStart = signal.peak_start_date ? parseLocalYYYYMMDD(signal.peak_start_date) : undefined;
+        const peakEnd = signal.peak_end_date ? parseLocalYYYYMMDD(signal.peak_end_date) : undefined;
+
+        return { start, end, preAlert, peakStart, peakEnd };
+    }
+
+    if (!signal.start_mmdd || !signal.end_mmdd) return null;
+    const { start, end, peak_start, peak_end } = resolveRecurringWindow(
+        today,
+        signal.start_mmdd,
+        signal.end_mmdd,
+        signal.peak_start_mmdd,
+        signal.peak_end_mmdd
+    );
+    const preAlert = addDays(start, -preAlertDays);
+    return { start, end, preAlert, peakStart: peak_start, peakEnd: peak_end };
+}

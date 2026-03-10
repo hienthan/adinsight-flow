@@ -146,14 +146,27 @@ export const SignalRow: React.FC<SignalRowProps> = ({
 
     return (
         <div
-            className={`w-full group hero-card mb-2 transition-all duration-300 border border-(--border-subtle) ${expanded ? 'bg-(--bg-main) shadow-xl' : 'hover:border-primary/40 hover:shadow-lg'}`}
-            style={{ padding: 0, background: "var(--bg-content)", borderRadius: "12px", overflow: "hidden" }}
+            className={`w-full group hero-card transition-all duration-300 border border-(--border-subtle) ${expanded ? 'bg-(--bg-main) shadow-xl' : 'hover:border-primary/40 hover:shadow-lg'}`}
+            style={{ 
+                padding: 0, 
+                background: "var(--bg-content)", 
+                borderRadius: "12px", 
+                overflow: "hidden",
+                marginBottom: "16px", // Balanced separation
+                display: "block",
+                width: "100%"
+            }}
         >
             {/* SCAN ROW - 4 COLUMNS LAYOUT */}
             <button
                 type="button"
                 onClick={onToggleExpand}
-                className="w-full text-left focus:outline-none grid grid-cols-1 md:grid-cols-[1.6fr_1.2fr_1fr_1.2fr] gap-4 items-center min-h-[84px] px-6 py-2"
+                className="w-full text-left focus:outline-none grid grid-cols-1 md:grid-cols-[1.6fr_1.2fr_1fr_1.2fr] gap-4 items-center"
+                style={{
+                    padding: "12px 20px", // Balanced row padding
+                    minHeight: "64px",
+                    display: "grid"
+                }}
             >
                 {/* COL 1: Status & Title (keep) */}
                 <div className="flex items-center gap-5 min-w-0 flex-[1.2]">
@@ -264,15 +277,21 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                 </div>
             </button>
 
-            {/* EXPANDED AREA */}
+             {/* EXPANDED AREA */}
             {expanded && (
                 <div
                     className="border-t border-(--border-subtle) animate-in fade-in slide-in-from-top-1 duration-200"
-                    style={{ background: "var(--bg-main)/10" }}
+                    style={{ 
+                        background: "rgba(var(--bg-main), 0.05)",
+                        padding: "10px 14px", // Balanced Gutter
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "16px"
+                    }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="p-8 flex flex-col gap-6">
-                        <div className="space-y-3">
+                    <div className="flex flex-col gap-5">
+                        <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <h5 className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.25em] text-(--text-muted)">
                                     <Sparkles size={14} className="text-primary/50" />
@@ -280,25 +299,32 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                                 </h5>
                                 <Button isIconOnly size="sm" variant="light" color="primary" radius="lg" onPress={() => onOpenNotes(x.s.id, x.name, x.destLabel, x.s.notes)}>
                                     <Edit3 size={18} />
-                                </Button>
+                                 </Button>
                             </div>
-                            <div className="px-6">
-                                <p className="leading-relaxed font-bold text-[0.95rem] text-(--text-main) tracking-tight text-justify">
+                            <div style={{ paddingLeft: "26px" }}>
+                                <p className="leading-relaxed font-bold text-[0.85rem] text-(--text-main) tracking-tight text-left">
                                     {x.s.summary || "No summary recorded."}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="space-y-3 pt-6 border-t border-(--border-subtle)/30">
+                        <div className="space-y-2 pt-4 border-t border-(--border-subtle)/30">
                             <h5 className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.25em] text-(--text-muted)">
-                                <Info size={14} className="text-primary/50" />
+                                 <Info size={14} className="text-primary/50" />
                                 Strategy Notes
                             </h5>
-                            <div className="px-6">
-                                <div className="p-6 rounded-xl bg-(--bg-content) border border-(--border-subtle) shadow-sm min-h-[140px] relative overflow-hidden">
+                            <div style={{ paddingLeft: "26px" }}>
+                                <div 
+                                    className="rounded-xl border border-(--border-subtle) shadow-sm relative overflow-hidden"
+                                    style={{
+                                        background: "var(--bg-content)",
+                                        padding: "16px 20px",
+                                        minHeight: "80px"
+                                    }}
+                                >
                                     <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
                                     {x.s.notes ? (
-                                        <p className="text-[1rem] font-medium leading-relaxed text-(--text-dim) italic whitespace-pre-wrap pl-2">"{x.s.notes}"</p>
+                                        <p className="text-[0.9rem] font-medium leading-relaxed text-(--text-dim) italic whitespace-pre-wrap pl-2">"{x.s.notes}"</p>
                                     ) : (
                                         <p className="text-sm font-medium italic text-(--text-muted) opacity-50 pl-2">No additional strategy notes.</p>
                                     )}
@@ -306,12 +332,12 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                             </div>
                         </div>
 
-                        <div className="space-y-3 pt-6 border-t border-(--border-subtle)/30">
+                        <div className="space-y-2 pt-4 border-t border-(--border-subtle)/30">
                             <h5 className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.25em] text-(--text-muted)">
                                 <Tag size={14} className="text-primary/50" />
                                 Target Context
                             </h5>
-                            <div className="flex flex-wrap gap-2.5 px-6">
+                            <div className="flex flex-wrap gap-2.5" style={{ paddingLeft: "26px" }}>
                                 {Array.isArray(x.s.keywords) && x.s.keywords.length > 0 ? (
                                     x.s.keywords.map((kw: string) => (
                                         <div key={kw} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-(--border-subtle) bg-(--bg-content) text-[10px] font-bold text-(--text-main) shadow-sm">

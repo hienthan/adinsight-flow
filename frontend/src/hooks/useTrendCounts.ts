@@ -10,9 +10,11 @@ export const useTrendCounts = () => {
     useEffect(() => {
         const fetchCounts = async () => {
             try {
+                // PocketBase Best Practice: Fetch only necessary fields
                 const signals = await pb.collection('trend_signals').getFullList<TrendSignal>({
                     expand: 'trend_type',
-                    filter: 'status = "active"'
+                    filter: 'status = "active"',
+                    fields: 'id,status,mode,start_mmdd,end_mmdd,peak_start_mmdd,peak_end_mmdd,pre_alert_days,start_date,end_date,expand.trend_type.key,expand.trend_type.name'
                 });
 
                 const today = new Date();

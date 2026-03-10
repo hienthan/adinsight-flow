@@ -1,11 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { pb } from "../../lib/pocketbase";
-import {
-    useDisclosure
-} from "@heroui/react";
-import {
-    Search, Sparkles, TrendingUp, Calendar, Info
-} from "lucide-react";
+import { useDisclosure } from "@heroui/react";
+import { Search, Sparkles, TrendingUp, Calendar, Info } from "lucide-react";
 import { toast } from "sonner";
 
 // Import extracted components
@@ -13,187 +9,32 @@ import { SignalRow } from "./components/SignalRow";
 import { StrategyNotesModal } from "./components/StrategyNotesModal.tsx";
 import { SectionHeader, EmptyState, CompactEmptyState } from "./components/SectionUI";
 
-// --- Types ---
-type Market = "HK" | "TW" | "ID" | "SG" | "MY" | "AU";
-type Priority = "high" | "medium";
-type Mode = "recurring" | "one_off";
-
-type DestinationObj = { code: string; name: string };
-type Destination = string | DestinationObj;
-
-type TrendSignal = {
-    id: string;
-    key: string;
-    trend_type: string;
-    trend_type_name?: string;
-    source_markets: string[];
-    destinations: Destination[];
-    mode: Mode;
-    status: "active" | "draft" | "archived";
-    pre_alert_days: number;
-    start_mmdd?: string;
-    end_mmdd?: string;
-    peak_start_mmdd?: string;
-    peak_end_mmdd?: string;
-    start_date?: string;
-    end_date?: string;
-    peak_start_date?: string;
-    peak_end_date?: string;
-    product_types: string[];
-    keywords: string[];
-    priority: Priority;
-    summary: string;
-    notes: string;
-    updated: string;
-    expand?: {
-        trend_type?: {
-            key?: string;
-            name?: string;
-        };
-    };
-};
-
-type SignalState = "PEAK" | "ACTIVE" | "IN_PREALERT" | "UPCOMING_PREALERT" | "ENDED";
-
-type ResolvedDates = {
-    start: Date;
-    end: Date;
-    preAlert: Date;
-    peakStart?: Date;
-    peakEnd?: Date;
-};
+// Import shared types and utils
+import { TrendSignal, SignalState, Market, Priority } from "./types";
+import { 
+    computeState, 
+    resolveSignalDates, 
+    formatDestinations, 
+    startOfDay, 
+    addDays, 
+    intersects 
+} from "./utils";
 
 type PreparedSignal = {
     s: TrendSignal;
     name: string;
     destLabel: string;
-    dates: ResolvedDates;
+    dates: {
+        start: Date;
+        end: Date;
+        preAlert: Date;
+        peakStart?: Date;
+        peakEnd?: Date;
+    };
     state: SignalState;
     preAlertDays: number;
     searchable: string;
 };
-
-// --- Logic Helpers ---
-
-function isDestObj(d: Destination): d is DestinationObj {
-    return typeof d === "object" && d !== null && "name" in d;
-}
-
-function formatDestinations(destinations: Destination[]) {
-    if (!Array.isArray(destinations) || destinations.length === 0) return "—";
-    const names = destinations
-        .map((d) => (isDestObj(d) ? d.name : String(d)))
-        .map((s) => s.trim())
-        .filter(Boolean);
-    return names.length ? names.join(" · ") : "—";
-}
-
-function parseLocalYYYYMMDD(dateStr: string): Date {
-    const [y, m, d] = dateStr.split("-").map((x) => parseInt(x, 10));
-    return new Date(y, m - 1, d);
-}
-
-function parseMMDD(mmdd: string) {
-    const [mm, dd] = mmdd.split("-").map((x) => parseInt(x, 10));
-    return { mm, dd };
-}
-
-function addDays(d: Date, days: number) {
-    const x = new Date(d);
-    x.setDate(x.getDate() + days);
-    return x;
-}
-
-function startOfDay(d: Date) {
-    const x = new Date(d);
-    x.setHours(0, 0, 0, 0);
-    return x;
-}
-
-function intersects(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
-    return aStart <= bEnd && aEnd >= bStart;
-}
-
-function resolveRecurringWindow(today: Date, start_mmdd: string, end_mmdd: string, peak_start_mmdd?: string, peak_end_mmdd?: string) {
-    const t = startOfDay(today);
-    const year = t.getFullYear();
-
-    const s0 = parseMMDD(start_mmdd);
-    const e0 = parseMMDD(end_mmdd);
-
-    let start = new Date(year, s0.mm - 1, s0.dd);
-    let end = new Date(year, e0.mm - 1, e0.dd);
-
-    if (end < start) {
-        end = new Date(year + 1, e0.mm - 1, e0.dd);
-    }
-
-    if (t > end) {
-        start = new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
-        end = new Date(end.getFullYear() + 1, end.getMonth(), end.getDate());
-    }
-
-    let peakStart: Date | undefined;
-    let peakEnd: Date | undefined;
-
-    if (peak_start_mmdd && peak_end_mmdd) {
-        const ps0 = parseMMDD(peak_start_mmdd);
-        const pe0 = parseMMDD(peak_end_mmdd);
-
-        peakStart = new Date(start.getFullYear(), ps0.mm - 1, ps0.dd);
-        peakEnd = new Date(start.getFullYear(), pe0.mm - 1, pe0.dd);
-
-        if (peakEnd < peakStart) {
-            peakEnd = new Date(peakEnd.getFullYear() + 1, peakEnd.getMonth(), peakEnd.getDate());
-        }
-
-        if (peakStart < start) peakStart = start;
-        if (peakEnd > end) peakEnd = end;
-    }
-
-    return { start, end, peakStart, peakEnd };
-}
-
-function resolveSignalDates(signal: TrendSignal, today: Date, preAlertDays: number): ResolvedDates | null {
-    if (signal.mode === "one_off") {
-        if (!signal.start_date || !signal.end_date) return null;
-        const start = parseLocalYYYYMMDD(signal.start_date);
-        const end = parseLocalYYYYMMDD(signal.end_date);
-        const preAlert = addDays(start, -preAlertDays);
-
-        const peakStart = signal.peak_start_date ? parseLocalYYYYMMDD(signal.peak_start_date) : undefined;
-        const peakEnd = signal.peak_end_date ? parseLocalYYYYMMDD(signal.peak_end_date) : undefined;
-
-        return { start, end, preAlert, peakStart, peakEnd };
-    }
-
-    if (!signal.start_mmdd || !signal.end_mmdd) return null;
-    const { start, end, peakStart, peakEnd } = resolveRecurringWindow(
-        today,
-        signal.start_mmdd,
-        signal.end_mmdd,
-        signal.peak_start_mmdd,
-        signal.peak_end_mmdd
-    );
-    const preAlert = addDays(start, -preAlertDays);
-    return { start, end, preAlert, peakStart, peakEnd };
-}
-
-function computeState(today: Date, dates: ResolvedDates): SignalState {
-    const t = startOfDay(today);
-    const start = startOfDay(dates.start);
-    const end = startOfDay(dates.end);
-    const pre = startOfDay(dates.preAlert);
-
-    const peakStart = dates.peakStart ? startOfDay(dates.peakStart) : undefined;
-    const peakEnd = dates.peakEnd ? startOfDay(dates.peakEnd) : undefined;
-
-    if (peakStart && peakEnd && t >= peakStart && t <= peakEnd) return "PEAK";
-    if (t >= start && t <= end) return "ACTIVE";
-    if (t >= pre && t < start) return "IN_PREALERT";
-    if (t < pre) return "UPCOMING_PREALERT";
-    return "ENDED";
-}
 
 const PRODUCT_TYPE_LABELS: Record<string, string> = {
     guide_content: "Guide",
@@ -216,37 +57,20 @@ export default function TrendRadarPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const records = await pb.collection('trend_signals').getFullList({
+                // PocketBase Best Practice: Selective field fetching
+                const records = await pb.collection('trend_signals').getFullList<TrendSignal>({
                     expand: 'trend_type',
                     sort: '-created',
+                    fields: 'id,key,trend_type,status,mode,pre_alert_days,start_mmdd,end_mmdd,peak_start_mmdd,peak_end_mmdd,start_date,end_date,peak_start_date,peak_end_date,source_markets,destinations,product_types,keywords,priority,summary,notes,updated,expand.trend_type.name,expand.trend_type.key'
                 });
 
-                const transformed: TrendSignal[] = records.map(r => ({
+                const transformed = records.map(r => ({
                     ...r,
-                    id: r.id,
-                    key: r.key,
-                    trend_type: r.trend_type,
                     trend_type_name: r.expand?.trend_type?.name || r.key,
                     source_markets: r.source_markets || [],
-                    destinations: r.destinations,
-                    mode: r.mode,
-                    status: r.status,
-                    pre_alert_days: r.pre_alert_days || 14,
-                    start_mmdd: r.start_mmdd,
-                    end_mmdd: r.end_mmdd,
-                    peak_start_mmdd: r.peak_start_mmdd,
-                    peak_end_mmdd: r.peak_end_mmdd,
-                    start_date: r.start_date,
-                    end_date: r.end_date,
-                    peak_start_date: r.peak_start_date,
-                    peak_end_date: r.peak_end_date,
-                    product_types: Array.isArray(r.product_types) ? r.product_types : (typeof r.product_types === 'string' ? r.product_types.split(',').map((k: string) => k.trim()) : []),
-                    keywords: Array.isArray(r.keywords) ? r.keywords : (typeof r.keywords === 'string' ? r.keywords.split(',').map((k: string) => k.trim()) : []),
-                    priority: r.priority,
-                    summary: r.summary,
-                    notes: r.notes || "",
-                    updated: r.updated,
-                })) as TrendSignal[];
+                    product_types: Array.isArray(r.product_types) ? r.product_types : (typeof r.product_types === 'string' ? (r.product_types as string).split(',').map((k: string) => k.trim()) : []),
+                    keywords: Array.isArray(r.keywords) ? r.keywords : (typeof r.keywords === 'string' ? (r.keywords as string).split(',').map((k: string) => k.trim()) : []),
+                })) as (TrendSignal & { trend_type_name: string })[];
 
                 setSignals(transformed);
             } catch (error) {
@@ -290,19 +114,19 @@ export default function TrendRadarPage() {
                 const sm = s.source_markets;
                 if (market === "ALL") return true;
                 if (!sm || sm.length === 0) return true;
-                return sm.includes(market as Market);
+                return (sm as string[]).includes(market);
             })
             .map((s) => {
                 const preAlertDays = s.pre_alert_days || defaultPreAlertDays;
                 const dates = resolveSignalDates(s, today, preAlertDays);
                 if (!dates) return null;
 
-                const state = computeState(today, dates);
-                const name = s.trend_type_name || s.trend_type;
+                const { state } = computeState(today, s, s.expand?.trend_type);
+                const name = (s as any).trend_type_name || s.trend_type;
                 const destLabel = formatDestinations(s.destinations);
                 const searchable = `${name} ${destLabel} ${s.summary ?? ""} ${(s.keywords ?? []).join(" ")}`.toLowerCase();
 
-                return { s, name, destLabel, dates, state, preAlertDays, searchable };
+                return { s, name, destLabel, dates, state, preAlertDays, searchable } as PreparedSignal;
             })
             .filter((x): x is PreparedSignal => x !== null);
 
@@ -311,13 +135,12 @@ export default function TrendRadarPage() {
         const withinHorizon = horizonDays == null
             ? withSearch
             : withSearch.filter((x) => {
-                const { state, dates } = x;
                 const hStart = startOfDay(today);
                 const hEnd = addDays(hStart, horizonDays);
 
-                if (state === "PEAK" || state === "ACTIVE") return intersects(dates.start, dates.end, hStart, hEnd);
-                if (state === "IN_PREALERT") return intersects(dates.preAlert, dates.start, hStart, hEnd);
-                if (state === "UPCOMING_PREALERT") return intersects(dates.preAlert, dates.preAlert, hStart, hEnd);
+                if (x.state === "PEAK" || x.state === "ACTIVE") return intersects(x.dates.start, x.dates.end, hStart, hEnd);
+                if (x.state === "IN_PREALERT") return intersects(x.dates.preAlert, x.dates.start, hStart, hEnd);
+                if (x.state === "UPCOMING_PREALERT") return intersects(x.dates.preAlert, x.dates.preAlert, hStart, hEnd);
                 return false;
             });
 
@@ -329,8 +152,8 @@ export default function TrendRadarPage() {
             if (sw !== 0) return sw;
             const pw = priorityWeight[a.s.priority] - priorityWeight[b.s.priority];
             if (pw !== 0) return pw;
-            const aDate = a.state === "IN_PREALERT" ? a.dates.start : a.state === "UPCOMING_PREALERT" ? a.dates.preAlert : a.dates.end;
-            const bDate = b.state === "IN_PREALERT" ? b.dates.start : b.state === "UPCOMING_PREALERT" ? b.dates.preAlert : b.dates.end;
+            const aDate = (a.state === "IN_PREALERT" || a.state === "UPCOMING_PREALERT") ? a.dates.start : a.dates.end;
+            const bDate = (b.state === "IN_PREALERT" || b.state === "UPCOMING_PREALERT") ? b.dates.start : b.dates.end;
             return aDate.getTime() - bDate.getTime();
         });
 
@@ -562,7 +385,7 @@ export default function TrendRadarPage() {
             <div className="flex flex-col gap-12 pb-32" style={{ marginTop: '1.5rem' }}>
                 <section>
                     <SectionHeader id="section-peak" icon={Sparkles} title="At Peak / Action Now" count={peak.length} bgClass="bg-rose-100" colorClass="text-rose-600" />
-                    <div className="flex flex-col gap-0">
+                    <div>
                         {peak.length === 0 ? <CompactEmptyState message="No trends at peak right now." /> : peak.map(x => (
                             <SignalRow
                                 key={x.s.id}
@@ -579,7 +402,7 @@ export default function TrendRadarPage() {
 
                 <section>
                     <SectionHeader id="section-active" icon={TrendingUp} title="Active Trends" count={active.length} bgClass="bg-emerald-100" colorClass="text-emerald-600" />
-                    <div className="flex flex-col gap-0">
+                    <div>
                         {activeToShow.length === 0 ? <EmptyState message="No active trends found matching criteria." /> : activeToShow.map(x => (
                             <SignalRow
                                 key={x.s.id}
@@ -601,7 +424,7 @@ export default function TrendRadarPage() {
 
                 <section>
                     <SectionHeader id="section-upcoming" icon={Calendar} title="Upcoming (Pre-alert)" count={upcoming.length} bgClass="bg-amber-100" colorClass="text-amber-600" />
-                    <div className="flex flex-col gap-0">
+                    <div>
                         {upcomingToShow.length === 0 ? <EmptyState message="No upcoming trends in the forecast." /> : upcomingToShow.map(x => (
                             <SignalRow
                                 key={x.s.id}
