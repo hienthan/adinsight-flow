@@ -21,7 +21,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ option
 
     const [searchQuery, setSearchQuery] = useState('');
 
-    const selectedValues = value ? value.split(',').filter(Boolean) : [];
+    const selectedValues = value ? value.split('|').filter(Boolean) : [];
 
     // Filter by empty value and search query
     const selectableOptions = options.filter(o => {
@@ -47,7 +47,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ option
         } else {
             newValues = [...selectedValues, optValue];
         }
-        onChange(newValues.join(','));
+        onChange(newValues.join('|'));
     };
 
     const clearSelection = (e: React.MouseEvent) => {

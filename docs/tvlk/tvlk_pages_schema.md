@@ -55,7 +55,9 @@ Các field giúp debug engine.
 
 field	type	specs
 entity_count	number (int)	số entity detect
-geo_score	number (float)	geo score từ entity
+geo_score	number (float)	geo_score từ entity
+final_score	number (float)	(intent_score * 0.5) + (geo_score * 0.3) + (planning_signal * 0.2)
+tier	text/select	1, 2, 3, 4
 
 
 ⸻

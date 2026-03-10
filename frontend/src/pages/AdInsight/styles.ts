@@ -1,6 +1,7 @@
 export const getTierStyle = (tier: string) => {
     switch (tier) {
-        case 'a1': return { background: 'hsla(var(--primary) / 0.05)', color: 'hsl(var(--primary))', border: '1px solid hsla(var(--primary) / 0.1)' };
+        case '1':
+        case 'a1': return { background: 'hsla(var(--primary) / 0.15)', color: 'hsl(var(--primary))', border: '1px solid hsla(var(--primary) / 0.3)', fontWeight: 800, boxShadow: '0 0 10px hsla(var(--primary) / 0.2)' };
         case '2':
         case 'a2': return { background: 'rgba(16, 185, 129, 0.05)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.1)' };
         case '3':

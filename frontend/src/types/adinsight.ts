@@ -22,7 +22,11 @@ export interface PageRecord {
     cookie_score?: number;
     cpc_risk_score?: number;
     dsa_campaign?: string;
-    geo_category?: string;
+    geo_score?: number;
+    final_score?: number;
+    geo_entity?: string;
+    geo_type?: string;
+    intent_type?: string;
     sub_city?: string;
     province?: string;
     display_name?: string;
@@ -39,7 +43,7 @@ export interface PageRecord {
 
 export interface ColumnDef {
     header: string;
-    key: keyof PageRecord | 'location' | 'actions';
+    key: keyof PageRecord | 'location' | 'actions' | 'score';
     width?: string;
     render?: (record: PageRecord) => React.ReactNode;
 }

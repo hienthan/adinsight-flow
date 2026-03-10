@@ -47,10 +47,18 @@ The V5 Geography system resolves massive data collisions via a recursive Parent 
 2.  **Taxonomy Matched (Secondary Clue):** Used to deduce `sub_tag` and macro `content_type`.
 3.  **Geo Entity Default (Fallback Baseline):** If intent cannot be mapped, it gracefully falls back to `destination` (Score: 8).
 
-### Dual Math Scoring
-Scores calculate true affiliate value:
-*   `Final Score = geo_score * intent_score + planning_signal`.
-*   URLs with `planning_signal` (e.g. "Itinerary 3 days") get a flat bonus (+2 to +4), guaranteeing entry into high DSA bid brackets.
+### 10-Point Weighted Sum Scoring & Tier Classification
+Scores calculate the true affiliate value on a highly compressed 10-point scale:
+*   `Final Score = (Intent Score * 0.5) + (Geo Score * 0.3) + (Planning Signal * 0.2)`.
+*   The `planning_signal` (+1) serves as a tie-breaker bonus that propels intent-heavy URLs to the top of their bracket.
+
+Based on the 10-point distribution, URLs are aggressively segmented into 3 Tiers for campaign management:
+*   **Tier 1 (Golden Keywords - High ROAS): `final_score >= 7.50`**
+    *(Top 10% of URLs. Perfect alignment of strong Intent and precise Geo targets).*
+*   **Tier 2 (Core Inventory - Mid Funnel): `7.00 <= final_score < 7.50`**
+    *(Solid exploration URLs providing essential market coverage).*
+*   **Tier 3 (Generic/Broad): `final_score < 7.00`**
+    *(Broad geographical coverage, unmapped intent, or international fallbacks).*
 
 ---
 
@@ -67,3 +75,24 @@ Campaign names perfectly segment ad groups without exploding campaign limits: `{
 *   `planning_bali` (Medium Value - MOFU)
 *   `destination_lombok` (Generic Coverage)
 *   `explore_jawa-barat` (Using auto-mapped precise province logic)
+
+---
+
+## 6. Appendix: Recent Fixes & Optimizations (March 2024)
+
+To reach near-zero "leakage" to legacy engines for Indonesian URLs, the following surgical fixes were implemented:
+
+1.  **Regex Word Boundary Enforcement:** 
+    *   Updated `smart_pattern_matcher.py` from substring matching (`in`) to strict Regex boundaries (`\bword\b`). 
+    *   **Result:** Eliminated "hallucinated" locations where words like `internasional` or `destinasi` falsely triggered a match for `nasi` (Jakarta).
+
+2.  **Strategic Stopword Revision:**
+    *   Removed `gunung`, `pulau`, `pantai`, and `danau` from `geo_stopwords.json`.
+    *   **Result:** Re-enabled detection for compound place names like `Gunung Kidul`, `Pulau Seribu`, and `Pantai Tanjung Aan` which were previously being "stripped" before matching could occur.
+
+3.  **Expanded Knowledge Base (75+ Entities):**
+    *   Injected 52 secondary cities (e.g., *Banjarbaru*, *Blitar*) and 25 targeted entities/aliases (e.g., *Dieng*, *Rinjani*, *Jaksel*) into `part3_sub_areas.json` and `part2_core_areas.json`.
+    *   **Result:** Resolved missing province issues for these locations and brought them under native V5 control.
+
+4.  **V4 Fallback Refinement:**
+    *   Tightened the logic in `tvlk_enrich_and_import_v5.py` to only trigger V4 fallback when V5 returns absolutely no valid entity AND no valid country, preventing valid V5 "National" articles from being overwritten by V4 noise.

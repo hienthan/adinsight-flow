@@ -39,7 +39,8 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
 
     const basicFields = [
         'tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type',
-        'affiliate_tier', 'affiliate_score', 'dsa_campaign', 'geo_category', 'province'
+        'affiliate_tier', 'affiliate_score', 'dsa_campaign', 'geo_category', 'province',
+        'intent_type'
     ];
 
     Object.keys(currentFilters).forEach(key => {
@@ -53,17 +54,31 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         const baseKey = isExclusion ? key.slice(1) : key;
 
         if (basicFields.includes(baseKey)) {
-            const values = value.split(',').filter(Boolean);
+            const values = value.split('|').filter(Boolean);
             if (values.length > 0) {
                 const operator = isExclusion ? '!=' : '=';
                 const joinner = isExclusion ? ' && ' : ' || ';
 
                 const subQueries = values.map(v => {
                     const cleanVal = v.trim();
-                    if (baseKey === 'country' && cleanVal === 'Vietnam') {
-                        return isExclusion
-                            ? `(${baseKey} != "Vietnam" && ${baseKey} != "Viet Nam")`
-                            : `(${baseKey} = "Vietnam" || ${baseKey} = "Viet Nam")`;
+                    if (baseKey === 'country') {
+                        if (cleanVal === 'Vietnam') {
+                            return isExclusion
+                                ? `(${baseKey} != "Vietnam" && ${baseKey} != "Viet Nam")`
+                                : `(${baseKey} = "Vietnam" || ${baseKey} = "Viet Nam")`;
+                        }
+                        if (cleanVal.toLowerCase() === 'indonesia') {
+                            return isExclusion
+                                ? `(${baseKey} != "Indonesia" && ${baseKey} != "indonesia")`
+                                : `(${baseKey} = "Indonesia" || ${baseKey} = "indonesia")`;
+                        }
+                    }
+                    if (baseKey === 'province') {
+                        if (cleanVal === 'jakarta') {
+                            return isExclusion
+                                ? `(${baseKey} != "jakarta" && ${baseKey} != "dki-jakarta")`
+                                : `(${baseKey} = "jakarta" || ${baseKey} = "dki-jakarta")`;
+                        }
                     }
                     return `${baseKey} ${operator} "${cleanVal}"`;
                 });

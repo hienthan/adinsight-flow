@@ -305,7 +305,7 @@
     "type": "sub_area",
     "geo_score": 7,
     "aliases": [],
-    "parent": "jakarta",
+    "parent": "bandung",
     "requires_context": false
   },
   "kemayoran": {
@@ -416,13 +416,6 @@
   "pasteur": {
     "type": "sub_area",
     "geo_score": 7,
-    "aliases": [],
-    "parent": "bandung",
-    "requires_context": false
-  },
-  "setiabudi": {
-    "type": "sub_area",
-    "geo_score": 8,
     "aliases": [],
     "parent": "bandung",
     "requires_context": false
@@ -698,7 +691,7 @@
     "parent": "yogyakarta",
     "requires_context": false
   },
-"gubeng": {
+  "gubeng": {
     "type": "sub_area",
     "geo_score": 7,
     "aliases": [],
@@ -1052,9 +1045,9 @@
     "parent": "palembang",
     "requires_context": false
   },
-"senggigi": {
+  "senggigi": {
     "type": "sub_area",
-    "geo_score": 8,
+    "geo_score": 7,
     "aliases": [],
     "parent": "lombok",
     "requires_context": false
@@ -1203,7 +1196,7 @@
     "parent": "sumba",
     "requires_context": false
   },
-"losari": {
+  "losari": {
     "type": "sub_area",
     "geo_score": 8,
     "aliases": [
@@ -1284,7 +1277,7 @@
     "parent": "manado",
     "requires_context": false
   },
-"sepinggan": {
+  "sepinggan": {
     "type": "sub_area",
     "geo_score": 7,
     "aliases": [],
@@ -1417,20 +1410,6 @@
     "parent": "bandung",
     "requires_context": false
   },
-  "setiabudi": {
-    "type": "sub_area",
-    "geo_score": 7,
-    "aliases": [],
-    "parent": "bandung",
-    "requires_context": false
-  },
-  "pasteur": {
-    "type": "sub_area",
-    "geo_score": 7,
-    "aliases": [],
-    "parent": "bandung",
-    "requires_context": false
-  },
   "cicaheum": {
     "type": "sub_area",
     "geo_score": 7,
@@ -1487,25 +1466,11 @@
     "parent": "lampung",
     "requires_context": false
   },
-  "nongsa": {
-    "type": "sub_area",
-    "geo_score": 7,
-    "aliases": [],
-    "parent": "batam",
-    "requires_context": false
-  },
   "lagoi-bay": {
     "type": "sub_area",
     "geo_score": 8,
     "aliases": [],
     "parent": "batam",
-    "requires_context": false
-  },
-  "senggigi": {
-    "type": "sub_area",
-    "geo_score": 7,
-    "aliases": [],
-    "parent": "lombok",
     "requires_context": false
   },
   "pink-beach": {
@@ -1549,7 +1514,595 @@
     "aliases": [],
     "parent": "bogor",
     "requires_context": false
+  },
+  "pacitan": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "boyolali": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "baturraden": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "kebumen": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "banjarbaru": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "kalimantan-selatan",
+    "requires_context": false
+  },
+  "probolinggo": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "gianyar": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "bali",
+    "requires_context": false
+  },
+  "ciamis": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "tarakan": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "kalimantan-utara",
+    "requires_context": false
+  },
+  "kupang": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "nusa-tenggara-timur",
+    "requires_context": false
+  },
+  "anyer": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "banten",
+    "requires_context": false
+  },
+  "bukittinggi": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "sumatera-barat",
+    "requires_context": false
+  },
+  "kediri": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "blitar": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "banyuwangi": {
+    "type": "sub_area",
+    "geo_score": 9,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "sumenep": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "toraja": {
+    "type": "sub_area",
+    "geo_score": 9,
+    "aliases": [],
+    "parent": "sulawesi-selatan",
+    "requires_context": false
+  },
+  "derawan": {
+    "type": "sub_area",
+    "geo_score": 9,
+    "aliases": [],
+    "parent": "kalimantan-timur",
+    "requires_context": false
+  },
+  "gresik": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "sidoarjo": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "purwakarta": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "lumajang": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "jember": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "mojokerto": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "pasuruan": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "situbondo": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "madiun": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "magetan": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "klaten": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "pemalang": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "purbalingga": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "salatiga": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "sragen": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "wonosobo": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "banyumas": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "majalengka": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "subang": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "cianjur": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "garut": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "pandeglang": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "banten",
+    "requires_context": false
+  },
+  "tanjung-lesung": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [
+      "ktanjung-lesung"
+    ],
+    "parent": "banten",
+    "requires_context": false
+  },
+  "bitung": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sulawesi-utara",
+    "requires_context": false
+  },
+  "palopo": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sulawesi-selatan",
+    "requires_context": false
+  },
+  "pariaman": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sumatera-barat",
+    "requires_context": false
+  },
+  "pagar-alam": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sumatera-selatan",
+    "requires_context": false
+  },
+  "nganjuk": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "bojonegoro": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "tulungagung": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "trenggalek": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "tanjung-pinang": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "kepulauan-riau",
+    "requires_context": false
+  },
+  "ternate": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "maluku-utara",
+    "requires_context": false
+  },
+  "negara": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "bali",
+    "requires_context": false
+  },
+  "cikarang": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "cibinong": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "cilegon": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "banten",
+    "requires_context": false
+  },
+  "cileunyi": {
+    "type": "sub_area",
+    "geo_score": 6,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "cimahi": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "indramayu": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "karawang": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "padalarang": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "parung": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-barat",
+    "requires_context": false
+  },
+  "rangkasbitung": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "banten",
+    "requires_context": false
+  },
+  "serpong": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "banten",
+    "requires_context": false
+  },
+  "jepara": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "cilacap": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "purwodadi": {
+    "type": "sub_area",
+    "geo_score": 6,
+    "aliases": [],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "lamongan": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "jombang": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "prigen": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jawa-timur",
+    "requires_context": false
+  },
+  "sinjai": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sulawesi-selatan",
+    "requires_context": false
+  },
+  "denpasar": {
+    "type": "sub_area",
+    "geo_score": 9,
+    "aliases": [],
+    "parent": "bali",
+    "requires_context": false
+  },
+  "pematangsiantar": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sumatera-utara",
+    "requires_context": false
+  },
+  "rantau-prapat": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sumatera-utara",
+    "requires_context": false
+  },
+  "sibolga": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sumatera-utara",
+    "requires_context": false
+  },
+  "solok": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sumatera-barat",
+    "requires_context": false
+  },
+  "tongging": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sumatera-utara",
+    "requires_context": false
+  },
+  "tanjung-balai": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sumatera-utara",
+    "requires_context": false
+  },
+  "dieng": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [
+      "dieng-plateau"
+    ],
+    "parent": "jawa-tengah",
+    "requires_context": false
+  },
+  "rinjani": {
+    "type": "sub_area",
+    "geo_score": 9,
+    "aliases": [
+      "gunung-rinjani"
+    ],
+    "parent": "nusa-tenggara-barat",
+    "requires_context": false
+  },
+  "tanjung-morawa": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "sumatera-utara",
+    "requires_context": false
+  },
+  "tanjung-aan": {
+    "type": "sub_area",
+    "geo_score": 8,
+    "aliases": [],
+    "parent": "nusa-tenggara-barat",
+    "requires_context": false
+  },
+  "tanjung-duren": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [],
+    "parent": "jakarta",
+    "requires_context": false
+  },
+  "malangan": {
+    "type": "sub_area",
+    "geo_score": 7,
+    "aliases": [
+      "topeng-malangan",
+      "tari-topeng-malangan"
+    ],
+    "parent": "jawa-timur",
+    "requires_context": false
   }
-
-
 }

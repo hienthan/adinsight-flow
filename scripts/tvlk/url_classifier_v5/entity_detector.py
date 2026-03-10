@@ -43,7 +43,25 @@ class EntityDetector:
                         for alias in val.get("aliases", []):
                             search_alias = alias.replace("-", " ")
                             self.patterns.append((search_alias, key))
+                            self.patterns.append((search_alias, key))
                             self.patterns.append((alias, key))
+                elif "clusters" in data:
+                    for cluster_name, cluster_data in data["clusters"].items():
+                        if isinstance(cluster_data, dict):
+                            for key, val in cluster_data.items():
+                                if isinstance(val, dict) and "type" in val:
+                                    val["canonical_id"] = key
+                                    self.entities[key] = val
+                                    
+                                    search_key = key.replace("-", " ")
+                                    self.patterns.append((search_key, key))
+                                    self.patterns.append((key, key))
+                                    
+                                    for alias in val.get("aliases", []):
+                                        search_alias = alias.replace("-", " ")
+                                        self.patterns.append((search_alias, key))
+                                        self.patterns.append((alias, key))
+                                        
                 else:
                     # Some files might not have the "entities" nested wrap, but just top-level keys
                     # e.g sub_areas

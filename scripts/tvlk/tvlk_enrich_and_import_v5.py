@@ -151,8 +151,8 @@ def process_url(url: str, platform_id: str) -> Optional[Dict]:
         geo_type = v5_res["geo_type"]
         
         # 3. Global Geo Fallback Integration
-        # If V5 Indo Geo missed, we consult the global geo NLP on the title_en & slug
-        if not final_entity or geo_type == "legacy":
+        # If V5 Indo Geo completely failed to find any entity, OR if the country is explicitly Unknown, then consult NLP Fallback
+        if not final_entity or (final_entity == "Unknown" and final_country == "Unknown"):
             global_geo_data = global_geo_engine.detect_geo_structured(slug, title_en)
             if global_geo_data.get('country') and global_geo_data['country'] != "Unknown":
                 final_country = global_geo_data.get('country')
@@ -201,11 +201,11 @@ def process_url(url: str, platform_id: str) -> Optional[Dict]:
             "canonical_id": canonical_id,
             "language": "id-id",
             "is_active": v5_res["is_active"],
-            "affiliate_tier": "a1" if v5_res["final_score"] > 8 else "a2", # Simplified tiering
+            "tier": "1" if v5_res["final_score"] >= 7.5 else "2" if v5_res["final_score"] >= 7.0 else "3",
             "cpc_risk_score": 0.0,
             "cookie_score": 0.0,
             "intent_score": v5_res["intent_score"],
-            "affiliate_score": v5_res["final_score"],
+            "final_score": v5_res["final_score"],
             "intent_primary": v5_res["intent_primary"],
             "intent_type": v5_res["intent_primary"],
             "intent_patterns": v5_res.get("detected_patterns", []),

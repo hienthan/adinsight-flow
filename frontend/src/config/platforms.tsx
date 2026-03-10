@@ -66,38 +66,35 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
         titleKey: 'title_en',
         defaultSitemapTags: ['activities'],
         columns: [
-            { header: 'ID', key: 'canonical_id', width: '80px' },
-            { header: 'English Title', key: 'title_en', width: '350px' },
-            { header: 'Tier', key: 'affiliate_tier', width: '80px' },
-            { header: 'Score', key: 'affiliate_score', width: '70px' },
-            { header: 'Campaign', key: 'dsa_campaign', width: '180px' },
-            { header: 'Category', key: 'geo_category', width: '120px' },
-            { header: 'Location', key: 'location', width: '250px' }
+            { header: 'English Title', key: 'title_en', width: '22%' },
+            { header: 'Tier', key: 'tier', width: '8%' },
+            { header: 'Score', key: 'score', width: '10%' },
+            { header: 'Content Type', key: 'content_type', width: '12%' },
+            { header: 'Geo Entity', key: 'geo_entity', width: '12%' },
+            { header: 'Geo Type', key: 'geo_type', width: '10%' },
+            { header: 'Campaign', key: 'dsa_campaign', width: '14%' },
+            { header: 'Location', key: 'location', width: '12%' }
         ],
         filters: [
             { id: 'searchTerm', label: 'Search Title', type: 'text', placeholder: 'Include keywords...' },
             { id: 'excludeTerm', label: 'Exclude Title', type: 'text', placeholder: 'Exclude keywords...' },
             {
-                id: 'affiliate_tier', label: 'Tier', type: 'select', multiple: true, options: [
+                id: 'tier', label: 'Tier', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
-                    { label: 'a1 (Priority)', value: 'a1' },
-                    { label: 'a2 (Price)', value: 'a2' },
-                    { label: 'a3 (Inspir.)', value: 'a3' },
-                    { label: 'a4 (BOFU)', value: 'a4' },
-                    { label: 'Excluded', value: 'excluded' }
+                    { label: '1', value: '1' },
+                    { label: '2', value: '2' },
+                    { label: '3', value: '3' },
+                    { label: '4', value: '4' }
                 ]
             },
             {
-                id: 'geo_category', label: 'Category', type: 'select', multiple: true, options: [
+                id: 'intent_type', label: 'Intent', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
-                    { label: 'City', value: 'city' },
-                    { label: 'Sub City', value: 'sub_city' },
-                    { label: 'Airport', value: 'airport' },
-                    { label: 'Station', value: 'station' },
-                    { label: 'Seaport', value: 'seaport' },
-                    { label: 'Landmark', value: 'landmark' },
-                    { label: 'Resort Area', value: 'resort_area' },
-                    { label: 'Shopping', value: 'shopping_district' }
+                    { label: 'Transport', value: 'transport' },
+                    { label: 'Things to Do', value: 'things_to_do' },
+                    { label: 'Information', value: 'information' },
+                    { label: 'Destination', value: 'destination' },
+                    { label: 'Planning', value: 'planning' }
                 ]
             },
             {
@@ -117,14 +114,29 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
             {
                 id: 'province', label: 'Province', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
-                    { label: 'Bali', value: 'Bali' },
-                    { label: 'Jakarta', value: 'Jakarta' },
-                    { label: 'West Java', value: 'West Java' },
-                    { label: 'Central Java', value: 'Central Java' },
-                    { label: 'East Java', value: 'East Java' },
-                    { label: 'Yogyakarta', value: 'Yogyakarta' },
-                    { label: 'North Sumatra', value: 'North Sumatra' },
-                    { label: 'South Sulawesi', value: 'South Sulawesi' }
+                    { label: 'Bali', value: 'bali' },
+                    { label: 'Jakarta', value: 'jakarta' },
+                    { label: 'East Java', value: 'jawa-timur' },
+                    { label: 'West Java', value: 'jawa-barat' },
+                    { label: 'Central Java', value: 'jawa-tengah' },
+                    { label: 'Yogyakarta', value: 'daerah-istimewa-yogyakarta' },
+                    { label: 'Banten', value: 'banten' },
+                    { label: 'West Kalimantan', value: 'kalimantan-barat' },
+                    { label: 'Papua', value: 'papua' },
+                    { label: 'Aceh', value: 'aceh' },
+                    { label: 'West Nusa Tenggara', value: 'nusa-tenggara-barat' },
+                    { label: 'East Nusa Tenggara', value: 'nusa-tenggara-timur' },
+                    { label: 'South Kalimantan', value: 'kalimantan-selatan' },
+                    { label: 'North Sulawesi', value: 'sulawesi-utara' },
+                    { label: 'North Sumatra', value: 'sumatera-utara' },
+                    { label: 'North Kalimantan', value: 'kalimantan-utara' },
+                    { label: 'South Sulawesi', value: 'sulawesi-selatan' },
+                    { label: 'South Sumatra', value: 'sumatera-selatan' },
+                    { label: 'Lampung', value: 'lampung' },
+                    { label: 'Bangka Belitung', value: 'kepulauan-bangka-belitung' },
+                    { label: 'West Sumatra', value: 'sumatera-barat' },
+                    { label: 'Maluku', value: 'maluku' },
+                    { label: 'Southeast Sulawesi', value: 'sulawesi-tenggara' }
                 ]
             },
             { id: 'country', label: 'Country', type: 'datalist', placeholder: 'Global / All' },
@@ -139,10 +151,10 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
         activeFilterKey: 'is_active',
         exportFields: [
             { id: 'dsa_campaign', label: 'Campaign (Grouping)', desc: 'Main campaign label for Google Ads' },
-            { id: 'affiliate_tier', label: 'Tier (a1-a4)', desc: 'Affiliate Cookie Tier' },
-            { id: 'geo_category', label: 'POI Category', desc: 'Airport, Landmark, etc.' },
+            { id: 'tier', label: 'Tier (1-4)', desc: 'Cookie Tier' },
+            { id: 'intent_type', label: 'Intent Type', desc: 'Classification intent' },
+            { id: 'geo_type', label: 'Geo Type', desc: 'Type of location entity' },
             { id: 'city', label: 'City', desc: 'Primary City match' },
-            { id: 'sub_city', label: 'Sub City', desc: 'Granular location' },
             { id: 'title_en', label: 'English Title', desc: 'Page title in English' },
             { id: 'url', label: 'URL', desc: 'Target link' }
         ]

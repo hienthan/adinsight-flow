@@ -1,7 +1,7 @@
 import React from 'react';
 import { ExternalLink, MapPin, ArrowUp, ArrowDown } from 'lucide-react';
 import { PageRecord, ColumnDef } from '../../types/adinsight';
-import { getTierStyle, getFunnelStyle, getScoreStyle } from './styles';
+import { getTierStyle, getFunnelStyle } from './styles';
 
 interface InsightDataTableProps {
     records: PageRecord[];
@@ -30,7 +30,7 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
 
     return (
         <div className="data-table-container hero-card" style={{ padding: 0 }}>
-            <table className="data-table">
+            <table className="data-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                     <tr>
                         {onSelect && onSelectAll && (
@@ -83,13 +83,6 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                     </td>
                                 )}
                                 {columns.map((col, idx) => {
-                                    if (col.key === 'canonical_id') {
-                                        return (
-                                            <td key={idx} style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', width: col.width }}>
-                                                {record.canonical_id === "0" ? "-" : `#${record.canonical_id}`}
-                                            </td>
-                                        );
-                                    }
                                     if (col.key === 'slug') {
                                         return (
                                             <td key={idx} style={{ maxWidth: col.width, overflow: 'hidden' }}>
@@ -125,53 +118,63 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                             tierVal = rawTier.slice(1);
                                         }
 
+                                        const scoreSuffix = record.final_score !== undefined && record.final_score !== null
+                                            ? ` (${record.final_score})`
+                                            : '';
+                                        const displayVal = `${tierVal}${scoreSuffix}`;
+
                                         return (
                                             <td key={idx} style={{ width: col.width }}>
                                                 <div className="hero-badge" style={{
                                                     textTransform: 'none', padding: '0.2rem 0.5rem', fontSize: '0.75rem',
-                                                    fontWeight: 800, borderRadius: '6px', minWidth: '24px', justifyContent: 'center',
+                                                    fontWeight: 800, borderRadius: '6px', minWidth: '40px', justifyContent: 'center',
+                                                    whiteSpace: 'nowrap',
                                                     ...(rawTier === 'excluded'
                                                         ? { background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }
                                                         : getTierStyle(rawTier))
                                                 }}>
-                                                    {tierVal}
+                                                    {displayVal}
                                                 </div>
                                             </td>
                                         );
                                     }
-                                    if (col.key === 'affiliate_score') {
-                                        const score = record.affiliate_score || 0;
+                                    if (col.key === 'score') {
+                                        const geo = record.geo_score ?? 0;
+                                        const intent = record.intent_score ?? 0;
                                         return (
                                             <td key={idx} style={{ width: col.width }}>
-                                                <div className="hero-badge" style={{
-                                                    padding: '0.25rem 0.6rem',
-                                                    fontSize: '0.85rem',
-                                                    borderRadius: '8px',
-                                                    justifyContent: 'center',
-                                                    ...getScoreStyle(score)
-                                                }}>
-                                                    {score}
+                                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', fontSize: '0.75rem', fontWeight: 800 }}>
+                                                    <span style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.12)', padding: '2px 6px', borderRadius: '4px' }}>{geo}</span>
+                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>/</span>
+                                                    <span style={{ color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.12)', padding: '2px 6px', borderRadius: '4px' }}>{intent}</span>
                                                 </div>
                                             </td>
                                         );
                                     }
                                     if (col.key === 'location') {
                                         const isTraveloka = !!record.title_en;
+                                        let displayText = '';
+
+                                        if (isTraveloka) {
+                                            const parts = [record.city, record.province].filter(p => p && p.toLowerCase() !== 'unknown');
+                                            displayText = parts.join(' / ');
+                                            if (!displayText) displayText = '-';
+                                        } else {
+                                            displayText = `${record.city}, ${record.country}`;
+                                        }
+
                                         return (
                                             <td key={idx} style={{ minWidth: col.width || '150px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                     <MapPin size={12} style={{ color: 'hsl(var(--primary))', opacity: 0.8 }} />
                                                     <span style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 600 }}>
-                                                        {isTraveloka
-                                                            ? [record.sub_city, record.city, record.province].filter(Boolean).join(' / ')
-                                                            : `${record.city}, ${record.country}`
-                                                        }
+                                                        {displayText}
                                                     </span>
                                                 </div>
                                             </td>
                                         );
                                     }
-                                    if (col.key === 'dsa_campaign' || col.key === 'geo_category') {
+                                    if (col.key === 'dsa_campaign') {
                                         const val = String(record[col.key as keyof PageRecord] || '');
                                         return (
                                             <td key={idx} style={{ width: col.width }}>
@@ -208,8 +211,8 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                         const rawCType = record.content_type || '-';
                                         const displayCType = rawCType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                                         return (
-                                            <td key={idx} style={{ width: col.width }}>
-                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                            <td key={idx} style={{ width: col.width, overflow: 'hidden' }}>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={displayCType}>
                                                     {displayCType}
                                                 </span>
                                             </td>
@@ -226,11 +229,16 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                                         fontWeight: 700,
                                                         color: 'hsl(var(--primary))',
                                                         textDecoration: 'none',
-                                                        display: 'block',
                                                         lineHeight: 1.4,
-                                                        fontSize: '0.9rem'
+                                                        fontSize: '0.9rem',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient: 'vertical'
                                                     }}
                                                     className="title-link"
+                                                    title={String(record[col.key as keyof PageRecord] || '')}
                                                 >
                                                     {String(record[col.key as keyof PageRecord] || '')}
                                                 </a>
@@ -239,7 +247,7 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                     }
                                     // Default text rendering for other keys
                                     return (
-                                        <td key={idx} style={{ fontWeight: 600, color: 'var(--text-main)', minWidth: '200px' }}>
+                                        <td key={idx} style={{ fontWeight: 600, color: 'var(--text-main)', width: col.width, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={String(record[col.key as keyof PageRecord] || '')}>
                                             {String(record[col.key as keyof PageRecord] || '')}
                                         </td>
                                     );
