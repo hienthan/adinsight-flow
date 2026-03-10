@@ -7,12 +7,43 @@ import {
     EyeOff,
     Check,
     Loader2,
-    StickyNote
+    StickyNote,
+    Bell,
+    Plus,
+    ChevronDown
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
-import { CampaignPlatform } from '../../types/campaign';
+import { CampaignPlatform, CampaignReminder } from '../../types/campaign';
 import RichTextEditor from '../common/RichTextEditor';
 import { htmlToPlainText } from '../../lib/noteHtml';
+import ReminderItem from '../tracking/ReminderItem';
+import AddPlatformReminderModal from '../campaign/AddPlatformReminderModal';
+
+// --- UI HELPERS ---
+
+const getInitials = (displayName: string) => {
+    const name = (displayName || '').toLowerCase();
+    if (name.includes('traveloka')) return 'TK';
+    if (name.includes('klook')) return 'K';
+    if (name.includes('trip')) return 'TR';
+    return name.substring(0, 2).toUpperCase();
+};
+
+const hexToRgba = (hex: string = '#000000', opacity: number = 1) => {
+    if (!hex?.startsWith('#')) return hex;
+    const r = parseInt(hex.slice(1, 3), 16) || 0;
+    const g = parseInt(hex.slice(3, 5), 16) || 0;
+    const b = parseInt(hex.slice(5, 7), 16) || 0;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
+
+const hexToRgbValues = (hex: string = '#000000') => {
+    if (!hex?.startsWith('#')) return '0, 0, 0';
+    const r = parseInt(hex.slice(1, 3), 16) || 0;
+    const g = parseInt(hex.slice(3, 5), 16) || 0;
+    const b = parseInt(hex.slice(5, 7), 16) || 0;
+    return `${r}, ${g}, ${b}`;
+};
 
 interface StickyNotesSidebarProps {
     open: boolean;
@@ -27,6 +58,8 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
     const [expandedPlatformId, setExpandedPlatformId] = useState<string | null>(null);
     const [showEmpty, setShowEmpty] = useState(false);
     const [savingId, setSavingId] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalPlatformId, setModalPlatformId] = useState<string>('');
 
     // Fetch Platforms
     const { data: platforms = [], isLoading } = useQuery<CampaignPlatform[]>({
@@ -36,7 +69,47 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                 sort: 'display_name',
             });
         },
+        staleTime: 1000 * 60 * 60 * 4, // 4 hours
     });
+
+    // Fetch Platform Reminders (Now from campaign_reminders)
+    const { data: allNotes = [] } = useQuery<CampaignReminder[]>({
+        queryKey: ['platform-notes'],
+        queryFn: async () => {
+            return await pb.collection('campaign_reminders').getFullList<CampaignReminder>({
+                filter: 'status = "pending" && campaign = null',
+                sort: 'reminder_date',
+                expand: 'platform'
+            });
+        },
+        staleTime: 1000 * 60 * 60 * 4, // 4 hours
+    });
+
+    // Helper to get counts for indicators
+    const getReminderStats = (platformId: string) => {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const todayStr = now.toISOString().split('T')[0];
+
+        const platformNotes = allNotes.filter(n => n.platform === platformId && n.status === 'pending');
+
+        let overdue = 0;
+        let today = 0;
+        let upcoming = 0;
+
+        platformNotes.forEach(note => {
+            if (!note.reminder_date) return;
+            const dueDate = new Date(note.reminder_date);
+            dueDate.setHours(0, 0, 0, 0);
+            const dueStr = dueDate.toISOString().split('T')[0];
+
+            if (dueStr < todayStr) overdue++;
+            else if (dueStr === todayStr) today++;
+            else upcoming++;
+        });
+
+        return { overdue, today, upcoming, total: platformNotes.length };
+    };
 
     // Mutations
     const updateMutation = useMutation({
@@ -69,9 +142,9 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
     const sortedPlatforms = useMemo(() => {
         return [...platforms].sort((a, b) => {
             if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
-            const aHasNote = !!a.sticky_note?.trim();
-            const bHasNote = !!b.sticky_note?.trim();
-            if (aHasNote !== bHasNote) return aHasNote ? -1 : 1;
+            // First sort by order
+            if ((a.order || 0) !== (b.order || 0)) return (a.order || 0) - (b.order || 0);
+            // Then by display_name
             return a.display_name.localeCompare(b.display_name);
         });
     }, [platforms]);
@@ -100,7 +173,14 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [open, onToggle]);
+    }, [open, onToggle, pinned]);
+
+    // Reset expansion state when sidebar closes
+    useEffect(() => {
+        if (!open) {
+            setExpandedPlatformId(null);
+        }
+    }, [open]);
 
     return (
         <aside
@@ -121,6 +201,16 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                 boxShadow: open ? '-10px 0 30px rgba(0,0,0,0.1)' : 'none'
             }}
         >
+            <style>{`
+                @keyframes pulse-soft {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(var(--pulse-color), 0.4); }
+                    70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(var(--pulse-color), 0); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(var(--pulse-color), 0); }
+                }
+                .pulse-indicator {
+                    animation: pulse-soft 2s infinite;
+                }
+            `}</style>
             {/* Toggle Tab */}
             <div
                 onClick={onToggle}
@@ -153,21 +243,66 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                         <StickyNote size={20} />
                     </div>
                     <div style={{ height: '1px', width: '24px', background: 'var(--border-subtle)' }} />
-                    {pinnedPlatforms.slice(0, 8).map(p => (
-                        <div
-                            key={p.id}
-                            title={p.display_name}
-                            onClick={onToggle}
-                            style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '6px',
-                                background: p.color,
-                                cursor: 'pointer',
-                                opacity: 0.8
-                            }}
-                        />
-                    ))}
+                    {pinnedPlatforms.slice(0, 8).map(p => {
+                        const stats = getReminderStats(p.id);
+                        const initials = getInitials(p.display_name);
+                        const hasOverdue = stats.overdue > 0;
+                        const count = stats.overdue || stats.today || stats.upcoming || 0;
+                        const badgeColor = stats.overdue > 0 ? '#ef4444' : stats.today > 0 ? '#fbbf24' : '#22c55e';
+
+                        return (
+                            <div
+                                key={p.id}
+                                title={p.display_name}
+                                onClick={() => {
+                                    setExpandedPlatformId(p.id);
+                                    if (!open) onToggle();
+                                    else if (expandedPlatformId === p.id) setExpandedPlatformId(null);
+                                }}
+                                className={hasOverdue ? "pulse-indicator" : ""}
+                                style={{
+                                    width: '26px',
+                                    height: '26px',
+                                    borderRadius: '50%',
+                                    background: hexToRgba(p.color, 0.12),
+                                    color: p.color,
+                                    cursor: 'pointer',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '0.68rem',
+                                    fontWeight: 900,
+                                    border: `1px solid ${hexToRgba(p.color, 0.2)}`,
+                                    // @ts-ignore
+                                    '--pulse-color': hexToRgbValues(p.color)
+                                } as any}
+                            >
+                                {initials}
+                                {count > 0 && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '-4px',
+                                        right: '-4px',
+                                        background: badgeColor,
+                                        borderRadius: '50%',
+                                        width: '12px',
+                                        height: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'white',
+                                        fontSize: '7px',
+                                        fontWeight: 900,
+                                        border: '1px solid var(--bg-card)',
+                                        zIndex: 1
+                                    }}>
+                                        {count}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 
@@ -232,6 +367,11 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                                                     onPin={(e) => togglePin(p, e)}
                                                     onSave={(content) => handleSaveNote(p.id, content)}
                                                     isSaving={savingId === p.id}
+                                                    allNotes={allNotes}
+                                                    onAddReminder={(id) => {
+                                                        setModalPlatformId(id);
+                                                        setIsModalOpen(true);
+                                                    }}
                                                 />
                                             ))}
                                         </div>
@@ -252,6 +392,11 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                                                 onPin={(e) => togglePin(p, e)}
                                                 onSave={(content) => handleSaveNote(p.id, content)}
                                                 isSaving={savingId === p.id}
+                                                allNotes={allNotes}
+                                                onAddReminder={(id) => {
+                                                    setModalPlatformId(id);
+                                                    setIsModalOpen(true);
+                                                }}
                                             />
                                         ))}
                                         {otherPlatforms.length === 0 && !showEmpty && (
@@ -267,6 +412,12 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                     </div>
                 </>
             )}
+
+            <AddPlatformReminderModal
+                platformId={modalPlatformId}
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+            />
         </aside>
     );
 }
@@ -278,9 +429,11 @@ interface CardProps {
     onPin: (e: React.MouseEvent) => void;
     onSave: (content: string) => void;
     isSaving: boolean;
+    allNotes: CampaignReminder[];
+    onAddReminder: (platformId: string) => void;
 }
 
-function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isSaving }: CardProps) {
+function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isSaving, allNotes, onAddReminder }: CardProps) {
     const [localContent, setLocalContent] = useState(platform.sticky_note || '');
     const previewText = useMemo(() => htmlToPlainText(platform.sticky_note || ''), [platform.sticky_note]);
 
@@ -321,8 +474,21 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
                 <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: '4px', background: platform.color, borderRadius: '0 4px 4px 0' }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isExpanded ? '0' : '0.25rem' }}>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             {platform.display_name}
+                            {allNotes.filter(n => n.platform === platform.id && n.status === 'pending').length > 0 && (
+                                <div style={{
+                                    padding: '1px 4px',
+                                    borderRadius: '3px',
+                                    background: hexToRgba(platform.color, 0.1),
+                                    color: platform.color,
+                                    fontSize: '0.62rem',
+                                    fontWeight: 900,
+                                    border: `1px solid ${hexToRgba(platform.color, 0.15)}`
+                                }}>
+                                    {getInitials(platform.display_name)}
+                                </div>
+                            )}
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                             {isSaving && <Loader2 size={12} className="animate-spin text-primary" />}
@@ -362,10 +528,19 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
                             value={localContent}
                             onChange={setLocalContent}
                             placeholder={`Strategy for ${platform.display_name}...`}
+                            variant="minimal"
                             minHeight={160}
                             maxHeight={400}
                         />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+
+                        {/* Reminders Section */}
+                        <PlatformRemindersSection
+                            platformNotes={allNotes.filter(n => n.platform === platform.id)}
+                            platformColor={platform.color}
+                            onAdd={() => onAddReminder(platform.id)}
+                        />
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
                             <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Auto-saves as you type</span>
                             {isSaving ? (
                                 <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -382,4 +557,89 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
             )}
         </div>
     );
+}
+
+function PlatformRemindersSection({ platformNotes, platformColor, onAdd }: { platformNotes: CampaignReminder[], platformColor?: string, onAdd: () => void }) {
+    const queryClient = useQueryClient();
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
+    const updateStatusMutation = useMutation({
+        mutationFn: async ({ id, status }: { id: string, status: string }) => {
+            return await pb.collection('campaign_reminders').update(id, { status });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['platform-notes'] });
+            queryClient.invalidateQueries({ queryKey: ['reminders'] });
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return await pb.collection('campaign_reminders').delete(id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['platform-notes'] });
+            queryClient.invalidateQueries({ queryKey: ['reminders'] });
+        }
+    });
+
+    return (
+        <div className="hero-card" style={{
+            padding: '0.45rem',
+            background: 'var(--bg-overlay)',
+            border: '1px solid var(--border-subtle)',
+            marginTop: '1.25rem'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isCollapsed ? 0 : '0.25rem' }}>
+                <button
+                    type="button"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="hero-btn hero-btn-ghost"
+                    style={{ padding: '0.15rem 0.3rem', gap: '0.3rem', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-dim)' }}
+                >
+                    {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+                    <Bell size={13} style={{ color: platformColor || 'hsl(var(--primary))' }} />
+                    Reminders
+                </button>
+                <button
+                    type="button"
+                    onClick={onAdd}
+                    className="hero-btn hero-btn-ghost"
+                    style={{ padding: '0.15rem 0.35rem', fontSize: '0.7rem' }}
+                >
+                    <Plus size={12} />
+                    Add
+                </button>
+            </div>
+
+            {!isCollapsed && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '200px', overflowY: 'auto' }}>
+                    {platformNotes.length === 0 ? (
+                        <div style={{
+                            padding: '0.75rem',
+                            textAlign: 'center',
+                            color: 'var(--text-dim)',
+                            fontSize: '0.7rem',
+                            border: '1px dashed var(--border-subtle)',
+                            borderRadius: '8px'
+                        }}>
+                            No pending platform reminders.
+                        </div>
+                    ) : (
+                        platformNotes.map(note => (
+                            <ReminderItem
+                                key={note.id}
+                                reminder={note}
+                                onDelete={() => deleteMutation.mutate(note.id)}
+                                onToggle={(id, status) => updateStatusMutation.mutate({ id, status })}
+                                platformColor={platformColor}
+                                compact={true}
+                            />
+                        ))
+                    )}
+                </div>
+            )}
+
+        </div>
+    )
 }

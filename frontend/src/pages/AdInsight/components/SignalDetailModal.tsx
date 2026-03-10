@@ -3,6 +3,7 @@ import { MapPin, Calendar, TrendingUp, Info, Save, X } from "lucide-react";
 import { TrendSignal, SignalState, Destination } from "../types";
 import { formatDate } from "../utils";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface SignalDetailModalProps {
     isOpen: boolean;
@@ -39,7 +40,7 @@ export const SignalDetailModal = ({
 
     const stateLabel = signal.state.replace('_', ' ');
 
-    return (
+    const modalContent = (
         <div
             style={{
                 position: 'fixed',
@@ -47,8 +48,8 @@ export const SignalDetailModal = ({
                 left: 0,
                 right: 0,
                 bottom: 0,
-                background: 'rgba(0, 0, 0, 0.4)',
-                backdropFilter: 'blur(8px)',
+                background: 'rgba(0, 0, 0, 0.75)',
+                transform: 'translateZ(0)', // GPU Composite fix
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -70,7 +71,9 @@ export const SignalDetailModal = ({
                     overflowY: 'auto',
                     position: 'relative',
                     boxShadow: 'var(--shadow-medium)',
-                    borderRadius: '1rem'
+                    borderRadius: '1rem',
+                    pointerEvents: 'auto',
+                    transform: 'translateZ(0)'
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -220,4 +223,6 @@ export const SignalDetailModal = ({
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 };

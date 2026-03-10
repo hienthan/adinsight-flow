@@ -22,6 +22,7 @@ export default function CampaignReminders({ campaignId, compact = false, platfor
                 expand: 'campaign,campaign.platform'
             });
         },
+        staleTime: 1000 * 60 * 60 * 4, // 4 hours
     });
 
     const updateStatusMutation = useMutation({

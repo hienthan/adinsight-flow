@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, Key, History, CheckCircle2 } from 'lucide-react';
+import { ArrowUpRight, Key, History, CheckCircle2, FileText } from 'lucide-react';
 import { Campaign, CampaignPlatform, CampaignChange } from '../../types/campaign';
 import { pb } from '../../lib/pocketbase';
 import { formatDate } from '../../lib/utils';
 import { htmlToPlainText } from '../../lib/noteHtml';
+import MetadataModal from './MetadataModal';
 
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type ViewMode = 'comfortable' | 'compact' | 'alert';
@@ -31,33 +32,33 @@ const REMINDER_STYLES: Record<ReminderState, {
         cardBackground: 'var(--bg-content)',
         cardBorder: 'var(--border-subtle)',
         badgeColor: 'hsl(var(--primary))',
-        badgeBackground: 'hsla(var(--primary) / 0.08)',
-        badgeBorder: 'hsla(var(--primary) / 0.2)',
+        badgeBackground: 'var(--accent-glow)',
+        badgeBorder: 'hsla(var(--primary) / 0.15)',
         alertColor: 'hsl(var(--primary))',
     },
     upcoming: {
-        cardBackground: 'hsla(var(--primary) / 0.07)',
-        cardBorder: 'hsla(var(--primary) / 0.3)',
+        cardBackground: 'hsla(var(--primary) / 0.05)',
+        cardBorder: 'hsla(var(--primary) / 0.25)',
         badgeColor: 'hsl(var(--primary))',
-        badgeBackground: 'hsla(var(--primary) / 0.14)',
+        badgeBackground: 'var(--accent-glow-strong)',
         badgeBorder: 'hsla(var(--primary) / 0.3)',
         alertColor: 'hsl(var(--primary))',
     },
     today: {
-        cardBackground: 'hsla(38 95% 55% / 0.13)',
-        cardBorder: 'hsla(38 95% 55% / 0.45)',
+        cardBackground: 'hsla(38 95% 55% / 0.1)',
+        cardBorder: 'hsla(38 95% 55% / 0.4)',
         badgeColor: 'hsl(38 95% 35%)',
-        badgeBackground: 'hsla(38 95% 55% / 0.23)',
-        badgeBorder: 'hsla(38 95% 45% / 0.45)',
+        badgeBackground: 'rgba(245, 158, 11, 0.15)',
+        badgeBorder: 'rgba(245, 158, 11, 0.3)',
         alertColor: 'hsl(38 95% 40%)',
     },
     overdue: {
-        cardBackground: 'hsla(3 85% 58% / 0.16)',
-        cardBorder: 'hsla(3 85% 58% / 0.5)',
-        badgeColor: 'hsl(3 85% 38%)',
-        badgeBackground: 'hsla(3 85% 58% / 0.24)',
-        badgeBorder: 'hsla(3 85% 48% / 0.45)',
-        alertColor: 'hsl(3 85% 42%)',
+        cardBackground: 'hsla(3 85% 58% / 0.1)',
+        cardBorder: 'hsla(3 85% 58% / 0.45)',
+        badgeColor: '#ef4444',
+        badgeBackground: 'rgba(239, 68, 68, 0.12)',
+        badgeBorder: 'rgba(239, 68, 68, 0.25)',
+        alertColor: '#ef4444',
     },
 };
 
@@ -65,7 +66,7 @@ interface CampaignCardProps {
     campaign: Campaign;
     platform?: CampaignPlatform;
     hasPendingReminders?: boolean;
-    highestPriority?: 'low' | 'medium' | 'high';
+    highestPriority?: 'low' | 'medium' | 'high' | 'critical';
     reminderState?: ReminderState;
     freshnessState?: FreshnessState;
     hasReviewed?: boolean;
@@ -87,6 +88,7 @@ export default function CampaignCard({
     const location = useLocation();
     const queryClient = useQueryClient();
     const [showCPCTooltip, setShowCPCTooltip] = React.useState(false);
+    const [isMetadataModalOpen, setIsMetadataModalOpen] = React.useState(false);
 
     const { data: cpcChanges = [] } = useQuery<CampaignChange[]>({
         queryKey: ['campaign-cpc-changes', campaign.id],
@@ -112,6 +114,10 @@ export default function CampaignCard({
         },
     });
 
+
+
+
+
     const compactView = viewMode === 'compact' || viewMode === 'alert';
     const notesPreview = htmlToPlainText(campaign.general_notes || '');
     const reminderStyle = REMINDER_STYLES[reminderState];
@@ -136,26 +142,33 @@ export default function CampaignCard({
         },
     };
 
+    const isPaused = campaign.status === 'paused';
+
     return (
         <div
-            className="animate-fade hero-card"
+            className={`animate-fade hero-card ${isPaused ? 'paused-campaign' : ''}`}
             style={{
                 position: 'relative',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
-                padding: compactView ? '0.65rem' : '1rem',
+                padding: compactView ? '0.75rem' : '1.25rem',
                 background: reminderStyle.cardBackground,
                 border: `1px solid ${reminderStyle.cardBorder}`,
+                boxShadow: 'var(--shadow-subtle)',
+                filter: isPaused ? 'grayscale(0.9) opacity(0.7)' : 'none',
+                ...(reminderState !== 'none' && { boxShadow: 'var(--shadow-glass)' })
             }}
             onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.transform = 'translateY(-3px)';
                 e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
+                e.currentTarget.style.borderColor = 'hsla(var(--primary) / 0.25)';
             }}
             onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-soft)';
+                e.currentTarget.style.boxShadow = reminderState !== 'none' ? 'var(--shadow-glass)' : 'var(--shadow-subtle)';
+                e.currentTarget.style.borderColor = reminderStyle.cardBorder;
             }}
         >
             {/* Priority Indicator Line */}
@@ -190,6 +203,7 @@ export default function CampaignCard({
                         >
                             {campaign.name}
                         </h3>
+
                         {campaign.is_dsa === false && (
                             <Key size={compactView ? 11 : 12} style={{ color: '#facc15', flexShrink: 0 }} />
                         )}
@@ -245,6 +259,21 @@ export default function CampaignCard({
                                 </div>
                             </div>
                         )}
+
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsMetadataModalOpen(true);
+                            }}
+                            className="hero-btn-ghost"
+                            style={{ padding: compactView ? '0.15rem' : '0.2rem', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            title={htmlToPlainText(campaign.metadata || '').trim().length > 0 ? "View/Edit Metadata" : "Add Metadata"}
+                        >
+                            <FileText size={compactView ? 12 : 13} style={{
+                                opacity: htmlToPlainText(campaign.metadata || '').trim().length > 0 ? 1 : 0.4,
+                                color: htmlToPlainText(campaign.metadata || '').trim().length > 0 ? 'hsl(var(--primary))' : 'inherit'
+                            }} />
+                        </button>
 
                         <button
                             onClick={(e) => {
@@ -331,6 +360,25 @@ export default function CampaignCard({
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                        {isPaused && (
+                            <span
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: compactView ? '0.06rem 0.28rem' : '0.1rem 0.35rem',
+                                    borderRadius: '4px',
+                                    fontSize: compactView ? '0.54rem' : '0.6rem',
+                                    fontWeight: 800,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.03em',
+                                    color: 'var(--text-muted)',
+                                    background: 'var(--bg-overlay)',
+                                    border: '1px solid var(--border-subtle)',
+                                }}
+                            >
+                                Paused
+                            </span>
+                        )}
                         <span
                             style={{
                                 display: 'inline-flex',
@@ -373,6 +421,16 @@ export default function CampaignCard({
                     {notesPreview || 'Define optimization notes...'}
                 </div>
             </div>
+
+            {isMetadataModalOpen && (
+                <MetadataModal
+                    isOpen={isMetadataModalOpen}
+                    onClose={() => setIsMetadataModalOpen(false)}
+                    campaignId={campaign.id}
+                    campaignName={campaign.name}
+                    initialContent={campaign.metadata || ''}
+                />
+            )}
         </div>
     );
 }

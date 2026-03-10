@@ -19,27 +19,27 @@ def classify_tier(slug):
     slug_lower = slug.lower()
     
     # Tier 5: Informational content (EXCLUDE from DSA or low bid)
-    RE_TIER_5 = r'guide|itinerary|best-things|how-to|tips|must-see|review|highlights|blog|article|things-to-do|places-to-visit'
+    RE_TIER_5 = r'guide|itinerary|best-things|how-to|tips|must-see|review|highlights|blog|article|things-to-do|places-to-visit|panduan|rekomendasi|daftar|berita|apa-saja'
     if re.search(RE_TIER_5, slug_lower):
         return "5"
     
-    # Tier 4: Packages & combos (check BEFORE Tier 1 to prevent "pass" conflicts)
-    RE_TIER_4 = r'package|combo|bundle|deal|\d+-day.*pass|unlimited|hop-on-hop-off|multi-day'
+    # Tier 4: Packages & combos
+    RE_TIER_4 = r'package|combo|bundle|deal|\d+-day.*pass|unlimited|hop-on-hop-off|multi-day|paket|rombongan'
     if re.search(RE_TIER_4, slug_lower):
         return "4"
     
-    # Tier 1: Direct tickets & admission (HIGHEST priority for DSA)
-    RE_TIER_1 = r'ticket|pass|entry|admission|fast-track|skip-the-line|vip-access|entrance'
+    # Tier 1: Direct tickets & admission
+    RE_TIER_1 = r'ticket|pass|entry|admission|fast-track|skip-the-line|vip-access|entrance|tiket|kartu-akses'
     if re.search(RE_TIER_1, slug_lower):
         return "1"
     
-    # Tier 2: Tours & guided experiences (HIGH priority)
-    RE_TIER_2 = r'tour|cruise|safari|excursion|walking-tour|food-tour|bike-tour|boat-trip|snorkel|dive|trek|hike'
+    # Tier 2: Tours & guided experiences
+    RE_TIER_2 = r'tour|cruise|safari|excursion|walking-tour|food-tour|bike-tour|boat-trip|snorkel|dive|trek|hike|wisata|tur|pengalaman'
     if re.search(RE_TIER_2, slug_lower):
         return "2"
     
-    # Tier 3: Services & rentals (MEDIUM priority)
-    RE_TIER_3 = r'spa|massage|transfer|shuttle|rental|sim-card|wifi|pocket-wifi|car-rental|bike-rental|scooter|class|workshop|lesson|cooking|yoga'
+    # Tier 3: Services & rentals
+    RE_TIER_3 = r'spa|massage|transfer|shuttle|rental|sim-card|wifi|pocket-wifi|car-rental|bike-rental|scooter|class|workshop|lesson|cooking|yoga|pijat|sewa|layanan'
     if re.search(RE_TIER_3, slug_lower):
         return "3"
     

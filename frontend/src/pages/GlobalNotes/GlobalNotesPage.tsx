@@ -7,10 +7,20 @@ import {
     Search,
     Pin,
     Trash2,
-    Monitor
+    Monitor,
+    PanelLeftClose,
+    PanelLeftOpen,
+    PanelRightClose,
+    PanelRightOpen,
+    Globe,
+    AlertCircle,
+    Settings,
+    Loader2,
+    Copy
 } from 'lucide-react';
+import { toast } from 'sonner';
 import RichTextEditor from '../../components/common/RichTextEditor';
-import { htmlToPlainText, prepareNoteHtmlForRender } from '../../lib/noteHtml';
+import { htmlToPlainText, prepareNoteHtmlForRender, normalizeHtmlForCompare } from '../../lib/noteHtml';
 
 interface Note {
     id: string;
@@ -18,7 +28,9 @@ interface Note {
     content: string;
     tags: string[];
     is_pinned: boolean;
-    platform: 'Klook' | 'Trip' | 'General';
+    priority: 'high' | 'medium' | 'normal';
+    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System' | 'RSA' | 'DSA';
+    images: string[];
     created: string;
     updated: string;
 }
@@ -28,12 +40,17 @@ export default function GlobalNotesPage() {
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isEditing, setIsEditing] = useState(false);
+    const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
+    const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
 
     // Form state
     const [editTitle, setEditTitle] = useState('');
     const [editContent, setEditContent] = useState('');
     const [editTags, setEditTags] = useState('');
     const [editPlatform, setEditPlatform] = useState<string>('General');
+    const [editPriority, setEditPriority] = useState<'high' | 'medium' | 'normal'>('normal');
+    const [confirmingDeleteNote, setConfirmingDeleteNote] = useState(false);
+    const [confirmingDeleteImage, setConfirmingDeleteImage] = useState<string | null>(null);
 
     // Fetch notes
     const { data: notes = [] } = useQuery<Note[]>({
@@ -49,7 +66,9 @@ export default function GlobalNotesPage() {
                 content: r.content,
                 tags: r.tags,
                 is_pinned: r.is_pinned,
+                priority: r.priority || 'normal',
                 platform: r.platform,
+                images: r.images || [],
                 created: r.created,
                 updated: r.updated
             })) as Note[];
@@ -72,6 +91,7 @@ export default function GlobalNotesPage() {
                 title: 'New Note',
                 content: '<h1>New Note</h1><p>Start writing...</p>',
                 platform: 'General',
+                priority: 'normal',
                 is_pinned: false,
                 tags: []
             };
@@ -90,7 +110,8 @@ export default function GlobalNotesPage() {
                 title: editTitle,
                 content: editContent,
                 tags: editTags.split(',').map(t => t.trim()).filter(t => t),
-                platform: editPlatform
+                platform: editPlatform,
+                priority: editPriority
             });
         },
         onSuccess: () => {
@@ -105,7 +126,64 @@ export default function GlobalNotesPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['global-notes'] });
-            if (activeNote?.id === selectedNoteId) setSelectedNoteId(null);
+            setSelectedNoteId(null);
+            setIsEditing(false);
+            setConfirmingDeleteNote(false);
+        }
+    });
+
+    const handleDeleteNote = (id: string) => {
+        if (!confirmingDeleteNote) {
+            setConfirmingDeleteNote(true);
+            setTimeout(() => setConfirmingDeleteNote(false), 3000);
+            return;
+        }
+        deleteMutation.mutate(id);
+    };
+
+    const handleImageUpload = async (file: File): Promise<string> => {
+        if (!selectedNoteId) throw new Error('No note selected');
+
+        const formData = new FormData();
+        formData.append('images', file);
+
+        const updatedRecord = await pb.collection('general_notes').update(selectedNoteId, formData);
+        queryClient.invalidateQueries({ queryKey: ['global-notes'] });
+
+        // Get the filename of the last uploaded image
+        const filename = updatedRecord.images[updatedRecord.images.length - 1];
+        return pb.files.getUrl(updatedRecord, filename);
+    };
+
+    const deleteImageMutation = useMutation({
+        mutationFn: async (filename: string) => {
+            if (!selectedNoteId || !activeNote) return;
+
+            // Remove from PB
+            await pb.collection('general_notes').update(selectedNoteId, {
+                'images-': [filename]
+            });
+            return filename;
+        },
+        onSuccess: (filename) => {
+            if (!filename) return;
+
+            // Get URL for cleanup
+            const imageUrl = pb.files.getUrl(activeNote as any, filename);
+
+            // Escape special chars for regex
+            const escapedUrl = imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const contentCleanup = editContent.replace(new RegExp(`<img[^>]*src=["']${escapedUrl}["'][^>]*>`, 'g'), '');
+
+            if (contentCleanup !== editContent) {
+                setEditContent(contentCleanup);
+                if (!isEditing) {
+                    pb.collection('general_notes').update(selectedNoteId!, {
+                        content: contentCleanup
+                    }).then(() => queryClient.invalidateQueries({ queryKey: ['global-notes'] }));
+                }
+            }
+            queryClient.invalidateQueries({ queryKey: ['global-notes'] });
         }
     });
 
@@ -125,12 +203,65 @@ export default function GlobalNotesPage() {
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         htmlToPlainText(note.content).toLowerCase().includes(searchTerm.toLowerCase()) ||
         note.tags?.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    ).sort((a, b) => {
+        // 1. Pinned status (true > false)
+        if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+
+        // 2. Priority (high > medium > normal)
+        const priorityScore = { high: 3, medium: 2, normal: 1 };
+        const aPriority = priorityScore[a.priority || 'normal'];
+        const bPriority = priorityScore[b.priority || 'normal'];
+        if (aPriority !== bPriority) return bPriority - aPriority;
+
+        // 3. Platform (Traveloka > Klook > System > General)
+        const getPlatformScore = (platform?: string) => {
+            const p = String(platform || '').toLowerCase();
+            if (p === 'rsa') return 8;
+            if (p === 'dsa') return 7;
+            if (p === 'traveloka' || p === 'tvlk') return 6;
+            if (p === 'klook') return 5;
+            if (p === 'trip') return 4;
+            if (p === 'system') return 2;
+            return 1;
+        };
+        const aPlatform = getPlatformScore(a.platform);
+        const bPlatform = getPlatformScore(b.platform);
+        if (aPlatform !== bPlatform) return bPlatform - aPlatform;
+
+        // 4. Updated time (newest first)
+        return new Date(b.updated).getTime() - new Date(a.updated).getTime();
+    });
 
     const renderedNote = useMemo(
         () => prepareNoteHtmlForRender(activeNote?.content || ''),
         [activeNote?.id, activeNote?.content] // Added activeNote?.id to ensure refresh
     );
+
+    // Compute changes for Save button
+    const hasChanges = useMemo(() => {
+        if (!activeNote) return false;
+
+        // Title comparison
+        const titleChanged = (activeNote.title || '') !== (editTitle || '');
+
+        // Use normalized HTML for content comparison
+        const contentChanged = normalizeHtmlForCompare(activeNote.content || '') !== normalizeHtmlForCompare(editContent || '');
+
+        // Tags comparison (ignore order and empty strings)
+        const currentTagsStr = (activeNote.tags || []).map(t => t.trim()).filter(Boolean).sort().join(',');
+        const editTagsStr = editTags.split(',').map(t => t.trim()).filter(Boolean).sort().join(',');
+        const tagsChanged = currentTagsStr !== editTagsStr;
+
+        // Platform comparison
+        const currentPlatform = String(activeNote.platform || 'General');
+        const platformChanged = currentPlatform !== editPlatform;
+
+        // Priority comparison
+        const currentPriority = activeNote.priority || 'normal';
+        const priorityChanged = currentPriority !== editPriority;
+
+        return titleChanged || contentChanged || tagsChanged || platformChanged || priorityChanged;
+    }, [activeNote, editTitle, editContent, editTags, editPlatform, editPriority]);
 
     // ESC support for editing
     useEffect(() => {
@@ -173,8 +304,41 @@ export default function GlobalNotesPage() {
         setEditContent(note.content);
         setEditTags(note.tags?.join(', ') || '');
         setEditPlatform(String(note.platform || 'General'));
+        setEditPriority(note.priority || 'normal');
         setIsEditing(true);
         setSelectedNoteId(note.id);
+    };
+
+    const handleCopyToClipboard = () => {
+        if (!activeNote) return;
+        const plainText = htmlToPlainText(activeNote.content);
+        const htmlContent = `<h1 style="font-size: 1.75rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem;">${activeNote.title}</h1>${activeNote.content}`;
+        const fullPlainText = `${activeNote.title}\n\n${plainText}`;
+
+        // Attempt to copy as rich text (HTML + Plain)
+        try {
+            const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+            const blobText = new Blob([fullPlainText], { type: 'text/plain' });
+            const data = [new ClipboardItem({
+                'text/html': blobHtml,
+                'text/plain': blobText,
+            })];
+
+            navigator.clipboard.write(data).then(() => {
+                toast.success('Note copied as Rich Text');
+            }).catch(err => {
+                console.error('Clipboard API error:', err);
+                // Fallback to legacy plain text copy
+                navigator.clipboard.writeText(fullPlainText).then(() => {
+                    toast.success('Copied as Plain Text');
+                });
+            });
+        } catch (err) {
+            console.error('Clipboard error:', err);
+            navigator.clipboard.writeText(fullPlainText).then(() => {
+                toast.success('Copied as Plain Text');
+            });
+        }
     };
 
     return (
@@ -182,7 +346,11 @@ export default function GlobalNotesPage() {
 
             {/* Sidebar List */}
             <div style={{
-                width: '320px',
+                width: isLeftSidebarCollapsed ? '0' : '320px',
+                minWidth: isLeftSidebarCollapsed ? '0' : '320px',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                opacity: isLeftSidebarCollapsed ? 0 : 1,
+                pointerEvents: isLeftSidebarCollapsed ? 'none' : 'auto',
                 display: 'flex',
                 flexDirection: 'column',
                 background: 'var(--bg-card)',
@@ -248,34 +416,86 @@ export default function GlobalNotesPage() {
                                 setIsEditing(false);
                             }}
                             style={{
-                                padding: '0.85rem 1.25rem',
+                                padding: '0.6rem 0.85rem',
                                 borderBottom: '1px solid var(--border-subtle)',
                                 cursor: 'pointer',
-                                background: selectedNoteId === note.id ? 'var(--accent-glow)' : 'transparent',
-                                borderLeft: selectedNoteId === note.id ? '4px solid hsl(var(--primary))' : '4px solid transparent',
+                                background: selectedNoteId === note.id
+                                    ? 'var(--accent-glow)'
+                                    : (note.priority === 'high' ? 'hsla(0, 84%, 60%, 0.03)' : note.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.03)' : 'transparent'),
+                                borderLeft: selectedNoteId === note.id
+                                    ? '3px solid hsl(var(--primary))'
+                                    : (note.priority === 'high' ? '3px solid #ef4444' : note.priority === 'medium' ? '3px solid #f59e0b' : '3px solid transparent'),
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                transition: 'all 0.15s ease'
+                                transition: 'all 0.1s ease',
+                                gap: '0.5rem'
                             }}
                             className="note-item-hover"
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, overflow: 'hidden' }}>
-                                {note.is_pinned && <Pin size={10} style={{ flexShrink: 0, color: 'var(--accent)', fill: 'var(--accent)' }} />}
-                                <span style={{
-                                    fontWeight: selectedNoteId === note.id ? 700 : 500,
-                                    fontSize: '0.85rem',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    color: selectedNoteId === note.id ? 'hsl(var(--primary))' : 'var(--text-main)'
-                                }}>
-                                    {note.title}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flex: 1, overflow: 'hidden' }}>
+                                {String(note.platform || '').toLowerCase() === 'klook' && (
+                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(255, 91, 0, 0.1)', color: '#ff5b00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>K</div>
+                                )}
+                                {(String(note.platform || '').toLowerCase() === 'traveloka' || String(note.platform || '').toLowerCase() === 'tvlk') && (
+                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(27, 160, 226, 0.1)', color: '#1ba0e2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.45rem', fontWeight: 800, padding: '0 3px' }}>TK</div>
+                                )}
+                                {String(note.platform || '').toLowerCase() === 'rsa' && (
+                                    <div style={{ flexShrink: 0, minWidth: 24, height: 14, borderRadius: 3, background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800, padding: '0 4px' }}>RSA</div>
+                                )}
+                                {String(note.platform || '').toLowerCase() === 'dsa' && (
+                                    <div style={{ flexShrink: 0, minWidth: 24, height: 14, borderRadius: 3, background: 'hsla(271, 81%, 56%, 0.1)', color: 'hsla(271, 81%, 56%, 1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800, padding: '0 4px' }}>DSA</div>
+                                )}
+                                {String(note.platform || '').toLowerCase() === 'trip' && (
+                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(14, 43, 92, 0.1)', color: '#0e2b5c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>T</div>
+                                )}
+                                {String(note.platform || '').toLowerCase() === 'system' && (
+                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'var(--bg-subtle)', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>
+                                        <Settings size={8} />
+                                    </div>
+                                )}
+                                {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa', 'dsa'].includes(String(note.platform || '').toLowerCase())) && (
+                                    <div style={{
+                                        flexShrink: 0,
+                                        width: 14,
+                                        height: 14,
+                                        borderRadius: 3,
+                                        background: 'hsla(243, 75%, 59%, 0.1)',
+                                        color: '#4f46e5',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <Globe size={9} strokeWidth={3} />
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', overflow: 'hidden', flex: 1 }}>
+                                    <span style={{
+                                        fontWeight: selectedNoteId === note.id ? 600 : 400,
+                                        fontSize: '0.78rem',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        color: selectedNoteId === note.id ? 'hsl(var(--primary))' : 'var(--text-main)',
+                                        letterSpacing: '-0.01em'
+                                    }}>
+                                        {note.title}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
+                                {note.images && note.images.length > 0 && (
+                                    <div title="Contains images" style={{ display: 'flex', alignItems: 'center' }}>
+                                        <Monitor size={12} style={{ color: 'hsl(var(--primary))' }} />
+                                    </div>
+                                )}
+                                {note.priority === 'high' && <AlertCircle size={9} color="#ef4444" />}
+                                {note.priority === 'medium' && <span style={{ color: '#f59e0b', fontSize: '9px', fontWeight: 800 }}>M</span>}
+                                {note.is_pinned && <Pin size={10} style={{ flexShrink: 0, color: 'var(--accent)', fill: 'var(--accent)', opacity: 0.9 }} />}
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: 500, opacity: 0.8 }}>
+                                    {new Date(note.updated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                 </span>
                             </div>
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', flexShrink: 0, fontWeight: 600 }}>
-                                {new Date(note.updated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                            </span>
                         </div>
                     ))}
                     {filteredNotes.length === 0 && (
@@ -294,11 +514,13 @@ export default function GlobalNotesPage() {
                 background: 'var(--bg-content)',
                 overflow: 'hidden',
                 marginTop: '1rem',
-                marginRight: '1rem',
+                marginRight: isRightSidebarCollapsed ? '1rem' : '0',
                 marginBottom: '1rem',
-                borderRadius: '0 1rem 1rem 0',
+                borderRadius: isLeftSidebarCollapsed ? '1rem' : '0 1rem 1rem 0',
                 border: '1px solid var(--border-subtle)',
-                borderLeft: 'none',
+                borderLeft: isLeftSidebarCollapsed ? '1px solid var(--border-subtle)' : 'none',
+                borderRight: isRightSidebarCollapsed ? '1px solid var(--border-subtle)' : 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 boxShadow: '10px 0 20px rgba(0,0,0,0.05)'
             }}>
                 {activeNote ? (
@@ -315,12 +537,34 @@ export default function GlobalNotesPage() {
                             top: 0,
                             zIndex: 10
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ display: 'flex', gap: '0.25rem', marginRight: '0.5rem' }}>
+                                    <button
+                                        onClick={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
+                                        className={`hero-btn-ghost ${isLeftSidebarCollapsed ? 'text-primary' : ''}`}
+                                        style={{ padding: '0.4rem', borderRadius: '8px' }}
+                                        title={isLeftSidebarCollapsed ? "Show Notes List" : "Hide Notes List"}
+                                    >
+                                        {isLeftSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                                    </button>
+                                </div>
+
                                 {isEditing ? (
                                     <input
                                         value={editTitle}
                                         onChange={e => setEditTitle(e.target.value)}
-                                        style={{ fontSize: '1.25rem', fontWeight: 700, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', outline: 'none', color: 'var(--text-main)', width: '300px' }}
+                                        style={{
+                                            fontSize: '1.25rem',
+                                            fontWeight: 700,
+                                            background: 'transparent',
+                                            border: 'none',
+                                            borderBottom: '1px solid var(--primary)',
+                                            outline: 'none',
+                                            color: 'var(--text-main)',
+                                            flex: 1,
+                                            maxWidth: '500px',
+                                            paddingBottom: '2px'
+                                        }}
                                         placeholder="Note Title"
                                         autoFocus
                                     />
@@ -334,16 +578,44 @@ export default function GlobalNotesPage() {
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 {isEditing ? (
                                     <>
-                                        <button onClick={() => updateMutation.mutate(activeNote.id)} className="hero-btn hero-btn-primary">Save Changes</button>
+                                        <button
+                                            onClick={() => updateMutation.mutate(activeNote.id)}
+                                            disabled={!hasChanges}
+                                            className="hero-btn hero-btn-primary"
+                                        >
+                                            Save
+                                        </button>
                                         <button onClick={() => setIsEditing(false)} className="hero-btn hero-btn-ghost">Cancel</button>
                                     </>
                                 ) : (
                                     <>
+                                        <button
+                                            onClick={handleCopyToClipboard}
+                                            className="hero-btn-ghost"
+                                            title="Copy to Clipboard"
+                                        >
+                                            <Copy size={18} />
+                                        </button>
                                         <button onClick={() => togglePinMutation.mutate(activeNote)} className="hero-btn-ghost" title={activeNote.is_pinned ? "Unpin" : "Pin"}>
                                             <Pin size={18} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />
                                         </button>
-                                        <button onClick={() => { if (confirm('Delete this note?')) deleteMutation.mutate(activeNote.id) }} className="hero-btn-ghost text-destructive" title="Delete">
+                                        <button
+                                            onClick={() => handleDeleteNote(activeNote.id)}
+                                            className={`hero-btn-ghost ${confirmingDeleteNote ? 'bg-destructive text-white' : 'text-destructive'}`}
+                                            title={confirmingDeleteNote ? "Confirm Delete" : "Delete"}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                                        >
                                             <Trash2 size={18} />
+                                            {confirmingDeleteNote && <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Confirm?</span>}
+                                        </button>
+                                        <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
+                                        <button
+                                            onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+                                            className={`hero-btn-ghost ${isRightSidebarCollapsed ? 'text-primary' : ''}`}
+                                            style={{ padding: '0.4rem', borderRadius: '8px' }}
+                                            title={isRightSidebarCollapsed ? "Show Information" : "Hide Information"}
+                                        >
+                                            {isRightSidebarCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
                                         </button>
                                     </>
                                 )}
@@ -351,7 +623,7 @@ export default function GlobalNotesPage() {
                         </div>
 
                         {/* Editor / Viewer Container */}
-                        <div className="note-content-area" style={{ flex: 1, display: 'flex', background: 'var(--bg-main)', overflow: 'hidden' }}>
+                        <div className="note-content-area" style={{ flex: 1, display: 'flex', background: 'var(--bg-main)', overflow: 'hidden', minWidth: 0 }}>
                             <div className="note-scroll-container" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
                                 <div style={{
                                     maxWidth: '920px',
@@ -374,45 +646,69 @@ export default function GlobalNotesPage() {
                                         overflow: 'hidden'
                                     }}>
                                         {isEditing ? (
-                                            <div style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
-                                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                                            <div style={{ padding: '3.5rem 4rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
                                                             Platform
-                                                        </div>
-                                                        <div className="filter-group">
-                                                            <select
-                                                                value={editPlatform || 'General'}
-                                                                onChange={e => setEditPlatform(e.target.value)}
-                                                                style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-main)' }}
-                                                            >
-                                                                <option value="General">General</option>
-                                                                <option value="Klook">Klook</option>
-                                                                <option value="Trip">Trip</option>
-                                                            </select>
-                                                        </div>
+                                                        </span>
+                                                        <select
+                                                            value={editPlatform || 'General'}
+                                                            onChange={e => setEditPlatform(e.target.value)}
+                                                            style={{ padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-subtle)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
+                                                        >
+                                                            <option value="General">General</option>
+                                                            <option value="RSA">RSA</option>
+                                                            <option value="DSA">DSA</option>
+                                                            <option value="System">System</option>
+                                                            <option value="Klook">Klook</option>
+                                                            <option value="Trip">Trip</option>
+                                                            <option value="Traveloka">TVLK</option>
+                                                        </select>
                                                     </div>
-                                                    <div style={{ border: '1px solid var(--border-subtle)', borderRadius: '0.75rem', background: 'var(--bg-main)', padding: '0.75rem 0.9rem' }}>
-                                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                                                            Tags (comma separated)
-                                                        </div>
-                                                        <div className="filter-group">
-                                                            <input
-                                                                value={editTags}
-                                                                onChange={e => setEditTags(e.target.value)}
-                                                                placeholder="e.g. Strategy, Q1, Planning"
-                                                                style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-main)' }}
-                                                            />
-                                                        </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+                                                            Priority
+                                                        </span>
+                                                        <select
+                                                            value={editPriority || 'normal'}
+                                                            onChange={e => setEditPriority(e.target.value as 'high' | 'medium' | 'normal')}
+                                                            style={{
+                                                                padding: '0.35rem 0.5rem',
+                                                                borderRadius: '6px',
+                                                                border: editPriority === 'high' ? '1px solid #ef4444' : editPriority === 'medium' ? '1px solid #f59e0b' : '1px solid var(--border-subtle)',
+                                                                background: editPriority === 'high' ? 'hsla(0, 84%, 60%, 0.05)' : editPriority === 'medium' ? 'hsla(38, 92%, 50%, 0.05)' : 'var(--bg-main)',
+                                                                color: editPriority === 'high' ? '#ef4444' : editPriority === 'medium' ? '#f59e0b' : 'var(--text-main)',
+                                                                fontSize: '0.8rem', outline: 'none', fontWeight: 600
+                                                            }}
+                                                        >
+                                                            <option value="normal">Normal</option>
+                                                            <option value="medium">Medium</option>
+                                                            <option value="high">High</option>
+                                                        </select>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+                                                            Tags
+                                                        </span>
+                                                        <input
+                                                            value={editTags}
+                                                            onChange={e => setEditTags(e.target.value)}
+                                                            placeholder="Comma separated, e.g. Strategy, Q1"
+                                                            style={{ flex: 1, padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-subtle)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
+                                                        />
                                                     </div>
                                                 </div>
-                                                <div className="filter-group" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                                    <label style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Content</label>
+
+                                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                                                     <RichTextEditor
                                                         value={editContent}
                                                         onChange={setEditContent}
                                                         placeholder="Write your note..."
-                                                        minHeight={450}
+                                                        style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+                                                        contentStyle={{ flex: 1 }}
+                                                        maxHeight="100%"
+                                                        onUploadImage={handleImageUpload}
                                                     />
                                                 </div>
                                             </div>
@@ -421,9 +717,9 @@ export default function GlobalNotesPage() {
                                                 <div
                                                     style={{
                                                         color: 'var(--text-main)',
-                                                        lineHeight: 1.85,
+                                                        lineHeight: 1.6,
                                                         cursor: 'text',
-                                                        fontSize: '1.05rem'
+                                                        fontSize: 'var(--text-sm)'
                                                     }}
                                                     onDoubleClick={() => startEditing(activeNote)}
                                                 >
@@ -445,9 +741,13 @@ export default function GlobalNotesPage() {
 
                             {/* Sidebar Meta & TOC (Right) */}
                             <div style={{
-                                width: '280px',
-                                borderLeft: '1px solid var(--border-subtle)',
-                                padding: '2rem 1.5rem',
+                                width: isRightSidebarCollapsed ? '0' : '280px',
+                                minWidth: isRightSidebarCollapsed ? '0' : '280px',
+                                borderLeft: isRightSidebarCollapsed ? 'none' : '1px solid var(--border-subtle)',
+                                padding: isRightSidebarCollapsed ? '0' : '2rem 1.5rem',
+                                opacity: isRightSidebarCollapsed ? 0 : 1,
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                pointerEvents: isRightSidebarCollapsed ? 'none' : 'auto',
                                 background: 'var(--bg-card)',
                                 overflowY: 'auto',
                                 position: 'sticky',
@@ -456,39 +756,156 @@ export default function GlobalNotesPage() {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '2.5rem',
-                                boxShadow: '-5px 0 15px rgba(0,0,0,0.02)'
+                                boxShadow: '-5px 0 15px rgba(0,0,0,0.02)',
+                                marginTop: '1rem',
+                                marginRight: '1rem',
+                                marginBottom: '1rem',
+                                borderRadius: '0 1rem 1rem 0',
+                                flexShrink: 0
                             }}>
-                                {/* Meta Section */}
+                                {/* Meta Section - Minimalized */}
                                 <div>
-                                    <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', letterSpacing: '0.05em' }}>Information</h4>
+                                    <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.8rem', letterSpacing: '0.05em' }}>Information</h4>
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        <div>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Platform</div>
-                                            <span className="hero-badge" style={{ background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontWeight: 700 }}>
-                                                {activeNote.platform}
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(2, 1fr)',
+                                        gap: '0.75rem',
+                                        background: 'var(--bg-main)',
+                                        padding: '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid var(--border-subtle)'
+                                    }}>
+                                        <div style={{ gridColumn: 'span 1' }}>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.2rem', textTransform: 'uppercase', opacity: 0.7 }}>Platform</div>
+                                            <span style={{
+                                                background: 'var(--accent-glow)',
+                                                color: 'hsl(var(--primary))',
+                                                fontWeight: 800,
+                                                fontSize: '0.65rem',
+                                                padding: '0.2rem 0.5rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid hsla(var(--primary) / 0.2)'
+                                            }}>
+                                                {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : (String(activeNote.platform || '').toLowerCase() === 'system' ? 'System' : (String(activeNote.platform || '').toLowerCase() === 'rsa' ? 'RSA' : (String(activeNote.platform || '').toLowerCase() === 'dsa' ? 'DSA' : activeNote.platform || 'General')))}
                                             </span>
                                         </div>
 
-                                        <div>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Tags</div>
-                                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                                {activeNote.tags?.length ? activeNote.tags.map(t => (
-                                                    <span key={t} className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-dim)', fontSize: '0.7rem' }}>#{t}</span>
-                                                )) : (
-                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontStyle: 'italic' }}>No tags</span>
-                                                )}
+                                        <div style={{ gridColumn: 'span 1' }}>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.2rem', textTransform: 'uppercase', opacity: 0.7 }}>Priority</div>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                <span className="hero-badge" style={{
+                                                    background: activeNote.priority === 'high' ? 'hsla(0, 84%, 60%, 0.1)' : activeNote.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.1)' : 'var(--bg-subtle)',
+                                                    color: activeNote.priority === 'high' ? '#ef4444' : activeNote.priority === 'medium' ? '#f59e0b' : 'var(--text-dim)',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.65rem',
+                                                    padding: '0.1rem 0.4rem'
+                                                }}>
+                                                    {activeNote.priority === 'high' ? 'High' : activeNote.priority === 'medium' ? 'Medium' : 'Normal'}
+                                                </span>
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Last Updated</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                                        <div style={{ gridColumn: 'span 2' }}>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.2rem', textTransform: 'uppercase', opacity: 0.7 }}>Last Updated</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-main)', fontWeight: 500 }}>
                                                 {new Date(activeNote.updated).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                                             </div>
                                         </div>
+
+                                        {activeNote.tags && activeNote.tags.length > 0 && (
+                                            <div style={{ gridColumn: 'span 2', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                                                <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                                                    {activeNote.tags.map(t => (
+                                                        <span key={t} style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 600 }}>#{t}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
+
+                                {/* Attachments Section */}
+                                {activeNote.images && activeNote.images.length > 0 && (
+                                    <div>
+                                        <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', letterSpacing: '0.05em' }}>Attachments</h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.6rem' }}>
+                                            {activeNote.images.map((img: string) => (
+                                                <div key={img} style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.75rem',
+                                                    padding: '0.5rem',
+                                                    borderRadius: '0.75rem',
+                                                    background: 'var(--bg-main)',
+                                                    border: '1px solid var(--border-subtle)',
+                                                }}>
+                                                    <div style={{
+                                                        width: '40px',
+                                                        height: '40px',
+                                                        borderRadius: '0.4rem',
+                                                        overflow: 'hidden',
+                                                        background: 'var(--bg-subtle)',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        <img
+                                                            src={pb.files.getUrl(activeNote as any, img, { thumb: '100x100' })}
+                                                            alt={img}
+                                                            onError={(e) => {
+                                                                (e.target as HTMLImageElement).src = 'https://placehold.co/40x40?text=IMG';
+                                                            }}
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                        />
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{
+                                                            fontSize: '0.65rem',
+                                                            color: 'var(--text-main)',
+                                                            fontWeight: 600,
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis'
+                                                        }}>
+                                                            {img.split('_').pop()}
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (confirmingDeleteImage === img) {
+                                                                    deleteImageMutation.mutate(img);
+                                                                    setConfirmingDeleteImage(null);
+                                                                } else {
+                                                                    setConfirmingDeleteImage(img);
+                                                                    setTimeout(() => setConfirmingDeleteImage(null), 3000);
+                                                                }
+                                                            }}
+                                                            disabled={deleteImageMutation.isPending}
+                                                            className={`hero-btn-ghost ${confirmingDeleteImage === img ? 'bg-destructive text-white' : 'text-destructive'}`}
+                                                            style={{
+                                                                padding: '0.2rem 0.5rem',
+                                                                marginTop: '0.2rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.25rem',
+                                                                borderRadius: '0.4rem',
+                                                                background: confirmingDeleteImage === img ? 'var(--destructive)' : 'transparent'
+                                                            }}
+                                                        >
+                                                            {deleteImageMutation.isPending ? (
+                                                                <Loader2 size={10} className="animate-spin" />
+                                                            ) : (
+                                                                <Trash2 size={10} />
+                                                            )}
+                                                            <span style={{ fontSize: '0.6rem', fontWeight: 700 }}>
+                                                                {deleteImageMutation.isPending ? 'Removing...' : (confirmingDeleteImage === img ? 'Confirm?' : 'Remove')}
+                                                            </span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* TOC Section */}
                                 {!isEditing && (

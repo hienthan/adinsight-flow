@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Bell, Save, AlertTriangle } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
@@ -31,15 +32,34 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
         enabled: !!campaignId && isOpen
     });
 
-    const availableMetrics = ['traffic', 'conversions', 'IS (Impression Share)', 'CPC', 'ROAS', 'Budget Burn Rate'];
+    const availableMetrics = ['TRAFFIC', 'CONVERSIONS', 'IS', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC KEYS'];
 
     const toggleMetric = (metric: string) => {
-        setFormData(prev => ({
-            ...prev,
-            check_metrics: prev.check_metrics.includes(metric)
+        setFormData(prev => {
+            const isSelected = prev.check_metrics.includes(metric);
+            const newMetrics = isSelected
                 ? prev.check_metrics.filter(m => m !== metric)
-                : [...prev.check_metrics, metric]
-        }));
+                : [...prev.check_metrics, metric];
+
+            let newMessage = prev.message.trim();
+            if (!isSelected) {
+                if (newMessage) {
+                    newMessage = newMessage.endsWith(',') ? `${newMessage} ${metric}` : `${newMessage}, ${metric}`;
+                } else {
+                    newMessage = metric;
+                }
+            } else {
+                const escapedMetric = metric.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                newMessage = newMessage.replace(new RegExp(escapedMetric, 'gi'), '').trim();
+                newMessage = newMessage.replace(/,\s*,/g, ',').replace(/^,\s*/, '').replace(/,\s*$/, '').trim();
+            }
+
+            return {
+                ...prev,
+                check_metrics: newMetrics,
+                message: newMessage
+            };
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -84,20 +104,19 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
 
     if (!isOpen) return null;
 
-    return (
+    const modalContent = (
         <div style={{
             position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'var(--bg-card-glass)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
+            background: 'rgba(2, 6, 23, 0.75)',
+            transform: 'translateZ(0)', // GPU Composite fix
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000,
+            zIndex: 1100,
             padding: '1.5rem'
         }}
             onMouseDown={(e) => {
@@ -118,7 +137,10 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                     padding: 0,
                     overflow: 'hidden',
                     background: 'var(--bg-content)',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    borderRadius: '2rem',
+                    boxShadow: 'var(--shadow-large)',
+                    pointerEvents: 'auto',
+                    transform: 'translateZ(0)'
                 }}
                 onClick={e => e.stopPropagation()}
             >
@@ -189,9 +211,10 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                                 value={formData.priority}
                                 onChange={e => setFormData({ ...formData, priority: e.target.value })}
                             >
-                                <option value="low">Low Priority</option>
-                                <option value="medium">Medium Priority</option>
-                                <option value="high">High Priority</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
                             </select>
                         </div>
                     </div>
@@ -250,4 +273,6 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 }

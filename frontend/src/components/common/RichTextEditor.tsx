@@ -4,8 +4,9 @@ import StarterKit from '@tiptap/starter-kit';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Placeholder from '@tiptap/extension-placeholder';
+import ImageResize from 'tiptap-extension-resize-image';
 import { Extension } from '@tiptap/core';
-import { Bold, Italic, Minus, Pilcrow } from 'lucide-react';
+import { Bold, Italic, Minus, Pilcrow, List, ListOrdered } from 'lucide-react';
 import { normalizeHtmlForCompare, toEditorHtml } from '../../lib/noteHtml';
 
 const MIN_FONT_SIZE = 12;
@@ -55,15 +56,41 @@ const FontSize = Extension.create({
                         chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run(),
         } as any;
     },
+    addKeyboardShortcuts() {
+        return {
+            'Mod-[': () => {
+                const current = (this.editor.getAttributes('textStyle').fontSize as string | undefined);
+                const parsed = Number(current);
+                const size = Number.isFinite(parsed) ? parsed : 14; // Default
+                const next = Math.max(12, size - 2);
+                return this.editor.commands.setFontSize(String(next));
+            },
+            'Mod-]': () => {
+                const current = (this.editor.getAttributes('textStyle').fontSize as string | undefined);
+                const parsed = Number(current);
+                const size = Number.isFinite(parsed) ? parsed : 14; // Default
+                const next = Math.min(24, size + 2);
+                return this.editor.commands.setFontSize(String(next));
+            },
+        };
+    },
+});
+
+const ResizableImage = (ImageResize as any).extend({
+    name: 'image',
 });
 
 interface RichTextEditorProps {
     value: string;
     onChange: (nextHtml: string) => void;
     placeholder?: string;
-    minHeight?: number;
-    maxHeight?: number;
+    minHeight?: number | string;
+    maxHeight?: number | string;
     disabled?: boolean;
+    style?: React.CSSProperties;
+    contentStyle?: React.CSSProperties;
+    onUploadImage?: (file: File) => Promise<string>;
+    variant?: 'default' | 'minimal';
 }
 
 export default function RichTextEditor({
@@ -73,8 +100,14 @@ export default function RichTextEditor({
     minHeight = 180,
     maxHeight = 360,
     disabled = false,
+    style,
+    contentStyle,
+    onUploadImage,
+    variant = 'default',
 }: RichTextEditorProps) {
     const initialHtml = useMemo(() => toEditorHtml(value || ''), [value]);
+
+    const isMinimal = variant === 'minimal';
 
     const editor = useEditor({
         extensions: [
@@ -86,6 +119,9 @@ export default function RichTextEditor({
             TextStyle,
             Color,
             FontSize,
+            ResizableImage.configure({
+                inline: true,
+            } as any),
             Placeholder.configure({
                 placeholder,
             }),
@@ -95,6 +131,52 @@ export default function RichTextEditor({
         onUpdate: ({ editor: currentEditor }) => {
             onChange(currentEditor.getHTML());
         },
+        editorProps: {
+            handlePaste: (view, event) => {
+                const items = event.clipboardData?.items;
+                if (!items) return false;
+
+                const files = [];
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') === 0) {
+                        const file = items[i].getAsFile();
+                        if (file) files.push(file);
+                    }
+                }
+
+                if (files.length > 0 && onUploadImage) {
+                    files.forEach(async (file) => {
+                        const url = await onUploadImage(file);
+                        view.dispatch(view.state.tr.replaceSelectionWith(
+                            view.state.schema.nodes.image.create({ src: url })
+                        ));
+                    });
+                    return true;
+                }
+                return false;
+            },
+            handleDrop: (view, event) => {
+                const files = event.dataTransfer?.files;
+                if (!files || files.length === 0) return false;
+
+                const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+                if (imageFiles.length > 0 && onUploadImage) {
+                    event.preventDefault();
+                    imageFiles.forEach(async (file) => {
+                        const url = await onUploadImage(file);
+                        const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+                        if (coordinates) {
+                            view.dispatch(view.state.tr.insert(
+                                coordinates.pos,
+                                view.state.schema.nodes.image.create({ src: url })
+                            ));
+                        }
+                    });
+                    return true;
+                }
+                return false;
+            }
+        }
     });
 
     useEffect(() => {
@@ -137,6 +219,7 @@ export default function RichTextEditor({
                 borderRadius: '12px',
                 background: 'var(--bg-content)',
                 overflow: 'hidden',
+                ...style
             }}
         >
             <div
@@ -144,7 +227,7 @@ export default function RichTextEditor({
                     display: 'flex',
                     flexWrap: 'wrap',
                     gap: '0.4rem',
-                    padding: '0.55rem',
+                    padding: isMinimal ? '0.35rem 0.55rem' : '0.55rem',
                     borderBottom: '1px solid var(--border-subtle)',
                     position: 'sticky',
                     top: 0,
@@ -152,59 +235,76 @@ export default function RichTextEditor({
                     background: 'var(--bg-main)',
                 }}
             >
-                <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().toggleBold().run()}>
-                    <Bold size={13} />
-                </button>
-                <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().toggleItalic().run()}>
-                    <Italic size={13} />
-                </button>
-                <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
-                    <Minus size={13} />
-                </button>
-                <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().unsetColor().unsetFontSize().run()}>
-                    <Pilcrow size={13} />
-                </button>
+                {!isMinimal && (
+                    <>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().toggleBold().run()}>
+                            <Bold size={13} />
+                        </button>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().toggleItalic().run()}>
+                            <Italic size={13} />
+                        </button>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+                            <Minus size={13} />
+                        </button>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', color: editor.isActive('bulletList') ? 'hsl(var(--primary))' : 'inherit' }} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+                            <List size={13} />
+                        </button>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', color: editor.isActive('orderedList') ? 'hsl(var(--primary))' : 'inherit' }} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+                            <ListOrdered size={13} />
+                        </button>
+                    </>
+                )}
 
-                <button
-                    type="button"
-                    className="hero-btn hero-btn-ghost"
-                    style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)' }}
-                    onClick={() => {
-                        const next = normalizeFontSize(getCurrentFontSize() - FONT_STEP);
-                        editor.chain().focus().setFontSize(String(next)).run();
-                    }}
-                    title="Decrease font size"
-                >
-                    <span style={{ fontWeight: 800, fontSize: '0.78rem', lineHeight: 1 }}>A</span>
-                </button>
-                <button
-                    type="button"
-                    className="hero-btn hero-btn-ghost"
-                    style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)' }}
-                    onClick={() => {
-                        const next = normalizeFontSize(getCurrentFontSize() + FONT_STEP);
-                        editor.chain().focus().setFontSize(String(next)).run();
-                    }}
-                    title="Increase font size"
-                >
-                    <span style={{ fontWeight: 800, fontSize: '1.02rem', lineHeight: 1 }}>A</span>
-                </button>
-                <span
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        padding: '0.2rem 0.45rem',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '8px',
-                        fontSize: 'var(--text-xs)',
-                        color: 'var(--text-dim)',
-                    }}
-                    title="Current font size"
-                >
-                    <span style={{ fontWeight: 700, fontSize: '0.72rem', lineHeight: 1 }}>A</span>
-                    {getCurrentFontSize()}px
-                </span>
+                {!isMinimal && (
+                    <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem' }} onClick={() => editor.chain().focus().unsetColor().unsetFontSize().run()}>
+                        <Pilcrow size={13} />
+                    </button>
+                )}
+
+                {!isMinimal && (
+                    <>
+                        <button
+                            type="button"
+                            className="hero-btn hero-btn-ghost"
+                            style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)' }}
+                            onClick={() => {
+                                const next = normalizeFontSize(getCurrentFontSize() - FONT_STEP);
+                                editor.chain().focus().setFontSize(String(next)).run();
+                            }}
+                            title="Decrease font size"
+                        >
+                            <span style={{ fontWeight: 800, fontSize: '0.78rem', lineHeight: 1 }}>A</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="hero-btn hero-btn-ghost"
+                            style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)' }}
+                            onClick={() => {
+                                const next = normalizeFontSize(getCurrentFontSize() + FONT_STEP);
+                                editor.chain().focus().setFontSize(String(next)).run();
+                            }}
+                            title="Increase font size"
+                        >
+                            <span style={{ fontWeight: 800, fontSize: '1.02rem', lineHeight: 1 }}>A</span>
+                        </button>
+                        <span
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                padding: '0.2rem 0.45rem',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '8px',
+                                fontSize: 'var(--text-xs)',
+                                color: 'var(--text-dim)',
+                            }}
+                            title="Current font size"
+                        >
+                            <span style={{ fontWeight: 700, fontSize: '0.72rem', lineHeight: 1 }}>A</span>
+                            {getCurrentFontSize()}px
+                        </span>
+                    </>
+                )}
 
                 {COLOR_SWATCHES.map((swatch) => (
                     <button
@@ -219,18 +319,20 @@ export default function RichTextEditor({
                     >
                         <span
                             style={{
-                                width: 10,
-                                height: 10,
+                                width: 12,
+                                height: 12,
                                 borderRadius: '999px',
-                                border: '1px solid var(--border-subtle)',
-                                background: swatch.value || 'transparent',
+                                border: swatch.value ? 'none' : '1px solid var(--border-subtle)',
+                                background: swatch.value || 'var(--text-main)',
                                 display: 'inline-block',
-                                marginRight: '0.35rem',
+                                marginRight: isMinimal ? '0' : '0.35rem',
+                                opacity: swatch.value ? 1 : 0.8
                             }}
                         />
-                        {swatch.label}
+                        {!isMinimal && swatch.label}
                     </button>
                 ))}
+
 
             </div>
 
@@ -241,6 +343,7 @@ export default function RichTextEditor({
                     overflowY: 'auto',
                     padding: '0.85rem 0.95rem',
                     cursor: 'text',
+                    ...contentStyle
                 }}
                 onMouseDown={(e) => {
                     if (e.target === e.currentTarget) {
@@ -251,6 +354,6 @@ export default function RichTextEditor({
             >
                 <EditorContent editor={editor} />
             </div>
-        </div>
+        </div >
     );
 }

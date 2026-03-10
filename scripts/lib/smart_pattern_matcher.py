@@ -200,18 +200,18 @@ class SmartPatternMatcher:
         
         # 1. Cultural Keywords (exact match)
         for keyword, (country, city) in self.cultural_keywords.items():
-            if keyword in slug_lower:
+            if re.search(r'\b' + re.escape(keyword) + r'\b', slug_lower):
                 return (country, city)
         
         # 2. City Prefix Matching (starts with or contains)
         for prefix, (country, city) in self.city_prefixes.items():
             # Check if slug contains the city name
-            if prefix in slug_lower or prefix.replace('-', '') in slug_clean:
+            if re.search(r'\b' + re.escape(prefix) + r'\b', slug_lower) or re.search(r'\b' + re.escape(prefix.replace('-', '')) + r'\b', slug_clean):
                 return (country, city)
         
         # 3. Country Keywords (for country-level detection)
         for keyword, (country, city) in self.country_keywords.items():
-            if keyword in slug_lower:
+            if re.search(r'\b' + re.escape(keyword) + r'\b', slug_lower):
                 return (country, city)
         
         # 4. Vietnamese Pattern Detection

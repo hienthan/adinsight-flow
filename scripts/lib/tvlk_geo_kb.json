@@ -1,0 +1,294 @@
+{
+    "pacitan": {
+        "country": "Indonesia",
+        "city": "Pacitan"
+    },
+    "bogor": {
+        "country": "Indonesia",
+        "city": "Bogor"
+    },
+    "purwakarta": {
+        "country": "Indonesia",
+        "city": "Purwakarta"
+    },
+    "boyolali": {
+        "country": "Indonesia",
+        "city": "Boyolali"
+    },
+    "likupang": {
+        "country": "Indonesia",
+        "city": "Likupang"
+    },
+    "mandalika": {
+        "country": "Indonesia",
+        "city": "Lombok"
+    },
+    "baturraden": {
+        "country": "Indonesia",
+        "city": "Purwokerto"
+    },
+    "sentul": {
+        "country": "Indonesia",
+        "city": "Bogor"
+    },
+    "semarang": {
+        "country": "Indonesia",
+        "city": "Semarang"
+    },
+    "pontianak": {
+        "country": "Indonesia",
+        "city": "Pontianak"
+    },
+    "kebumen": {
+        "country": "Indonesia",
+        "city": "Kebumen"
+    },
+    "tangerang": {
+        "country": "Indonesia",
+        "city": "Tangerang"
+    },
+    "karawang": {
+        "country": "Indonesia",
+        "city": "Karawang"
+    },
+    "banjarbaru": {
+        "country": "Indonesia",
+        "city": "Banjarbaru"
+    },
+    "probolinggo": {
+        "country": "Indonesia",
+        "city": "Probolinggo"
+    },
+    "cikarang": {
+        "country": "Indonesia",
+        "city": "Cikarang"
+    },
+    "gianyar": {
+        "country": "Indonesia",
+        "city": "Gianyar"
+    },
+    "cilegon": {
+        "country": "Indonesia",
+        "city": "Cilegon"
+    },
+    "pangandaran": {
+        "country": "Indonesia",
+        "city": "Pangandaran"
+    },
+    "ciamis": {
+        "country": "Indonesia",
+        "city": "Ciamis"
+    },
+    "tarakan": {
+        "country": "Indonesia",
+        "city": "Tarakan"
+    },
+    "kupang": {
+        "country": "Indonesia",
+        "city": "Kupang"
+    },
+    "tabanan": {
+        "country": "Indonesia",
+        "city": "Tabanan"
+    },
+    "nusa-penida": {
+        "country": "Indonesia",
+        "city": "Bali"
+    },
+    "nusa-dua": {
+        "country": "Indonesia",
+        "city": "Bali"
+    },
+    "ubud": {
+        "country": "Indonesia",
+        "city": "Bali"
+    },
+    "lembang": {
+        "country": "Indonesia",
+        "city": "Bandung"
+    },
+    "anyer": {
+        "country": "Indonesia",
+        "city": "Banten"
+    },
+    "labuan-bajo": {
+        "country": "Indonesia",
+        "city": "Labuan Bajo"
+    },
+    "puncak": {
+        "country": "Indonesia",
+        "city": "Bogor"
+    },
+    "bukittinggi": {
+        "country": "Indonesia",
+        "city": "Bukittinggi"
+    },
+    "canggu": {
+        "country": "Indonesia",
+        "city": "Bali"
+    },
+    "uluwatu": {
+        "country": "Indonesia",
+        "city": "Bali"
+    },
+    "lovina": {
+        "country": "Indonesia",
+        "city": "Bali"
+    },
+    "kediri": {
+        "country": "Indonesia",
+        "city": "Kediri"
+    },
+    "blitar": {
+        "country": "Indonesia",
+        "city": "Blitar"
+    },
+    "solo": {
+        "country": "Indonesia",
+        "city": "Solo"
+    },
+    "banyuwangi": {
+        "country": "Indonesia",
+        "city": "Banyuwangi"
+    },
+    "malang": {
+        "country": "Indonesia",
+        "city": "Malang"
+    },
+    "sumenep": {
+        "country": "Indonesia",
+        "city": "Sumenep"
+    },
+    "ternate": {
+        "country": "Indonesia",
+        "city": "Ternate"
+    },
+    "toraja": {
+        "country": "Indonesia",
+        "city": "Toraja"
+    },
+    "raja-ampat": {
+        "country": "Indonesia",
+        "city": "Raja Ampat"
+    },
+    "wakatobi": {
+        "country": "Indonesia",
+        "city": "Wakatobi"
+    },
+    "morotai": {
+        "country": "Indonesia",
+        "city": "Morotai"
+    },
+    "derawan": {
+        "country": "Indonesia",
+        "city": "Derawan"
+    },
+    "dieng": {
+        "country": "Indonesia",
+        "city": "Dieng"
+    },
+    "belitung": {
+        "country": "Indonesia",
+        "city": "Belitung"
+    },
+    "gresik": {
+        "country": "Indonesia",
+        "city": "Gresik"
+    },
+    "jogja": {
+        "country": "Indonesia",
+        "city": "Yogyakarta"
+    },
+    "shibuya": {
+        "country": "Japan",
+        "city": "Tokyo"
+    },
+    "shinjuku": {
+        "country": "Japan",
+        "city": "Tokyo"
+    },
+    "ginza": {
+        "country": "Japan",
+        "city": "Tokyo"
+    },
+    "makati": {
+        "country": "Philippines",
+        "city": "Makati"
+    },
+    "quezon": {
+        "country": "Philippines",
+        "city": "Quezon City"
+    },
+    "rantau-prapat": {
+        "country": "Indonesia",
+        "city": "Rantau Prapat"
+    },
+    "bitung": {
+        "country": "Indonesia",
+        "city": "Bitung"
+    },
+    "jawa-timur": {
+        "country": "Indonesia",
+        "city": "Unknown"
+    },
+    "jawa-barat": {
+        "country": "Indonesia",
+        "city": "Unknown"
+    },
+    "jawa-tengah": {
+        "country": "Indonesia",
+        "city": "Unknown"
+    },
+    "sumatera-utara": {
+        "country": "Indonesia",
+        "city": "Unknown"
+    },
+    "sumatera-barat": {
+        "country": "Indonesia",
+        "city": "Unknown"
+    },
+    "kalimantan-timur": {
+        "country": "Indonesia",
+        "city": "Unknown"
+    },
+    "sulawesi-utara": {
+        "country": "Indonesia",
+        "city": "Unknown"
+    },
+    "sapporo": {
+        "country": "Japan",
+        "city": "Sapporo"
+    },
+    "hokkaido": {
+        "country": "Japan",
+        "city": "Hokkaido"
+    },
+    "seoul": {
+        "country": "South Korea",
+        "city": "Seoul"
+    },
+    "hong-kong": {
+        "country": "Hong Kong",
+        "city": "Hong Kong"
+    },
+    "macau": {
+        "country": "Macao",
+        "city": "Macao"
+    },
+    "phu-quoc": {
+        "country": "Viet Nam",
+        "city": "Phu Quoc"
+    },
+    "da-nang": {
+        "country": "Viet Nam",
+        "city": "Da Nang"
+    },
+    "hoi-an": {
+        "country": "Viet Nam",
+        "city": "Hoi An"
+    },
+    "sa-pa": {
+        "country": "Viet Nam",
+        "city": "Sa Pa"
+    }
+}

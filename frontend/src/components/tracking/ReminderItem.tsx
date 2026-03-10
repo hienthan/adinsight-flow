@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Trash2, Calendar, CheckCircle, AlertCircle, Send } from 'lucide-react';
+import { CampaignReminder } from '../../types/campaign';
 import { formatDate } from '../../lib/utils';
 
 interface ReminderItemProps {
-    reminder: any;
+    reminder: CampaignReminder;
     onToggle?: (id: string, status: string, note?: string) => void;
     onDelete?: (id: string) => void;
     showCampaignName?: boolean;
@@ -30,6 +31,7 @@ export default function ReminderItem({
     };
 
     const style = getPriorityStyle(reminder.priority);
+    const isOverdue = reminder.status === 'pending' && new Date(reminder.reminder_date) < new Date();
 
     return (
         <div
@@ -39,11 +41,16 @@ export default function ReminderItem({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.25rem',
-                borderLeft: reminder.status === 'pending' ? `3px solid ${style.color}` : '1px solid var(--border-subtle)',
-                background: reminder.status === 'completed' ? 'var(--bg-main)' : 'var(--bg-content)',
+                borderLeft: reminder.status === 'pending'
+                    ? `3px solid ${isOverdue ? '#ef4444' : style.color}`
+                    : '1px solid var(--border-subtle)',
+                background: reminder.status === 'completed'
+                    ? 'var(--bg-main)'
+                    : isOverdue ? 'hsla(0, 84%, 60%, 0.05)' : 'var(--bg-content)',
                 opacity: reminder.status === 'completed' ? 0.8 : 1,
                 fontSize: '0.7rem',
                 boxShadow: 'var(--shadow-sm)',
+                transform: 'translateZ(0)', // GPU Layer Promotion to prevent flicker
             }}
         >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
@@ -80,7 +87,7 @@ export default function ReminderItem({
                 <div style={{ flex: 1, minWidth: 0 }}>
                     {showCampaignName && reminder.expand?.campaign && (
                         <div
-                            onClick={() => onCampaignClick?.(reminder.campaign)}
+                            onClick={() => onCampaignClick?.(reminder.campaign || '')}
                             style={{
                                 fontWeight: 800,
                                 color: platformColor || 'hsl(var(--primary))',
@@ -113,13 +120,14 @@ export default function ReminderItem({
                         <span style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.2rem',
-                            color: 'var(--text-dim)',
+                            gap: '0.3rem',
+                            color: isOverdue ? '#ef4444' : 'var(--text-dim)',
                             fontSize: '0.6rem',
-                            fontWeight: 600,
+                            fontWeight: isOverdue ? 800 : 600,
                             flexShrink: 0,
                             marginTop: '0.1rem'
                         }}>
+                            {isOverdue && <span style={{ textTransform: 'uppercase' }}>Overdue</span>}
                             <Calendar size={10} />
                             {formatDate(reminder.reminder_date)}
                         </span>
@@ -128,9 +136,11 @@ export default function ReminderItem({
                     {isCompleting && (
                         <div className="animate-fade" style={{ marginTop: '0.5rem', display: 'flex', gap: '0.4rem' }}>
                             <input
+                                id={`note-input-${reminder.id}`}
                                 autoFocus
                                 className="hero-input"
                                 placeholder="Add notes..."
+                                aria-label="Completion notes"
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
                                 style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem', height: 'auto' }}
@@ -144,6 +154,7 @@ export default function ReminderItem({
                             <button
                                 className="hero-btn hero-btn-primary"
                                 style={{ padding: '0.2rem 0.6rem', height: 'auto' }}
+                                aria-label="Send notes"
                                 onClick={() => {
                                     onToggle?.(reminder.id, 'completed', note);
                                     setIsCompleting(false);

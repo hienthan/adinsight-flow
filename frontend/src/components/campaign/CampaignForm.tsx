@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ShieldCheck, Lock } from 'lucide-react';
+import { AlertTriangle, ShieldCheck, Lock, Maximize2 } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
 import RichTextEditor from '../common/RichTextEditor';
 import { normalizeHtmlForCompare } from '../../lib/noteHtml';
+import MetadataModal from './MetadataModal';
 
 interface CampaignFormProps {
     campaignId?: string;
@@ -34,7 +35,7 @@ const normalizeForComparison = (field: keyof Campaign, value: any) => {
         const val = toComparableNumber(value);
         return val === 0 ? null : val; // Normalize 0 to null for stable comparison with DB
     }
-    if (field === 'general_notes') return normalizeHtmlForCompare((value ?? '').toString());
+    if (field === 'general_notes' || field === 'metadata') return normalizeHtmlForCompare((value ?? '').toString());
     if (field === 'name' || field === 'status' || field === 'platform' || field === 'keywords' || field === 'description') {
         return (value ?? '').toString().trim();
     }
@@ -71,12 +72,14 @@ export default function CampaignForm({
         max_daily_budget: 0,
         keywords: '',
         chatgpt_metadata: '',
+        metadata: '',
         description: '',
         general_notes: '',
         is_dsa: true,
         priority: 'normal',
         created_date: getLocalDateInputValue(),
     });
+    const [isMetadataModalOpen, setIsMetadataModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const isModalLayout = layoutVariant === 'modal';
@@ -85,7 +88,7 @@ export default function CampaignForm({
         queryKey: ['platforms'],
         queryFn: async () => {
             return await pb.collection('campaign_platforms').getFullList<CampaignPlatform>({
-                sort: 'display_name',
+                sort: 'order,display_name',
             });
         },
     });
@@ -123,6 +126,7 @@ export default function CampaignForm({
             'max_daily_budget',
             'keywords',
             'description',
+            'metadata',
             'general_notes',
             'is_dsa',
             'priority',
@@ -168,7 +172,7 @@ export default function CampaignForm({
             let savedRecord: Campaign;
 
             if (campaignId && existingCampaign) {
-                const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'keywords', 'description'];
+                const trackedFields: (keyof Campaign)[] = ['cpc', 'description'];
                 const changes: any[] = [];
                 trackedFields.forEach((field) => {
                     const oldValue = existingCampaign[field];
@@ -295,13 +299,14 @@ export default function CampaignForm({
                             value={formData.priority || 'normal'}
                             onChange={handleChange}
                             style={{
-                                color: formData.priority === 'high' ? '#ef4444' : (formData.priority === 'medium' ? '#f59e0b' : 'inherit'),
+                                color: formData.priority === 'critical' ? '#d946ef' : (formData.priority === 'high' ? '#ef4444' : (formData.priority === 'medium' ? '#f59e0b' : 'inherit')),
                                 fontWeight: formData.priority !== 'normal' ? 800 : 500
                             }}
                         >
-                            <option value="normal">Nor</option>
-                            <option value="medium">Med</option>
-                            <option value="high">Hi</option>
+                            <option value="normal">Normal</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
                         </select>
                     </div>
                 </div>
@@ -421,15 +426,45 @@ export default function CampaignForm({
                 </div>
 
                 <div className="filter-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                        <label style={{ marginBottom: 0 }}>Metadata / Configs</label>
+                        <button
+                            type="button"
+                            onClick={() => setIsMetadataModalOpen(true)}
+                            className="hero-btn hero-btn-ghost"
+                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', gap: '0.3rem' }}
+                        >
+                            <Maximize2 size={13} />
+                            Full Editor
+                        </button>
+                    </div>
+                    <RichTextEditor
+                        value={(formData.metadata || '').toString()}
+                        onChange={(nextHtml) => setFormData((prev) => ({ ...prev, metadata: nextHtml }))}
+                        placeholder="Detailed metadata configuration..."
+                        minHeight={isModalLayout ? 60 : 80}
+                        maxHeight={isModalLayout ? 200 : 220}
+                    />
+                </div>
+
+                <div className="filter-group">
                     <label>Internal Notes</label>
                     <RichTextEditor
                         value={(formData.general_notes || '').toString()}
                         onChange={(nextHtml) => setFormData((prev) => ({ ...prev, general_notes: nextHtml }))}
                         placeholder="Implementation details, checkpoints, governance..."
-                        minHeight={isModalLayout ? 100 : 120}
-                        maxHeight={isModalLayout ? 500 : 220}
+                        minHeight={isModalLayout ? 60 : 80}
+                        maxHeight={isModalLayout ? 200 : 220}
                     />
                 </div>
+
+                <MetadataModal
+                    isOpen={isMetadataModalOpen}
+                    onClose={() => setIsMetadataModalOpen(false)}
+                    campaignName={formData.name}
+                    initialContent={(formData.metadata || '').toString()}
+                    onSave={(newContent) => setFormData(prev => ({ ...prev, metadata: newContent }))}
+                />
 
                 {!hideActions && (
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '0.4rem', justifyContent: 'flex-end' }}>

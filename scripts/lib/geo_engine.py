@@ -203,16 +203,35 @@ class GeoEngine:
             "sisters": ("Singapore", "Sisters Islands")
         }
         
-        # Load external knowledge base if exists
-        kb_path = os.path.join(os.path.dirname(__file__), 'geo_knowledge.json')
-        if os.path.exists(kb_path):
-            try:
-                with open(kb_path, 'r', encoding='utf-8') as f:
-                    for k, v in json.load(f).items():
-                        self.kb[k.lower().replace(' ', '-')] = (v['country'], v['city'])
-            except: pass
+        # 2. Dynamic Phrase Scanning (Knowledge Bases)
+        # Load all JSON files in the same directory that look like geo KBs
+        lib_dir = os.path.dirname(__file__)
+        for filename in os.listdir(lib_dir):
+            if filename.endswith('.json') and ('geo' in filename or 'kb' in filename):
+                kb_path = os.path.join(lib_dir, filename)
+                try:
+                    with open(kb_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        for k, v in data.items():
+                            # Support both flat and nested structures
+                            if isinstance(v, dict) and 'country' in v and 'city' in v:
+                                self.kb[k.lower().replace(' ', '-')] = (v['country'], v['city'])
+                            elif isinstance(v, (list, tuple)) and len(v) >= 2:
+                                self.kb[k.lower().replace(' ', '-')] = (v[0], v[1])
+                except Exception as e:
+                    print(f"⚠️ Warning: Failed to load KB {filename}: {e}")
 
-        # 2. City Inventory (Multi-word support)
+        # 2A. Structured KB for Affiliate Strategy
+        self.structured_kb = {}
+        try:
+            structured_kb_path = os.path.join(lib_dir, '..', 'tvlk', 'lib', 'indo_geo_master.json')
+            if os.path.exists(structured_kb_path):
+                with open(structured_kb_path, 'r', encoding='utf-8') as f:
+                    self.structured_kb = json.load(f)
+        except Exception as e:
+            print(f"⚠️ Warning: Failed to load structured KB: {e}")
+
+        # 2B. City Inventory (Multi-word support)
         self.city_lookup = {}
         if self.gnc:
             for uid, city in self.gnc.get_cities().items():
@@ -237,6 +256,20 @@ class GeoEngine:
             "korea": "South Korea", "taiwan": "Taiwan"
         })
 
+        # 4. Stop Words to avoid false positives (e.g., 'anak' in North Korea)
+        self.geo_stop_words = {
+            "anak", "dan", "untuk", "dari", "yang", "dengan", "pada", "ke", 
+            "itu", "ini", "bisa", "buat", "paling", "seru", "favorit",
+            "wisata", "tur", "tiket", "masuk", "liburan", "murah", "promo", "jalan", 
+            "harga", "pesan", "beli", "jual", "paket", "hari", "malam", "terbaik", 
+            "terbaru", "populer", "lokasi", "tempat", "info", "lengkap", "panduan", 
+            "cara", "menuju", "tips", "rekomendasi", "daftar", "sewa", "rental", 
+            "mobil", "motor", "kamar", "hotel", "penginapan", "villa", "resort", 
+            "penerbangan", "pesawat", "bandara", "stasiun", "terminal", "pelabuhan", 
+            "kapal", "ferry", "jadwal", "rute", "peta", "objek", "destinasi",
+            "taman", "pantai", "gunung", "danau", "pulau", "candi", "museum", "kampung"
+        }
+
     def normalize_country(self, val):
         if not val or val == "Unknown": return "Unknown"
         if len(val) == 2: return self.iso_map.get(val.upper(), val)
@@ -249,24 +282,39 @@ class GeoEngine:
         except: pass
         return val.title()
 
-    def detect_geo(self, slug):
+    def detect_geo(self, slug, title_en=""):
         slug_lower = slug.lower()
         slug_clean = slug_lower.replace('-', ' ').replace('_', ' ')
+        title_lower = title_en.lower() if title_en else ""
         
         # 0. Smart Pattern Matching (HIGHEST PRIORITY - Cultural/Language Keywords)
         if SMART_MATCHER_AVAILABLE:
             result = smart_matcher.detect(slug)
+            if not result and title_en:
+                result = smart_matcher.detect(title_en)
             if result:
                 country, city = result
                 return self.normalize_country(country), city
         
         # 1. Broad Phrase Search (KB Whitelist)
-        # Check for any KB or Whitelist key as a substring
+        # Check for any KB or Whitelist key as a complete phrase in slug OR title
+        slug_hyphens = slug_clean.replace(' ', '-')
+        padded_slug = f"-{slug_hyphens}-"
+        padded_title = f"-{title_lower.replace(' ', '-')}-"
+        
         for key, (co, ci) in self.kb.items():
-            if key in slug_lower or key.replace('-', ' ') in slug_clean:
-                return self.normalize_country(co), ci
+            if '*' in key:
+                # Handle wildcard patterns like "jr-*-pass" -> "-jr-.*-pass-"
+                regex_pattern = f"-{key.replace('*', '.*')}-"
+                if re.search(regex_pattern, padded_slug) or re.search(regex_pattern, padded_title):
+                    return self.normalize_country(co), ci
+            else:
+                padded_key = f"-{key}-"
+                # First check original slug, then check English translated title
+                if padded_key in padded_slug or padded_key in padded_title:
+                    return self.normalize_country(co), ci
 
-        # 2. Dynamic Phrase Scanning (Cities)
+        # 2. Dynamic Phrase Scanning (Cities) - using original slug first
         words = re.split(r'[-_\s]', slug_lower)
         found_cities = []
         # Try checking all 1-to-3 word combinations
@@ -274,6 +322,7 @@ class GeoEngine:
             for i in range(len(words) - n + 1):
                 phrase = " ".join(words[i:i+n])
                 if len(phrase) < 3: continue
+                if phrase in self.geo_stop_words: continue # Skip common words
                 if phrase in self.city_lookup:
                     found_cities.extend(self.city_lookup[phrase])
         
@@ -281,11 +330,33 @@ class GeoEngine:
             top = sorted(found_cities, key=lambda x: x.get('population', 0), reverse=True)[0]
             return self.normalize_country(top['countrycode']), top['name']
 
+        # 2B. Dynamic Phrase Scanning (Cities) - using English title if slug failed
+        if title_lower:
+            words_title = re.split(r'[-\s]', title_lower)
+            for n in range(min(3, len(words_title)), 0, -1):
+                for i in range(len(words_title) - n + 1):
+                    phrase = " ".join(words_title[i:i+n])
+                    if len(phrase) < 3: continue
+                    if phrase in self.geo_stop_words: continue
+                    if phrase in self.city_lookup:
+                        found_cities.extend(self.city_lookup[phrase])
+            
+            if found_cities:
+                top = sorted(found_cities, key=lambda x: x.get('population', 0), reverse=True)[0]
+                return self.normalize_country(top['countrycode']), top['name']
+
         # 3. Country Keyword Scan
         for word in words:
             if len(word) < 3: continue
             if word in self.country_names:
                 return self.normalize_country(word), "Unknown"
+
+        # 3B. Country Keyword Scan - using English title
+        if title_lower:
+            for word in words_title:
+                if len(word) < 3: continue
+                if word in self.country_names:
+                    return self.normalize_country(word), "Unknown"
 
         # 4. Geopy Fallback (Smart Geocoding) - DISABLED during ingestion
         if ENABLE_GEOPY_FALLBACK and self.geolocator:
@@ -321,5 +392,38 @@ class GeoEngine:
                 pass  # Silently fail and return Unknown
 
         return "Unknown", "Unknown"
+
+    def detect_geo_structured(self, slug, title_en=""):
+        slug_lower = slug.lower()
+        slug_clean = slug_lower.replace('-', ' ').replace('_', ' ')
+        slug_hyphens = slug_clean.replace(' ', '-')
+        padded_slug = f"-{slug_hyphens}-"
+        
+        # 1. Check Structured KB first (Highest Priority for DSA)
+        # We sort keys by length descending to match longest phrases first (e.g. "nusa-penida" before "nusa")
+        sorted_keys = sorted(self.structured_kb.keys(), key=len, reverse=True)
+        for key in sorted_keys:
+            padded_key = f"-{key}-"
+            if padded_key in padded_slug:
+                data = self.structured_kb[key]
+                return {
+                    "country": (data.get("country") or "Unknown").title(),
+                    "city": (data.get("city") or "Unknown").title(),
+                    "sub_city": (data.get("sub_city") or "").title(),
+                    "province": (data.get("province") or "").title(),
+                    "geo_category": data.get("category", ""),
+                    "display_name": data.get("display_name", "")
+                }
+                
+        # 2. Fallback to classic detection
+        country, city = self.detect_geo(slug, title_en)
+        return {
+            "country": country,
+            "city": city,
+            "sub_city": "",
+            "province": "",
+            "geo_category": "city" if city != "Unknown" else "", # Default generic category if city found
+            "display_name": ""
+        }
 
 engine = GeoEngine()

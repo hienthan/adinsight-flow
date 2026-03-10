@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Bell, Activity, ChevronDown, ChevronRight, History, X } from 'lucide-react';
 import CampaignForm from './CampaignForm';
@@ -48,9 +49,23 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
         return () => window.removeEventListener('keydown', handleEsc);
     }, [isOpen, onClose, isReminderModalOpen]);
 
+    // Prevent background scrolling and pointer bleed when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            // Also prevent pointer events on the body wrapper if necessary, 
+            // but usually overflow: hidden is enough to stop scroll-based repaint glitches.
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
-    return (
+    const modalContent = (
         <>
             <div
                 style={{
@@ -59,8 +74,8 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    backdropFilter: 'blur(8px)',
+                    background: 'rgba(2, 6, 23, 0.65)', // Deeper slate to replace blur
+                    transform: 'translateZ(0)', // GPU Composite fix for Chrome cursor freeze bug
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -89,7 +104,11 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                         maxHeight: '90vh',
                         overflowY: 'auto',
                         position: 'relative',
-                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
+                        boxShadow: 'var(--shadow-large)',
+                        borderRadius: '2rem',
+                        pointerEvents: 'auto', // Ensure clicks hit this layer, not the blurred background
+                        transform: 'translateZ(0)', // Keep stacking context clean
+                        overscrollBehavior: 'contain' // Prevent scroll-bleed to blurred background
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -252,8 +271,8 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.4)',
-                        backdropFilter: 'blur(10px)',
+                        background: 'rgba(2, 6, 23, 0.8)', // Replace blur with dark slate
+                        transform: 'translateZ(0)', // GPU Composite fix
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -273,8 +292,11 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             padding: '1.5rem',
                             background: 'var(--bg-content)',
                             position: 'relative',
-                            boxShadow: 'var(--shadow-2xl)',
-                            overflow: 'hidden'
+                            boxShadow: 'var(--shadow-large)',
+                            borderRadius: '2rem',
+                            overflow: 'hidden',
+                            pointerEvents: 'auto',
+                            transform: 'translateZ(0)'
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -300,4 +322,6 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
             )}
         </>
     );
+
+    return createPortal(modalContent, document.body);
 }

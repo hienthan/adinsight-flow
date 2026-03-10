@@ -1,11 +1,11 @@
 import React from "react";
-import { 
-    Modal, 
-    ModalContent, 
+import {
+    Modal,
+    ModalContent,
     ModalHeader,
     ModalBody,
     ModalFooter,
-    Button, 
+    Button,
     Textarea
 } from "@heroui/react";
 import { Info } from "lucide-react";
@@ -41,13 +41,13 @@ export const StrategyNotesModal: React.FC<StrategyNotesModalProps> = ({
             size="2xl"
             placement="center"
             scrollBehavior="inside"
-            backdrop="blur"
+            backdrop="opaque"
             disableAnimation={false}
             classNames={{
                 wrapper: "items-center justify-center p-4",
-                base: "bg-(--bg-content) border border-(--border-subtle) shadow-2xl rounded-[24px] overflow-hidden max-h-[95vh]",
+                base: "bg-(--bg-content) border border-(--border-subtle) shadow-2xl rounded-[24px] overflow-hidden max-h-[95vh] [transform:translateZ(0)]",
                 closeButton: "top-8 right-8 text-(--text-muted) hover:text-(--text-main) transition-colors p-2 hover:bg-(--bg-overlay) rounded-full z-50",
-                backdrop: "bg-black/30 backdrop-blur-md",
+                backdrop: "bg-black/60 [transform:translateZ(0)]",
             }}
         >
             <ModalContent>

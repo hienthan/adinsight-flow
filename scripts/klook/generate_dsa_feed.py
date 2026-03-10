@@ -81,18 +81,29 @@ def generate_dsa_feed(input_file="data/klook_experiences-activity_preview.json",
         
         # Write rows
         for item in filtered:
-            # Create semicolon-separated labels
-            labels = [
-                item.get('country', 'Unknown'),
-                item.get('city', ''),
-                tier_names.get(item.get('tier', '3'), 'Tier3-Services'),
-                'Klook'
+            # Create semicolon-separated labels and ensure they are all lowercase
+            # Replace spaces with hyphens to be safe from CSV parsing errors
+            
+            # Helper to clean labels
+            def clean_label(val):
+                if not val: return ""
+                return str(val).lower().replace(" ", "-").replace(",", "")
+            
+            raw_labels = [
+                f"geo={clean_label(item.get('country', 'unknown'))}",
+                f"city={clean_label(item.get('city', ''))}" if item.get('city') else "",
+                f"tier={clean_label(item.get('tier', '3'))}",
+                f"ctype={clean_label(item.get('content_type', ''))}" if item.get('content_type') else "",
+                f"funnel={clean_label(item.get('funnel_stage', ''))}" if item.get('funnel_stage') else "",
+                f"tag={clean_label(item.get('sub_tag', ''))}" if item.get('sub_tag') else "",
+                f"platform={clean_label(item.get('platform', ''))}" if item.get('platform') else "platform=klook"
             ]
+            
             # Filter out empty strings and join with semicolon
-            custom_label = ';'.join([l for l in labels if l])
+            custom_label = ';'.join([l for l in raw_labels if l])
             
             writer.writerow([
-                item['url'],
+                item.get('url', ''),
                 custom_label
             ])
     

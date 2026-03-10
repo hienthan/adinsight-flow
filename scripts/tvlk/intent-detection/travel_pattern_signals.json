@@ -1,0 +1,126 @@
+{
+  "patterns": {
+    "itinerary": {
+      "intent": "planning",
+      "weight": 3,
+      "aliases": [
+        "rencana-perjalanan",
+        "rencana-trip",
+        "travel-plan"
+      ]
+    },
+    "one-day-trip": {
+      "intent": "planning",
+      "weight": 3,
+      "aliases": [
+        "1-day-trip",
+        "day-trip",
+        "trip-sehari",
+        "sehari"
+      ]
+    },
+    "weekend-trip": {
+      "intent": "planning",
+      "weight": 3,
+      "aliases": [
+        "trip-akhir-pekan",
+        "weekend-getaway",
+        "liburan-weekend"
+      ]
+    },
+    "2-hari-1-malam": {
+      "intent": "planning",
+      "weight": 4,
+      "aliases": [
+        "2d1n",
+        "dua-hari-satu-malam",
+        "trip-2-hari"
+      ]
+    },
+    "3-hari-2-malam": {
+      "intent": "planning",
+      "weight": 4,
+      "aliases": [
+        "3d2n",
+        "tiga-hari-dua-malam",
+        "trip-3-hari"
+      ]
+    },
+    "4-hari-3-malam": {
+      "intent": "planning",
+      "weight": 4,
+      "aliases": [
+        "4d3n",
+        "empat-hari-tiga-malam"
+      ]
+    },
+    "5-hari-4-malam": {
+      "intent": "planning",
+      "weight": 4,
+      "aliases": [
+        "5d4n"
+      ]
+    },
+    "1-hari": {
+      "intent": "things_to_do",
+      "weight": 2,
+      "aliases": [
+        "satu-hari",
+        "sehari"
+      ]
+    },
+    "2-hari": {
+      "intent": "planning",
+      "weight": 2,
+      "aliases": [
+        "dua-hari"
+      ]
+    },
+    "3-hari": {
+      "intent": "planning",
+      "weight": 2,
+      "aliases": [
+        "tiga-hari"
+      ]
+    },
+    "4-hari": {
+      "intent": "planning",
+      "weight": 2,
+      "aliases": [
+        "empat-hari"
+      ]
+    },
+    "road-trip": {
+      "intent": "things_to_do",
+      "weight": 3,
+      "aliases": [
+        "trip-darat",
+        "perjalanan-darat"
+      ]
+    },
+    "island-hopping": {
+      "intent": "things_to_do",
+      "weight": 3,
+      "aliases": [
+        "keliling-pulau",
+        "hop-island"
+      ]
+    },
+    "diving-trip": {
+      "intent": "things_to_do",
+      "weight": 3,
+      "aliases": [
+        "trip-diving",
+        "diving-tour"
+      ]
+    },
+    "snorkeling-trip": {
+      "intent": "things_to_do",
+      "weight": 3,
+      "aliases": [
+        "trip-snorkeling",
+        "snorkeling-tour"
+      ]
+    }
+  }
+}

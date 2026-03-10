@@ -10,6 +10,7 @@ export interface CampaignPlatform {
     metadata?: string;
     sticky_note?: string;
     is_pinned?: boolean;
+    order?: number;
     created: string;
     updated: string;
 }
@@ -26,10 +27,11 @@ export interface Campaign {
     max_daily_budget?: number;
     keywords?: string;
     chatgpt_metadata?: string;
+    metadata?: string;
     description?: string;
     general_notes?: string;
     is_dsa: boolean;
-    priority?: 'normal' | 'medium' | 'high';
+    priority?: 'normal' | 'medium' | 'high' | 'critical';
     custom_fields?: Record<string, any>;
     created: string;
     updated: string;
@@ -57,13 +59,14 @@ export interface CampaignChange {
 
 export interface CampaignReminder {
     id: string;
-    campaign: string;
+    campaign: string | null;
+    platform?: string;
     related_change?: string;
     reminder_date: string;
     message: string;
     check_metrics?: string[];
     status: 'pending' | 'completed' | 'dismissed' | 'snoozed';
-    priority?: 'low' | 'medium' | 'high';
+    priority?: 'low' | 'medium' | 'high' | 'critical';
     completion_notes?: string;
     snooze_until?: string;
     metadata?: Record<string, any>;
@@ -86,4 +89,17 @@ export interface ReminderTemplate {
     active?: boolean;
     created: string;
     updated: string;
+}
+export interface CampaignNote {
+    id: string;
+    platform: string;
+    message: string;
+    status: 'pending' | 'completed' | 'dismissed';
+    priority?: 'low' | 'medium' | 'high' | 'critical';
+    due_date?: string;
+    created: string;
+    updated: string;
+    expand?: {
+        platform?: CampaignPlatform;
+    };
 }

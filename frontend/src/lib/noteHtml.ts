@@ -10,10 +10,10 @@ export interface NoteHeading {
 const ALLOWED_TAGS = [
     'p', 'br', 'strong', 'em', 'u', 's', 'span',
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'ol', 'li', 'blockquote', 'hr', 'a',
+    'ul', 'ol', 'li', 'blockquote', 'hr', 'a', 'img',
 ];
 
-const ALLOWED_ATTR = ['href', 'target', 'rel', 'style', 'data-note-heading-id'];
+const ALLOWED_ATTR = ['href', 'target', 'rel', 'style', 'data-note-heading-id', 'src', 'alt', 'width', 'height'];
 
 const sanitizeConfig = {
     ALLOWED_TAGS,
@@ -66,10 +66,48 @@ export const normalizeHtmlForCompare = (value: string): string => {
 export const htmlToPlainText = (value: string): string => {
     const html = sanitizeNoteHtml(toEditorHtml(value || ''));
     if (typeof window === 'undefined') {
-        return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        return html.replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/p>|<\/div>|<\/h[1-6]>/gi, '\n')
+            .replace(/<li>/gi, '\n- ')
+            .replace(/<[^>]+>/g, '')
+            .replace(/[ \t]+/g, ' ')
+            .trim();
     }
+
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+
+    // Refined traversal
+    const processElement = (el: Element): string => {
+        let text = '';
+        el.childNodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                text += node.textContent;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                const childEl = node as HTMLElement;
+                const tag = childEl.tagName.toLowerCase();
+
+                if (tag === 'p' || tag === 'div' || tag.match(/^h[1-6]$/)) {
+                    text += '\n' + processElement(childEl) + '\n';
+                } else if (tag === 'br') {
+                    text += '\n';
+                } else if (tag === 'li') {
+                    text += '\n- ' + processElement(childEl);
+                } else if (tag === 'ul' || tag === 'ol') {
+                    text += '\n' + processElement(childEl) + '\n';
+                } else {
+                    text += processElement(childEl);
+                }
+            }
+        });
+        return text;
+    };
+
+    const finalResult = processElement(doc.body);
+    // Cleanup: collapse multiple newlines and spaces, but keep structure
+    return finalResult
+        .replace(/[ \t]+/g, ' ') // Collapse horizontal whitespace
+        .replace(/\n\s*\n\s*\n+/g, '\n\n') // Max 2 newlines
+        .trim();
 };
 
 export const prepareNoteHtmlForRender = (value: string): { html: string; headings: NoteHeading[] } => {
@@ -77,6 +115,7 @@ export const prepareNoteHtmlForRender = (value: string): { html: string; heading
     if (typeof window === 'undefined') return { html, headings: [] };
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
+
     const headings: NoteHeading[] = [];
     // Select standard headings AND paragraphs that look like section titles
     const els = doc.body.querySelectorAll('h1, h2, h3, h4, h5, h6, p');

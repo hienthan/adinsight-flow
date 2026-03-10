@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     ChevronLeft,
     History,
@@ -31,6 +31,7 @@ export default function CampaignDetail() {
     const { campaignId } = useParams<{ campaignId: string }>();
     const navigate = useNavigate();
     const location = useLocation();
+    const queryClient = useQueryClient();
     const returnPath = (location.state as any)?.from || '/camp-tracking';
     const [isEditing, setIsEditing] = useState(false);
     const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
@@ -73,6 +74,7 @@ export default function CampaignDetail() {
         if (window.confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
             try {
                 await pb.collection('campaigns').delete(campaignId);
+                queryClient.invalidateQueries({ queryKey: ['campaigns'] });
                 navigate(returnPath);
             } catch (error) {
                 console.error('Error deleting campaign:', error);
