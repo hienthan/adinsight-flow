@@ -5,8 +5,7 @@ import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown
 interface InsightActionBarProps {
     selectedCount: number;
     onClear: () => void;
-    onApply: (payload: { tier?: string; sub_tag?: string; is_active?: boolean }) => void;
-    availableSubTags: { label: string, value: string }[];
+    onApply: (payload: { tier?: string; country?: string; is_active?: boolean }) => void;
     isUpdating: boolean;
 }
 
@@ -14,11 +13,10 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
     selectedCount,
     onClear,
     onApply,
-    availableSubTags,
     isUpdating
 }) => {
     const [selectedTier, setSelectedTier] = useState<string>('');
-    const [selectedSubTag, setSelectedSubTag] = useState<string>('');
+    const [setToUnknownCountry, setSetToUnknownCountry] = useState<boolean>(false);
     const [selectedStatus, setSelectedStatus] = useState<boolean | null>(null);
 
     if (selectedCount === 0) return null;
@@ -26,20 +24,20 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
     const tierOptions = [1, 2, 3, 4, 5].map(t => ({ label: `Tier ${t}`, value: String(t) }));
 
     const handleApply = () => {
-        const payload: { tier?: string; sub_tag?: string; is_active?: boolean } = {};
+        const payload: { tier?: string; country?: string; is_active?: boolean } = {};
         if (selectedTier) payload.tier = selectedTier;
-        if (selectedSubTag) payload.sub_tag = selectedSubTag;
+        if (setToUnknownCountry) payload.country = 'Unknown';
         if (selectedStatus !== null) payload.is_active = selectedStatus;
 
         if (Object.keys(payload).length > 0) {
             onApply(payload);
             setSelectedTier('');
-            setSelectedSubTag('');
+            setSetToUnknownCountry(false);
             setSelectedStatus(null);
         }
     };
 
-    const hasSelection = selectedTier || selectedSubTag || selectedStatus !== null;
+    const hasSelection = selectedTier || setToUnknownCountry || selectedStatus !== null;
 
     return (
         <div style={{
@@ -84,13 +82,21 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <MultiSelectDropdown
-                        options={availableSubTags}
-                        value={selectedSubTag}
-                        onChange={setSelectedSubTag}
-                        placeholder="Set Sub Tag..."
-                        width="160px"
-                    />
+                    <button
+                        onClick={() => setSetToUnknownCountry(!setToUnknownCountry)}
+                        disabled={isUpdating}
+                        className={`hero-btn ${setToUnknownCountry ? 'hero-btn-primary' : 'hero-btn-secondary'}`}
+                        style={{
+                            padding: '0.5rem 0.85rem',
+                            fontSize: '0.8rem',
+                            height: '38px',
+                            borderRadius: '10px',
+                            fontWeight: setToUnknownCountry ? 800 : 600
+                        }}
+                        title="Set Country = Unknown"
+                    >
+                        Country = Unknown
+                    </button>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '1px solid var(--border-subtle)', borderRight: '1px solid var(--border-subtle)', paddingLeft: '1rem', paddingRight: '1rem' }}>

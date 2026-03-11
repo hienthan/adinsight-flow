@@ -59,14 +59,7 @@ export default function AdInsightPage() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
-    // Get predefined sub tags from config to populate the bulk update dropdown
-    const availableSubTags = useMemo(() => {
-        const subTagFilter = config.filters.find(f => f.id === 'sub_tag');
-        if (!subTagFilter || !subTagFilter.options) return [];
-        return subTagFilter.options
-            .filter(opt => opt.value !== '') // Exclude "All" option
-            .map(opt => ({ label: opt.label, value: opt.value }));
-    }, [config.filters]);
+
 
     const handleSelect = useCallback((id: string) => {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -114,7 +107,15 @@ export default function AdInsightPage() {
     const handleExport = async (selectedFields: string[], customFileName: string, customLabel?: string) => {
         try {
             setExporting(true);
-            const filterString = buildFilterString(filters);
+            const baseFilterString = buildFilterString(filters);
+            let filterString = baseFilterString;
+            
+            // For export, always enforce that the record is active
+            if (config.activeFilterKey) {
+                const activeCondition = `${config.activeFilterKey} = true`;
+                filterString = baseFilterString ? `(${baseFilterString}) && ${activeCondition}` : activeCondition;
+            }
+
             const allRecords: PageRecord[] = [];
             let page = 1;
             let hasMore = true;
@@ -139,21 +140,33 @@ export default function AdInsightPage() {
                 // Helper to clean labels
                 const cleanLabel = (val: string) => String(val).toLowerCase().replace(/\s+/g, '-').replace(/,/g, '');
 
+                let titleLabel = '';
+
                 selectedFields.forEach(field => {
                     const value = record[field as keyof PageRecord];
                     if (value) {
-                        let prefix = '';
-                        if (field === 'country') prefix = 'geo=';
-                        else if (field === 'city') prefix = 'city=';
-                        else if (field === 'tier') prefix = 'tier=';
-                        else if (field === 'content_type') prefix = 'ctype=';
-                        else if (field === 'funnel_stage') prefix = 'funnel=';
-                        else if (field === 'sub_tag') prefix = 'tag=';
-                        else if (field === 'title_en') prefix = 'title=';
+                        if (field === config.titleKey) {
+                            // Leave title human-readable for NotebookLM, just strip characters that break the CSV/Label format
+                            titleLabel = String(value).replace(/[;,]/g, ' ').replace(/\s+/g, ' ').trim();
+                        } else {
+                            let prefix = '';
+                            if (field === 'country') prefix = 'geo=';
+                            else if (field === 'province') prefix = 'province=';
+                            else if (field === 'city') prefix = 'city=';
+                            else if (field === 'tier') prefix = 'tier=';
+                            else if (field === 'content_type') prefix = 'ctype=';
+                            else if (field === 'funnel_stage') prefix = 'funnel=';
+                            else if (field === 'sub_tag') prefix = 'tag=';
+                            // dsa_campaign gets an empty prefix since its values are already formatted (e.g. TVLK_ID_Leisure_Hotspots)
 
-                        labelParts.push(`${prefix}${cleanLabel(String(value))}`);
+                            labelParts.push(`${prefix}${cleanLabel(String(value))}`);
+                        }
                     }
                 });
+
+                if (titleLabel) {
+                    labelParts.push(titleLabel);
+                }
 
 
                 // Append custom label suffix if provided
@@ -166,7 +179,17 @@ export default function AdInsightPage() {
             }).join('\n');
 
             const csv = csvHeader + csvRows;
-            const defaultName = `${platformId}-${filters.sitemap_tag || 'all'}-${allRecords.length}`;
+
+            // Format default filename (e.g. traveloka -> tvlk, activities -> act)
+            let formattedPlatform = platformId;
+            let formattedTag = filters.sitemap_tag || 'all';
+
+            if (platformId === 'traveloka') {
+                formattedPlatform = 'tvlk';
+                if (formattedTag === 'activities') formattedTag = 'act';
+            }
+
+            const defaultName = `${formattedPlatform}-${formattedTag}-${allRecords.length}`;
             const fileNameToUse = `${customFileName || defaultName}.csv`;
 
             // Support for File System Access API (Persistent Path)
@@ -214,7 +237,6 @@ export default function AdInsightPage() {
 
     return (
         <div className="page-container">
-            {/* Bulk Action Bar at the top to ensure dropdowns have space */}
             <InsightActionBar
                 selectedCount={selectedIds.length}
                 onClear={() => setSelectedIds([])}
@@ -223,9 +245,11 @@ export default function AdInsightPage() {
                     if (payload.is_active !== undefined) {
                         finalPayload.include_for_dsa = payload.is_active;
                     }
+                    if (payload.country) {
+                        finalPayload.country = payload.country;
+                    }
                     handleBulkUpdate(finalPayload);
                 }}
-                availableSubTags={availableSubTags}
                 isUpdating={isBulkUpdating}
             />
 

@@ -80,6 +80,10 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
                                 : `(${baseKey} = "jakarta" || ${baseKey} = "dki-jakarta")`;
                         }
                     }
+                    if (baseKey === 'dsa_campaign') {
+                        const campOperator = isExclusion ? '!~' : '~';
+                        return `${baseKey} ${campOperator} "${cleanVal}"`;
+                    }
                     return `${baseKey} ${operator} "${cleanVal}"`;
                 });
 
