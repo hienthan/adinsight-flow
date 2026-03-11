@@ -181,10 +181,10 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
         );
     };
 
-    const mainFilters = filters.filter(f => ['searchTerm', 'sitemap_tag', 'country', 'sub_tag', 'content_type', 'funnel_stage', 'tier', 'affiliate_tier', 'geo_category', 'province', 'dsa_campaign'].includes(f.id));
+    const mainFilters = filters.filter(f => ['searchTerm', 'country', 'content_type', 'funnel_stage', 'tier', 'affiliate_tier', 'geo_category', 'province', 'dsa_campaign'].includes(f.id));
 
     // For logical exclusion filters, we find the base definitions and map them
-    const excludeIds = ['searchTerm', 'country', 'sub_tag', 'tier'];
+    const excludeIds = ['searchTerm', 'country', 'tier', 'content_type'];
     const exclusionBaseFilters = filters.filter(f => excludeIds.includes(f.id));
 
     return (

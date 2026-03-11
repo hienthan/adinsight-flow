@@ -25,9 +25,10 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
     totalCount,
     isExporting
 }) => {
-    const [selectedFields, setSelectedFields] = useState<string[]>(['country', 'city', 'tier', 'funnel_stage', 'sub_tag']);
+    const [selectedFields, setSelectedFields] = useState<string[]>([]);
     const [fileName, setFileName] = useState('');
     const [customLabel, setCustomLabel] = useState('');
+    const [hasInitialized, setHasInitialized] = useState(false);
 
     const toggleField = (id: string) => {
         setSelectedFields(prev =>
@@ -36,12 +37,18 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
     };
 
     useEffect(() => {
+        if (!hasInitialized && fields.length > 0) {
+            const defaultsToExclude = ['province', 'city', 'content_type', 'title_en', 'translated_title_vi'];
+            setSelectedFields(fields.filter(f => !defaultsToExclude.includes(f.id)).map(f => f.id));
+            setHasInitialized(true);
+        }
+
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isOpen) onClose();
         };
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
-    }, [isOpen, onClose]);
+    }, [isOpen, onClose, fields]);
 
     if (!isOpen) return null;
 
@@ -65,7 +72,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                 style={{
                     width: '100%',
                     maxWidth: '500px',
-                    background: 'var(--bg-card)',
+                    background: 'var(--bg-content)',
                     borderRadius: '24px',
                     boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.4)',
                     border: '1px solid var(--border-subtle)',

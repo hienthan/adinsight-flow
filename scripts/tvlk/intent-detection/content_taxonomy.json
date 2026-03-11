@@ -1,290 +1,93 @@
 {
- "taxonomy_version": "v2",
+ "taxonomy_version": "v3",
  "categories": {
-
   "attractions": {
-   "keywords": [
-    "wisata",
-    "tempat-wisata",
-    "destinasi",
-    "objek-wisata",
-    "lokasi-wisata",
-    "spot-wisata",
-    "pantai",
-    "pantai-indah",
-    "pantai-terbaik",
-    "gunung",
-    "gunung-terindah",
-    "air-terjun",
-    "curug",
-    "danau",
-    "situ",
-    "telaga",
-    "pulau",
-    "kepulauan",
-    "laguna",
-    "teluk",
-    "taman-nasional",
-    "taman-wisata",
-    "hutan",
-    "hutan-mangrove",
-    "bukit",
-    "puncak",
-    "lembah",
-    "gua",
-    "tebing",
-    "savana",
-    "padang-savana",
-    "cagar-alam",
-    "kampung-wisata",
-    "desa-wisata",
-    "monumen",
-    "ikon-kota",
-    "landmark",
-    "viewpoint",
-    "spot-foto",
-    "tempat-foto",
-    "tempat-instagramable"
-   ]
+   "sub_tags": {
+    "nature": [
+     "pantai", "pantai-indah", "pantai-terbaik", 
+     "gunung", "gunung-terindah", "air-terjun", "curug", "danau", "situ", "telaga", 
+     "pulau", "kepulauan", "laguna", "teluk", "bukit", "puncak", "lembah", "gua", "tebing",
+     "savana", "padang-savana"
+    ],
+    "park": [
+     "taman-nasional", "taman-wisata", "hutan", "hutan-mangrove", "cagar-alam"
+    ],
+    "village": [
+     "kampung-wisata", "desa-wisata"
+    ],
+    "landmark": [
+     "wisata", "tempat-wisata", "destinasi", "objek-wisata", "lokasi-wisata", "spot-wisata",
+     "monumen", "ikon-kota", "landmark", "viewpoint", "spot-foto", "tempat-foto", "tempat-instagramable"
+    ]
+   }
   },
-
   "activities": {
-   "keywords": [
-    "snorkeling",
-    "diving",
-    "scuba",
-    "rafting",
-    "arung-jeram",
-    "trekking",
-    "hiking",
-    "pendakian",
-    "climbing",
-    "panjat-tebing",
-    "surfing",
-    "selancar",
-    "paragliding",
-    "skydiving",
-    "bungee",
-    "zipline",
-    "flying-fox",
-    "jetski",
-    "banana-boat",
-    "parasailing",
-    "kayaking",
-    "canoeing",
-    "river-tubing",
-    "camping",
-    "glamping",
-    "outbound",
-    "paintball",
-    "offroad",
-    "atv",
-    "buggy",
-    "go-kart",
-    "playground",
-    "indoor-playground",
-    "kids-playground",
-    "taman-bermain",
-    "arena-bermain",
-    "waterpark",
-    "wahana-air",
-    "theme-park",
-    "taman-hiburan",
-    "taman-bermain-anak",
-    "kelas-masak",
-    "cooking-class",
-    "workshop",
-    "kelas-seni"
-   ]
+   "sub_tags": {
+    "water_sports": [
+     "snorkeling", "diving", "scuba", "rafting", "arung-jeram", 
+     "surfing", "selancar", "jetski", "banana-boat", "parasailing", "kayaking", "canoeing", "river-tubing"
+    ],
+    "outdoor": [
+     "trekking", "hiking", "pendakian", "climbing", "panjat-tebing",
+     "camping", "glamping", "outbound", "paintball", "offroad", "atv", "buggy", "go-kart",
+     "paragliding", "skydiving", "bungee", "zipline", "flying-fox"
+    ],
+    "amusement": [
+     "playground", "indoor-playground", "kids-playground", "taman-bermain", "arena-bermain", 
+     "waterpark", "wahana-air", "theme-park", "taman-hiburan", "taman-bermain-anak"
+    ],
+    "class": [
+     "kelas-masak", "cooking-class", "workshop", "kelas-seni"
+    ]
+   }
   },
-
   "transport": {
-   "keywords": [
-    "bandara",
-    "airport",
-    "kereta",
-    "kereta-api",
-    "kereta-bandara",
-    "stasiun",
-    "jadwal-kereta",
-    "jadwal-kapal",
-    "bus",
-    "tiket-bus",
-    "terminal",
-    "kapal",
-    "ferry",
-    "pelabuhan",
-    "kapal-cepat",
-    "speedboat",
-    "perahu",
-    "transportasi",
-    "shuttle",
-    "travel",
-    "angkutan",
-    "rute",
-    "jalur",
-    "trayek",
-    "whoosh",
-    "mrt",
-    "lrt",
-    "transjakarta",
-    "angkot",
-    "taksi",
-    "ojek",
-    "ojek-online",
-    "grab",
-    "gocar"
-   ]
+   "sub_tags": {
+    "flight": ["bandara", "airport"],
+    "train": ["kereta", "kereta-api", "kereta-bandara", "stasiun", "jadwal-kereta", "mrt", "lrt", "whoosh"],
+    "bus": ["bus", "tiket-bus", "terminal", "transjakarta"],
+    "boat": ["kapal", "jadwal-kapal", "ferry", "pelabuhan", "kapal-cepat", "speedboat", "perahu"],
+    "transit": ["transportasi", "shuttle", "travel", "angkutan", "rute", "jalur", "trayek", "angkot", "taksi", "ojek", "ojek-online", "grab", "gocar"]
+   }
   },
-
   "planning": {
-   "keywords": [
-    "itinerary",
-    "rencana-perjalanan",
-    "trip",
-    "liburan",
-    "jalan-jalan",
-    "wisata-sehari",
-    "one-day-trip",
-    "weekend-trip",
-    "akhir-pekan",
-    "liburan-singkat",
-    "petualangan",
-    "backpacker",
-    "budget",
-    "liburan-murah",
-    "hemat",
-    "paket-wisata",
-    "paket-tour",
-    "tour-guide",
-    "guide-wisata",
-    "tips-liburan",
-    "tips-perjalanan",
-    "rekomendasi-trip",
-    "destinasi-liburan",
-    "agenda-liburan"
-   ]
+   "sub_tags": {
+    "itinerary": ["itinerary", "rencana-perjalanan", "trip", "liburan", "jalan-jalan", "wisata-sehari", "one-day-trip", "weekend-trip", "akhir-pekan", "liburan-singkat", "petualangan", "backpacker", "agenda-liburan"],
+    "package": ["paket-wisata", "paket-tour", "tour-guide", "guide-wisata"],
+    "tips": ["tips-liburan", "tips-perjalanan", "rekomendasi-trip", "destinasi-liburan", "budget", "liburan-murah", "hemat"]
+   }
   },
-
   "culinary": {
-   "keywords": [
-    "kuliner",
-    "makan",
-    "tempat-makan",
-    "restoran",
-    "rumah-makan",
-    "warung",
-    "kedai",
-    "kafe",
-    "cafe",
-    "coffee-shop",
-    "kopi",
-    "kedai-kopi",
-    "sarapan",
-    "brunch",
-    "makan-siang",
-    "makan-malam",
-    "street-food",
-    "makanan-khas",
-    "hidangan-khas",
-    "kuliner-khas",
-    "menu-khas",
-    "bakso",
-    "sate",
-    "mie",
-    "mie-ayam",
-    "seafood",
-    "nasi-goreng",
-    "nasi-padang",
-    "ayam-bakar",
-    "ayam-penyet",
-    "martabak",
-    "dessert",
-    "kue",
-    "jajanan",
-    "cemilan",
-    "makanan-enak",
-    "tempat-ngopi",
-    "tempat-ngemil"
-   ]
+   "sub_tags": {
+    "restaurant": ["restoran", "rumah-makan", "warung", "kedai", "tempat-makan"],
+    "cafe": ["kafe", "cafe", "coffee-shop", "kopi", "kedai-kopi", "tempat-ngopi", "tempat-ngemil"],
+    "dining": ["sarapan", "brunch", "makan-siang", "makan-malam", "makan"],
+    "local_food": ["kuliner", "street-food", "makanan-khas", "hidangan-khas", "kuliner-khas", "menu-khas", "bakso", "sate", "mie", "mie-ayam", "seafood", "nasi-goreng", "nasi-padang", "ayam-bakar", "ayam-penyet", "martabak", "makanan-enak"],
+    "dessert": ["dessert", "kue", "jajanan", "cemilan"]
+   }
   },
-
   "events": {
-   "keywords": [
-    "festival",
-    "festival-musik",
-    "festival-budaya",
-    "festival-kuliner",
-    "festival-seni",
-    "event",
-    "acara",
-    "konser",
-    "pameran",
-    "expo",
-    "pertunjukan",
-    "pagelaran",
-    "karnaval",
-    "parade",
-    "kompetisi",
-    "lomba",
-    "turnamen",
-    "pertandingan",
-    "show",
-    "showcase",
-    "bazaar"
-   ]
+   "sub_tags": {
+    "festival": ["festival", "festival-musik", "festival-budaya", "festival-kuliner", "festival-seni", "karnaval", "parade", "bazaar"],
+    "exhibition": ["pameran", "expo", "showcase"],
+    "show": ["event", "acara", "konser", "pertunjukan", "pagelaran", "show"],
+    "competition": ["kompetisi", "lomba", "turnamen", "pertandingan"]
+   }
   },
-
   "wellness": {
-   "keywords": [
-    "spa",
-    "pijat",
-    "massage",
-    "refleksi",
-    "refleksologi",
-    "terapi",
-    "facial",
-    "perawatan-wajah",
-    "perawatan-tubuh",
-    "salon",
-    "kecantikan",
-    "skincare",
-    "manicure",
-    "pedicure",
-    "hair-spa",
-    "body-treatment",
-    "yoga",
-    "meditasi",
-    "wellness",
-    "relaksasi"
-   ]
+   "sub_tags": {
+    "spa": ["spa", "pijat", "massage", "refleksi", "refleksologi", "terapi"],
+    "beauty": ["facial", "perawatan-wajah", "perawatan-tubuh", "salon", "kecantikan", "skincare", "manicure", "pedicure", "hair-spa", "body-treatment"],
+    "fitness": ["yoga", "meditasi", "wellness", "relaksasi"]
+   }
   },
-
   "shopping": {
-   "keywords": [
-    "mall",
-    "shopping",
-    "belanja",
-    "pusat-belanja",
-    "outlet",
-    "factory-outlet",
-    "pasar",
-    "pasar-tradisional",
-    "pasar-malam",
-    "butik",
-    "toko",
-    "toko-souvenir",
-    "souvenir",
-    "oleh-oleh",
-    "oleh-oleh-khas",
-    "kerajinan",
-    "sentra-kerajinan",
-    "batik",
-    "tenun",
-    "galeri",
-    "pusat-oleh-oleh"
-   ]
+   "sub_tags": {
+    "mall": ["mall", "shopping", "pusat-belanja", "outlet", "factory-outlet"],
+    "market": ["pasar", "pasar-tradisional", "pasar-malam", "belanja"],
+    "souvenir": ["toko-souvenir", "souvenir", "oleh-oleh", "oleh-oleh-khas", "pusat-oleh-oleh"],
+    "crafts": ["kerajinan", "sentra-kerajinan", "batik", "tenun", "galeri", "butik", "toko"]
+   }
   }
-
  }
 }

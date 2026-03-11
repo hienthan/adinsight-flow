@@ -51,6 +51,7 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                 ]
             }
         ],
+        activeFilterKey: 'include_for_dsa',
         exportFields: [
             { id: 'country', label: 'Country Name', desc: 'e.g. Hong Kong, Japan' },
             { id: 'city', label: 'City Name', desc: 'Included if present' },
@@ -70,9 +71,9 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
             { header: 'Tier', key: 'tier', width: '8%' },
             { header: 'Score', key: 'score', width: '10%' },
             { header: 'Content Type', key: 'content_type', width: '12%' },
-            { header: 'Geo Entity', key: 'geo_entity', width: '12%' },
-            { header: 'Geo Type', key: 'geo_type', width: '10%' },
+            { header: 'SubTag', key: 'sub_tag', width: '12%' },
             { header: 'Campaign', key: 'dsa_campaign', width: '14%' },
+            { header: 'Geo Entity', key: 'geo_entity', width: '12%' },
             { header: 'Location', key: 'location', width: '12%' }
         ],
         filters: [
@@ -98,17 +99,30 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                 ]
             },
             {
+                id: 'content_type', label: 'Content', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Attractions', value: 'attractions' },
+                    { label: 'Activities', value: 'activities' },
+                    { label: 'Transport', value: 'transport' },
+                    { label: 'Planning', value: 'planning' },
+                    { label: 'Culinary', value: 'culinary' },
+                    { label: 'Events', value: 'events' },
+                    { label: 'Wellness', value: 'wellness' },
+                    { label: 'Shopping', value: 'shopping' }
+                ]
+            },
+            {
                 id: 'dsa_campaign', label: 'Campaign', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
-                    { label: 'Transit Hubs', value: 'TVLK_ID_Transit_Hubs' },
-                    { label: 'Leisure Hotspots', value: 'TVLK_ID_Leisure_Hotspots' },
-                    { label: 'Cultural/Family', value: 'TVLK_ID_Cultural_Family' },
-                    { label: 'Shopping/Business', value: 'TVLK_ID_Shopping_Business' },
-                    { label: 'General Provinces', value: 'TVLK_ID_General_Provinces' },
-                    { label: 'CatchAll No Geo', value: 'TVLK_ID_CatchAll_NoGeo' },
-                    { label: 'General DSA', value: 'TVLK_ID_General_DSA' },
-                    { label: 'Exclude System', value: 'TVLK_ID_Exclude_System' },
-                    { label: 'Exclude Low Perf', value: 'TVLK_ID_Exclude_LowPerformance' }
+                    { label: 'Things to Do', value: 'things_to_do' },
+                    { label: 'Destination', value: 'destination' },
+                    { label: 'Planning', value: 'planning' },
+                    { label: 'Information', value: 'information' },
+                    { label: 'Transport', value: 'transport' },
+                    { label: 'Transit Hubs', value: 'transit_hubs' },
+                    { label: 'Leisure Hotspots', value: 'leisure_hotspots' },
+                    { label: 'Global General', value: 'general_dsa' },
+                    { label: 'Exclude', value: 'exclude' }
                 ]
             },
             {
@@ -160,11 +174,10 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
         exportFields: [
             { id: 'dsa_campaign', label: 'Campaign (Grouping)', desc: 'Main campaign label for Google Ads' },
             { id: 'tier', label: 'Tier (1-4)', desc: 'Cookie Tier' },
-            { id: 'intent_type', label: 'Intent Type', desc: 'Classification intent' },
-            { id: 'geo_type', label: 'Geo Type', desc: 'Type of location entity' },
+            { id: 'content_type', label: 'Content Type', desc: 'Page Category' },
+            { id: 'province', label: 'Province', desc: 'Target Province' },
             { id: 'city', label: 'City', desc: 'Primary City match' },
-            { id: 'title_en', label: 'English Title', desc: 'Page title in English' },
-            { id: 'url', label: 'URL', desc: 'Target link' }
+            { id: 'title_en', label: 'English Title', desc: 'Page title in English' }
         ]
     }
 };
