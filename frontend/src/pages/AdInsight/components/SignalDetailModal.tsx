@@ -49,7 +49,6 @@ export const SignalDetailModal = ({
                 right: 0,
                 bottom: 0,
                 background: 'rgba(0, 0, 0, 0.75)',
-                transform: 'translateZ(0)', // GPU Composite fix
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -73,7 +72,7 @@ export const SignalDetailModal = ({
                     boxShadow: 'var(--shadow-medium)',
                     borderRadius: '1rem',
                     pointerEvents: 'auto',
-                    transform: 'translateZ(0)'
+                    /* GPU hack removed */
                 }}
                 onClick={(e) => e.stopPropagation()}
             >

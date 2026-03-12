@@ -27,6 +27,7 @@ export interface PageRecord {
     geo_entity?: string;
     geo_type?: string;
     intent_type?: string;
+    intent_primary?: string;
     sub_city?: string;
     province?: string;
     display_name?: string;

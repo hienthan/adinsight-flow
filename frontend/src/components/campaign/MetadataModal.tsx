@@ -67,7 +67,7 @@ export default function MetadataModal({
                 position: 'fixed',
                 top: 0, left: 0, right: 0, bottom: 0,
                 background: 'rgba(0, 0, 0, 0.8)',
-                transform: 'translateZ(0)', // GPU Composite fix
+                /* GPU hack removed */
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -89,7 +89,7 @@ export default function MetadataModal({
                     padding: '0.5rem 0.75rem',
                     boxShadow: 'var(--shadow-2xl)',
                     pointerEvents: 'auto',
-                    transform: 'translateZ(0)'
+                    /* GPU hack removed */
                 }}
                 onClick={e => e.stopPropagation()}
             >

@@ -96,7 +96,7 @@ export default function AddPlatformReminderModal({ platformId, isOpen, onClose }
             right: 0,
             bottom: 0,
             background: 'rgba(2, 6, 23, 0.75)',
-            transform: 'translateZ(0)', // GPU Composite fix
+            /* GPU hack removed */
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -124,7 +124,7 @@ export default function AddPlatformReminderModal({ platformId, isOpen, onClose }
                     borderRadius: '2rem',
                     boxShadow: 'var(--shadow-large)',
                     pointerEvents: 'auto',
-                    transform: 'translateZ(0)'
+                    /* GPU hack removed */
                 }}
                 onClick={e => e.stopPropagation()}
             >

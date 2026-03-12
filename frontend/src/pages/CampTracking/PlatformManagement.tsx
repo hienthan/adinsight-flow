@@ -242,7 +242,7 @@ export default function PlatformManagement() {
                     <button
                         onClick={() => navigate('/camp-tracking')}
                         className="hero-btn-ghost"
-                        style={{ padding: '0.65rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', background: 'var(--bg-overlay)', backdropFilter: 'var(--glass-blur)' }}
+                        style={{ padding: '0.65rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', background: 'var(--bg-overlay)' }}
                     >
                         <ChevronLeft size={22} />
                     </button>

@@ -75,7 +75,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     right: 0,
                     bottom: 0,
                     background: 'rgba(2, 6, 23, 0.65)', // Deeper slate to replace blur
-                    transform: 'translateZ(0)', // GPU Composite fix for Chrome cursor freeze bug
+                    /* GPU hack removed */
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -107,7 +107,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                         boxShadow: 'var(--shadow-large)',
                         borderRadius: '2rem',
                         pointerEvents: 'auto', // Ensure clicks hit this layer, not the blurred background
-                        transform: 'translateZ(0)', // Keep stacking context clean
+                        /* GPU hack removed */
                         overscrollBehavior: 'contain' // Prevent scroll-bleed to blurred background
                     }}
                     onClick={(e) => e.stopPropagation()}
@@ -272,7 +272,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                         right: 0,
                         bottom: 0,
                         background: 'rgba(2, 6, 23, 0.8)', // Replace blur with dark slate
-                        transform: 'translateZ(0)', // GPU Composite fix
+                        /* GPU hack removed */
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -296,7 +296,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             borderRadius: '2rem',
                             overflow: 'hidden',
                             pointerEvents: 'auto',
-                            transform: 'translateZ(0)'
+                            /* GPU hack removed */
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >

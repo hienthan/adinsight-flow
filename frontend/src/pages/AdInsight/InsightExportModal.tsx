@@ -59,8 +59,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
             left: 0,
             width: '100vw',
             height: '100vh',
-            background: 'rgba(0, 0, 0, 0.65)',
-            transform: 'translateZ(0)', // GPU Composite fix
+            background: 'rgba(2, 6, 23, 0.75)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -82,7 +81,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                     maxHeight: '85vh',
                     position: 'relative',
                     pointerEvents: 'auto',
-                    transform: 'translateZ(0)'
+                    /* GPU hack removed */
                 }}
                 onClick={(e) => e.stopPropagation()}
             >

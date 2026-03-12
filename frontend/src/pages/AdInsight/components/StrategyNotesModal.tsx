@@ -45,9 +45,9 @@ export const StrategyNotesModal: React.FC<StrategyNotesModalProps> = ({
             disableAnimation={false}
             classNames={{
                 wrapper: "items-center justify-center p-4",
-                base: "bg-(--bg-content) border border-(--border-subtle) shadow-2xl rounded-[24px] overflow-hidden max-h-[95vh] [transform:translateZ(0)]",
+                base: "bg-(--bg-content) border border-(--border-subtle) shadow-2xl rounded-[24px] overflow-hidden max-h-[95vh]",
                 closeButton: "top-8 right-8 text-(--text-muted) hover:text-(--text-main) transition-colors p-2 hover:bg-(--bg-overlay) rounded-full z-50",
-                backdrop: "bg-black/60 [transform:translateZ(0)]",
+                backdrop: "bg-black/60",
             }}
         >
             <ModalContent>
