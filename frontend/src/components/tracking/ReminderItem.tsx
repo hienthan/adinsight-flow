@@ -50,7 +50,6 @@ export default function ReminderItem({
                 opacity: reminder.status === 'completed' ? 0.8 : 1,
                 fontSize: '0.7rem',
                 boxShadow: 'var(--shadow-sm)',
-                transform: 'translateZ(0)', // GPU Layer Promotion to prevent flicker
             }}
         >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>

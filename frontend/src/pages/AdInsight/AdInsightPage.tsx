@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Globe, Download } from 'lucide-react';
+import { Globe, Download, LayoutDashboard, List } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { usePlatformAnalytics } from '../../hooks/usePlatformAnalytics';
 import { usePlatformMeta } from '../../hooks/usePlatformMeta';
@@ -9,6 +9,7 @@ import { InsightDataTable } from './InsightDataTable';
 import { InsightFilterBar } from './InsightFilterBar';
 import { InsightExportModal } from './InsightExportModal';
 import { InsightActionBar } from './InsightActionBar';
+import { AdInsightDashboard } from './Dashboard/AdInsightDashboard';
 import { buildFilterString } from './insightUtils';
 import { PageRecord } from '../../types/adinsight';
 
@@ -17,6 +18,7 @@ export default function AdInsightPage() {
     const platformId = (platform === 'traveloka' ? 'traveloka' : 'klook');
     const config = PLATFORMS[platformId];
 
+    const [selectedView, setSelectedView] = useState("list");
     const [perPage, setPerPage] = useState(100);
     const initialFilters = useMemo(() => {
         const filters: Record<string, string> = {
@@ -265,8 +267,8 @@ export default function AdInsightPage() {
                 borderRadius: '12px',
                 boxShadow: 'var(--shadow-soft)'
             }}>
-                {/* Left: Platform Switcher */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+                {/* Left: Platform Switcher & View Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
                             width: '36px',
@@ -289,6 +291,52 @@ export default function AdInsightPage() {
                             </p>
                         </div>
                     </div>
+
+                    {/* View Toggle integrated into the left side navigation */}
+                    <div
+                        role="group"
+                        aria-label="Switch between List and Dashboard view"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: 'var(--bg-overlay)',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: '10px',
+                            overflow: 'hidden',
+                            marginLeft: '0.5rem'
+                        }}
+                    >
+                        <button
+                            aria-label="List View"
+                            aria-pressed={selectedView === 'list'}
+                            onClick={() => setSelectedView('list')}
+                            title="List View"
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                width: '34px', height: '34px', border: 'none', cursor: 'pointer',
+                                background: selectedView === 'list' ? 'hsl(var(--primary))' : 'transparent',
+                                color: selectedView === 'list' ? 'white' : 'var(--text-dim)',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <List size={14} />
+                        </button>
+                        <button
+                            aria-label="Dashboard Intelligence View"
+                            aria-pressed={selectedView === 'dashboard'}
+                            onClick={() => setSelectedView('dashboard')}
+                            title="Dashboard Intelligence"
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                width: '34px', height: '34px', border: 'none', cursor: 'pointer',
+                                background: selectedView === 'dashboard' ? 'hsl(var(--primary))' : 'transparent',
+                                color: selectedView === 'dashboard' ? 'white' : 'var(--text-dim)',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <LayoutDashboard size={14} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Center: Record Count */}
@@ -301,44 +349,44 @@ export default function AdInsightPage() {
                     </div>
                 </div>
 
-                {/* Right: Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, justifyContent: 'flex-end' }}>
-                    <button
-                        onClick={handleReset}
-                        className="hero-btn"
-                        style={{
-                            padding: '0.6rem 1rem',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            visibility: isFiltered ? 'visible' : 'hidden',
-                            border: '1px solid var(--border-subtle)',
-                            background: 'var(--bg-overlay)',
-                            borderRadius: '10px'
-                        }}
-                    >
-                        Reset
-                    </button>
+                {/* Right: Actions (Only shown in list view) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, justifyContent: 'flex-end', minHeight: '36px' }}>
+                    {selectedView === 'list' && (
+                        <>
+                            <button
+                                onClick={handleReset}
+                                className="hero-btn"
+                                style={{
+                                    padding: '0.6rem 1rem',
+                                    fontSize: '13px',
+                                    fontWeight: 700,
+                                    visibility: isFiltered ? 'visible' : 'hidden',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: 'var(--bg-overlay)',
+                                    borderRadius: '10px'
+                                }}
+                            >
+                                Reset
+                            </button>
 
-                    <button
-                        onClick={() => setIsExportModalOpen(true)}
-                        disabled={exporting}
-                        className="hero-btn hero-btn-primary"
-                        style={{
-                            padding: '0.6rem 1.2rem',
-                            gap: '0.5rem',
-                            fontSize: '13px',
-                            borderRadius: '10px'
-                        }}
-                    >
-                        <Download size={16} />
-                        {exporting ? 'Exporting...' : 'CSV'}
-                    </button>
+                            <button
+                                onClick={() => setIsExportModalOpen(true)}
+                                disabled={exporting}
+                                className="hero-btn hero-btn-primary"
+                                style={{ padding: '0.6rem 1.2rem', gap: '0.5rem', fontSize: '13px', borderRadius: '10px' }}
+                            >
+                                <Download size={16} />
+                                {exporting ? 'Exporting...' : 'CSV'}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* Filter Bar */}
-            <InsightFilterBar
-                filters={config.filters}
+            {selectedView === 'list' ? (
+                <>
+                    <InsightFilterBar
+                        filters={config.filters}
                 currentValues={filters}
                 onFilterChange={handleFilterChange}
                 countries={countries}
@@ -431,6 +479,10 @@ export default function AdInsightPage() {
                 isExporting={exporting}
             />
 
+                </>
+            ) : (
+                <AdInsightDashboard platformInfo={config} sitemapTags={sitemapTags} />
+            )}
 
         </div>
     );

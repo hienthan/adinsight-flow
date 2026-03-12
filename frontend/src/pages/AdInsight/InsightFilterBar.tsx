@@ -278,7 +278,6 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     .exclude-section {
                         background: rgba(255, 252, 252, 0.8) !important;
                         border: 1px solid rgba(239, 68, 68, 0.15) !important;
-                        backdrop-filter: blur(10px);
                         box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.02);
                     }
                     .exclude-section label {

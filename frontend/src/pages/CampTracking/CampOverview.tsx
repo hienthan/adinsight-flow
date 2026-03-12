@@ -493,7 +493,6 @@ export default function CampOverview() {
                     borderRadius: '1.25rem',
                     background: 'var(--bg-overlay)',
                     boxShadow: 'var(--shadow-subtle)',
-                    backdropFilter: 'var(--glass-blur)'
                 }}>
                     <div className="filter-group">
                         <label>Search Camp</label>
@@ -552,7 +551,6 @@ export default function CampOverview() {
                     borderRadius: '1.1rem',
                     background: 'var(--bg-overlay)',
                     boxShadow: 'var(--shadow-subtle)',
-                    backdropFilter: 'var(--glass-blur)'
                 }}>
                     <div className="filter-group">
                         <label style={{ fontSize: '0.65rem', marginBottom: '0.15rem' }}>View Mode</label>
