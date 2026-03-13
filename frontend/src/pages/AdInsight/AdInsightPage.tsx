@@ -155,6 +155,7 @@ export default function AdInsightPage() {
                             if (field === 'country') prefix = 'geo=';
                             else if (field === 'province') prefix = 'province=';
                             else if (field === 'city') prefix = 'city=';
+                            else if (field === 'geo_entity') prefix = 'geo_entity=';
                             else if (field === 'tier') prefix = 'tier=';
                             else if (field === 'content_type') prefix = 'ctype=';
                             else if (field === 'funnel_stage') prefix = 'funnel=';

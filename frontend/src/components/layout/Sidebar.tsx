@@ -9,7 +9,8 @@ import {
     Bell,
     History,
     Settings,
-    TrendingUp // Import
+    TrendingUp,
+    FileText
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { CampaignReminder } from '../../types/campaign';
@@ -100,9 +101,23 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
     const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
-    const NavLink = ({ to, icon: Icon, children, badgeCount, badgeText, activeCondition }: any) => {
+    const NavLink = ({ to, icon: Icon, children, badgeCount, badgeText, activeCondition, color = 'blue' }: any) => {
         const active = activeCondition !== undefined ? activeCondition : isActive(to);
         const hasBadge = badgeCount > 0 || !!badgeText;
+
+        // Premium Color Palette
+        const colors: Record<string, { main: string, bg: string }> = {
+            blue: { main: 'hsl(217, 91%, 60%)', bg: 'hsla(217, 91%, 60%, 0.1)' },
+            emerald: { main: 'hsl(160, 84%, 39%)', bg: 'hsla(160, 84%, 39%, 0.1)' },
+            amber: { main: 'hsl(38, 92%, 50%)', bg: 'hsla(38, 92%, 50%, 0.12)' },
+            indigo: { main: 'hsl(239, 84%, 67%)', bg: 'hsla(239, 84%, 67%, 0.1)' },
+            rose: { main: 'hsl(350, 89%, 60%)', bg: 'hsla(350, 89%, 60%, 0.1)' },
+            purple: { main: 'hsl(265, 89%, 65%)', bg: 'hsla(265, 89%, 65%, 0.1)' },
+            teal: { main: 'hsl(187, 85%, 45%)', bg: 'hsla(187, 85%, 45%, 0.1)' },
+            slate: { main: 'hsl(215, 25%, 45%)', bg: 'hsla(215, 25%, 45%, 0.1)' }
+        };
+
+        const theme = colors[color] || colors.blue;
 
         return (
             <Link
@@ -115,12 +130,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     justifyContent: 'center',
                     width: '32px',
                     height: '32px',
-                    borderRadius: collapsed ? '50%' : '8px',
-                    background: active ? (collapsed ? 'hsl(var(--primary))' : 'white') : 'var(--accent-glow)',
-                    color: active ? (collapsed ? 'white' : 'hsl(var(--primary))') : 'var(--text-dim)',
-                    boxShadow: active ? (collapsed ? '0 4px 12px hsla(var(--primary) / 0.3)' : '0 4px 12px rgba(0,0,0,0.05)') : 'none',
-                    transition: 'all 0.3s ease',
-                    flexShrink: 0
+                    borderRadius: collapsed ? '50%' : '10px',
+                    background: active ? 'white' : theme.bg,
+                    color: theme.main,
+                    boxShadow: active ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    flexShrink: 0,
+                    border: active ? '1px solid var(--border-subtle)' : '1px solid transparent'
                 }}>
                     {Icon && typeof Icon !== 'function' ? <Icon size={18} strokeWidth={active ? 2.5 : 2} /> : <Icon />}
                 </div>
@@ -128,9 +144,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {!collapsed && (
                     <span style={{
                         fontSize: '0.875rem',
-                        fontWeight: active ? 700 : 500,
+                        fontWeight: active ? 700 : 600,
                         color: active ? 'hsl(var(--primary))' : 'var(--text-dim)',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '-0.01em'
                     }}>
                         {children}
                     </span>
@@ -187,29 +204,30 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', overflowY: 'auto', flex: 1, padding: '0 0.5rem' }}>
                 {/* Knowledge Base Section - Moved to Top */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>Knowledge</div>}
-                <NavLink to="/global-notes" icon={Globe}>
+                <NavLink to="/global-notes" icon={FileText} color="purple">
                     General Notes
                 </NavLink>
 
                 {/* Section Header */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>Tracking Core</div>}
 
-                <NavLink to="/camp-tracking" icon={Target} activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes'].some(p => location.pathname.includes(p))}>
+                <NavLink to="/camp-tracking" icon={Target} color="indigo" activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes'].some(p => location.pathname.includes(p))}>
                     Overview
                 </NavLink>
 
-                <NavLink to="/camp-tracking/platforms" icon={Settings}>
+                <NavLink to="/camp-tracking/platforms" icon={Settings} color="teal">
                     Manage Platforms
                 </NavLink>
 
                 <NavLink
                     to="/camp-tracking/reminders"
                     icon={Bell}
+                    color="amber"
                     badgeText={(reminderCounts.overdue > 0 || reminderCounts.today > 0) ? `${reminderCounts.overdue}/${reminderCounts.today}` : undefined}
                 >
                     Reminders
                 </NavLink>
-                <NavLink to="/camp-tracking/changes" icon={History}>
+                <NavLink to="/camp-tracking/changes" icon={History} color="purple">
                     Auto Logs
                 </NavLink>
 
@@ -217,7 +235,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>DSA Analytics</div>}
 
                 {/* NEW: Trend Signals Link */}
-                <NavLink to="/adinsight/trends" icon={TrendingUp}>
+                <NavLink to="/adinsight/trends" icon={TrendingUp} color="emerald">
                     Trend Signals
                 </NavLink>
 
@@ -230,7 +248,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         justifyContent: collapsed ? 'center' : 'flex-start',
                         gap: '0.85rem',
                         color: 'var(--text-dim)',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         fontSize: '0.9rem',
                         cursor: 'pointer',
                         borderRadius: '0.85rem',
@@ -244,9 +262,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         justifyContent: 'center',
                         width: '32px',
                         height: '32px',
-                        borderRadius: '8px',
-                        background: 'var(--accent-glow)',
-                        color: 'var(--text-dim)',
+                        borderRadius: '10px',
+                        background: 'hsla(var(--primary) / 0.1)',
+                        color: 'hsl(var(--primary))',
                         flexShrink: 0
                     }}>
                         <Globe size={18} strokeWidth={2} />

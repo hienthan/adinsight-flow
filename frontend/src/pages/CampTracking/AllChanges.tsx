@@ -96,7 +96,7 @@ export default function AllChanges() {
     return (
         <div className="page-container">
             <div style={{ marginBottom: '1.5rem' }}>
-                <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: platform?.color || 'hsl(var(--primary))', letterSpacing: '-0.03em' }}>
+                <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: platform?.color || 'hsl(var(--primary))', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
                     {platform ? `${platform.display_name} Audit Logs` : 'Global Change Logs'}
                 </h1>
                 <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>

@@ -128,6 +128,7 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
             {
                 id: 'province', label: 'Province', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },
+                    { label: 'Unknown', value: 'Unknown' },
                     { label: 'Aceh', value: 'aceh' },
                     { label: 'Bali', value: 'bali' },
                     { label: 'Bangka Belitung', value: 'bangka-belitung' },
@@ -173,7 +174,7 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
         activeFilterKey: 'is_active',
         exportFields: [
             { id: 'dsa_campaign', label: 'Campaign (Grouping)', desc: 'Main campaign label for Google Ads' },
-            { id: 'tier', label: 'Tier (1-4)', desc: 'Cookie Tier' },
+            { id: 'geo_entity', label: 'Geo Entity', desc: 'The specific entity (Landmark/City/etc)' },
             { id: 'content_type', label: 'Content Type', desc: 'Page Category' },
             { id: 'province', label: 'Province', desc: 'Target Province' },
             { id: 'city', label: 'City', desc: 'Primary City match' },

@@ -248,12 +248,12 @@ export default function PlatformManagement() {
                     </button>
                     <div>
                         <h1 style={{
-                            fontSize: '2.5rem',
-                            fontWeight: 900,
+                            fontSize: 'var(--text-3xl)',
+                            fontWeight: 800,
                             color: 'hsl(var(--primary))',
-                            letterSpacing: '-0.05em',
+                            letterSpacing: '-0.03em',
                             margin: 0,
-                            lineHeight: 1
+                            lineHeight: 1.2
                         }}>
                             Platforms
                         </h1>
