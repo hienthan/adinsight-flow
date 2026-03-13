@@ -7,11 +7,12 @@ export interface DashboardFilters {
     platformInfo: { collection: string, id: string; titleKey: string };
     sitemap_tag: string;
     province: string;
+    activeFilterKey?: string;
 }
 
 export function useDashboardData(filters: DashboardFilters) {
-    // Include province in queryKey so we refetch on province change (server-side filtering)
-    const queryKey = ['dashboardData', filters.platformInfo.collection, filters.sitemap_tag, filters.province];
+    // Include province and activeFilterKey in queryKey so we refetch if settings change
+    const queryKey = ['dashboardData', filters.platformInfo.collection, filters.sitemap_tag, filters.province, filters.activeFilterKey];
 
     return useQuery({
         queryKey,
@@ -32,7 +33,13 @@ export function useDashboardData(filters: DashboardFilters) {
                 filterMap.province = filters.province;
             }
 
-            const pbFilter = buildFilterString(filterMap);
+            let pbFilter = buildFilterString(filterMap);
+            
+            // Enforce active records filtering for the dashboard
+            if (filters.activeFilterKey) {
+                const activeClause = `${filters.activeFilterKey} = true`;
+                pbFilter = pbFilter ? `(${pbFilter}) && ${activeClause}` : activeClause;
+            }
             
             const records = await pb.collection(collection).getFullList<PageRecord>({
                 filter: pbFilter,

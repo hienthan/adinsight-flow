@@ -65,7 +65,7 @@ def test_pb_setup():
         'sitemap_tag', 'content_type', 'language', 'sub_tag', 'metadata', 
         'is_active', 'canonical_id', 'affiliate_tier', 'cpc_risk_score',
         'cookie_score', 'intent_score', 'affiliate_score', 'time_sensitive',
-        'dsa_campaign'
+        'dsa_campaign', 'last_http_status', 'last_check_error', 'last_checked_at'
     ]
     
     outdated_fields = ['tier', 'funnel_stage']

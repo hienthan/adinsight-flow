@@ -22,6 +22,7 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
         },
         sitemap_tag: pattern,
         province,
+        activeFilterKey: platformInfo.activeFilterKey
     }), [platformInfo, pattern, province]);
 
     const { data: records, isLoading, isError } = useDashboardData(filters);

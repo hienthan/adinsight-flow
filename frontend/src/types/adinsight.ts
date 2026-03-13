@@ -13,6 +13,7 @@ export interface PageRecord {
     languages: string[];
     content_type: string;
     is_active: boolean;
+    last_http_status?: number;
     sub_tag?: string;
     translated_title_vi?: string;
     title_en?: string;

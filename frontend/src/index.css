@@ -21,7 +21,7 @@
     --color-slate-700: #334155;
     --color-slate-800: #1e293b;
     --color-slate-900: #0f172a;
-    
+
     --color-emerald-50: #ecfdf5;
     --color-emerald-100: #d1fae5;
     --color-emerald-200: #a7f3d0;
@@ -29,15 +29,15 @@
     --color-emerald-400: #34d399;
     --color-emerald-500: #10b981;
     --color-emerald-600: #059669;
-    
+
     --color-amber-50: #fffbeb;
     --color-amber-100: #fef3c7;
     --color-amber-500: #f59e0b;
-    
+
     --color-rose-50: #fff1f2;
     --color-rose-100: #ffe4e6;
     --color-rose-500: #f43f5e;
-    
+
     --color-indigo-50: #eef2ff;
     --color-indigo-100: #e0e7ff;
     --color-indigo-500: #6366f1;
@@ -73,7 +73,7 @@
     --color-tremor-brand-DEFAULT: var(--color-blue-500);
     --color-tremor-brand-emphasis: var(--color-blue-700);
     --color-tremor-brand-inverted: #ffffff;
-    
+
     --color-tremor-background-muted: var(--color-slate-50);
     --color-tremor-background-subtle: var(--color-slate-100);
     --color-tremor-background-DEFAULT: #ffffff;
@@ -81,7 +81,7 @@
 
     --color-tremor-border-DEFAULT: var(--color-slate-200);
     --color-tremor-ring-DEFAULT: var(--color-slate-200);
-    
+
     --color-tremor-content-subtle: var(--color-slate-400);
     --color-tremor-content-DEFAULT: var(--color-slate-500);
     --color-tremor-content-emphasis: var(--color-slate-700);
@@ -152,7 +152,7 @@
     --color-tremor-brand-DEFAULT: var(--color-blue-500);
     --color-tremor-brand-emphasis: var(--color-blue-400);
     --color-tremor-brand-inverted: var(--color-blue-950);
-    
+
     --color-tremor-background-muted: #131A2B;
     --color-tremor-background-subtle: var(--color-slate-800);
     --color-tremor-background-DEFAULT: var(--color-slate-950);
@@ -160,7 +160,7 @@
 
     --color-tremor-border-DEFAULT: var(--color-slate-800);
     --color-tremor-ring-DEFAULT: var(--color-slate-800);
-    
+
     --color-tremor-content-subtle: var(--color-slate-600);
     --color-tremor-content-DEFAULT: var(--color-slate-500);
     --color-tremor-content-emphasis: var(--color-slate-200);
@@ -900,51 +900,59 @@ h3.hero-section-title {
  */
 @layer utilities {
   .tremor-background-DEFAULT {
-      background-color: var(--color-tremor-background-DEFAULT);
+    background-color: var(--color-tremor-background-DEFAULT);
   }
+
   .tremor-background-subtle {
-      background-color: var(--color-tremor-background-subtle);
+    background-color: var(--color-tremor-background-subtle);
   }
+
   .tremor-background-muted {
-      background-color: var(--color-tremor-background-muted);
+    background-color: var(--color-tremor-background-muted);
   }
+
   .tremor-background-emphasis {
-      background-color: var(--color-tremor-background-emphasis);
+    background-color: var(--color-tremor-background-emphasis);
   }
-  
+
   .tremor-border-DEFAULT {
-      border-color: var(--color-tremor-border-DEFAULT);
+    border-color: var(--color-tremor-border-DEFAULT);
   }
-  
+
   .tremor-content-DEFAULT {
-      color: var(--color-tremor-content-DEFAULT);
+    color: var(--color-tremor-content-DEFAULT);
   }
+
   .tremor-content-subtle {
-      color: var(--color-tremor-content-subtle);
+    color: var(--color-tremor-content-subtle);
   }
+
   .tremor-content-emphasis {
-      color: var(--color-tremor-content-emphasis);
+    color: var(--color-tremor-content-emphasis);
   }
+
   .tremor-content-strong {
-      color: var(--color-tremor-content-strong);
+    color: var(--color-tremor-content-strong);
   }
-  
+
   /* Fix Tremor Box Shadows */
   .tremor-box-shadow {
-      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   }
+
   .tremor-box-shadow-dark {
-      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   }
-  
+
   /* Fix Tremor Rings */
   .tremor-ring-DEFAULT {
-      --tw-ring-color: var(--color-tremor-ring-DEFAULT);
-      box-shadow: 0 0 0 1px var(--tw-ring-color);
+    --tw-ring-color: var(--color-tremor-ring-DEFAULT);
+    box-shadow: 0 0 0 1px var(--tw-ring-color);
   }
+
   .tremor-ring-offset {
-      --tw-ring-offset-width: 2px;
-      --tw-ring-offset-color: #fff;
+    --tw-ring-offset-width: 2px;
+    --tw-ring-offset-color: #fff;
   }
 }
 
