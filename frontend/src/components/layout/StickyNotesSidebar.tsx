@@ -185,7 +185,7 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
     return (
         <aside
             ref={sidebarRef}
-            className={`sticky-sidebar ${open ? 'expanded' : 'collapsed'}`}
+            className={`sticky-sidebar sticky-sidebar-shell ${open ? 'expanded' : 'collapsed'}`}
             style={{
                 position: 'fixed',
                 right: 0,
@@ -202,13 +202,19 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
             }}
         >
             <style>{`
-                @keyframes pulse-soft {
-                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(var(--pulse-color), 0.4); }
-                    70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(var(--pulse-color), 0); }
-                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(var(--pulse-color), 0); }
+                .sticky-sidebar-shell .hero-btn,
+                .sticky-sidebar-shell .hero-btn-ghost {
+                    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
                 }
-                .pulse-indicator {
-                    animation: pulse-soft 2s infinite;
+
+                .sticky-sidebar-shell .hero-btn:hover,
+                .sticky-sidebar-shell .hero-btn-ghost:hover {
+                    transform: none;
+                    filter: none;
+                }
+
+                .sticky-sidebar-shell .hero-card:hover {
+                    transform: none;
                 }
             `}</style>
             {/* Toggle Tab */}
@@ -246,7 +252,6 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                     {pinnedPlatforms.slice(0, 8).map(p => {
                         const stats = getReminderStats(p.id);
                         const initials = getInitials(p.display_name);
-                        const hasOverdue = stats.overdue > 0;
                         const count = stats.overdue || stats.today || stats.upcoming || 0;
                         const badgeColor = stats.overdue > 0 ? '#ef4444' : stats.today > 0 ? '#fbbf24' : '#22c55e';
 
@@ -259,7 +264,6 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                                     if (!open) onToggle();
                                     else if (expandedPlatformId === p.id) setExpandedPlatformId(null);
                                 }}
-                                className={hasOverdue ? "pulse-indicator" : ""}
                                 style={{
                                     width: '26px',
                                     height: '26px',
@@ -457,7 +461,7 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
             border: '1px solid var(--border-subtle)',
             borderRadius: '12px',
             overflow: 'hidden',
-            transition: 'all 0.2s ease',
+            transition: 'background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
             boxShadow: isExpanded ? 'inset 0 2px 4px rgba(0,0,0,0.02)' : 'var(--shadow-soft)'
         }}>
             <div

@@ -18,7 +18,7 @@ export default function Header({
     const { active, preAlert, upcoming, loading } = useTrendCounts();
 
     return (
-        <div className="header-wrapper">
+        <div className="header-wrapper header-shell">
             <header className="top-bar">
                 <div className="title-group">
                     <h1>AdInsight Flow</h1>
@@ -26,6 +26,16 @@ export default function Header({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <style>{`
+                        .header-shell .theme-toggle {
+                            transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+                        }
+
+                        .header-shell .theme-toggle:hover {
+                            transform: none;
+                            filter: none;
+                        }
+                    `}</style>
                     <AnimatePresence>
                         {!loading && (active > 0 || preAlert > 0 || upcoming > 0) && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginRight: '0.5rem', background: 'var(--bg-overlay)', padding: '0.35rem 0.75rem', borderRadius: '14px', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 0 12px rgba(0,0,0,0.02)' }}>
@@ -36,20 +46,9 @@ export default function Header({
                                         style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
                                         title={`${active} Active Trends`}
                                     >
-                                        <motion.div
-                                            animate={{
-                                                scale: [1, 1.15, 1],
-                                                opacity: [0.8, 1, 0.8]
-                                            }}
-                                            transition={{
-                                                duration: 2,
-                                                repeat: Infinity,
-                                                ease: "easeInOut"
-                                            }}
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
-                                        >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.05)' }}>
                                             <TrendingUp size={14} style={{ color: '#10b981' }} />
-                                        </motion.div>
+                                        </div>
                                         <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>{active}</span>
                                     </motion.div>
                                 )}
@@ -65,23 +64,9 @@ export default function Header({
                                         style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
                                         title={`${preAlert} Pre-alerts`}
                                     >
-                                        <motion.div
-                                            animate={{
-                                                boxShadow: [
-                                                    "0 0 0px rgba(245, 158, 11, 0)",
-                                                    "0 0 8px rgba(245, 158, 11, 0.4)",
-                                                    "0 0 0px rgba(245, 158, 11, 0)"
-                                                ]
-                                            }}
-                                            transition={{
-                                                duration: 3,
-                                                repeat: Infinity,
-                                                ease: "easeInOut"
-                                            }}
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
-                                        >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', boxShadow: 'inset 0 0 0 1px rgba(245, 158, 11, 0.04)' }}>
                                             <Zap size={14} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
-                                        </motion.div>
+                                        </div>
                                         <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>{preAlert}</span>
                                     </motion.div>
                                 )}
@@ -123,7 +108,7 @@ export default function Header({
                             gap: '0.5rem',
                             fontSize: '0.75rem',
                             fontWeight: 700,
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transition: 'background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease',
                             boxShadow: 'var(--shadow-soft)'
                         }}
                     >
@@ -142,7 +127,7 @@ export default function Header({
                             border: '1px solid var(--border-subtle)',
                             color: darkMode ? '#fbbf24' : 'var(--text-dim)',
                             cursor: 'pointer',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transition: 'background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',

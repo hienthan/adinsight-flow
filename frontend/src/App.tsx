@@ -51,7 +51,10 @@ function App() {
 
       <main
         className={`main-wrapper ${sidebarCollapsed ? 'full' : ''}`}
-        style={{ marginRight: stickySidebarOpen ? '420px' : '48px' }}
+        style={{
+          marginRight: stickySidebarOpen ? '420px' : '48px',
+          transition: 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}
       >
         <Header
           darkMode={darkMode}

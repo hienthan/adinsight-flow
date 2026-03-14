@@ -146,7 +146,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
 
     return (
         <div
-            className={`w-full group hero-card transition-all duration-300 border border-(--border-subtle) ${expanded ? 'bg-(--bg-main) shadow-xl' : 'hover:border-primary/40 hover:shadow-lg'}`}
+            className={`signal-row-card w-full group hero-card border border-(--border-subtle) ${expanded ? 'bg-(--bg-main) shadow-xl' : 'hover:border-primary/40 hover:shadow-lg'}`}
             style={{ 
                 padding: 0, 
                 background: "var(--bg-content)", 
@@ -154,9 +154,15 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                 overflow: "hidden",
                 marginBottom: "16px", // Balanced separation
                 display: "block",
-                width: "100%"
+                width: "100%",
+                transition: 'background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease'
             }}
         >
+            <style>{`
+                .signal-row-card:hover {
+                    transform: none;
+                }
+            `}</style>
             {/* SCAN ROW - 4 COLUMNS LAYOUT */}
             <button
                 type="button"

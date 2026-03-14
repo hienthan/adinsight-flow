@@ -411,7 +411,23 @@ export default function CampOverview() {
     };
 
     return (
-        <div className="page-container">
+        <div className="page-container camp-overview-page">
+            <style>{`
+                .camp-overview-page .hero-btn,
+                .camp-overview-page .hero-btn-ghost,
+                .camp-overview-page .hero-btn-primary,
+                .camp-overview-page .hero-card {
+                    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+                }
+
+                .camp-overview-page .hero-btn:hover,
+                .camp-overview-page .hero-btn-ghost:hover,
+                .camp-overview-page .hero-btn-primary:hover,
+                .camp-overview-page .hero-card:hover {
+                    transform: none;
+                    filter: none;
+                }
+            `}</style>
             {/* Header Area */}
             <div style={{
                 display: 'flex',
@@ -458,7 +474,7 @@ export default function CampOverview() {
                             visibility: hasActiveFilters ? 'visible' : 'hidden',
                             pointerEvents: hasActiveFilters ? 'auto' : 'none',
                             color: hasActiveFilters ? 'white' : 'var(--text-dim)',
-                            transition: 'all 0.2s',
+                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
                             boxShadow: hasActiveFilters ? '0 4px 12px hsla(var(--primary) / 0.3)' : 'var(--shadow-subtle)',
                             display: 'flex',
                             alignItems: 'center',
@@ -614,7 +630,7 @@ export default function CampOverview() {
                                         border: `1px solid ${item.active ? 'hsl(var(--primary))' : 'var(--border-subtle)'}`,
                                         borderRadius: '10px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s',
+                                        transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
                                         userSelect: 'none',
                                     }}
                                 >
@@ -627,7 +643,7 @@ export default function CampOverview() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        transition: 'all 0.2s'
+                                        transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease'
                                     }}>
                                         {item.active && <Check size={10} strokeWidth={4} color="white" />}
                                     </div>
@@ -694,11 +710,9 @@ export default function CampOverview() {
                             fontWeight: 800,
                             color: filterPriority === 'critical' ? '#fff' : '#d946ef',
                             cursor: 'pointer',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            transform: filterPriority === 'critical' ? 'scale(1.05)' : 'scale(1)',
+                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
                             boxShadow: filterPriority === 'critical' ? '0 0 15px rgba(217, 70, 239, 0.4)' : 'none',
-                            opacity: (filterPriority !== 'all' && filterPriority !== 'critical') ? 0.5 : 1,
-                            filter: (filterPriority !== 'all' && filterPriority !== 'critical') ? 'grayscale(0.3)' : 'none'
+                            opacity: (filterPriority !== 'all' && filterPriority !== 'critical') ? 0.55 : 1
                         }}
                     >
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterPriority === 'critical' ? '#fff' : '#d946ef', boxShadow: filterPriority === 'critical' ? '0 0 8px #fff' : '0 0 8px #d946ef' }} />
@@ -720,11 +734,9 @@ export default function CampOverview() {
                             fontWeight: 800,
                             color: filterPriority === 'high' ? '#fff' : '#ef4444',
                             cursor: 'pointer',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            transform: filterPriority === 'high' ? 'scale(1.05)' : 'scale(1)',
+                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
                             boxShadow: filterPriority === 'high' ? '0 0 15px rgba(239, 68, 68, 0.4)' : 'none',
-                            opacity: (filterPriority !== 'all' && filterPriority !== 'high') ? 0.5 : 1,
-                            filter: (filterPriority !== 'all' && filterPriority !== 'high') ? 'grayscale(0.3)' : 'none'
+                            opacity: (filterPriority !== 'all' && filterPriority !== 'high') ? 0.55 : 1
                         }}
                     >
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterPriority === 'high' ? '#fff' : '#ef4444', boxShadow: filterPriority === 'high' ? '0 0 8px #fff' : '0 0 8px #ef4444' }} />
@@ -748,11 +760,9 @@ export default function CampOverview() {
                             fontWeight: 800,
                             color: reminderQuickFilter === 'overdue' ? '#fff' : '#ef4444',
                             cursor: 'pointer',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            transform: reminderQuickFilter === 'overdue' ? 'scale(1.05)' : 'scale(1)',
+                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
                             boxShadow: reminderQuickFilter === 'overdue' ? '0 0 15px rgba(239, 68, 68, 0.4)' : 'none',
-                            opacity: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'overdue') ? 0.5 : 1,
-                            filter: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'overdue') ? 'grayscale(0.3)' : 'none'
+                            opacity: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'overdue') ? 0.55 : 1
                         }}
                     >
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'overdue' ? '#fff' : '#ef4444', boxShadow: reminderQuickFilter === 'overdue' ? '0 0 8px #fff' : '0 0 8px #ef4444' }} />
@@ -774,11 +784,9 @@ export default function CampOverview() {
                             fontWeight: 800,
                             color: reminderQuickFilter === 'today' ? '#fff' : '#f59e0b',
                             cursor: 'pointer',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            transform: reminderQuickFilter === 'today' ? 'scale(1.05)' : 'scale(1)',
+                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
                             boxShadow: reminderQuickFilter === 'today' ? '0 0 15px rgba(245, 158, 11, 0.4)' : 'none',
-                            opacity: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'today') ? 0.5 : 1,
-                            filter: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'today') ? 'grayscale(0.3)' : 'none'
+                            opacity: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'today') ? 0.55 : 1
                         }}
                     >
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'today' ? '#fff' : '#f59e0b', boxShadow: reminderQuickFilter === 'today' ? '0 0 8px #fff' : '0 0 8px #f59e0b' }} />
@@ -800,11 +808,9 @@ export default function CampOverview() {
                             fontWeight: 800,
                             color: reminderQuickFilter === 'upcoming' ? '#fff' : 'var(--text-dim)',
                             cursor: 'pointer',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            transform: reminderQuickFilter === 'upcoming' ? 'scale(1.05)' : 'scale(1)',
+                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
                             boxShadow: reminderQuickFilter === 'upcoming' ? '0 0 15px hsla(var(--primary) / 0.4)' : 'none',
-                            opacity: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'upcoming') ? 0.5 : 1,
-                            filter: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'upcoming') ? 'grayscale(0.3)' : 'none'
+                            opacity: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'upcoming') ? 0.55 : 1
                         }}
                     >
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'upcoming' ? '#fff' : 'var(--text-muted)', boxShadow: reminderQuickFilter === 'upcoming' ? '0 0 8px #fff' : 'none' }} />
@@ -883,7 +889,7 @@ export default function CampOverview() {
                                             cursor: 'pointer',
                                             padding: '0.5rem',
                                             borderRadius: '8px',
-                                            transition: 'all 0.2s',
+                                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
                                             userSelect: 'none'
                                         }}
                                         onMouseEnter={(e) => {

@@ -239,7 +239,25 @@ export default function AdInsightPage() {
     ) || (filters.sitemap_tag !== config.defaultSitemapTags[0]);
 
     return (
-        <div className="page-container">
+        <div className="page-container adinsight-page">
+            <style>{`
+                .adinsight-page .hero-btn,
+                .adinsight-page .hero-btn-ghost,
+                .adinsight-page .hero-btn-primary,
+                .adinsight-page .hero-btn-secondary,
+                .adinsight-page .hero-card {
+                    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+                }
+
+                .adinsight-page .hero-btn:hover,
+                .adinsight-page .hero-btn-ghost:hover,
+                .adinsight-page .hero-btn-primary:hover,
+                .adinsight-page .hero-btn-secondary:hover,
+                .adinsight-page .hero-card:hover {
+                    transform: none;
+                    filter: none;
+                }
+            `}</style>
             <InsightActionBar
                 selectedCount={selectedIds.length}
                 onClear={() => setSelectedIds([])}
@@ -317,7 +335,7 @@ export default function AdInsightPage() {
                                 width: '34px', height: '34px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'list' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'list' ? 'white' : 'var(--text-dim)',
-                                transition: 'all 0.2s ease'
+                                transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease'
                             }}
                         >
                             <List size={14} />
@@ -332,7 +350,7 @@ export default function AdInsightPage() {
                                 width: '34px', height: '34px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'dashboard' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'dashboard' ? 'white' : 'var(--text-dim)',
-                                transition: 'all 0.2s ease'
+                                transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease'
                             }}
                         >
                             <LayoutDashboard size={14} />

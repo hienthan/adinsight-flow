@@ -36,6 +36,9 @@ interface Note {
 }
 
 export default function GlobalNotesPage() {
+    const panelTransition = 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, margin 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease';
+    const itemTransition = 'background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, opacity 0.12s ease';
+    const controlTransition = 'background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease';
     const queryClient = useQueryClient();
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -342,13 +345,33 @@ export default function GlobalNotesPage() {
     };
 
     return (
-        <div className="page-container" style={{ height: 'calc(100vh - 2rem)', display: 'flex', overflow: 'hidden', padding: 0, gap: 0 }}>
+        <div className="page-container global-notes-page" style={{ height: 'calc(100vh - 2rem)', display: 'flex', overflow: 'hidden', padding: 0, gap: 0 }}>
+            <style>{`
+                .global-notes-page .hero-btn,
+                .global-notes-page .hero-btn-ghost,
+                .global-notes-page .hero-btn-primary,
+                .global-notes-page .hero-btn-secondary {
+                    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+                }
+
+                .global-notes-page .hero-btn:hover,
+                .global-notes-page .hero-btn-ghost:hover,
+                .global-notes-page .hero-btn-primary:hover,
+                .global-notes-page .hero-btn-secondary:hover {
+                    transform: none;
+                    filter: none;
+                }
+
+                .global-notes-page .note-item-hover:hover {
+                    background: var(--accent-glow);
+                }
+            `}</style>
 
             {/* Sidebar List */}
             <div style={{
                 width: isLeftSidebarCollapsed ? '0' : '320px',
                 minWidth: isLeftSidebarCollapsed ? '0' : '320px',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: panelTransition,
                 opacity: isLeftSidebarCollapsed ? 0 : 1,
                 pointerEvents: isLeftSidebarCollapsed ? 'none' : 'auto',
                 display: 'flex',
@@ -384,7 +407,7 @@ export default function GlobalNotesPage() {
                         background: 'var(--bg-main)',
                         borderRadius: '0.75rem',
                         border: '1px solid var(--border-subtle)',
-                        transition: 'all 0.2s ease',
+                        transition: controlTransition,
                         boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)'
                     }}>
                         <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
@@ -428,7 +451,7 @@ export default function GlobalNotesPage() {
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                transition: 'all 0.1s ease',
+                                transition: itemTransition,
                                 gap: '0.5rem'
                             }}
                             className="note-item-hover"
@@ -520,7 +543,7 @@ export default function GlobalNotesPage() {
                 border: '1px solid var(--border-subtle)',
                 borderLeft: isLeftSidebarCollapsed ? '1px solid var(--border-subtle)' : 'none',
                 borderRight: isRightSidebarCollapsed ? '1px solid var(--border-subtle)' : 'none',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: panelTransition,
                 boxShadow: '10px 0 20px rgba(0,0,0,0.05)'
             }}>
                 {activeNote ? (
@@ -746,7 +769,7 @@ export default function GlobalNotesPage() {
                                 borderLeft: isRightSidebarCollapsed ? 'none' : '1px solid var(--border-subtle)',
                                 padding: isRightSidebarCollapsed ? '0' : '2rem 1.5rem',
                                 opacity: isRightSidebarCollapsed ? 0 : 1,
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transition: panelTransition,
                                 pointerEvents: isRightSidebarCollapsed ? 'none' : 'auto',
                                 background: 'var(--bg-card)',
                                 overflowY: 'auto',
@@ -929,7 +952,7 @@ export default function GlobalNotesPage() {
                                                             whiteSpace: 'nowrap',
                                                             padding: '0.25rem 0.5rem',
                                                             borderRadius: '0.4rem',
-                                                            transition: 'all 0.2s'
+                                                            transition: controlTransition
                                                         }}
                                                         onClick={() => scrollToSection(item.id)}
                                                         className="hover:bg-accent-glow hover:text-primary"

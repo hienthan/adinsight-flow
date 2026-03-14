@@ -16,9 +16,14 @@ export const SignalCard = ({ signal, onOpen }: SignalCardProps) => {
     return (
         <Card
             isPressable
-            className="bg-(--bg-content) border border-(--border-subtle) shadow-md hover:shadow-xl transition-all h-full rounded-[20px]"
+            className="signal-card bg-(--bg-content) border border-(--border-subtle) shadow-md hover:shadow-xl h-full rounded-[20px]"
             onPress={() => onOpen(signal)}
         >
+            <style>{`
+                .signal-card {
+                    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+                }
+            `}</style>
             <CardHeader style={{ padding: "40px 40px 24px 40px" }} className="flex flex-col items-start gap-4">
                 <div className="flex justify-between w-full items-start">
                     <div className="flex flex-wrap gap-2">
