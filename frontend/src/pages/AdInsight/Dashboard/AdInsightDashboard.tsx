@@ -3,6 +3,44 @@ import { useDashboardData } from './useDashboardData';
 import { DashboardCharts } from './DashboardCharts';
 import { MultiSelectDropdown } from '../../../components/common/MultiSelectDropdown';
 import { PlatformConfig } from '../../../types/adinsight';
+import { SurfaceCard } from '../../../components/common/ui';
+
+const DASHBOARD_PAGE_STYLE = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+} as const;
+
+const FILTER_BAR_STYLE = {
+    position: 'relative',
+    zIndex: 60,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1.25rem',
+    flexWrap: 'wrap',
+    overflow: 'visible',
+} as const;
+
+const LIVE_COUNT_STYLE = {
+    marginLeft: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    fontSize: '0.75rem',
+    color: 'var(--text-dim)',
+    fontWeight: 600,
+} as const;
+
+const ERROR_STATE_STYLE = {
+    padding: '2rem',
+    textAlign: 'center',
+    background: 'rgba(239,68,68,0.06)',
+    border: '1px solid rgba(239,68,68,0.2)',
+    borderRadius: '12px',
+    color: '#ef4444',
+    fontSize: '0.9rem',
+    fontWeight: 600,
+} as const;
 
 interface AdInsightDashboardProps {
     platformInfo: PlatformConfig;
@@ -22,6 +60,7 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
         },
         sitemap_tag: pattern,
         province,
+        activeFilterKey: platformInfo.activeFilterKey
     }), [platformInfo, pattern, province]);
 
     const { data: records, isLoading, isError } = useDashboardData(filters);
@@ -49,25 +88,10 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
     const urlCount = filteredRecords.length;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={DASHBOARD_PAGE_STYLE}>
 
             {/* ── Filter bar — matches InsightFilterBar design exactly ── */}
-            <section
-                className="filter-container"
-                style={{
-                    position: 'relative',
-                    zIndex: 60,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1.25rem',
-                    flexWrap: 'wrap',
-                    background: 'var(--bg-card)',
-                    padding: '1.25rem',
-                    borderRadius: '12px',
-                    border: '1px solid var(--border-subtle)',
-                    boxShadow: 'var(--shadow-soft)',
-                }}
-            >
+            <SurfaceCard className="filter-container" variant="soft" style={FILTER_BAR_STYLE}>
                 {/* Pattern Selector */}
                 <div className="filter-group">
                     <label>Pattern <span style={{ color: '#ef4444' }}>*</span></label>
@@ -96,15 +120,7 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
 
                 {/* Live count badge — right-aligned */}
                 {!isLoading && records && (
-                    <div style={{
-                        marginLeft: 'auto',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.75rem',
-                        color: 'var(--text-dim)',
-                        fontWeight: 600
-                    }}>
+                    <div style={LIVE_COUNT_STYLE}>
                         <span style={{
                             display: 'inline-block',
                             width: '7px', height: '7px',
@@ -136,20 +152,11 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
                         50% { opacity: 0.4; }
                     }
                 `}</style>
-            </section>
+            </SurfaceCard>
 
             {/* ── Dashboard Charts ─────────────────────────────────── */}
             {isError ? (
-                <div style={{
-                    padding: '2rem',
-                    textAlign: 'center',
-                    background: 'rgba(239,68,68,0.06)',
-                    border: '1px solid rgba(239,68,68,0.2)',
-                    borderRadius: '12px',
-                    color: '#ef4444',
-                    fontSize: '0.9rem',
-                    fontWeight: 600
-                }}>
+                <div style={ERROR_STATE_STYLE}>
                     Failed to load dashboard data. Check PocketBase connection.
                 </div>
             ) : (

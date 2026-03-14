@@ -14,10 +14,18 @@ import {
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { CampaignPlatform, CampaignReminder } from '../../types/campaign';
-import RichTextEditor from '../common/RichTextEditor';
+import LazyRichTextEditor from '../common/LazyRichTextEditor';
 import { htmlToPlainText } from '../../lib/noteHtml';
 import ReminderItem from '../tracking/ReminderItem';
 import AddPlatformReminderModal from '../campaign/AddPlatformReminderModal';
+import {
+    SAFE_BUTTON_SELECTORS,
+    SAFE_CARD_SELECTORS,
+    createSafeInteractionScopeCss,
+} from '../../lib/uiMotion';
+import { SafeButton } from '../common/ui/SafeButton';
+import { SurfaceCard } from '../common/ui/SurfaceCard';
+import { SectionHeader } from '../common/ui/SectionHeader';
 
 // --- UI HELPERS ---
 
@@ -185,7 +193,7 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
     return (
         <aside
             ref={sidebarRef}
-            className={`sticky-sidebar ${open ? 'expanded' : 'collapsed'}`}
+            className={`sticky-sidebar sticky-sidebar-shell ${open ? 'expanded' : 'collapsed'}`}
             style={{
                 position: 'fixed',
                 right: 0,
@@ -202,14 +210,8 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
             }}
         >
             <style>{`
-                @keyframes pulse-soft {
-                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(var(--pulse-color), 0.4); }
-                    70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(var(--pulse-color), 0); }
-                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(var(--pulse-color), 0); }
-                }
-                .pulse-indicator {
-                    animation: pulse-soft 2s infinite;
-                }
+                ${createSafeInteractionScopeCss('.sticky-sidebar-shell', SAFE_BUTTON_SELECTORS)}
+                ${createSafeInteractionScopeCss('.sticky-sidebar-shell', SAFE_CARD_SELECTORS)}
             `}</style>
             {/* Toggle Tab */}
             <div
@@ -246,7 +248,6 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                     {pinnedPlatforms.slice(0, 8).map(p => {
                         const stats = getReminderStats(p.id);
                         const initials = getInitials(p.display_name);
-                        const hasOverdue = stats.overdue > 0;
                         const count = stats.overdue || stats.today || stats.upcoming || 0;
                         const badgeColor = stats.overdue > 0 ? '#ef4444' : stats.today > 0 ? '#fbbf24' : '#22c55e';
 
@@ -259,7 +260,6 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                                     if (!open) onToggle();
                                     else if (expandedPlatformId === p.id) setExpandedPlatformId(null);
                                 }}
-                                className={hasOverdue ? "pulse-indicator" : ""}
                                 style={{
                                     width: '26px',
                                     height: '26px',
@@ -311,12 +311,11 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                     <div style={{
                         padding: '1.25rem 1.5rem',
                         borderBottom: '1px solid var(--border-subtle)',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <button
+                        <SectionHeader
+                            title="Sticky Hub"
+                            actions={<>
+                            <SafeButton
                                 onClick={onPinToggle}
                                 className="hero-btn-ghost"
                                 style={{
@@ -328,21 +327,19 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                                 title={pinned ? "Unpin Sidebar" : "Pin Sidebar"}
                             >
                                 <Pin size={18} style={{ fill: pinned ? 'currentColor' : 'none' }} />
-                            </button>
-                            <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>Sticky Hub</h2>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <button
+                            </SafeButton>
+                            <SafeButton
                                 onClick={() => setShowEmpty(!showEmpty)}
                                 className={`hero-btn-ghost ${showEmpty ? 'text-primary' : ''}`}
                                 style={{ padding: '0.4rem' }}
                             >
                                 {showEmpty ? <Eye size={16} /> : <EyeOff size={16} />}
-                            </button>
-                            <button onClick={onToggle} className="hero-btn-ghost" style={{ padding: '0.4rem' }}>
+                            </SafeButton>
+                            <SafeButton onClick={onToggle} className="hero-btn-ghost" style={{ padding: '0.4rem' }}>
                                 <ChevronRight size={18} />
-                            </button>
-                        </div>
+                            </SafeButton>
+                            </>}
+                        />
                     </div>
 
                     <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem' }}>
@@ -354,9 +351,10 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                             <>
                                 {pinnedPlatforms.length > 0 && (
                                     <div style={{ marginBottom: '1.5rem' }}>
-                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.75rem', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <Pin size={10} style={{ fill: 'currentColor' }} /> Pinned Platforms
-                                        </div>
+                                        <SectionHeader
+                                            title={<span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Pin size={10} style={{ fill: 'currentColor' }} /> Pinned Platforms</span>}
+                                            style={{ marginBottom: '0.75rem' }}
+                                        />
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                             {pinnedPlatforms.map(p => (
                                                 <PlatformStickyCard
@@ -379,9 +377,12 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                                 )}
 
                                 <div>
-                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
-                                        {pinnedPlatforms.length > 0 ? 'Other Platforms' : 'All Platforms'}
-                                    </div>
+                                    <SectionHeader
+                                        title={<span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+                                            {pinnedPlatforms.length > 0 ? 'Other Platforms' : 'All Platforms'}
+                                        </span>}
+                                        style={{ marginBottom: '0.75rem' }}
+                                    />
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                         {otherPlatforms.map(p => (
                                             <PlatformStickyCard
@@ -402,7 +403,7 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                                         {otherPlatforms.length === 0 && !showEmpty && (
                                             <div style={{ padding: '2rem 1rem', textAlign: 'center', background: 'var(--bg-main)', borderRadius: '12px', border: '1px dashed var(--border-subtle)' }}>
                                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>No active sticky notes</div>
-                                                <button onClick={() => setShowEmpty(true)} className="hero-btn hero-btn-ghost" style={{ fontSize: '0.75rem' }}>Show empty platforms to add</button>
+                                                <SafeButton onClick={() => setShowEmpty(true)} className="hero-btn hero-btn-ghost" style={{ fontSize: '0.75rem' }}>Show empty platforms to add</SafeButton>
                                             </div>
                                         )}
                                     </div>
@@ -452,14 +453,15 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
     }, [localContent, isExpanded, platform.sticky_note, onSave]);
 
     return (
-        <div style={{
-            background: isExpanded ? 'var(--bg-main)' : 'var(--bg-card)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            transition: 'all 0.2s ease',
-            boxShadow: isExpanded ? 'inset 0 2px 4px rgba(0,0,0,0.02)' : 'var(--shadow-soft)'
-        }}>
+        <SurfaceCard
+            variant={isExpanded ? 'inset' : 'soft'}
+            padding={0}
+            radius="12px"
+            style={{
+                overflow: 'hidden',
+                boxShadow: isExpanded ? 'inset 0 2px 4px rgba(0,0,0,0.02)' : 'var(--shadow-soft)'
+            }}
+        >
             <div
                 onClick={onToggle}
                 style={{
@@ -492,13 +494,13 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                             {isSaving && <Loader2 size={12} className="animate-spin text-primary" />}
-                            <button
+                            <SafeButton
                                 onClick={onPin}
                                 className="hero-btn-ghost"
                                 style={{ padding: '0.2rem', color: platform.is_pinned ? 'var(--accent)' : 'var(--text-muted)' }}
                             >
                                 <Pin size={12} style={{ fill: platform.is_pinned ? 'currentColor' : 'none' }} />
-                            </button>
+                            </SafeButton>
                         </div>
                     </div>
                     {!isExpanded && (
@@ -524,7 +526,7 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
             {isExpanded && (
                 <div style={{ padding: '0 1rem 1rem 1rem' }}>
                     <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
-                        <RichTextEditor
+                        <LazyRichTextEditor
                             value={localContent}
                             onChange={setLocalContent}
                             placeholder={`Strategy for ${platform.display_name}...`}
@@ -555,7 +557,7 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
                     </div>
                 </div>
             )}
-        </div>
+        </SurfaceCard>
     );
 }
 
@@ -584,14 +586,9 @@ function PlatformRemindersSection({ platformNotes, platformColor, onAdd }: { pla
     });
 
     return (
-        <div className="hero-card" style={{
-            padding: '0.45rem',
-            background: 'var(--bg-overlay)',
-            border: '1px solid var(--border-subtle)',
-            marginTop: '1.25rem'
-        }}>
+        <SurfaceCard variant="inset" padding="0.45rem" style={{ marginTop: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isCollapsed ? 0 : '0.25rem' }}>
-                <button
+                <SafeButton
                     type="button"
                     onClick={() => setIsCollapsed(!isCollapsed)}
                     className="hero-btn hero-btn-ghost"
@@ -600,8 +597,8 @@ function PlatformRemindersSection({ platformNotes, platformColor, onAdd }: { pla
                     {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
                     <Bell size={13} style={{ color: platformColor || 'hsl(var(--primary))' }} />
                     Reminders
-                </button>
-                <button
+                </SafeButton>
+                <SafeButton
                     type="button"
                     onClick={onAdd}
                     className="hero-btn hero-btn-ghost"
@@ -609,7 +606,7 @@ function PlatformRemindersSection({ platformNotes, platformColor, onAdd }: { pla
                 >
                     <Plus size={12} />
                     Add
-                </button>
+                </SafeButton>
             </div>
 
             {!isCollapsed && (
@@ -640,6 +637,6 @@ function PlatformRemindersSection({ platformNotes, platformColor, onAdd }: { pla
                 </div>
             )}
 
-        </div>
+        </SurfaceCard>
     )
 }

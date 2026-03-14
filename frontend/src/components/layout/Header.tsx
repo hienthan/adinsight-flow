@@ -1,6 +1,11 @@
 import { Moon, Sun, Layout, TrendingUp, Zap, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTrendCounts } from '../../hooks/useTrendCounts';
+import {
+    SAFE_THEME_TOGGLE_SELECTORS,
+    createSafeInteractionScopeCss,
+} from '../../lib/uiMotion';
+import { SafeButton } from '../common/ui/SafeButton';
 
 interface HeaderProps {
     darkMode: boolean;
@@ -18,7 +23,7 @@ export default function Header({
     const { active, preAlert, upcoming, loading } = useTrendCounts();
 
     return (
-        <div className="header-wrapper">
+        <div className="header-wrapper header-shell">
             <header className="top-bar">
                 <div className="title-group">
                     <h1>AdInsight Flow</h1>
@@ -26,6 +31,9 @@ export default function Header({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <style>{`
+                        ${createSafeInteractionScopeCss('.header-shell', SAFE_THEME_TOGGLE_SELECTORS)}
+                    `}</style>
                     <AnimatePresence>
                         {!loading && (active > 0 || preAlert > 0 || upcoming > 0) && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginRight: '0.5rem', background: 'var(--bg-overlay)', padding: '0.35rem 0.75rem', borderRadius: '14px', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 0 12px rgba(0,0,0,0.02)' }}>
@@ -36,20 +44,9 @@ export default function Header({
                                         style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
                                         title={`${active} Active Trends`}
                                     >
-                                        <motion.div
-                                            animate={{
-                                                scale: [1, 1.15, 1],
-                                                opacity: [0.8, 1, 0.8]
-                                            }}
-                                            transition={{
-                                                duration: 2,
-                                                repeat: Infinity,
-                                                ease: "easeInOut"
-                                            }}
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
-                                        >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', boxShadow: 'inset 0 0 0 1px rgba(16, 185, 129, 0.05)' }}>
                                             <TrendingUp size={14} style={{ color: '#10b981' }} />
-                                        </motion.div>
+                                        </div>
                                         <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>{active}</span>
                                     </motion.div>
                                 )}
@@ -65,23 +62,9 @@ export default function Header({
                                         style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
                                         title={`${preAlert} Pre-alerts`}
                                     >
-                                        <motion.div
-                                            animate={{
-                                                boxShadow: [
-                                                    "0 0 0px rgba(245, 158, 11, 0)",
-                                                    "0 0 8px rgba(245, 158, 11, 0.4)",
-                                                    "0 0 0px rgba(245, 158, 11, 0)"
-                                                ]
-                                            }}
-                                            transition={{
-                                                duration: 3,
-                                                repeat: Infinity,
-                                                ease: "easeInOut"
-                                            }}
-                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
-                                        >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', boxShadow: 'inset 0 0 0 1px rgba(245, 158, 11, 0.04)' }}>
                                             <Zap size={14} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
-                                        </motion.div>
+                                        </div>
                                         <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>{preAlert}</span>
                                     </motion.div>
                                 )}
@@ -107,7 +90,7 @@ export default function Header({
                         )}
                     </AnimatePresence>
 
-                    <button
+                    <SafeButton
                         onClick={onToggleStickySidebar}
                         className="theme-toggle"
                         title={stickySidebarOpen ? 'Close Sticky Hub' : 'Open Sticky Hub'}
@@ -123,15 +106,14 @@ export default function Header({
                             gap: '0.5rem',
                             fontSize: '0.75rem',
                             fontWeight: 700,
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                             boxShadow: 'var(--shadow-soft)'
                         }}
                     >
                         <Layout size={18} />
                         <span>Sticky Hub</span>
-                    </button>
+                    </SafeButton>
 
-                    <button
+                    <SafeButton
                         onClick={onToggleDarkMode}
                         className="theme-toggle"
                         title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
@@ -142,7 +124,6 @@ export default function Header({
                             border: '1px solid var(--border-subtle)',
                             color: darkMode ? '#fbbf24' : 'var(--text-dim)',
                             cursor: 'pointer',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -150,7 +131,7 @@ export default function Header({
                         }}
                     >
                         {darkMode ? <Sun size={18} fill="currentColor" /> : <Moon size={18} fill="#64748b" />}
-                    </button>
+                    </SafeButton>
                 </div>
             </header>
         </div>

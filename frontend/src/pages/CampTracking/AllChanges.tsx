@@ -7,6 +7,35 @@ import { useNavigate } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
 
 import AutoLogItem from '../../components/tracking/AutoLogItem';
+import { SurfaceCard } from '../../components/common/ui';
+
+const PAGE_HEADER_STYLE = {
+    marginBottom: '1.5rem',
+} as const;
+
+const PAGE_STACK_STYLE = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.5rem',
+} as const;
+
+const SECTION_TOGGLE_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    cursor: 'pointer',
+    padding: '0.5rem',
+    borderRadius: '8px',
+    transition: 'background-color 0.2s ease',
+    userSelect: 'none',
+} as const;
+
+const GROUP_GRID_STYLE = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gap: '0.75rem',
+    padding: '0 0.5rem',
+} as const;
 
 export default function AllChanges() {
     const navigate = useNavigate();
@@ -95,8 +124,8 @@ export default function AllChanges() {
 
     return (
         <div className="page-container">
-            <div style={{ marginBottom: '1.5rem' }}>
-                <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: platform?.color || 'hsl(var(--primary))', letterSpacing: '-0.03em' }}>
+            <div style={PAGE_HEADER_STYLE}>
+                <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: platform?.color || 'hsl(var(--primary))', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
                     {platform ? `${platform.display_name} Audit Logs` : 'Global Change Logs'}
                 </h1>
                 <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
@@ -124,13 +153,13 @@ export default function AllChanges() {
             </div>
 
             {groupedChanges.length === 0 ? (
-                <div className="hero-card" style={{ textAlign: 'center', padding: '5rem' }}>
+                <SurfaceCard style={{ textAlign: 'center', padding: '5rem' }}>
                     <History size={48} style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', opacity: 0.5 }} />
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>No changes logged yet</h3>
                     <p style={{ color: 'var(--text-dim)' }}>Campaign modifications will appear here.</p>
-                </div>
+                </SurfaceCard>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={PAGE_STACK_STYLE}>
                     {groupedChanges.map((group: any) => {
                         const isCollapsed = collapsedSections[group.platform.id];
                         return (
@@ -138,15 +167,8 @@ export default function AllChanges() {
                                 <div
                                     onClick={() => toggleSection(group.platform.id)}
                                     style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.75rem',
+                                        ...SECTION_TOGGLE_STYLE,
                                         marginBottom: isCollapsed ? '0' : '1.25rem',
-                                        cursor: 'pointer',
-                                        padding: '0.5rem',
-                                        borderRadius: '8px',
-                                        transition: 'all 0.2s',
-                                        userSelect: 'none'
                                     }}
                                     onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-overlay)'; }}
                                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
@@ -161,12 +183,7 @@ export default function AllChanges() {
                                 </div>
 
                                 {!isCollapsed && (
-                                    <div style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                                        gap: '0.75rem',
-                                        padding: '0 0.5rem'
-                                    }}>
+                                    <div style={GROUP_GRID_STYLE}>
                                         {group.items.map((change: any) => (
                                             <AutoLogItem
                                                 key={change.id}

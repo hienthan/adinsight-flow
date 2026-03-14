@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Download, X } from 'lucide-react';
+import { SafeButton, SectionHeader, SurfaceCard } from '../../components/common/ui';
+import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
 
 interface ExportField {
     id: string;
@@ -67,14 +69,12 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
             padding: '1.5rem',
             animation: 'fade-in 0.2s ease-out'
         }} onClick={onClose}>
-            <div
+            <SurfaceCard
                 style={{
                     width: '100%',
                     maxWidth: '500px',
-                    background: 'var(--bg-content)',
                     borderRadius: '24px',
                     boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.4)',
-                    border: '1px solid var(--border-subtle)',
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
@@ -84,42 +84,46 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                     /* GPU hack removed */
                 }}
                 onClick={(e) => e.stopPropagation()}
+                padding={0}
+                radius="24px"
             >
                 {/* Modal Header */}
                 <div style={{
                     padding: '1.75rem 2rem',
                     borderBottom: '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
                     background: 'var(--bg-main)'
                 }}>
-                    <div>
-                        <h4 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'hsl(var(--primary))', letterSpacing: '-0.02em' }}>
-                            Export Configuration
-                        </h4>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', margin: '0.25rem 0 0 0' }}>
-                            Choose how to build the 'Custom Label' column
-                        </p>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            background: 'var(--bg-overlay)',
-                            border: '1px solid var(--border-subtle)',
-                            color: 'var(--text-main)',
-                            cursor: 'pointer',
-                            width: '36px',
-                            height: '36px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '10px',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <X size={20} />
-                    </button>
+                    <SectionHeader
+                        title={
+                            <div>
+                                <h4 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'hsl(var(--primary))', letterSpacing: '-0.02em' }}>
+                                    Export Configuration
+                                </h4>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', margin: '0.25rem 0 0 0' }}>
+                                    Choose how to build the 'Custom Label' column
+                                </p>
+                            </div>
+                        }
+                        actions={
+                            <SafeButton
+                                onClick={onClose}
+                                style={{
+                                    background: 'var(--bg-overlay)',
+                                    border: '1px solid var(--border-subtle)',
+                                    color: 'var(--text-main)',
+                                    width: '36px',
+                                    height: '36px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '10px',
+                                }}
+                            >
+                                <X size={20} />
+                            </SafeButton>
+                        }
+                        style={{ marginBottom: 0 }}
+                    />
                 </div>
 
                 {/* Filename Input */}
@@ -198,7 +202,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                                         borderRadius: '12px',
                                         border: '1px solid var(--border-subtle)',
                                         background: 'var(--bg-content)',
-                                        transition: 'all 0.2s'
+                                        transition: SAFE_INTERACTIVE_TRANSITION
                                     }}
                                 >
                                     <input
@@ -225,14 +229,14 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                     display: 'flex',
                     gap: '1rem'
                 }}>
-                    <button
+                    <SafeButton
                         onClick={onClose}
                         className="hero-btn hero-btn-secondary"
                         style={{ flex: 1, padding: '0.85rem' }}
                     >
                         Cancel
-                    </button>
-                    <button
+                    </SafeButton>
+                    <SafeButton
                         onClick={() => onExport(selectedFields, fileName, customLabel)}
                         disabled={isExporting || (selectedFields.length === 0 && !customLabel.trim())}
                         className="hero-btn hero-btn-primary"
@@ -244,9 +248,9 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                                 <span>Export {totalCount.toLocaleString()} Records</span>
                             </>
                         )}
-                    </button>
+                    </SafeButton>
                 </div>
-            </div>
+            </SurfaceCard>
         </div>
     );
 

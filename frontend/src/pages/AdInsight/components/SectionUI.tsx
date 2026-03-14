@@ -1,4 +1,5 @@
 import { LayoutGrid } from "lucide-react";
+import { SurfaceCard } from "../../../components/common/ui";
 
 export const SectionHeader = ({ id, icon: Icon, title, count, bgClass, colorClass }: any) => (
     <div id={id} className="flex items-center gap-3 mb-4 px-2 scroll-mt-32">
@@ -16,9 +17,11 @@ export const SectionHeader = ({ id, icon: Icon, title, count, bgClass, colorClas
 );
 
 export const EmptyState = ({ message }: { message: string }) => (
-    <div
-        className="hero-card py-6 flex flex-col items-center justify-center text-center border-dashed border-2 shadow-none"
-        style={{ borderColor: "var(--border-subtle)", background: "var(--bg-overlay)" }}
+    <SurfaceCard
+        className="py-6 flex flex-col items-center justify-center text-center border-dashed border-2 shadow-none"
+        variant="inset"
+        padding="1.5rem"
+        style={{ borderColor: "var(--border-subtle)" }}
     >
         <div
             className="w-8 h-8 rounded-full flex items-center justify-center mb-2"
@@ -27,7 +30,7 @@ export const EmptyState = ({ message }: { message: string }) => (
             <LayoutGrid size={16} />
         </div>
         <p className="font-bold text-xs" style={{ color: "var(--text-muted)" }}>{message}</p>
-    </div>
+    </SurfaceCard>
 );
 
 export const CompactEmptyState = ({ message }: { message: string }) => (

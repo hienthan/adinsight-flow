@@ -1,7 +1,8 @@
 import React from "react";
-import { Button, Chip } from "@heroui/react";
 import { MapPin, Info, Tag, Edit3, TrendingUp, Sparkles, Zap, Calendar, ArrowRight, Bell } from "lucide-react";
 import { Destination } from "../types";
+import { SAFE_INTERACTIVE_TRANSITION } from "../../../lib/uiMotion";
+import { SafeButton } from "../../../components/common/ui";
 
 type SignalState = "PEAK" | "ACTIVE" | "IN_PREALERT" | "UPCOMING_PREALERT" | "ENDED";
 type ResolvedDates = {
@@ -53,6 +54,57 @@ const MARKET_CHIP_STYLES: Record<string, { bg: string; text: string; border: str
     AU: { bg: "rgba(244, 63, 94, 0.14)", text: "#be123c", border: "rgba(244, 63, 94, 0.28)" },
     DEFAULT: { bg: "rgba(148, 163, 184, 0.14)", text: "#475569", border: "rgba(148, 163, 184, 0.28)" },
 };
+
+function PremiumChip({
+    children,
+    style,
+    className = "",
+    size = "sm",
+}: {
+    children: React.ReactNode;
+    style?: React.CSSProperties;
+    className?: string;
+    size?: "sm" | "md";
+}) {
+    const metrics = size === "sm"
+        ? {
+            minHeight: "20px",
+            padding: "0 0.5rem",
+            fontSize: "9px",
+            letterSpacing: "0.04em",
+            borderRadius: "8px",
+        }
+        : {
+            minHeight: "24px",
+            padding: "0 0.625rem",
+            fontSize: "10px",
+            letterSpacing: "0.02em",
+            borderRadius: "10px",
+        };
+
+    return (
+        <span
+            className={className}
+            style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "1px solid var(--border-subtle)",
+                fontWeight: 800,
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: "100%",
+                boxSizing: "border-box",
+                ...metrics,
+                ...style,
+            }}
+        >
+            {children}
+        </span>
+    );
+}
 
 export const StateBadge = ({ state }: { state: SignalState }) => {
     const getStyle = (s: SignalState) => {
@@ -146,7 +198,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
 
     return (
         <div
-            className={`w-full group hero-card transition-all duration-300 border border-(--border-subtle) ${expanded ? 'bg-(--bg-main) shadow-xl' : 'hover:border-primary/40 hover:shadow-lg'}`}
+            className={`signal-row-card w-full group hero-card border border-(--border-subtle) ${expanded ? 'bg-(--bg-main) shadow-xl' : 'hover:border-primary/40 hover:shadow-lg'}`}
             style={{ 
                 padding: 0, 
                 background: "var(--bg-content)", 
@@ -154,9 +206,15 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                 overflow: "hidden",
                 marginBottom: "16px", // Balanced separation
                 display: "block",
-                width: "100%"
+                width: "100%",
+                transition: SAFE_INTERACTIVE_TRANSITION
             }}
         >
+            <style>{`
+                .signal-row-card:hover {
+                    transform: none;
+                }
+            `}</style>
             {/* SCAN ROW - 4 COLUMNS LAYOUT */}
             <button
                 type="button"
@@ -188,23 +246,19 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                             {x.s.source_markets && x.s.source_markets.length > 0 && (
                                 <div className="flex gap-1 shrink-0 ml-1">
                                     {x.s.source_markets.map((m: string) => (
-                                        <Chip
+                                        <PremiumChip
                                             key={m}
                                             size="sm"
-                                            variant="flat"
-                                            radius="md"
                                             style={{
                                                 backgroundColor: (MARKET_CHIP_STYLES[m] || MARKET_CHIP_STYLES.DEFAULT).bg,
                                                 color: (MARKET_CHIP_STYLES[m] || MARKET_CHIP_STYLES.DEFAULT).text,
                                                 border: `1px solid ${(MARKET_CHIP_STYLES[m] || MARKET_CHIP_STYLES.DEFAULT).border}`,
+                                                boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
                                             }}
-                                            classNames={{
-                                                base: "h-5 rounded-[8px] shadow-sm",
-                                                content: "text-[9px] font-extrabold px-2 tracking-wide",
-                                            }}
+                                            className="shadow-sm"
                                         >
                                             {m}
-                                        </Chip>
+                                        </PremiumChip>
                                     ))}
                                 </div>
                             )}
@@ -216,19 +270,14 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                 <div className="flex-1 flex items-center gap-2 px-4 overflow-hidden">
                     <div className="flex items-center gap-1.5 flex-wrap">
                         {productTypes.slice(0, 6).map((pt: string) => (
-                            <Chip
+                            <PremiumChip
                                 key={pt}
-                                size="sm"
-                                variant="flat"
-                                radius="md"
+                                size="md"
                                 style={{ backgroundColor: 'rgba(139, 92, 246, 0.12)', color: '#7c3aed', border: '1px solid rgba(139, 92, 246, 0.15)' }}
-                                classNames={{
-                                    base: "h-6 min-w-0 rounded-[10px]",
-                                    content: "text-[10px] font-bold px-2.5 capitalize truncate"
-                                }}
+                                className="min-w-0 truncate"
                             >
                                 {pt}
-                            </Chip>
+                            </PremiumChip>
                         ))}
                         {productTypes.length > 6 && (
                             <span className="text-[10px] font-black text-(--text-muted) shrink-0">+{productTypes.length - 6}</span>
@@ -297,9 +346,23 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                                     <Sparkles size={14} className="text-primary/50" />
                                     Executive Summary
                                 </h5>
-                                <Button isIconOnly size="sm" variant="light" color="primary" radius="lg" onPress={() => onOpenNotes(x.s.id, x.name, x.destLabel, x.s.notes)}>
+                                <SafeButton
+                                    onClick={() => onOpenNotes(x.s.id, x.name, x.destLabel, x.s.notes)}
+                                    className="hero-btn-ghost"
+                                    style={{
+                                        width: "34px",
+                                        height: "34px",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        borderRadius: "12px",
+                                        color: "hsl(var(--primary))",
+                                        background: "rgba(59, 130, 246, 0.06)",
+                                        border: "1px solid rgba(59, 130, 246, 0.12)",
+                                    }}
+                                >
                                     <Edit3 size={18} />
-                                 </Button>
+                                 </SafeButton>
                             </div>
                             <div style={{ paddingLeft: "26px" }}>
                                 <p className="leading-relaxed font-bold text-[0.85rem] text-(--text-main) tracking-tight text-left">

@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Bell, Save, AlertTriangle } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign } from '../../types/campaign';
+import { FilterChip, SafeButton, SurfaceCard, SectionHeader } from '../common/ui';
 
 interface AddReminderModalProps {
     campaignId: string;
@@ -129,51 +130,50 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                 shouldCloseOnBackdropClickRef.current = false;
             }}
         >
-            <div
-                className="hero-card animate-scale-in"
+            <SurfaceCard
+                className="animate-scale-in"
+                radius="2rem"
+                padding={0}
+                onClick={e => e.stopPropagation()}
                 style={{
                     width: '100%',
                     maxWidth: '520px',
-                    padding: 0,
-                    overflow: 'hidden',
-                    background: 'var(--bg-content)',
-                    borderRadius: '2rem',
-                    boxShadow: 'var(--shadow-large)',
                     pointerEvents: 'auto',
-                    /* GPU hack removed */
+                    overflow: 'hidden',
+                    boxShadow: 'var(--shadow-large)',
                 }}
-                onClick={e => e.stopPropagation()}
             >
-                {/* Modal Header */}
                 <div style={{
                     padding: '2rem 2.5rem',
                     borderBottom: '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
                     background: 'var(--bg-overlay)'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
-                            <Bell size={24} />
-                        </div>
-                        <div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Add Reminder</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                                Campaign: <span style={{ color: 'hsl(var(--primary))', fontWeight: 700 }}>{campaign?.name || 'Loading...'}</span>
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="hero-btn-ghost"
-                        style={{ padding: '0.5rem', borderRadius: '10px' }}
-                    >
-                        <X size={20} />
-                    </button>
+                    <SectionHeader
+                        title={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
+                                    <Bell size={24} />
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Add Reminder</h3>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                                        Campaign: <span style={{ color: 'hsl(var(--primary))', fontWeight: 700 }}>{campaign?.name || 'Loading...'}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                        actions={
+                            <SafeButton
+                                onClick={onClose}
+                                className="hero-btn-ghost"
+                                style={{ padding: '0.5rem', borderRadius: '10px' }}
+                            >
+                                <X size={20} />
+                            </SafeButton>
+                        }
+                    />
                 </div>
 
-                {/* Modal Body */}
                 <form onSubmit={handleSubmit} style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
                     {error && (
                         <div className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '100%', textTransform: 'none', padding: '0.8rem 1rem', display: 'flex', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}>
@@ -223,40 +223,40 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                         <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '1rem', display: 'block' }}>Metrics to Monitor</label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                             {availableMetrics.map(metric => (
-                                <button
+                                <FilterChip
                                     key={metric}
-                                    type="button"
                                     onClick={() => toggleMetric(metric)}
-                                    className={`hero-badge ${formData.check_metrics.includes(metric) ? 'active' : ''}`}
+                                    active={formData.check_metrics.includes(metric)}
+                                    activeBackground="hsl(var(--primary))"
+                                    inactiveBackground="var(--bg-overlay)"
+                                    activeBorder="hsl(var(--primary))"
+                                    inactiveBorder="var(--border-subtle)"
+                                    activeColor="white"
+                                    inactiveColor="var(--text-dim)"
+                                    activeShadow="0 4px 12px hsla(var(--primary) / 0.3)"
                                     style={{
                                         padding: '0.6rem 1rem',
                                         fontSize: '0.75rem',
                                         fontWeight: 700,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        background: formData.check_metrics.includes(metric) ? 'hsl(var(--primary))' : 'var(--bg-overlay)',
-                                        color: formData.check_metrics.includes(metric) ? 'white' : 'var(--text-dim)',
-                                        border: formData.check_metrics.includes(metric) ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)',
-                                        boxShadow: formData.check_metrics.includes(metric) ? '0 4px 12px hsla(var(--primary) / 0.3)' : 'none'
                                     }}
                                 >
                                     {metric}
-                                </button>
+                                </FilterChip>
                             ))}
                         </div>
                     </div>
 
                     {/* Modal Footer */}
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
-                        <button
+                        <SafeButton
                             type="button"
                             onClick={onClose}
                             className="hero-btn hero-btn-secondary"
                             style={{ padding: '0.8rem 1.5rem' }}
                         >
                             Cancel
-                        </button>
-                        <button
+                        </SafeButton>
+                        <SafeButton
                             type="submit"
                             disabled={loading}
                             className="hero-btn hero-btn-primary"
@@ -267,10 +267,10 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                         >
                             <Save size={18} />
                             {loading ? 'Saving...' : 'Create Reminder'}
-                        </button>
+                        </SafeButton>
                     </div>
                 </form>
-            </div>
+            </SurfaceCard>
         </div>
     );
 

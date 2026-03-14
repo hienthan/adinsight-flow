@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ShieldCheck, Lock, Maximize2 } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
-import RichTextEditor from '../common/RichTextEditor';
+import LazyRichTextEditor from '../common/LazyRichTextEditor';
 import { normalizeHtmlForCompare } from '../../lib/noteHtml';
 import MetadataModal from './MetadataModal';
 
@@ -438,7 +438,7 @@ export default function CampaignForm({
                             Full Editor
                         </button>
                     </div>
-                    <RichTextEditor
+                    <LazyRichTextEditor
                         value={(formData.metadata || '').toString()}
                         onChange={(nextHtml) => setFormData((prev) => ({ ...prev, metadata: nextHtml }))}
                         placeholder="Detailed metadata configuration..."
@@ -449,7 +449,7 @@ export default function CampaignForm({
 
                 <div className="filter-group">
                     <label>Internal Notes</label>
-                    <RichTextEditor
+                    <LazyRichTextEditor
                         value={(formData.general_notes || '').toString()}
                         onChange={(nextHtml) => setFormData((prev) => ({ ...prev, general_notes: nextHtml }))}
                         placeholder="Implementation details, checkpoints, governance..."

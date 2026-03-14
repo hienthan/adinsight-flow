@@ -2,6 +2,7 @@ import React from 'react';
 import { ExternalLink, MapPin, ArrowUp, ArrowDown } from 'lucide-react';
 import { PageRecord, ColumnDef } from '../../types/adinsight';
 import { getTierStyle, getFunnelStyle } from './styles';
+import { SurfaceCard } from '../../components/common/ui';
 
 interface InsightDataTableProps {
     records: PageRecord[];
@@ -52,7 +53,7 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
     const allSelected = records.length > 0 && records.every(r => selectedIds.includes(r.id));
 
     return (
-        <div className="data-table-container hero-card" style={{ padding: 0 }}>
+        <SurfaceCard className="data-table-container" padding={0}>
             <table className="data-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                     <tr>
@@ -89,11 +90,18 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                     {records.map((record) => {
                         const isActive = record.is_active !== false && record.include_for_dsa !== false;
                         const isSelected = selectedIds.includes(record.id);
+                        const is404 = record.last_http_status === 404;
+
                         return (
                             <tr key={record.id} style={{
                                 opacity: isActive ? 1 : 0.45,
-                                background: isSelected ? 'hsla(var(--primary)/0.03)' : (isActive ? 'inherit' : 'var(--bg-overlay)'),
-                                borderLeft: isSelected ? '3px solid hsl(var(--primary))' : '3px solid transparent'
+                                background: isSelected
+                                    ? 'hsla(var(--primary)/0.05)'
+                                    : (is404 ? 'rgba(245, 158, 11, 0.05)' : (isActive ? 'inherit' : 'var(--bg-overlay)')),
+                                borderLeft: isSelected
+                                    ? '4px solid hsl(var(--primary))'
+                                    : (is404 ? '4px solid rgba(245, 158, 11, 0.5)' : '4px solid transparent'),
+                                transition: 'background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease'
                             }}>
                                 {onSelect && (
                                     <td style={{ textAlign: 'center' }}>
@@ -245,6 +253,7 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                         );
                                     }
                                     if (col.key === 'title_en' || col.key === 'translated_title_vi') {
+                                        const is404 = record.last_http_status === 404;
                                         return (
                                             <td key={idx} style={{ minWidth: col.width || '200px' }}>
                                                 <a
@@ -253,7 +262,7 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                                     rel="noopener noreferrer"
                                                     style={{
                                                         fontWeight: 700,
-                                                        color: 'hsl(var(--primary))',
+                                                        color: is404 ? '#d97706' : 'hsl(var(--primary))',
                                                         textDecoration: 'none',
                                                         lineHeight: 1.4,
                                                         fontSize: '0.9rem',
@@ -289,6 +298,6 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                     )}
                 </tbody>
             </table>
-        </div>
+        </SurfaceCard>
     );
 };

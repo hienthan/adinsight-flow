@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Layout Components
@@ -6,21 +6,20 @@ import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import StickyNotesSidebar from './components/layout/StickyNotesSidebar';
 
-// Page Components - AdInsight
-import AdInsightPage from './pages/AdInsight/AdInsightPage';
-import TrendSignalsPage from './pages/AdInsight/TrendSignalsPage';
-
-// Page Components - Camp Tracking
-import CampOverview from './pages/CampTracking/CampOverview';
-import PlatformCampaigns from './pages/CampTracking/PlatformCampaigns';
-import CampaignDetail from './pages/CampTracking/CampaignDetail';
-import AllReminders from './pages/CampTracking/AllReminders';
-import AllChanges from './pages/CampTracking/AllChanges';
-import CampaignFormPage from './pages/CampTracking/CampaignFormPage';
-import PlatformManagement from './pages/CampTracking/PlatformManagement';
-import GlobalNotesPage from './pages/GlobalNotes/GlobalNotesPage';
+import { SAFE_PANEL_TRANSITION } from './lib/uiMotion';
 
 import './App.css';
+
+const AdInsightPage = lazy(() => import('./pages/AdInsight/AdInsightPage'));
+const TrendSignalsPage = lazy(() => import('./pages/AdInsight/TrendSignalsPage'));
+const CampOverview = lazy(() => import('./pages/CampTracking/CampOverview'));
+const PlatformCampaigns = lazy(() => import('./pages/CampTracking/PlatformCampaigns'));
+const CampaignDetail = lazy(() => import('./pages/CampTracking/CampaignDetail'));
+const AllReminders = lazy(() => import('./pages/CampTracking/AllReminders'));
+const AllChanges = lazy(() => import('./pages/CampTracking/AllChanges'));
+const CampaignFormPage = lazy(() => import('./pages/CampTracking/CampaignFormPage'));
+const PlatformManagement = lazy(() => import('./pages/CampTracking/PlatformManagement'));
+const GlobalNotesPage = lazy(() => import('./pages/GlobalNotes/GlobalNotesPage'));
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -51,7 +50,10 @@ function App() {
 
       <main
         className={`main-wrapper ${sidebarCollapsed ? 'full' : ''}`}
-        style={{ marginRight: stickySidebarOpen ? '420px' : '48px' }}
+        style={{
+          marginRight: stickySidebarOpen ? '420px' : '48px',
+          transition: SAFE_PANEL_TRANSITION
+        }}
       >
         <Header
           darkMode={darkMode}
@@ -64,32 +66,25 @@ function App() {
           }}
         />
 
-        <Routes>
-          {/* Default route */}
-          <Route path="/" element={<Navigate to="/camp-tracking" replace />} />
-
-          {/* AdInsight Routes */}
-          <Route path="/adinsight" element={<Navigate to="/adinsight/klook" replace />} />
-          <Route path="/adinsight/trends" element={<TrendSignalsPage />} />
-          <Route path="/adinsight/:platform" element={<AdInsightPage />} />
-          <Route path="/adinsight/:platform/:content" element={<AdInsightPage />} />
-
-          {/* Camp Tracking Routes */}
-          <Route path="/camp-tracking" element={<CampOverview />} />
-          <Route path="/camp-tracking/new" element={<CampaignFormPage />} />
-          <Route path="/camp-tracking/edit/:campaignId" element={<CampaignFormPage />} />
-          <Route path="/camp-tracking/platforms" element={<PlatformManagement />} />
-          <Route path="/camp-tracking/platform/:platformId" element={<PlatformCampaigns />} />
-          <Route path="/camp-tracking/campaign/:campaignId" element={<CampaignDetail />} />
-          <Route path="/camp-tracking/reminders" element={<AllReminders />} />
-          <Route path="/camp-tracking/changes" element={<AllChanges />} />
-
-          {/* Global Notes Route */}
-          <Route path="/global-notes" element={<GlobalNotesPage />} />
-
-          {/* 404 fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/camp-tracking" replace />} />
+            <Route path="/adinsight" element={<Navigate to="/adinsight/klook" replace />} />
+            <Route path="/adinsight/trends" element={<TrendSignalsPage />} />
+            <Route path="/adinsight/:platform" element={<AdInsightPage />} />
+            <Route path="/adinsight/:platform/:content" element={<AdInsightPage />} />
+            <Route path="/camp-tracking" element={<CampOverview />} />
+            <Route path="/camp-tracking/new" element={<CampaignFormPage />} />
+            <Route path="/camp-tracking/edit/:campaignId" element={<CampaignFormPage />} />
+            <Route path="/camp-tracking/platforms" element={<PlatformManagement />} />
+            <Route path="/camp-tracking/platform/:platformId" element={<PlatformCampaigns />} />
+            <Route path="/camp-tracking/campaign/:campaignId" element={<CampaignDetail />} />
+            <Route path="/camp-tracking/reminders" element={<AllReminders />} />
+            <Route path="/camp-tracking/changes" element={<AllChanges />} />
+            <Route path="/global-notes" element={<GlobalNotesPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </main>
 
       <StickyNotesSidebar
@@ -102,6 +97,14 @@ function App() {
         }}
         onPinToggle={() => setStickySidebarPinned(!stickySidebarPinned)}
       />
+    </div>
+  );
+}
+
+function RouteFallback() {
+  return (
+    <div className="page-container" style={{ paddingTop: '4rem', color: 'var(--text-dim)', fontWeight: 700 }}>
+      Loading...
     </div>
   );
 }

@@ -1,13 +1,13 @@
-import { useMemo, useState, useEffect } from "react";
+import { Suspense, lazy, useMemo, useState, useEffect } from "react";
 import { pb } from "../../lib/pocketbase";
-import { useDisclosure } from "@heroui/react";
-import { Search, Sparkles, TrendingUp, Calendar, Info } from "lucide-react";
+import { Search, Sparkles, TrendingUp, Calendar, Info, Check } from "lucide-react";
 import { toast } from "sonner";
 
 // Import extracted components
 import { SignalRow } from "./components/SignalRow";
-import { StrategyNotesModal } from "./components/StrategyNotesModal.tsx";
 import { SectionHeader, EmptyState, CompactEmptyState } from "./components/SectionUI";
+import { SafeButton, SurfaceCard, ToolbarGroup } from "../../components/common/ui";
+import { AdInsightProviderBoundary } from "./AdInsightProviderBoundary";
 
 // Import shared types and utils
 import { TrendSignal, SignalState, Market, Priority } from "./types";
@@ -36,6 +36,45 @@ type PreparedSignal = {
     searchable: string;
 };
 
+const TREND_RADAR_HEADER_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    borderRadius: '12px',
+    boxShadow: 'var(--shadow-soft)',
+} as const;
+
+const FILTER_SECTION_STYLE = {
+    marginBottom: '1.5rem',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'flex-end',
+    gap: '0.9rem',
+} as const;
+
+const FILTER_CARD_STYLE = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.75rem',
+    borderRadius: '0.85rem',
+} as const;
+
+const STATUS_VIEW_ITEMS = [
+    { id: "section-peak", label: "At Peak" },
+    { id: "section-active", label: "Active" },
+    { id: "section-upcoming", label: "Pre-alert" },
+] as const;
+
+const MARKETS = ["HK", "TW", "ID", "SG", "MY", "AU"] as const;
+
+const HORIZON_OPTIONS = [
+    { value: "TODAY", label: "Today" },
+    { value: "7", label: "Next 7 days" },
+    { value: "14", label: "Next 14 days" },
+    { value: "30", label: "Next 30 days" },
+    { value: "ALL", label: "All time" },
+] as const;
+
 const PRODUCT_TYPE_LABELS: Record<string, string> = {
     guide_content: "Guide",
     entry_pretrip: "Entry",
@@ -43,6 +82,10 @@ const PRODUCT_TYPE_LABELS: Record<string, string> = {
     attraction: "Attraction",
     rail: "Rail"
 };
+
+const StrategyNotesModal = lazy(() =>
+    import("./components/StrategyNotesModal.tsx").then((module) => ({ default: module.StrategyNotesModal })),
+);
 
 function formatProductType(type: string) {
     return PRODUCT_TYPE_LABELS[type] || type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -163,6 +206,11 @@ export default function TrendRadarPage() {
     const peak = prepared.filter((x) => x.state === "PEAK");
     const active = prepared.filter((x) => x.state === "ACTIVE");
     const upcoming = prepared.filter((x) => x.state === "IN_PREALERT" || x.state === "UPCOMING_PREALERT");
+    const statusViewItems = [
+        { ...STATUS_VIEW_ITEMS[0], count: peak.length },
+        { ...STATUS_VIEW_ITEMS[1], count: active.length },
+        { ...STATUS_VIEW_ITEMS[2], count: upcoming.length },
+    ];
 
     const activeToShow = (q.trim() || showMoreActive) ? active : active.slice(0, 8);
     const upcomingToShow = (q.trim() || showMoreUpcoming) ? upcoming : upcoming.slice(0, 12);
@@ -170,7 +218,7 @@ export default function TrendRadarPage() {
     const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
     // Notes Modal Logic
-    const { isOpen: isNotesOpen, onOpen: onNotesOpen, onOpenChange: onNotesOpenChange } = useDisclosure();
+    const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [selectedSignal, setSelectedSignal] = useState<{ id: string, name: string, destLabel: string, notes?: string } | null>(null);
     const [draftNotes, setDraftNotes] = useState("");
     const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -178,7 +226,7 @@ export default function TrendRadarPage() {
     const handleOpenNotes = (id: string, name: string, destLabel: string, notes?: string) => {
         setSelectedSignal({ id, name, destLabel, notes });
         setDraftNotes(notes || "");
-        onNotesOpen();
+        setIsNotesOpen(true);
     };
 
     const handleSaveNotes = async () => {
@@ -188,7 +236,7 @@ export default function TrendRadarPage() {
             await pb.collection('trend_signals').update(selectedSignal.id, { notes: draftNotes });
             setSignals(prev => prev.map(s => s.id === selectedSignal.id ? { ...s, notes: draftNotes } : s));
             toast.success("Strategy notes updated");
-            onNotesOpenChange();
+            setIsNotesOpen(false);
         } catch (error) {
             console.error("Error saving notes:", error);
             toast.error("Failed to save notes");
@@ -214,20 +262,12 @@ export default function TrendRadarPage() {
     }
 
     return (
-        <div className="page-container w-full px-8 py-8 animate-fade">
+            <div className="page-container w-full px-8 py-8 animate-fade">
             {/* Zone 1: Header Summary Card - Compact Version */}
-            <div
-                className="hero-card"
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: '1.5rem',
-                    padding: '0.75rem 1.5rem',
-                    background: 'var(--bg-content)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '12px',
-                    boxShadow: 'var(--shadow-soft)'
-                }}
+            <SurfaceCard
+                variant="soft"
+                padding="0.75rem 1.5rem"
+                style={TREND_RADAR_HEADER_STYLE}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <div
@@ -249,11 +289,15 @@ export default function TrendRadarPage() {
                         </p>
                     </div>
                 </div>
-            </div>
+            </SurfaceCard>
 
             {/* Zone 2: Filter Controls (grouped like CampOverview) */}
-            <section style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '0.9rem' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: '0.85rem', background: 'var(--bg-overlay)' }}>
+            <section style={FILTER_SECTION_STYLE}>
+                <SurfaceCard
+                    variant="inset"
+                    padding="0.65rem"
+                    style={FILTER_CARD_STYLE}
+                >
                     <div className="filter-group">
                         <label>Search Trends</label>
                         <div style={{ position: 'relative' }}>
@@ -279,7 +323,7 @@ export default function TrendRadarPage() {
                             style={{ minWidth: '150px' }}
                         >
                             <option value="ALL">All Markets</option>
-                            {["HK", "TW", "ID", "SG", "MY", "AU"].map(m => <option key={m} value={m}>{m}</option>)}
+                            {MARKETS.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
                     </div>
 
@@ -293,17 +337,17 @@ export default function TrendRadarPage() {
                             }}
                             style={{ minWidth: '160px' }}
                         >
-                            <option value="TODAY">Today</option>
-                            <option value="7">Next 7 days</option>
-                            <option value="14">Next 14 days</option>
-                            <option value="30">Next 30 days</option>
-                            <option value="ALL">All time</option>
+                            {HORIZON_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
                     <div className="filter-group">
                         <label style={{ opacity: 0 }}>&nbsp;</label>
-                        <label
+                        <SafeButton
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -321,22 +365,37 @@ export default function TrendRadarPage() {
                                 letterSpacing: 'normal',
                                 color: includeBaseline ? 'hsl(var(--primary))' : 'var(--text-dim)',
                             }}
+                            onClick={() => setIncludeBaseline(!includeBaseline)}
                         >
-                            <input
-                                type="checkbox"
-                                checked={includeBaseline}
-                                onChange={(e) => setIncludeBaseline(e.target.checked)}
-                                style={{ width: '14px', height: '14px', accentColor: 'hsl(var(--primary))', cursor: 'pointer' }}
-                            />
+                            <span
+                                style={{
+                                    width: '14px',
+                                    height: '14px',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: includeBaseline ? 'hsl(var(--primary))' : 'var(--bg-content)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white',
+                                }}
+                            >
+                                {includeBaseline && <Check size={10} strokeWidth={4} />}
+                            </span>
                             Baseline
-                        </label>
+                        </SafeButton>
                     </div>
-                </div>
+                </SurfaceCard>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: '0.85rem', background: 'var(--bg-overlay)' }}>
+                <SurfaceCard
+                    variant="inset"
+                    padding="0.65rem"
+                    style={FILTER_CARD_STYLE}
+                >
                     <div className="filter-group">
                         <label>Status View</label>
-                        <div
+                        <ToolbarGroup
+                            compact
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -347,17 +406,14 @@ export default function TrendRadarPage() {
                                 gap: '0.25rem',
                             }}
                         >
-                            {[
-                                { id: "section-peak", label: "At Peak", count: peak.length },
-                                { id: "section-active", label: "Active", count: active.length },
-                                { id: "section-upcoming", label: "Pre-alert", count: upcoming.length },
-                            ].map((item) => {
+                            {statusViewItems.map((item) => {
                                 const isActive = activeSection === item.id;
                                 return (
-                                    <button
+                                    <SafeButton
                                         key={item.id}
                                         onClick={() => scrollToSection(item.id)}
                                         className="hero-btn"
+                                        aria-pressed={isActive}
                                         style={{
                                             padding: '0.4rem 0.7rem',
                                             borderRadius: '0.5rem',
@@ -373,12 +429,12 @@ export default function TrendRadarPage() {
                                     >
                                         {item.label}
                                         <span style={{ fontWeight: 800, opacity: isActive ? 1 : 0.8 }}>{item.count}</span>
-                                    </button>
+                                    </SafeButton>
                                 );
                             })}
-                        </div>
+                        </ToolbarGroup>
                     </div>
-                </div>
+                </SurfaceCard>
             </section>
 
             {/* Zone 3: Content Sections */}
@@ -415,9 +471,9 @@ export default function TrendRadarPage() {
                             />
                         ))}
                         {!q.trim() && !showMoreActive && active.length > 8 && (
-                            <button onClick={() => setShowMoreActive(true)} className="mt-4 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200">
+                            <SafeButton onClick={() => setShowMoreActive(true)} className="mt-4 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-200">
                                 Show {active.length - 8} more active trends ↓
-                            </button>
+                            </SafeButton>
                         )}
                     </div>
                 </section>
@@ -437,34 +493,40 @@ export default function TrendRadarPage() {
                             />
                         ))}
                         {!q.trim() && !showMoreUpcoming && upcoming.length > 12 && (
-                            <button onClick={() => setShowMoreUpcoming(true)} className="mt-4 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200">
+                            <SafeButton onClick={() => setShowMoreUpcoming(true)} className="mt-4 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-200">
                                 Show {upcoming.length - 12} more upcoming trends ↓
-                            </button>
+                            </SafeButton>
                         )}
                     </div>
                 </section>
 
                 {horizon !== 'ALL' && (
-                    <div className="mt-4 mx-2 p-4 rounded-xl bg-blue-50/50 border border-blue-100 flex items-start gap-3">
+                    <SurfaceCard className="mt-4 mx-2 flex items-start gap-3" padding="1rem" style={{ background: 'rgba(239, 246, 255, 0.7)', border: '1px solid rgba(191, 219, 254, 1)' }}>
                         <Info size={16} className="text-blue-500 mt-0.5" />
                         <div className="flex-1">
                             <p className="text-xs font-medium text-slate-600 mb-1">Some trends may be hidden because they fall outside the selected timeframe (<strong>{horizon === 'TODAY' ? 'Today' : `Next ${horizon} Days`}</strong>).</p>
-                            <button onClick={() => setHorizon('ALL')} className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-700 underline">View All Timeframes</button>
+                            <SafeButton onClick={() => setHorizon('ALL')} className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-700 underline">View All Timeframes</SafeButton>
                         </div>
-                    </div>
+                    </SurfaceCard>
                 )}
             </div>
 
             {/* Zone 4: Strategy Notes Modal - Now extracted */}
-            <StrategyNotesModal
-                isOpen={isNotesOpen}
-                onOpenChange={onNotesOpenChange}
-                selectedSignal={selectedSignal}
-                draftNotes={draftNotes}
-                setDraftNotes={setDraftNotes}
-                handleSaveNotes={handleSaveNotes}
-                isSavingNotes={isSavingNotes}
-            />
-        </div>
+            {isNotesOpen ? (
+                <Suspense fallback={null}>
+                    <AdInsightProviderBoundary>
+                        <StrategyNotesModal
+                            isOpen={isNotesOpen}
+                            onOpenChange={setIsNotesOpen}
+                            selectedSignal={selectedSignal}
+                            draftNotes={draftNotes}
+                            setDraftNotes={setDraftNotes}
+                            handleSaveNotes={handleSaveNotes}
+                            isSavingNotes={isSavingNotes}
+                        />
+                    </AdInsightProviderBoundary>
+                </Suspense>
+            ) : null}
+            </div>
     );
 }

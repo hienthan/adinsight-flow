@@ -122,6 +122,9 @@ detected_keywords	json	keyword match
 
 field	type	specs
 is_active	bool	default true
+last_http_status	number	latest confirmed HTTP status from manual 404 checker job
+last_check_error	text	latest non-HTTP checker result (timeout, tls_blocked, soft_404, request_error)
+last_checked_at	date	latest manual 404 checker execution timestamp
 created	datetime	system
 updated	datetime	system
 
@@ -169,6 +172,9 @@ detected_patterns (json)
 detected_keywords (json)
 
 is_active
+last_http_status
+last_check_error
+last_checked_at
 
 created
 updated
@@ -183,9 +189,10 @@ updated
 type	field
 relation	platform
 url	url
-text	slug, city, intent
-number	scores
+text	slug, city, intent, last_check_error
+number	scores, last_http_status
 bool	is_active
+date	last_checked_at
 json	debug arrays
 datetime	created updated
 

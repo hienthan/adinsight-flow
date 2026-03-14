@@ -1,5 +1,6 @@
 import { Trash2, Calendar, ArrowRight } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
+import { SafeButton, SurfaceCard } from '../common/ui';
 
 interface AutoLogItemProps {
     change: any;
@@ -77,17 +78,19 @@ export default function AutoLogItem({
     const hasChanged = oldRaw !== newRaw;
 
     return (
-        <div className="hero-card animate-fade" style={{
-            padding: '0.45rem 0.65rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.25rem',
-            borderLeft: `3px solid ${platformColor || 'hsl(var(--primary))'}`,
-            fontSize: '0.7rem',
-            background: 'var(--bg-content)',
-            boxShadow: 'var(--shadow-sm)',
-            height: '100%'
-        }}>
+        <SurfaceCard
+            className="animate-fade"
+            padding="0.45rem 0.65rem"
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.25rem',
+                borderLeft: `3px solid ${platformColor || 'hsl(var(--primary))'}`,
+                fontSize: '0.7rem',
+                boxShadow: 'var(--shadow-sm)',
+                height: '100%'
+            }}
+        >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
                     {showCampaignName && change.expand?.campaign && (
@@ -139,7 +142,7 @@ export default function AutoLogItem({
                     </div>
                 </div>
                 {onDelete && (
-                    <button
+                    <SafeButton
                         onClick={(e) => {
                             e.stopPropagation();
                             if (confirm('Remove this log entry?')) onDelete(change.id);
@@ -148,7 +151,7 @@ export default function AutoLogItem({
                         style={{ padding: '0.15rem', borderRadius: '4px', height: 'auto', flexShrink: 0 }}
                     >
                         <Trash2 size={12} />
-                    </button>
+                    </SafeButton>
                 )}
             </div>
 
@@ -190,6 +193,6 @@ export default function AutoLogItem({
                     {newDisplay}
                 </span>
             </div>
-        </div>
+        </SurfaceCard>
     );
 }

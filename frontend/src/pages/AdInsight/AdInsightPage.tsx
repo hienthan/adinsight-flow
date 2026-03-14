@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { Suspense, lazy, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Globe, Download, LayoutDashboard, List } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
@@ -9,9 +9,52 @@ import { InsightDataTable } from './InsightDataTable';
 import { InsightFilterBar } from './InsightFilterBar';
 import { InsightExportModal } from './InsightExportModal';
 import { InsightActionBar } from './InsightActionBar';
-import { AdInsightDashboard } from './Dashboard/AdInsightDashboard';
 import { buildFilterString } from './insightUtils';
 import { PageRecord } from '../../types/adinsight';
+import {
+    SAFE_BUTTON_SELECTORS,
+    SAFE_CARD_SELECTORS,
+    createSafeInteractionScopeCss,
+} from '../../lib/uiMotion';
+import { SafeButton } from '../../components/common/ui/SafeButton';
+import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
+import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
+import { AdInsightProviderBoundary } from './AdInsightProviderBoundary';
+
+const AdInsightDashboard = lazy(() =>
+    import('./Dashboard/AdInsightDashboard').then((module) => ({ default: module.AdInsightDashboard })),
+);
+
+const HEADER_CARD_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '1.5rem',
+} as const;
+
+const RECORD_COUNT_STYLE = {
+    textAlign: 'center',
+    flex: 1,
+} as const;
+
+const HEADER_ACTIONS_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.6rem',
+    flex: 1,
+    justifyContent: 'flex-end',
+    minHeight: '36px',
+} as const;
+
+const PAGINATION_CARD_STYLE = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '1.5rem',
+    gap: '2rem',
+} as const;
+
+const PAGE_SIZE_OPTIONS = [50, 100, 200, 500] as const;
 
 export default function AdInsightPage() {
     const { platform } = useParams();
@@ -155,6 +198,7 @@ export default function AdInsightPage() {
                             if (field === 'country') prefix = 'geo=';
                             else if (field === 'province') prefix = 'province=';
                             else if (field === 'city') prefix = 'city=';
+                            else if (field === 'geo_entity') prefix = 'geo_entity=';
                             else if (field === 'tier') prefix = 'tier=';
                             else if (field === 'content_type') prefix = 'ctype=';
                             else if (field === 'funnel_stage') prefix = 'funnel=';
@@ -238,7 +282,11 @@ export default function AdInsightPage() {
     ) || (filters.sitemap_tag !== config.defaultSitemapTags[0]);
 
     return (
-        <div className="page-container">
+        <AdInsightProviderBoundary>
+            <div className="page-container adinsight-page">
+            <style>{`
+                ${createSafeInteractionScopeCss('.adinsight-page', [...SAFE_BUTTON_SELECTORS, ...SAFE_CARD_SELECTORS])}
+            `}</style>
             <InsightActionBar
                 selectedCount={selectedIds.length}
                 onClear={() => setSelectedIds([])}
@@ -256,17 +304,11 @@ export default function AdInsightPage() {
             />
 
             {/* Header / Platform Switcher */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '1.5rem',
-                padding: '1rem 1.5rem',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '12px',
-                boxShadow: 'var(--shadow-soft)'
-            }}>
+            <SurfaceCard
+                variant="soft"
+                padding="1rem 1.5rem"
+                style={HEADER_CARD_STYLE}
+            >
                 {/* Left: Platform Switcher & View Toggle */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -293,20 +335,17 @@ export default function AdInsightPage() {
                     </div>
 
                     {/* View Toggle integrated into the left side navigation */}
-                    <div
+                    <ToolbarGroup
+                        compact
                         role="group"
                         aria-label="Switch between List and Dashboard view"
                         style={{
-                            display: 'flex',
-                            alignItems: 'center',
                             background: 'var(--bg-overlay)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '10px',
                             overflow: 'hidden',
                             marginLeft: '0.5rem'
                         }}
                     >
-                        <button
+                        <SafeButton
                             aria-label="List View"
                             aria-pressed={selectedView === 'list'}
                             onClick={() => setSelectedView('list')}
@@ -316,12 +355,11 @@ export default function AdInsightPage() {
                                 width: '34px', height: '34px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'list' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'list' ? 'white' : 'var(--text-dim)',
-                                transition: 'all 0.2s ease'
                             }}
                         >
                             <List size={14} />
-                        </button>
-                        <button
+                        </SafeButton>
+                        <SafeButton
                             aria-label="Dashboard Intelligence View"
                             aria-pressed={selectedView === 'dashboard'}
                             onClick={() => setSelectedView('dashboard')}
@@ -331,16 +369,15 @@ export default function AdInsightPage() {
                                 width: '34px', height: '34px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'dashboard' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'dashboard' ? 'white' : 'var(--text-dim)',
-                                transition: 'all 0.2s ease'
                             }}
                         >
                             <LayoutDashboard size={14} />
-                        </button>
-                    </div>
+                        </SafeButton>
+                    </ToolbarGroup>
                 </div>
 
                 {/* Center: Record Count */}
-                <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={RECORD_COUNT_STYLE}>
                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))', lineHeight: 1 }}>
                         {totalCount.toLocaleString()}
                     </div>
@@ -350,10 +387,10 @@ export default function AdInsightPage() {
                 </div>
 
                 {/* Right: Actions (Only shown in list view) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, justifyContent: 'flex-end', minHeight: '36px' }}>
+                <div style={HEADER_ACTIONS_STYLE}>
                     {selectedView === 'list' && (
                         <>
-                            <button
+                            <SafeButton
                                 onClick={handleReset}
                                 className="hero-btn"
                                 style={{
@@ -367,9 +404,9 @@ export default function AdInsightPage() {
                                 }}
                             >
                                 Reset
-                            </button>
+                            </SafeButton>
 
-                            <button
+                            <SafeButton
                                 onClick={() => setIsExportModalOpen(true)}
                                 disabled={exporting}
                                 className="hero-btn hero-btn-primary"
@@ -377,11 +414,11 @@ export default function AdInsightPage() {
                             >
                                 <Download size={16} />
                                 {exporting ? 'Exporting...' : 'CSV'}
-                            </button>
+                            </SafeButton>
                         </>
                     )}
                 </div>
-            </div>
+            </SurfaceCard>
 
             {selectedView === 'list' ? (
                 <>
@@ -408,16 +445,9 @@ export default function AdInsightPage() {
                 />
 
                 {/* Pagination */}
-                <div
-                    className="hero-card"
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: '1.5rem',
-                        padding: '1.25rem',
-                        gap: '2rem'
-                    }}
+                <SurfaceCard
+                    padding="1.25rem"
+                    style={PAGINATION_CARD_STYLE}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Per page:</span>
@@ -433,10 +463,11 @@ export default function AdInsightPage() {
                                 color: 'var(--text-main)'
                             }}
                         >
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                            <option value="200">200</option>
-                            <option value="500">500</option>
+                            {PAGE_SIZE_OPTIONS.map((size) => (
+                                <option key={size} value={size}>
+                                    {size}
+                                </option>
+                            ))}
                         </select>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
                             Showing {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, totalCount)} of {totalCount.toLocaleString()}
@@ -444,29 +475,29 @@ export default function AdInsightPage() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <button
+                        <SafeButton
                             onClick={() => fetchPages(currentPage - 1)}
                             disabled={currentPage === 1 || loading}
                             className="hero-btn hero-btn-secondary"
                             style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
                         >
                             ← Prev
-                        </button>
+                        </SafeButton>
 
                         <span style={{ fontSize: '0.9rem', color: 'var(--text-main)', padding: '0 0.5rem', fontWeight: 700 }}>
                             Page {currentPage} / {totalPages}
                         </span>
 
-                        <button
+                        <SafeButton
                             onClick={() => fetchPages(currentPage + 1)}
                             disabled={currentPage === totalPages || loading}
                             className="hero-btn hero-btn-secondary"
                             style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
                         >
                             Next →
-                        </button>
+                        </SafeButton>
                     </div>
-                </div>
+                </SurfaceCard>
             </div>
 
             {/* Export Modal */}
@@ -481,9 +512,12 @@ export default function AdInsightPage() {
 
                 </>
             ) : (
-                <AdInsightDashboard platformInfo={config} sitemapTags={sitemapTags} />
+                <Suspense fallback={<div style={{ padding: '2rem', color: 'var(--text-dim)', fontWeight: 700 }}>Loading dashboard...</div>}>
+                    <AdInsightDashboard platformInfo={config} sitemapTags={sitemapTags} />
+                </Suspense>
             )}
 
-        </div>
+            </div>
+        </AdInsightProviderBoundary>
     );
 }

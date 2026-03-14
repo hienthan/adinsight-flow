@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Search, AlertCircle } from 'lucide-react';
 import { FilterDef } from '../../types/adinsight';
 import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown';
+import { SafeButton, SurfaceCard } from '../../components/common/ui';
+import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
 
 interface InsightFilterBarProps {
     filters: FilterDef[];
@@ -10,6 +12,38 @@ interface InsightFilterBarProps {
     countries: string[];
     sitemapTags: string[];
 }
+
+const MAIN_FILTER_IDS = ['searchTerm', 'country', 'content_type', 'funnel_stage', 'tier', 'affiliate_tier', 'geo_category', 'province', 'dsa_campaign'];
+const EXCLUDE_FILTER_IDS = ['searchTerm', 'country', 'tier', 'content_type'];
+
+const FILTER_BAR_SHELL_STYLE = {
+    position: 'relative',
+    zIndex: 60,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    marginBottom: '1.5rem',
+    overflow: 'visible',
+} as const;
+
+const FILTER_ROW_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1.25rem',
+    flexWrap: 'wrap',
+} as const;
+
+const EXCLUSION_SECTION_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1.25rem',
+    flexWrap: 'wrap',
+    padding: '1.25rem',
+    borderRadius: '16px',
+    animation: 'fadeIn 0.3s ease-out',
+    marginTop: '0.75rem',
+    position: 'relative',
+} as const;
 
 export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
     filters,
@@ -181,20 +215,24 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
         );
     };
 
-    const mainFilters = filters.filter(f => ['searchTerm', 'country', 'content_type', 'funnel_stage', 'tier', 'affiliate_tier', 'geo_category', 'province', 'dsa_campaign'].includes(f.id));
+    const mainFilters = filters.filter(f => MAIN_FILTER_IDS.includes(f.id));
 
     // For logical exclusion filters, we find the base definitions and map them
-    const excludeIds = ['searchTerm', 'country', 'tier', 'content_type'];
-    const exclusionBaseFilters = filters.filter(f => excludeIds.includes(f.id));
+    const exclusionBaseFilters = filters.filter(f => EXCLUDE_FILTER_IDS.includes(f.id));
 
     return (
-        <section className="filter-container" style={{ position: 'relative', zIndex: 60, display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--bg-card)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-soft)', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+        <SurfaceCard
+            className="filter-container"
+            variant="soft"
+            style={FILTER_BAR_SHELL_STYLE}
+        >
+            <div style={FILTER_ROW_STYLE}>
                 {mainFilters.map(f => renderFilter(f))}
 
-                <button
+                <SafeButton
                     onClick={() => setIsExcludeVisible(!isExcludeVisible)}
                     className="exclude-toggle"
+                    aria-pressed={isExcludeVisible}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -203,7 +241,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                         padding: '0.6rem',
                         borderRadius: '10px',
                         border: '1px solid',
-                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transition: SAFE_INTERACTIVE_TRANSITION,
                         alignSelf: 'flex-end',
                         width: '40px',
                         height: '40px',
@@ -211,21 +249,11 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     title="Toggle Exclusions"
                 >
                     <AlertCircle size={20} className="exclude-icon" />
-                </button>
+                </SafeButton>
             </div>
 
             {isExcludeVisible && (
-                <div className="exclude-section animate-fade" style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1.25rem',
-                    flexWrap: 'wrap',
-                    padding: '1.25rem',
-                    borderRadius: '16px',
-                    animation: 'fadeIn 0.3s ease-out',
-                    marginTop: '0.75rem',
-                    position: 'relative'
-                }}>
+                <div className="exclude-section animate-fade" style={EXCLUSION_SECTION_STYLE}>
                     {exclusionBaseFilters.map(f => renderFilter(f, true))}
                 </div>
             )}
@@ -344,6 +372,6 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     }
                 `}
             </style>
-        </section>
+        </SurfaceCard>
     );
 };

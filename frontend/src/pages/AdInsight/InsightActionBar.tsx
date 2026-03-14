@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Eye, EyeOff, Check } from 'lucide-react';
 import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown';
+import { SafeButton, SurfaceCard } from '../../components/common/ui';
+import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
 
 interface InsightActionBarProps {
     selectedCount: number;
@@ -40,13 +42,11 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
     const hasSelection = selectedTier || setToUnknownCountry || selectedStatus !== null;
 
     return (
-        <div style={{
+        <SurfaceCard style={{
             position: 'fixed',
             top: '2rem',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'var(--bg-content)',
-            border: '1px solid var(--border-subtle)',
             borderRadius: '16px',
             boxShadow: 'var(--shadow-floating)',
             padding: '0.75rem 1.25rem',
@@ -82,7 +82,7 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
+                    <SafeButton
                         onClick={() => setSetToUnknownCountry(!setToUnknownCountry)}
                         disabled={isUpdating}
                         className={`hero-btn ${setToUnknownCountry ? 'hero-btn-primary' : 'hero-btn-secondary'}`}
@@ -96,11 +96,11 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                         title="Set Country = Unknown"
                     >
                         Country = Unknown
-                    </button>
+                    </SafeButton>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderLeft: '1px solid var(--border-subtle)', borderRight: '1px solid var(--border-subtle)', paddingLeft: '1rem', paddingRight: '1rem' }}>
-                    <button
+                    <SafeButton
                         onClick={() => setSelectedStatus(true)}
                         disabled={isUpdating}
                         className={`hero-btn-secondary ${selectedStatus === true ? 'active' : ''}`}
@@ -112,13 +112,13 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                             background: selectedStatus === true ? 'hsla(var(--primary) / 0.15)' : 'transparent',
                             color: selectedStatus === true ? 'hsl(var(--primary))' : 'var(--text-dim)',
                             border: selectedStatus === true ? '1px solid hsla(var(--primary) / 0.4)' : '1px solid transparent',
-                            transition: 'all 0.2s ease'
+                            transition: SAFE_INTERACTIVE_TRANSITION
                         }}
                         title="Set Active"
                     >
                         <Eye size={16} />
-                    </button>
-                    <button
+                    </SafeButton>
+                    <SafeButton
                         onClick={() => setSelectedStatus(false)}
                         disabled={isUpdating}
                         className={`hero-btn-secondary ${selectedStatus === false ? 'active' : ''}`}
@@ -130,15 +130,15 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                             background: selectedStatus === false ? 'hsla(var(--destructive) / 0.15)' : 'transparent',
                             color: selectedStatus === false ? 'hsl(var(--destructive))' : 'var(--text-dim)',
                             border: selectedStatus === false ? '1px solid hsla(var(--destructive) / 0.4)' : '1px solid transparent',
-                            transition: 'all 0.2s ease'
+                            transition: SAFE_INTERACTIVE_TRANSITION
                         }}
                         title="Set Inactive"
                     >
                         <EyeOff size={16} />
-                    </button>
+                    </SafeButton>
                 </div>
 
-                <button
+                <SafeButton
                     onClick={handleApply}
                     disabled={!hasSelection || isUpdating}
                     className="hero-btn hero-btn-primary"
@@ -151,10 +151,10 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                     }}
                 >
                     {isUpdating ? 'Updating...' : <><Check size={16} /> Update</>}
-                </button>
+                </SafeButton>
             </div>
 
-            <button
+            <SafeButton
                 onClick={onClear}
                 style={{
                     display: 'flex',
@@ -172,7 +172,7 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                 title="Clear Selection"
             >
                 <X size={16} />
-            </button>
+            </SafeButton>
             <style>
                 {`
                     @keyframes slideDown {
@@ -181,6 +181,6 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
                     }
                 `}
             </style>
-        </div>
+        </SurfaceCard>
     );
 };
