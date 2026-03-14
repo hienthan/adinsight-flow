@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Download, X } from 'lucide-react';
-import { SafeButton, SectionHeader, SurfaceCard } from '../../components/common/ui';
+import { SafeButton, SectionHeader, SurfaceCard, createAmbientSurface, createPremiumBadgeStyle } from '../../components/common/ui';
 import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
 
 interface ExportField {
@@ -50,7 +50,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
         };
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
-    }, [isOpen, onClose, fields]);
+    }, [fields, hasInitialized, isOpen, onClose]);
 
     if (!isOpen) return null;
 
@@ -72,7 +72,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
             <SurfaceCard
                 style={{
                     width: '100%',
-                    maxWidth: '500px',
+                    maxWidth: '560px',
                     borderRadius: '24px',
                     boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.4)',
                     overflow: 'hidden',
@@ -81,6 +81,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                     maxHeight: '85vh',
                     position: 'relative',
                     pointerEvents: 'auto',
+                    ...createAmbientSurface('#3b82f6', 0.9),
                     /* GPU hack removed */
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -91,16 +92,19 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                 <div style={{
                     padding: '1.75rem 2rem',
                     borderBottom: '1px solid var(--border-subtle)',
-                    background: 'var(--bg-main)'
+                    background: 'transparent'
                 }}>
+                    <div className="hero-badge" style={{ marginBottom: '0.7rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                        Export Builder
+                    </div>
                     <SectionHeader
                         title={
                             <div>
-                                <h4 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'hsl(var(--primary))', letterSpacing: '-0.02em' }}>
+                                <h4 style={{ fontSize: '1.35rem', fontWeight: 850, margin: 0, color: 'var(--text-main)', letterSpacing: '-0.03em' }}>
                                     Export Configuration
                                 </h4>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', margin: '0.25rem 0 0 0' }}>
-                                    Choose how to build the 'Custom Label' column
+                                <p style={{ fontSize: '0.88rem', color: 'var(--text-dim)', margin: '0.35rem 0 0 0', lineHeight: 1.55 }}>
+                                    Build a clean CSV label recipe for {totalCount.toLocaleString()} matching records.
                                 </p>
                             </div>
                         }
@@ -111,12 +115,12 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                                     background: 'var(--bg-overlay)',
                                     border: '1px solid var(--border-subtle)',
                                     color: 'var(--text-main)',
-                                    width: '36px',
-                                    height: '36px',
+                                    width: '38px',
+                                    height: '38px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    borderRadius: '10px',
+                                    borderRadius: '12px',
                                 }}
                             >
                                 <X size={20} />
@@ -199,9 +203,11 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                                         gap: '1rem',
                                         cursor: 'pointer',
                                         padding: '0.75rem 1rem',
-                                        borderRadius: '12px',
+                                        borderRadius: '14px',
                                         border: '1px solid var(--border-subtle)',
-                                        background: 'var(--bg-content)',
+                                        background: selectedFields.includes(field.id)
+                                            ? 'linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, var(--bg-content) 100%)'
+                                            : 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%)',
                                         transition: SAFE_INTERACTIVE_TRANSITION
                                     }}
                                 >
@@ -225,7 +231,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                 <div style={{
                     padding: '1.5rem 2rem',
                     borderTop: '1px solid var(--border-subtle)',
-                    background: 'var(--bg-main)',
+                    background: 'linear-gradient(180deg, transparent 0%, var(--bg-overlay) 100%)',
                     display: 'flex',
                     gap: '1rem'
                 }}>

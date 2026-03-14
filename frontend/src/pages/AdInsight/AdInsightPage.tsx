@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Globe, Download, LayoutDashboard, List } from 'lucide-react';
+import { Globe, Download, LayoutDashboard, List, RefreshCw, Database, Filter, Sparkles } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { usePlatformAnalytics } from '../../hooks/usePlatformAnalytics';
 import { usePlatformMeta } from '../../hooks/usePlatformMeta';
@@ -19,6 +19,7 @@ import {
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
+import { createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from '../../components/common/ui';
 import { AdInsightProviderBoundary } from './AdInsightProviderBoundary';
 
 const AdInsightDashboard = lazy(() =>
@@ -55,6 +56,22 @@ const PAGINATION_CARD_STYLE = {
 } as const;
 
 const PAGE_SIZE_OPTIONS = [50, 100, 200, 500] as const;
+
+interface SaveFilePickerWindow extends Window {
+    showSaveFilePicker?: (options?: {
+        suggestedName?: string;
+        id?: string;
+        types?: Array<{
+            description: string;
+            accept: Record<string, string[]>;
+        }>;
+    }) => Promise<{
+        createWritable: () => Promise<{
+            write: (contents: BlobPart) => Promise<void>;
+            close: () => Promise<void>;
+        }>;
+    }>;
+}
 
 export default function AdInsightPage() {
     const { platform } = useParams();
@@ -241,7 +258,11 @@ export default function AdInsightPage() {
             // Support for File System Access API (Persistent Path)
             if ('showSaveFilePicker' in window) {
                 try {
-                    const handle = await (window as any).showSaveFilePicker({
+                    const picker = (window as SaveFilePickerWindow).showSaveFilePicker;
+                    if (!picker) {
+                        throw new Error('File picker is unavailable');
+                    }
+                    const handle = await picker({
                         suggestedName: fileNameToUse,
                         id: 'adinsight-export',
                         types: [{
@@ -254,8 +275,8 @@ export default function AdInsightPage() {
                     await writable.close();
                     setIsExportModalOpen(false);
                     return;
-                } catch (err: any) {
-                    if (err.name === 'AbortError') return;
+                } catch (err: unknown) {
+                    if (err instanceof DOMException && err.name === 'AbortError') return;
                     console.error('File Picker error, falling back:', err);
                 }
             }
@@ -281,6 +302,12 @@ export default function AdInsightPage() {
         !['sitemap_tag', 'titleKey'].includes(k) && filters[k]
     ) || (filters.sitemap_tag !== config.defaultSitemapTags[0]);
 
+    const summaryCards = [
+        { label: 'Records', value: totalCount.toLocaleString(), helper: isFiltered ? 'filtered universe' : 'full universe', icon: Database, accent: '59, 130, 246' },
+        { label: 'Selected', value: selectedIds.length.toLocaleString(), helper: selectedIds.length > 0 ? 'ready for bulk action' : 'nothing selected', icon: Sparkles, accent: '20, 184, 166' },
+        { label: 'Pattern', value: filters.sitemap_tag || config.defaultSitemapTags[0], helper: config.collection, icon: Filter, accent: '168, 85, 247' },
+    ] as const;
+
     return (
         <AdInsightProviderBoundary>
             <div className="page-container adinsight-page">
@@ -291,7 +318,7 @@ export default function AdInsightPage() {
                 selectedCount={selectedIds.length}
                 onClear={() => setSelectedIds([])}
                 onApply={(payload) => {
-                    const finalPayload: any = { ...payload };
+                    const finalPayload: Partial<PageRecord> & { include_for_dsa?: boolean } = { ...payload };
                     if (payload.is_active !== undefined) {
                         finalPayload.include_for_dsa = payload.is_active;
                     }
@@ -303,29 +330,37 @@ export default function AdInsightPage() {
                 isUpdating={isBulkUpdating}
             />
 
-            {/* Header / Platform Switcher */}
             <SurfaceCard
                 variant="soft"
-                padding="1rem 1.5rem"
-                style={HEADER_CARD_STYLE}
+                padding="1.35rem"
+                style={{
+                    ...HEADER_CARD_STYLE,
+                    borderRadius: '1.8rem',
+                    ...createAmbientSurface('#3b82f6', 0.9),
+                    boxShadow: '0 24px 48px -34px rgba(15, 23, 42, 0.7)',
+                }}
             >
                 {/* Left: Platform Switcher & View Toggle */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '8px',
-                            background: 'hsla(var(--primary) / 0.1)',
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, hsla(var(--primary) / 0.14) 0%, rgba(20, 184, 166, 0.12) 100%)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: 'hsl(var(--primary))'
+                            color: 'hsl(var(--primary))',
+                            border: '1px solid hsla(var(--primary) / 0.18)',
                         }}>
                             <Globe size={18} />
                         </div>
                         <div>
-                            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>
+                            <div className="hero-badge" style={{ marginBottom: '0.4rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                                AdInsight Workspace
+                            </div>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
                                 {config.name} Analytics
                             </h3>
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', margin: 0 }}>
@@ -342,7 +377,8 @@ export default function AdInsightPage() {
                         style={{
                             background: 'var(--bg-overlay)',
                             overflow: 'hidden',
-                            marginLeft: '0.5rem'
+                            marginLeft: '0.5rem',
+                            borderRadius: '12px',
                         }}
                     >
                         <SafeButton
@@ -391,6 +427,21 @@ export default function AdInsightPage() {
                     {selectedView === 'list' && (
                         <>
                             <SafeButton
+                                onClick={() => fetchPages(currentPage)}
+                                className="hero-btn hero-btn-ghost"
+                                style={{
+                                    padding: '0.6rem 0.85rem',
+                                    gap: '0.45rem',
+                                    fontSize: '13px',
+                                    borderRadius: '10px',
+                                    background: 'var(--bg-overlay)',
+                                    border: '1px solid var(--border-subtle)',
+                                }}
+                            >
+                                <RefreshCw size={15} />
+                                Refresh
+                            </SafeButton>
+                            <SafeButton
                                 onClick={handleReset}
                                 className="hero-btn"
                                 style={{
@@ -420,6 +471,51 @@ export default function AdInsightPage() {
                 </div>
             </SurfaceCard>
 
+            <div
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '0.9rem',
+                    marginBottom: '1.15rem',
+                }}
+            >
+                {summaryCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                        <SurfaceCard
+                            key={card.label}
+                            padding="1rem 1.05rem"
+                            style={{
+                                borderRadius: '1.35rem',
+                                background: [
+                                    `radial-gradient(circle at top right, ${toAlphaColor(`rgb(${card.accent})`, 0.16)} 0%, transparent 34%)`,
+                                    `linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 88%, var(--bg-main) 12%) 100%)`,
+                                ].join(', '),
+                                border: `1px solid ${toAlphaColor(`rgb(${card.accent})`, 0.16)}`,
+                                boxShadow: `0 20px 36px -30px ${toAlphaColor(`rgb(${card.accent})`, 0.45)}`,
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                        {card.label}
+                                    </div>
+                                    <div style={{ marginTop: '0.55rem', fontSize: '1.5rem', fontWeight: 850, letterSpacing: '-0.04em', color: 'var(--text-main)', lineHeight: 1 }}>
+                                        {card.value}
+                                    </div>
+                                    <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 600 }}>
+                                        {card.helper}
+                                    </div>
+                                </div>
+                                <div style={{ width: '2.35rem', height: '2.35rem', borderRadius: '0.9rem', display: 'grid', placeItems: 'center', background: toAlphaColor(`rgb(${card.accent})`, 0.12), border: `1px solid ${toAlphaColor(`rgb(${card.accent})`, 0.18)}`, color: `rgb(${card.accent})` }}>
+                                    <Icon size={18} />
+                                </div>
+                            </div>
+                        </SurfaceCard>
+                    );
+                })}
+            </div>
+
             {selectedView === 'list' ? (
                 <>
                     <InsightFilterBar
@@ -447,7 +543,12 @@ export default function AdInsightPage() {
                 {/* Pagination */}
                 <SurfaceCard
                     padding="1.25rem"
-                    style={PAGINATION_CARD_STYLE}
+                    style={{
+                        ...PAGINATION_CARD_STYLE,
+                        borderRadius: '1.45rem',
+                        background: 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
+                        boxShadow: '0 18px 34px -30px rgba(15, 23, 42, 0.62)',
+                    }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Per page:</span>

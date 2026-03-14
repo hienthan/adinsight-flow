@@ -45,6 +45,16 @@ const EXCLUSION_SECTION_STYLE = {
     position: 'relative',
 } as const;
 
+const FILTER_SHELL_STYLE = {
+    ...FILTER_BAR_SHELL_STYLE,
+    borderRadius: '1.45rem',
+    background: [
+        'radial-gradient(circle at top right, rgba(59, 130, 246, 0.1) 0%, transparent 24%)',
+        'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 96%, var(--bg-main) 4%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
+    ].join(', '),
+    boxShadow: '0 18px 34px -30px rgba(15, 23, 42, 0.62)',
+} as const;
+
 export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
     filters,
     currentValues,
@@ -224,7 +234,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
         <SurfaceCard
             className="filter-container"
             variant="soft"
-            style={FILTER_BAR_SHELL_STYLE}
+            style={FILTER_SHELL_STYLE}
         >
             <div style={FILTER_ROW_STYLE}>
                 {mainFilters.map(f => renderFilter(f))}
@@ -304,9 +314,9 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
 
                     /* Exclude Section - Premium (Light Mode Default) */
                     .exclude-section {
-                        background: rgba(255, 252, 252, 0.8) !important;
+                        background: linear-gradient(180deg, rgba(255, 247, 247, 0.82) 0%, rgba(255, 252, 252, 0.94) 100%) !important;
                         border: 1px solid rgba(239, 68, 68, 0.15) !important;
-                        box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.02);
+                        box-shadow: 0 20px 30px -24px rgba(239, 68, 68, 0.35);
                     }
                     .exclude-section label {
                         color: #dc2626 !important;
@@ -337,7 +347,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     }
 
                     :global(.dark) .exclude-section {
-                        background: rgba(15, 10, 10, 0.6) !important; /* Deep red-black tint */
+                        background: linear-gradient(180deg, rgba(20, 10, 10, 0.78) 0%, rgba(15, 10, 10, 0.68) 100%) !important;
                         border: 1px solid rgba(239, 68, 68, 0.25) !important;
                         box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.3) !important;
                     }

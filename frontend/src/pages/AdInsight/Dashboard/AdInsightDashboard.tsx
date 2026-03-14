@@ -3,7 +3,7 @@ import { useDashboardData } from './useDashboardData';
 import { DashboardCharts } from './DashboardCharts';
 import { MultiSelectDropdown } from '../../../components/common/MultiSelectDropdown';
 import { PlatformConfig } from '../../../types/adinsight';
-import { SurfaceCard } from '../../../components/common/ui';
+import { SurfaceCard, createAmbientSurface, createPremiumBadgeStyle } from '../../../components/common/ui';
 
 const DASHBOARD_PAGE_STYLE = {
     display: 'flex',
@@ -89,9 +89,48 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
 
     return (
         <div style={DASHBOARD_PAGE_STYLE}>
+            <SurfaceCard
+                padding="1.25rem"
+                style={{
+                    borderRadius: '1.65rem',
+                    ...createAmbientSurface('#3b82f6', 0.85),
+                    boxShadow: '0 24px 46px -34px rgba(15, 23, 42, 0.7)',
+                }}
+            >
+                <div className="hero-badge" style={{ marginBottom: '0.75rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                    Dashboard Intelligence
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div>
+                        <h2 style={{ fontSize: '1.45rem', fontWeight: 850, letterSpacing: '-0.04em', color: 'var(--text-main)', margin: 0 }}>
+                            {platformInfo.name} Performance Board
+                        </h2>
+                        <p style={{ marginTop: '0.45rem', fontSize: '0.86rem', color: 'var(--text-dim)', fontWeight: 500 }}>
+                            Executive scan of geo coverage, score quality, and content mix across the current filtered dataset.
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
+                        <span className="hero-badge" style={{ background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)' }}>
+                            Pattern {pattern}
+                        </span>
+                        <span className="hero-badge" style={createPremiumBadgeStyle('#14b8a6', { textColor: '#5eead4' })}>
+                            {province || 'All Provinces'}
+                        </span>
+                    </div>
+                </div>
+            </SurfaceCard>
 
             {/* ── Filter bar — matches InsightFilterBar design exactly ── */}
-            <SurfaceCard className="filter-container" variant="soft" style={FILTER_BAR_STYLE}>
+            <SurfaceCard
+                className="filter-container"
+                variant="soft"
+                style={{
+                    ...FILTER_BAR_STYLE,
+                    borderRadius: '1.4rem',
+                    background: 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
+                    boxShadow: '0 18px 32px -30px rgba(15, 23, 42, 0.62)',
+                }}
+            >
                 {/* Pattern Selector */}
                 <div className="filter-group">
                     <label>Pattern <span style={{ color: '#ef4444' }}>*</span></label>
