@@ -1,12 +1,10 @@
-import { useMemo, useState, useEffect } from "react";
+import { Suspense, lazy, useMemo, useState, useEffect } from "react";
 import { pb } from "../../lib/pocketbase";
-import { useDisclosure } from "@heroui/react";
 import { Search, Sparkles, TrendingUp, Calendar, Info, Check } from "lucide-react";
 import { toast } from "sonner";
 
 // Import extracted components
 import { SignalRow } from "./components/SignalRow";
-import { StrategyNotesModal } from "./components/StrategyNotesModal.tsx";
 import { SectionHeader, EmptyState, CompactEmptyState } from "./components/SectionUI";
 import { SafeButton, SurfaceCard, ToolbarGroup } from "../../components/common/ui";
 import { AdInsightProviderBoundary } from "./AdInsightProviderBoundary";
@@ -84,6 +82,10 @@ const PRODUCT_TYPE_LABELS: Record<string, string> = {
     attraction: "Attraction",
     rail: "Rail"
 };
+
+const StrategyNotesModal = lazy(() =>
+    import("./components/StrategyNotesModal.tsx").then((module) => ({ default: module.StrategyNotesModal })),
+);
 
 function formatProductType(type: string) {
     return PRODUCT_TYPE_LABELS[type] || type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -216,7 +218,7 @@ export default function TrendRadarPage() {
     const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
     // Notes Modal Logic
-    const { isOpen: isNotesOpen, onOpen: onNotesOpen, onOpenChange: onNotesOpenChange } = useDisclosure();
+    const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [selectedSignal, setSelectedSignal] = useState<{ id: string, name: string, destLabel: string, notes?: string } | null>(null);
     const [draftNotes, setDraftNotes] = useState("");
     const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -224,7 +226,7 @@ export default function TrendRadarPage() {
     const handleOpenNotes = (id: string, name: string, destLabel: string, notes?: string) => {
         setSelectedSignal({ id, name, destLabel, notes });
         setDraftNotes(notes || "");
-        onNotesOpen();
+        setIsNotesOpen(true);
     };
 
     const handleSaveNotes = async () => {
@@ -234,7 +236,7 @@ export default function TrendRadarPage() {
             await pb.collection('trend_signals').update(selectedSignal.id, { notes: draftNotes });
             setSignals(prev => prev.map(s => s.id === selectedSignal.id ? { ...s, notes: draftNotes } : s));
             toast.success("Strategy notes updated");
-            onNotesOpenChange();
+            setIsNotesOpen(false);
         } catch (error) {
             console.error("Error saving notes:", error);
             toast.error("Failed to save notes");
@@ -260,7 +262,6 @@ export default function TrendRadarPage() {
     }
 
     return (
-        <AdInsightProviderBoundary>
             <div className="page-container w-full px-8 py-8 animate-fade">
             {/* Zone 1: Header Summary Card - Compact Version */}
             <SurfaceCard
@@ -511,16 +512,21 @@ export default function TrendRadarPage() {
             </div>
 
             {/* Zone 4: Strategy Notes Modal - Now extracted */}
-            <StrategyNotesModal
-                isOpen={isNotesOpen}
-                onOpenChange={onNotesOpenChange}
-                selectedSignal={selectedSignal}
-                draftNotes={draftNotes}
-                setDraftNotes={setDraftNotes}
-                handleSaveNotes={handleSaveNotes}
-                isSavingNotes={isSavingNotes}
-            />
+            {isNotesOpen ? (
+                <Suspense fallback={null}>
+                    <AdInsightProviderBoundary>
+                        <StrategyNotesModal
+                            isOpen={isNotesOpen}
+                            onOpenChange={setIsNotesOpen}
+                            selectedSignal={selectedSignal}
+                            draftNotes={draftNotes}
+                            setDraftNotes={setDraftNotes}
+                            handleSaveNotes={handleSaveNotes}
+                            isSavingNotes={isSavingNotes}
+                        />
+                    </AdInsightProviderBoundary>
+                </Suspense>
+            ) : null}
             </div>
-        </AdInsightProviderBoundary>
     );
 }

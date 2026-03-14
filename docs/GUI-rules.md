@@ -455,6 +455,14 @@ Preferred lazy boundaries in this app:
 - chart dashboards should be lazy if the default view is still table/list
 - editor runtimes should be lazy at modal or expanded-panel boundaries when the editor is not immediately needed
 - when a heavy UI kit is only used for simple `Button` or `Chip` cases, prefer local primitives before adding more chunk rules
+- for rarely used feature pages, lazy-load heavyweight modals at invocation time instead of importing them into the route chunk up front
+
+HeroUI reduction rule for AdInsight:
+
+- replace HeroUI `Button`, `Chip`, `Card`, and `Skeleton` first when they are used as pure presentation primitives
+- keep HeroUI `Modal`, `Tabs`, `Textarea`, and disclosure flows until local replacements can preserve behavior and premium feel without regression
+- when replacing a visual primitive, preserve its size contract exactly: height, horizontal padding, line-height, white-space, truncation, and radius must match before considering the refactor safe
+- if a heavy component file is not imported anywhere, treat it as dead-code cleanup, not as a performance hotspot
 
 Do:
 

@@ -1,8 +1,8 @@
-import { Card, CardHeader, CardBody, CardFooter, Chip } from "@heroui/react";
 import { ChevronRight, MapPin, Bell } from "lucide-react";
 import { TrendSignal, SignalState, Destination } from "../types";
 import { getStateColor, getPriorityColor, formatDate } from "../utils";
 import { SAFE_INTERACTIVE_TRANSITION } from "../../../lib/uiMotion";
+import { SurfaceCard } from "../../../components/common/ui";
 
 interface SignalCardProps {
     signal: TrendSignal & { state: SignalState; start: Date; end: Date; pre_alert_date: Date };
@@ -14,38 +14,62 @@ export const SignalCard = ({ signal, onOpen }: SignalCardProps) => {
         ?.map((d: string | Destination) => (typeof d === "string" ? d : d.name))
         .join(", ");
 
+    const priorityTone = getPriorityColor(signal.priority);
+    const stateTone = getStateColor(signal.state);
+
+    const toneStyles: Record<string, { bg: string; text: string; border: string }> = {
+        primary: { bg: "rgba(59, 130, 246, 0.12)", text: "#2563eb", border: "rgba(59, 130, 246, 0.18)" },
+        success: { bg: "rgba(16, 185, 129, 0.12)", text: "#059669", border: "rgba(16, 185, 129, 0.18)" },
+        danger: { bg: "rgba(239, 68, 68, 0.12)", text: "#dc2626", border: "rgba(239, 68, 68, 0.18)" },
+        warning: { bg: "rgba(245, 158, 11, 0.12)", text: "#d97706", border: "rgba(245, 158, 11, 0.18)" },
+        default: { bg: "rgba(148, 163, 184, 0.12)", text: "#475569", border: "rgba(148, 163, 184, 0.18)" },
+        secondary: { bg: "rgba(139, 92, 246, 0.12)", text: "#7c3aed", border: "rgba(139, 92, 246, 0.18)" },
+    };
+
+    const priorityStyle = toneStyles[priorityTone] || toneStyles.default;
+    const stateStyle = toneStyles[stateTone] || toneStyles.default;
+
+    const renderChip = (label: string, style: { bg: string; text: string; border: string }, extraClassName = "") => (
+        <span
+            className={extraClassName}
+            style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "24px",
+                padding: "0 0.75rem",
+                borderRadius: "10px",
+                background: style.bg,
+                color: style.text,
+                border: `1px solid ${style.border}`,
+                fontSize: "10px",
+                fontWeight: 900,
+                textTransform: "uppercase",
+                letterSpacing: "0.14em",
+            }}
+        >
+            {label}
+        </span>
+    );
+
     return (
-        <Card
-            isPressable
+        <button
+            type="button"
             className="signal-card bg-(--bg-content) border border-(--border-subtle) shadow-md hover:shadow-xl h-full rounded-[20px]"
-            onPress={() => onOpen(signal)}
+            onClick={() => onOpen(signal)}
+            style={{ textAlign: "left", width: "100%", padding: 0, cursor: "pointer" }}
         >
             <style>{`
                 .signal-card {
                     transition: ${SAFE_INTERACTIVE_TRANSITION};
                 }
             `}</style>
-            <CardHeader style={{ padding: "40px 40px 24px 40px" }} className="flex flex-col items-start gap-4">
+            <SurfaceCard padding="0" radius="20px" style={{ height: "100%", overflow: "hidden", boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)" }}>
+            <div style={{ padding: "40px 40px 24px 40px" }} className="flex flex-col items-start gap-4">
                 <div className="flex justify-between w-full items-start">
                     <div className="flex flex-wrap gap-2">
-                        <Chip
-                            size="sm"
-                            variant="flat"
-                            color={getPriorityColor(signal.priority)}
-                            radius="md"
-                            className="font-bold uppercase tracking-widest h-6 px-3"
-                        >
-                            {signal.priority}
-                        </Chip>
-                        <Chip
-                            size="sm"
-                            color={getStateColor(signal.state)}
-                            variant="dot"
-                            radius="md"
-                            className={`font-black uppercase tracking-widest text-[10px] h-6 px-3 border-(--border-subtle) bg-(--bg-overlay)/50 ${signal.state === 'PEAK' ? 'animate-pulse shadow-sm' : ''}`}
-                        >
-                            {signal.state.replace('_', ' ')}
-                        </Chip>
+                        {renderChip(signal.priority, priorityStyle)}
+                        {renderChip(signal.state.replace('_', ' '), stateStyle, signal.state === 'PEAK' ? 'animate-pulse shadow-sm' : '')}
                     </div>
                     <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.15)' }} className="flex items-center gap-2 px-3 py-1.5 rounded-md">
                         <Bell size={12} />
@@ -62,9 +86,9 @@ export const SignalCard = ({ signal, onOpen }: SignalCardProps) => {
                         {destinationLabel}
                     </div>
                 </div>
-            </CardHeader>
+            </div>
 
-            <CardBody style={{ padding: "0px 40px 24px 40px" }} className="space-y-8 flex-1">
+            <div style={{ padding: "0px 40px 24px 40px" }} className="space-y-8 flex-1">
                 <div className="space-y-3">
                     <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-(--text-muted)">
                         <span>Timeline</span>
@@ -83,16 +107,13 @@ export const SignalCard = ({ signal, onOpen }: SignalCardProps) => {
                     <p className="text-[10px] font-black uppercase tracking-widest text-(--text-muted)">Coverage</p>
                     <div className="flex flex-wrap gap-2">
                         {signal.product_types?.map(p => (
-                            <Chip 
+                            <span
                                 key={p} 
-                                size="sm" 
-                                variant="flat" 
-                                radius="md"
                                 style={{ backgroundColor: 'rgba(139, 92, 246, 0.12)', color: '#7c3aed', border: '1px solid rgba(139, 92, 246, 0.15)' }}
-                                className="font-bold h-7 capitalize"
+                                className="inline-flex items-center rounded-[10px] border px-3 py-1.5 font-bold h-7 capitalize"
                             >
                                 {p}
-                            </Chip>
+                            </span>
                         ))}
                     </div>
                 </div>
@@ -103,9 +124,9 @@ export const SignalCard = ({ signal, onOpen }: SignalCardProps) => {
                         "{signal.notes}"
                     </div>
                 )}
-            </CardBody>
+            </div>
 
-            <CardFooter style={{ padding: "32px 40px 40px 40px" }} className="bg-(--bg-overlay)/20 border-t border-(--border-subtle) justify-between">
+            <div style={{ padding: "32px 40px 40px 40px" }} className="bg-(--bg-overlay)/20 border-t border-(--border-subtle) justify-between flex items-center">
                 <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${signal.status === 'active' ? 'bg-success' : 'bg-default-400'}`} />
                     <span className="text-[10px] font-black uppercase tracking-widest text-(--text-muted)">
@@ -115,7 +136,8 @@ export const SignalCard = ({ signal, onOpen }: SignalCardProps) => {
                 <div className="font-bold text-primary flex items-center gap-2 text-xs bg-primary/5 hover:bg-primary/10 px-4 py-2 rounded-lg transition-colors">
                     View Insights <ChevronRight size={14} />
                 </div>
-            </CardFooter>
-        </Card>
+            </div>
+            </SurfaceCard>
+        </button>
     );
 };
