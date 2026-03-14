@@ -28,6 +28,9 @@ import {
     SAFE_PANEL_TRANSITION,
     createSafeInteractionScopeCss,
 } from '../../lib/uiMotion';
+import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
+import { SafeButton } from '../../components/common/ui/SafeButton';
+import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
 
 interface Note {
     id: string;
@@ -552,16 +555,16 @@ export default function GlobalNotesPage() {
                             zIndex: 10
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ display: 'flex', gap: '0.25rem', marginRight: '0.5rem' }}>
-                                    <button
+                                <ToolbarGroup compact style={{ marginRight: '0.5rem', background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}>
+                                    <SafeButton
                                         onClick={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
                                         className={`hero-btn-ghost ${isLeftSidebarCollapsed ? 'text-primary' : ''}`}
                                         style={{ padding: '0.4rem', borderRadius: '8px' }}
                                         title={isLeftSidebarCollapsed ? "Show Notes List" : "Hide Notes List"}
                                     >
                                         {isLeftSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-                                    </button>
-                                </div>
+                                    </SafeButton>
+                                </ToolbarGroup>
 
                                 {isEditing ? (
                                     <input
@@ -592,28 +595,28 @@ export default function GlobalNotesPage() {
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 {isEditing ? (
                                     <>
-                                        <button
+                                        <SafeButton
                                             onClick={() => updateMutation.mutate(activeNote.id)}
                                             disabled={!hasChanges}
                                             className="hero-btn hero-btn-primary"
                                         >
                                             Save
-                                        </button>
-                                        <button onClick={() => setIsEditing(false)} className="hero-btn hero-btn-ghost">Cancel</button>
+                                        </SafeButton>
+                                        <SafeButton onClick={() => setIsEditing(false)} className="hero-btn hero-btn-ghost">Cancel</SafeButton>
                                     </>
                                 ) : (
                                     <>
-                                        <button
+                                        <SafeButton
                                             onClick={handleCopyToClipboard}
                                             className="hero-btn-ghost"
                                             title="Copy to Clipboard"
                                         >
                                             <Copy size={18} />
-                                        </button>
-                                        <button onClick={() => togglePinMutation.mutate(activeNote)} className="hero-btn-ghost" title={activeNote.is_pinned ? "Unpin" : "Pin"}>
+                                        </SafeButton>
+                                        <SafeButton onClick={() => togglePinMutation.mutate(activeNote)} className="hero-btn-ghost" title={activeNote.is_pinned ? "Unpin" : "Pin"}>
                                             <Pin size={18} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />
-                                        </button>
-                                        <button
+                                        </SafeButton>
+                                        <SafeButton
                                             onClick={() => handleDeleteNote(activeNote.id)}
                                             className={`hero-btn-ghost ${confirmingDeleteNote ? 'bg-destructive text-white' : 'text-destructive'}`}
                                             title={confirmingDeleteNote ? "Confirm Delete" : "Delete"}
@@ -621,16 +624,16 @@ export default function GlobalNotesPage() {
                                         >
                                             <Trash2 size={18} />
                                             {confirmingDeleteNote && <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Confirm?</span>}
-                                        </button>
+                                        </SafeButton>
                                         <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
-                                        <button
+                                        <SafeButton
                                             onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
                                             className={`hero-btn-ghost ${isRightSidebarCollapsed ? 'text-primary' : ''}`}
                                             style={{ padding: '0.4rem', borderRadius: '8px' }}
                                             title={isRightSidebarCollapsed ? "Show Information" : "Hide Information"}
                                         >
                                             {isRightSidebarCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
-                                        </button>
+                                        </SafeButton>
                                     </>
                                 )}
                             </div>
@@ -649,16 +652,18 @@ export default function GlobalNotesPage() {
                                     flexDirection: 'column'
                                 }}>
                                     {/* Document "Page" */}
-                                    <div style={{
-                                        flex: 1,
-                                        background: 'var(--bg-card)',
-                                        borderRadius: '1.25rem',
-                                        border: '1px solid var(--border-subtle)',
-                                        boxShadow: '0 10px 30px -15px rgba(0,0,0,0.05)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        overflow: 'hidden'
-                                    }}>
+                                    <SurfaceCard
+                                        variant="soft"
+                                        radius="1.25rem"
+                                        padding={0}
+                                        style={{
+                                            flex: 1,
+                                            boxShadow: '0 10px 30px -15px rgba(0,0,0,0.05)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            overflow: 'hidden'
+                                        }}
+                                    >
                                         {isEditing ? (
                                             <div style={{ padding: '3.5rem 4rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
@@ -738,9 +743,9 @@ export default function GlobalNotesPage() {
                                                     onDoubleClick={() => startEditing(activeNote)}
                                                 >
                                                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2rem' }}>
-                                                        <button onClick={() => startEditing(activeNote)} className="hero-btn hero-btn-ghost" style={{ fontSize: '0.75rem' }}>
+                                                        <SafeButton onClick={() => startEditing(activeNote)} className="hero-btn hero-btn-ghost" style={{ fontSize: '0.75rem' }}>
                                                             Edit Content
-                                                        </button>
+                                                        </SafeButton>
                                                     </div>
                                                     <div
                                                         className="note-content-html"
@@ -749,7 +754,7 @@ export default function GlobalNotesPage() {
                                                 </div>
                                             </div>
                                         )}
-                                    </div>
+                                    </SurfaceCard>
                                 </div>
                             </div>
 
@@ -882,7 +887,7 @@ export default function GlobalNotesPage() {
                                                         }}>
                                                             {img.split('_').pop()}
                                                         </div>
-                                                        <button
+                                                        <SafeButton
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 if (confirmingDeleteImage === img) {
@@ -913,7 +918,7 @@ export default function GlobalNotesPage() {
                                                             <span style={{ fontSize: '0.6rem', fontWeight: 700 }}>
                                                                 {deleteImageMutation.isPending ? 'Removing...' : (confirmingDeleteImage === img ? 'Confirm?' : 'Remove')}
                                                             </span>
-                                                        </button>
+                                                        </SafeButton>
                                                     </div>
                                                 </div>
                                             ))}

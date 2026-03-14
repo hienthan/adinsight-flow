@@ -18,6 +18,8 @@ import {
     createSafeInteractionScopeCss,
 } from '../../lib/uiMotion';
 import { SafeButton } from '../../components/common/ui/SafeButton';
+import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
+import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
 
 export default function AdInsightPage() {
     const { platform } = useParams();
@@ -266,17 +268,16 @@ export default function AdInsightPage() {
             />
 
             {/* Header / Platform Switcher */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '1.5rem',
-                padding: '1rem 1.5rem',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '12px',
-                boxShadow: 'var(--shadow-soft)'
-            }}>
+            <SurfaceCard
+                variant="soft"
+                padding="1rem 1.5rem"
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '1.5rem',
+                }}
+            >
                 {/* Left: Platform Switcher & View Toggle */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -303,15 +304,12 @@ export default function AdInsightPage() {
                     </div>
 
                     {/* View Toggle integrated into the left side navigation */}
-                    <div
+                    <ToolbarGroup
+                        compact
                         role="group"
                         aria-label="Switch between List and Dashboard view"
                         style={{
-                            display: 'flex',
-                            alignItems: 'center',
                             background: 'var(--bg-overlay)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '10px',
                             overflow: 'hidden',
                             marginLeft: '0.5rem'
                         }}
@@ -344,7 +342,7 @@ export default function AdInsightPage() {
                         >
                             <LayoutDashboard size={14} />
                         </SafeButton>
-                    </div>
+                    </ToolbarGroup>
                 </div>
 
                 {/* Center: Record Count */}
@@ -389,7 +387,7 @@ export default function AdInsightPage() {
                         </>
                     )}
                 </div>
-            </div>
+            </SurfaceCard>
 
             {selectedView === 'list' ? (
                 <>
