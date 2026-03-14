@@ -19,19 +19,12 @@ import {
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
-import { createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from '../../components/common/ui';
+import { MetricCard, PageHero } from '../../components/common/ui';
 import { AdInsightProviderBoundary } from './AdInsightProviderBoundary';
 
 const AdInsightDashboard = lazy(() =>
     import('./Dashboard/AdInsightDashboard').then((module) => ({ default: module.AdInsightDashboard })),
 );
-
-const HEADER_CARD_STYLE = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '1.5rem',
-} as const;
 
 const RECORD_COUNT_STYLE = {
     textAlign: 'center',
@@ -330,18 +323,63 @@ export default function AdInsightPage() {
                 isUpdating={isBulkUpdating}
             />
 
-            <SurfaceCard
-                variant="soft"
-                padding="1.35rem"
-                style={{
-                    ...HEADER_CARD_STYLE,
-                    borderRadius: '1.8rem',
-                    ...createAmbientSurface('#3b82f6', 0.9),
-                    boxShadow: '0 24px 48px -34px rgba(15, 23, 42, 0.7)',
-                }}
+            <PageHero
+                eyebrow="AdInsight Workspace"
+                title={`${config.name} Analytics`}
+                subtitle={`Operator-first SEO analytics surface for ${config.collection}.`}
+                accent="#3b82f6"
+                actions={(
+                    <div style={HEADER_ACTIONS_STYLE}>
+                        {selectedView === 'list' && (
+                            <>
+                                <SafeButton
+                                    onClick={() => fetchPages(currentPage)}
+                                    className="hero-btn hero-btn-ghost"
+                                    style={{
+                                        padding: '0.6rem 0.85rem',
+                                        gap: '0.45rem',
+                                        fontSize: '13px',
+                                        borderRadius: '10px',
+                                        background: 'var(--bg-overlay)',
+                                        border: '1px solid var(--border-subtle)',
+                                    }}
+                                >
+                                    <RefreshCw size={15} />
+                                    Refresh
+                                </SafeButton>
+                                <SafeButton
+                                    onClick={handleReset}
+                                    className="hero-btn"
+                                    style={{
+                                        padding: '0.6rem 1rem',
+                                        fontSize: '13px',
+                                        fontWeight: 700,
+                                        visibility: isFiltered ? 'visible' : 'hidden',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-overlay)',
+                                        borderRadius: '10px'
+                                    }}
+                                >
+                                    Reset
+                                </SafeButton>
+                                <SafeButton
+                                    onClick={() => setIsExportModalOpen(true)}
+                                    disabled={exporting}
+                                    className="hero-btn hero-btn-primary"
+                                    style={{ padding: '0.6rem 1.2rem', gap: '0.5rem', fontSize: '13px', borderRadius: '10px' }}
+                                >
+                                    <Download size={16} />
+                                    {exporting ? 'Exporting...' : 'CSV'}
+                                </SafeButton>
+                            </>
+                        )}
+                    </div>
+                )}
+                style={{ marginBottom: '1.5rem' }}
             >
                 {/* Left: Platform Switcher & View Toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
                             width: '42px',
@@ -357,12 +395,6 @@ export default function AdInsightPage() {
                             <Globe size={18} />
                         </div>
                         <div>
-                            <div className="hero-badge" style={{ marginBottom: '0.4rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
-                                AdInsight Workspace
-                            </div>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
-                                {config.name} Analytics
-                            </h3>
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', margin: 0 }}>
                                 Collection: {config.collection}
                             </p>
@@ -411,8 +443,6 @@ export default function AdInsightPage() {
                         </SafeButton>
                     </ToolbarGroup>
                 </div>
-
-                {/* Center: Record Count */}
                 <div style={RECORD_COUNT_STYLE}>
                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))', lineHeight: 1 }}>
                         {totalCount.toLocaleString()}
@@ -421,55 +451,8 @@ export default function AdInsightPage() {
                         {isFiltered ? 'Matching Records' : 'Total Records'}
                     </div>
                 </div>
-
-                {/* Right: Actions (Only shown in list view) */}
-                <div style={HEADER_ACTIONS_STYLE}>
-                    {selectedView === 'list' && (
-                        <>
-                            <SafeButton
-                                onClick={() => fetchPages(currentPage)}
-                                className="hero-btn hero-btn-ghost"
-                                style={{
-                                    padding: '0.6rem 0.85rem',
-                                    gap: '0.45rem',
-                                    fontSize: '13px',
-                                    borderRadius: '10px',
-                                    background: 'var(--bg-overlay)',
-                                    border: '1px solid var(--border-subtle)',
-                                }}
-                            >
-                                <RefreshCw size={15} />
-                                Refresh
-                            </SafeButton>
-                            <SafeButton
-                                onClick={handleReset}
-                                className="hero-btn"
-                                style={{
-                                    padding: '0.6rem 1rem',
-                                    fontSize: '13px',
-                                    fontWeight: 700,
-                                    visibility: isFiltered ? 'visible' : 'hidden',
-                                    border: '1px solid var(--border-subtle)',
-                                    background: 'var(--bg-overlay)',
-                                    borderRadius: '10px'
-                                }}
-                            >
-                                Reset
-                            </SafeButton>
-
-                            <SafeButton
-                                onClick={() => setIsExportModalOpen(true)}
-                                disabled={exporting}
-                                className="hero-btn hero-btn-primary"
-                                style={{ padding: '0.6rem 1.2rem', gap: '0.5rem', fontSize: '13px', borderRadius: '10px' }}
-                            >
-                                <Download size={16} />
-                                {exporting ? 'Exporting...' : 'CSV'}
-                            </SafeButton>
-                        </>
-                    )}
                 </div>
-            </SurfaceCard>
+            </PageHero>
 
             <div
                 style={{
@@ -482,36 +465,14 @@ export default function AdInsightPage() {
                 {summaryCards.map((card) => {
                     const Icon = card.icon;
                     return (
-                        <SurfaceCard
+                        <MetricCard
                             key={card.label}
-                            padding="1rem 1.05rem"
-                            style={{
-                                borderRadius: '1.35rem',
-                                background: [
-                                    `radial-gradient(circle at top right, ${toAlphaColor(`rgb(${card.accent})`, 0.16)} 0%, transparent 34%)`,
-                                    `linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 88%, var(--bg-main) 12%) 100%)`,
-                                ].join(', '),
-                                border: `1px solid ${toAlphaColor(`rgb(${card.accent})`, 0.16)}`,
-                                boxShadow: `0 20px 36px -30px ${toAlphaColor(`rgb(${card.accent})`, 0.45)}`,
-                            }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
-                                <div>
-                                    <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                                        {card.label}
-                                    </div>
-                                    <div style={{ marginTop: '0.55rem', fontSize: '1.5rem', fontWeight: 850, letterSpacing: '-0.04em', color: 'var(--text-main)', lineHeight: 1 }}>
-                                        {card.value}
-                                    </div>
-                                    <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 600 }}>
-                                        {card.helper}
-                                    </div>
-                                </div>
-                                <div style={{ width: '2.35rem', height: '2.35rem', borderRadius: '0.9rem', display: 'grid', placeItems: 'center', background: toAlphaColor(`rgb(${card.accent})`, 0.12), border: `1px solid ${toAlphaColor(`rgb(${card.accent})`, 0.18)}`, color: `rgb(${card.accent})` }}>
-                                    <Icon size={18} />
-                                </div>
-                            </div>
-                        </SurfaceCard>
+                            label={card.label}
+                            value={card.value}
+                            helper={card.helper}
+                            icon={Icon}
+                            accent={`rgb(${card.accent})`}
+                        />
                     );
                 })}
             </div>

@@ -4,3 +4,6 @@ export * from './SurfaceCard';
 export * from './ToolbarGroup';
 export * from './SectionHeader';
 export * from './premium';
+export * from './PageHero';
+export * from './MetricCard';
+export * from './ModalHero';

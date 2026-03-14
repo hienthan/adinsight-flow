@@ -10,6 +10,9 @@ import { pb } from '../../lib/pocketbase';
 import { Campaign } from '../../types/campaign';
 import { SafeButton } from '../common/ui/SafeButton';
 import { SurfaceCard } from '../common/ui/SurfaceCard';
+import { ModalHero } from '../common/ui/ModalHero';
+import { createPremiumBadgeStyle } from '../common/ui/premium';
+import { SAFE_BUTTON_SELECTORS, SAFE_CARD_SELECTORS, createSafeInteractionScopeCss } from '../../lib/uiMotion';
 
 const chipStyle = (background: string, border: string, color: string) => ({
     background,
@@ -107,7 +110,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                 }}
             >
                 <div
-                    className="hero-card animate-fade modal-layout"
+                    className="campaign-edit-modal-shell hero-card animate-fade modal-layout"
                     style={{
                         width: '100%',
                         maxWidth: '980px',
@@ -130,6 +133,9 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
+                    <style>{`
+                        ${createSafeInteractionScopeCss('.campaign-edit-modal-shell', [...SAFE_BUTTON_SELECTORS, ...SAFE_CARD_SELECTORS])}
+                    `}</style>
                     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                         <div
                             style={{
@@ -140,26 +146,11 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                 marginBottom: '0.8rem',
                             }}
                         >
-                            <SurfaceCard
-                                padding="1.15rem 1.2rem"
-                                radius="1.5rem"
-                                style={{
-                                    background: 'linear-gradient(180deg, rgba(59, 130, 246, 0.12) 0%, var(--bg-overlay) 100%)',
-                                    border: '1px solid rgba(59, 130, 246, 0.16)',
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                                    <div style={{ minWidth: 0 }}>
-                                        <div className="hero-badge" style={{ marginBottom: '0.75rem', background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.18)', color: '#93c5fd' }}>
-                                            {campaignId ? 'Edit Campaign' : 'Create Campaign'}
-                                        </div>
-                                        <h2 className="hero-section-title" style={{ fontSize: '1.4rem', marginBottom: 0, color: 'var(--text-main)' }}>
-                                            {campaignId ? 'Edit Tracking Strategy' : 'Create New Campaign'}
-                                        </h2>
-                                        <p style={{ marginTop: '0.5rem', color: 'var(--text-dim)', fontSize: '0.9rem', lineHeight: 1.55 }}>
-                                            Keep platform, priority, operating notes, reminders, and autolog context in one premium edit surface.
-                                        </p>
-                                    </div>
+                            <ModalHero
+                                eyebrow={campaignId ? 'Edit Campaign' : 'Create Campaign'}
+                                title={campaignId ? 'Edit Tracking Strategy' : 'Create New Campaign'}
+                                subtitle="Keep platform, priority, operating notes, reminders, and autolog context in one premium edit surface."
+                                actions={(
                                     <SafeButton
                                         onClick={onClose}
                                         className="hero-btn hero-btn-ghost"
@@ -167,20 +158,20 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                     >
                                         <X size={18} />
                                     </SafeButton>
-                                </div>
-
+                                )}
+                            >
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.95rem' }}>
-                                    <span style={chipStyle('rgba(99, 102, 241, 0.12)', 'rgba(99, 102, 241, 0.2)', '#a5b4fc')}>
+                                    <span style={{ ...chipStyle('rgba(99, 102, 241, 0.12)', 'rgba(99, 102, 241, 0.2)', '#a5b4fc'), ...createPremiumBadgeStyle('#6366f1', { textColor: '#a5b4fc' }) }}>
                                         {campaign?.status || 'draft'}
                                     </span>
-                                    <span style={chipStyle('rgba(20, 184, 166, 0.12)', 'rgba(20, 184, 166, 0.2)', '#5eead4')}>
+                                    <span style={{ ...chipStyle('rgba(20, 184, 166, 0.12)', 'rgba(20, 184, 166, 0.2)', '#5eead4'), ...createPremiumBadgeStyle('#14b8a6', { textColor: '#5eead4' }) }}>
                                         {campaign?.priority || 'normal'}
                                     </span>
                                     <span style={chipStyle('rgba(148, 163, 184, 0.12)', 'rgba(148, 163, 184, 0.2)', 'var(--text-dim)')}>
                                         {campaign?.is_dsa === false ? 'manual' : 'dsa support'}
                                     </span>
                                 </div>
-                            </SurfaceCard>
+                            </ModalHero>
 
                             <SurfaceCard
                                 padding="1.05rem 1.1rem"

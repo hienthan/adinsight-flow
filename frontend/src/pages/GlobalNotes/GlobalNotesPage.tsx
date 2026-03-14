@@ -16,7 +16,12 @@ import {
     AlertCircle,
     Settings,
     Loader2,
-    Copy
+    Copy,
+    FileText,
+    Tags,
+    Paperclip,
+    ListTree,
+    Clock3,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import RichTextEditor from '../../components/common/RichTextEditor';
@@ -32,6 +37,7 @@ import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
 import { SectionHeader } from '../../components/common/ui/SectionHeader';
+import { MetricCard, PageHero, createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from '../../components/common/ui';
 
 interface Note {
     id: string;
@@ -45,6 +51,8 @@ interface Note {
     created: string;
     updated: string;
 }
+
+type PocketBaseFileRecord = Parameters<typeof pb.files.getUrl>[0];
 
 const NOTE_SHELL_STYLE = {
     height: 'calc(100vh - 2rem)',
@@ -80,6 +88,32 @@ const NOTE_META_OPTIONS = {
 } as const;
 
 const GENERAL_PLATFORM_KEYS = ['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa', 'dsa'] as const;
+
+const getPlatformAccent = (platform?: string) => {
+    const normalized = String(platform || '').toLowerCase();
+    if (normalized === 'klook') return '#ff5b00';
+    if (normalized === 'traveloka' || normalized === 'tvlk') return '#1ba0e2';
+    if (normalized === 'trip') return '#0e2b5c';
+    if (normalized === 'rsa') return '#3b82f6';
+    if (normalized === 'dsa') return '#8b5cf6';
+    if (normalized === 'system') return '#64748b';
+    return '#4f46e5';
+};
+
+const getPriorityAccent = (priority?: Note['priority']) => {
+    if (priority === 'high') return '#ef4444';
+    if (priority === 'medium') return '#f59e0b';
+    return '#22c55e';
+};
+
+const formatPlatformLabel = (platform?: string) => {
+    const normalized = String(platform || '').toLowerCase();
+    if (normalized === 'traveloka' || normalized === 'tvlk') return 'TVLK';
+    if (normalized === 'system') return 'System';
+    if (normalized === 'rsa') return 'RSA';
+    if (normalized === 'dsa') return 'DSA';
+    return platform || 'General';
+};
 
 const getPlatformBadge = (platform?: string) => {
     const normalized = String(platform || '').toLowerCase();
@@ -270,7 +304,7 @@ export default function GlobalNotesPage() {
             if (!filename) return;
 
             // Get URL for cleanup
-            const imageUrl = pb.files.getUrl(activeNote as any, filename);
+            const imageUrl = pb.files.getUrl(activeNote as PocketBaseFileRecord, filename);
 
             // Escape special chars for regex
             const escapedUrl = imageUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -333,9 +367,22 @@ export default function GlobalNotesPage() {
         return new Date(b.updated).getTime() - new Date(a.updated).getTime();
     });
 
+    const noteStats = useMemo(() => {
+        const pinned = notes.filter((note) => note.is_pinned).length;
+        const highPriority = notes.filter((note) => note.priority === 'high').length;
+        const attachments = notes.reduce((sum, note) => sum + (note.images?.length || 0), 0);
+
+        return {
+            total: notes.length,
+            pinned,
+            highPriority,
+            attachments,
+        };
+    }, [notes]);
+
     const renderedNote = useMemo(
         () => prepareNoteHtmlForRender(activeNote?.content || ''),
-        [activeNote?.id, activeNote?.content] // Added activeNote?.id to ensure refresh
+        [activeNote?.content]
     );
 
     // Compute changes for Save button
@@ -476,7 +523,8 @@ export default function GlobalNotesPage() {
                 ${createSafeInteractionScopeCss('.global-notes-page', SAFE_BUTTON_SELECTORS)}
 
                 .global-notes-page .note-item-hover:hover {
-                    background: var(--accent-glow);
+                    transform: translateY(-1px);
+                    box-shadow: 0 16px 30px -28px rgba(15, 23, 42, 0.35);
                 }
             `}</style>
 
@@ -489,64 +537,79 @@ export default function GlobalNotesPage() {
                 pointerEvents: isLeftSidebarCollapsed ? 'none' : 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                background: 'var(--bg-card)',
+                background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 0%, var(--bg-content) 100%)',
                 borderRight: '1px solid var(--border-subtle)',
                 marginTop: '1rem',
                 marginLeft: '1rem',
                 marginBottom: '1rem',
                 borderRadius: '1rem 0 0 1rem',
                 overflow: 'hidden',
-                boxShadow: '0 0 20px rgba(0,0,0,0.05)'
+                boxShadow: '0 24px 42px -34px rgba(15, 23, 42, 0.28)'
             }}>
                 {/* Header */}
-                <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-content)', opacity: 0.9 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h2 style={{ fontSize: '0.9rem', fontWeight: 800, margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'hsl(var(--primary))' }}>Knowledge Base</h2>
-                        <button
-                            onClick={() => createMutation.mutate()}
-                            className="hero-btn-ghost"
-                            style={{ padding: '0.4rem', borderRadius: '50%' }}
-                            title="New Note"
-                        >
-                            <Plus size={18} />
-                        </button>
-                    </div>
-
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.6rem',
-                        padding: '0.5rem 0.85rem',
-                        background: 'var(--bg-main)',
-                        borderRadius: '0.75rem',
-                        border: '1px solid var(--border-subtle)',
-                        transition: SAFE_INTERACTIVE_TRANSITION,
-                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)'
-                    }}>
-                        <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                        <input
-                            type="text"
-                            placeholder="Search notes..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                outline: 'none',
-                                color: 'var(--text-main)',
-                                fontSize: '0.85rem',
-                                width: '100%',
-                                padding: '0.2rem 0'
-                            }}
-                        />
-                    </div>
+                <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%)' }}>
+                    <PageHero
+                        eyebrow="Knowledge Base"
+                        title="General Notes"
+                        subtitle="Keep strategy, operating notes, and supporting files in a single workspace."
+                        accent="#4f46e5"
+                        actions={(
+                            <SafeButton
+                                onClick={() => createMutation.mutate()}
+                                className="hero-btn hero-btn-primary"
+                                style={{ paddingInline: '0.9rem', minHeight: '2.5rem' }}
+                            >
+                                <Plus size={16} />
+                                New
+                            </SafeButton>
+                        )}
+                        style={{ padding: '1.15rem', borderRadius: '1.45rem' }}
+                    >
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.65rem' }}>
+                            <MetricCard label="Notes" value={noteStats.total} icon={FileText} accent="#4f46e5" style={{ padding: '0.85rem 0.9rem' }} />
+                            <MetricCard label="Pinned" value={noteStats.pinned} icon={Pin} accent="#f59e0b" style={{ padding: '0.85rem 0.9rem' }} />
+                            <MetricCard label="Files" value={noteStats.attachments} icon={Paperclip} accent="#22c55e" style={{ padding: '0.85rem 0.9rem' }} />
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.6rem',
+                            padding: '0.65rem 0.9rem',
+                            marginTop: '0.85rem',
+                            background: 'color-mix(in srgb, var(--bg-content) 84%, var(--bg-main) 16%)',
+                            borderRadius: '0.9rem',
+                            border: '1px solid var(--border-subtle)',
+                            transition: SAFE_INTERACTIVE_TRANSITION,
+                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)'
+                        }}>
+                            <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                            <input
+                                type="text"
+                                placeholder="Search notes, content, tags..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    outline: 'none',
+                                    color: 'var(--text-main)',
+                                    fontSize: '0.85rem',
+                                    width: '100%',
+                                    padding: '0.2rem 0'
+                                }}
+                            />
+                        </div>
+                    </PageHero>
                 </div>
 
                 {/* Note List */}
-                <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-content)' }}>
+                <div style={{ flex: 1, overflowY: 'auto', background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 96%, var(--bg-main) 4%) 0%, var(--bg-content) 100%)', padding: '0.8rem' }}>
                     {filteredNotes.map(note => (
                         (() => {
                             const badge = getPlatformBadge(note.platform);
+                            const platformAccent = getPlatformAccent(note.platform);
+                            const priorityAccent = getPriorityAccent(note.priority);
+                            const isSelected = selectedNoteId === note.id;
                             return (
                                 <div
                                     key={note.id}
@@ -555,33 +618,36 @@ export default function GlobalNotesPage() {
                                         setIsEditing(false);
                                     }}
                                     style={{
-                                        padding: '0.6rem 0.85rem',
-                                        borderBottom: '1px solid var(--border-subtle)',
+                                        padding: '0.8rem 0.9rem',
                                         cursor: 'pointer',
-                                        background: selectedNoteId === note.id
-                                            ? 'var(--accent-glow)'
-                                            : (note.priority === 'high' ? 'hsla(0, 84%, 60%, 0.03)' : note.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.03)' : 'transparent'),
-                                        borderLeft: selectedNoteId === note.id
-                                            ? '3px solid hsl(var(--primary))'
-                                            : (note.priority === 'high' ? '3px solid #ef4444' : note.priority === 'medium' ? '3px solid #f59e0b' : '3px solid transparent'),
+                                        background: isSelected
+                                            ? createAmbientSurface(platformAccent, 0.65).background
+                                            : `linear-gradient(180deg, ${toAlphaColor(priorityAccent, 0.04)} 0%, color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%) 100%)`,
+                                        border: `1px solid ${isSelected ? toAlphaColor(platformAccent, 0.22) : 'var(--border-subtle)'}`,
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
                                         transition: SAFE_ITEM_TRANSITION,
-                                        gap: '0.5rem'
+                                        gap: '0.5rem',
+                                        borderRadius: '1rem',
+                                        marginBottom: '0.65rem',
+                                        boxShadow: isSelected ? `0 18px 30px -28px ${toAlphaColor(platformAccent, 0.5)}` : 'none',
+                                        position: 'relative',
+                                        overflow: 'hidden'
                                     }}
                                     className="note-item-hover"
                                 >
+                                    <div style={{ position: 'absolute', left: 0, top: '18%', bottom: '18%', width: '3px', background: isSelected ? platformAccent : priorityAccent, borderRadius: '0 6px 6px 0' }} />
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flex: 1, overflow: 'hidden' }}>
                                         {badge && <div style={badge.style}>{badge.icon ?? badge.label}</div>}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', overflow: 'hidden', flex: 1 }}>
                                     <span style={{
-                                        fontWeight: selectedNoteId === note.id ? 600 : 400,
-                                        fontSize: '0.78rem',
+                                        fontWeight: isSelected ? 700 : 600,
+                                        fontSize: '0.8rem',
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
-                                        color: selectedNoteId === note.id ? 'hsl(var(--primary))' : 'var(--text-main)',
+                                        color: isSelected ? platformAccent : 'var(--text-main)',
                                         letterSpacing: '-0.01em'
                                     }}>
                                         {note.title}
@@ -594,7 +660,7 @@ export default function GlobalNotesPage() {
                                         <Monitor size={12} style={{ color: 'hsl(var(--primary))' }} />
                                     </div>
                                 )}
-                                {note.priority === 'high' && <AlertCircle size={9} color="#ef4444" />}
+                                {note.priority === 'high' && <AlertCircle size={10} color="#ef4444" />}
                                 {note.priority === 'medium' && <span style={{ color: '#f59e0b', fontSize: '9px', fontWeight: 800 }}>M</span>}
                                 {note.is_pinned && <Pin size={10} style={{ flexShrink: 0, color: 'var(--accent)', fill: 'var(--accent)', opacity: 0.9 }} />}
                                 <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: 500, opacity: 0.8 }}>
@@ -618,7 +684,7 @@ export default function GlobalNotesPage() {
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                background: 'var(--bg-content)',
+                background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 96%, var(--bg-main) 4%) 0%, var(--bg-content) 100%)',
                 overflow: 'hidden',
                 marginTop: '1rem',
                 marginRight: isRightSidebarCollapsed ? '1rem' : '0',
@@ -628,7 +694,7 @@ export default function GlobalNotesPage() {
                 borderLeft: isLeftSidebarCollapsed ? '1px solid var(--border-subtle)' : 'none',
                 borderRight: isRightSidebarCollapsed ? '1px solid var(--border-subtle)' : 'none',
                 transition: SAFE_PANEL_TRANSITION,
-                boxShadow: '10px 0 20px rgba(0,0,0,0.05)'
+                boxShadow: '0 26px 44px -34px rgba(15, 23, 42, 0.28)'
             }}>
                 {activeNote ? (
                     <>
@@ -639,7 +705,7 @@ export default function GlobalNotesPage() {
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            background: 'var(--bg-card)',
+                            background: createAmbientSurface(getPlatformAccent(activeNote.platform), 0.4).background,
                             position: 'sticky',
                             top: 0,
                             zIndex: 10
@@ -679,7 +745,17 @@ export default function GlobalNotesPage() {
                                     <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>{activeNote.title}</h1>
                                 )}
 
-                                {!isEditing && activeNote.is_pinned && <span className="hero-badge" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>PINNED</span>}
+                                {!isEditing && (
+                                    <>
+                                        <span className="hero-badge" style={createPremiumBadgeStyle(getPlatformAccent(activeNote.platform), { textColor: getPlatformAccent(activeNote.platform) })}>
+                                            {formatPlatformLabel(activeNote.platform)}
+                                        </span>
+                                        <span className="hero-badge" style={createPremiumBadgeStyle(getPriorityAccent(activeNote.priority), { textColor: getPriorityAccent(activeNote.priority) })}>
+                                            {activeNote.priority === 'high' ? 'High Priority' : activeNote.priority === 'medium' ? 'Medium Priority' : 'Normal Priority'}
+                                        </span>
+                                        {activeNote.is_pinned && <span className="hero-badge" style={createPremiumBadgeStyle('#f59e0b', { textColor: '#f59e0b' })}>Pinned</span>}
+                                    </>
+                                )}
                             </div>
 
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -725,7 +801,7 @@ export default function GlobalNotesPage() {
                         <div className="note-content-area" style={{ flex: 1, display: 'flex', background: 'var(--bg-main)', overflow: 'hidden', minWidth: 0 }}>
                             <div className="note-scroll-container" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
                                 <div style={{
-                                    maxWidth: '920px',
+                                    maxWidth: '980px',
                                     width: '100%',
                                     margin: '0 auto',
                                     padding: '2.5rem 1.5rem',
@@ -733,6 +809,23 @@ export default function GlobalNotesPage() {
                                     display: 'flex',
                                     flexDirection: 'column'
                                 }}>
+                                    <PageHero
+                                        eyebrow={isEditing ? 'Editing Workspace' : 'Document View'}
+                                        title={isEditing ? (editTitle || 'Untitled note') : activeNote.title}
+                                        subtitle={isEditing ? 'Adjust metadata, edit content, and keep your operating notes clean.' : 'Double-click the document or use Edit Content to revise this note.'}
+                                        accent={getPlatformAccent(activeNote.platform)}
+                                        style={{ marginBottom: '1rem', padding: '1.1rem 1.25rem', borderRadius: '1.5rem' }}
+                                    >
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem' }}>
+                                            <span className="hero-badge" style={createPremiumBadgeStyle(getPlatformAccent(activeNote.platform), { textColor: getPlatformAccent(activeNote.platform) })}>{formatPlatformLabel(activeNote.platform)}</span>
+                                            <span className="hero-badge" style={createPremiumBadgeStyle(getPriorityAccent(activeNote.priority), { textColor: getPriorityAccent(activeNote.priority) })}>{activeNote.priority}</span>
+                                            {activeNote.tags?.slice(0, 3).map((tag) => (
+                                                <span key={tag} className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </PageHero>
                                     {/* Document "Page" */}
                                     <SurfaceCard
                                         variant="soft"
@@ -740,14 +833,15 @@ export default function GlobalNotesPage() {
                                         padding={0}
                                         style={{
                                             flex: 1,
-                                            boxShadow: '0 10px 30px -15px rgba(0,0,0,0.05)',
+                                            ...createAmbientSurface(getPlatformAccent(activeNote.platform), 0.28),
+                                            boxShadow: `0 22px 42px -30px ${toAlphaColor(getPlatformAccent(activeNote.platform), 0.28)}`,
                                             display: 'flex',
                                             flexDirection: 'column',
                                             overflow: 'hidden'
                                         }}
                                     >
                                         {isEditing ? (
-                                            <div style={{ padding: '3.5rem 4rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
+                                            <div style={{ padding: '3rem 3.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                         <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
@@ -814,7 +908,7 @@ export default function GlobalNotesPage() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div style={{ flex: 1, padding: '3.5rem 4rem' }}>
+                                            <div style={{ flex: 1, padding: '3rem 3.5rem' }}>
                                                 <div
                                                     style={{
                                                         color: 'var(--text-main)',
@@ -849,7 +943,7 @@ export default function GlobalNotesPage() {
                                 opacity: isRightSidebarCollapsed ? 0 : 1,
                                 transition: SAFE_PANEL_TRANSITION,
                                 pointerEvents: isRightSidebarCollapsed ? 'none' : 'auto',
-                                background: 'var(--bg-card)',
+                                background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 0%, var(--bg-content) 100%)',
                                 overflowY: 'auto',
                                 position: 'sticky',
                                 top: '0',
@@ -857,7 +951,7 @@ export default function GlobalNotesPage() {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '2.5rem',
-                                boxShadow: '-5px 0 15px rgba(0,0,0,0.02)',
+                                boxShadow: '-22px 0 42px -38px rgba(15, 23, 42, 0.3)',
                                 marginTop: '1rem',
                                 marginRight: '1rem',
                                 marginBottom: '1rem',
@@ -868,10 +962,11 @@ export default function GlobalNotesPage() {
                                 <SurfaceCard
                                     variant="inset"
                                     padding="0.9rem"
-                                    style={{ boxShadow: 'none' }}
+                                    style={{ ...createAmbientSurface(getPlatformAccent(activeNote.platform), 0.32), boxShadow: 'none' }}
                                 >
                                     <SectionHeader
                                         title={<h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', margin: 0 }}>Information</h4>}
+                                        actions={<FileText size={14} style={{ color: getPlatformAccent(activeNote.platform) }} />}
                                         style={{ marginBottom: '0.8rem' }}
                                     />
 
@@ -887,15 +982,13 @@ export default function GlobalNotesPage() {
                                         <div style={{ gridColumn: 'span 1' }}>
                                             <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.2rem', textTransform: 'uppercase', opacity: 0.7 }}>Platform</div>
                                             <span style={{
-                                                background: 'var(--accent-glow)',
-                                                color: 'hsl(var(--primary))',
+                                                ...createPremiumBadgeStyle(getPlatformAccent(activeNote.platform), { textColor: getPlatformAccent(activeNote.platform) }),
                                                 fontWeight: 800,
                                                 fontSize: '0.65rem',
                                                 padding: '0.2rem 0.5rem',
                                                 borderRadius: '6px',
-                                                border: '1px solid hsla(var(--primary) / 0.2)'
                                             }}>
-                                                {String(activeNote.platform || '').toLowerCase() === 'traveloka' || String(activeNote.platform || '').toLowerCase() === 'tvlk' ? 'TVLK' : (String(activeNote.platform || '').toLowerCase() === 'system' ? 'System' : (String(activeNote.platform || '').toLowerCase() === 'rsa' ? 'RSA' : (String(activeNote.platform || '').toLowerCase() === 'dsa' ? 'DSA' : activeNote.platform || 'General')))}
+                                                {formatPlatformLabel(activeNote.platform)}
                                             </span>
                                         </div>
 
@@ -903,8 +996,11 @@ export default function GlobalNotesPage() {
                                             <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-dim)', marginBottom: '0.2rem', textTransform: 'uppercase', opacity: 0.7 }}>Priority</div>
                                             <div style={{ display: 'flex', alignItems: 'center' }}>
                                                 <span className="hero-badge" style={{
-                                                    background: activeNote.priority === 'high' ? 'hsla(0, 84%, 60%, 0.1)' : activeNote.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.1)' : 'var(--bg-subtle)',
-                                                    color: activeNote.priority === 'high' ? '#ef4444' : activeNote.priority === 'medium' ? '#f59e0b' : 'var(--text-dim)',
+                                                    ...createPremiumBadgeStyle(getPriorityAccent(activeNote.priority), {
+                                                        textColor: activeNote.priority === 'normal' ? 'var(--text-dim)' : getPriorityAccent(activeNote.priority),
+                                                        background: activeNote.priority === 'normal' ? 'var(--bg-subtle)' : undefined,
+                                                        borderColor: activeNote.priority === 'normal' ? 'var(--border-subtle)' : undefined,
+                                                    }),
                                                     fontWeight: 700,
                                                     fontSize: '0.65rem',
                                                     padding: '0.1rem 0.4rem'
@@ -925,7 +1021,7 @@ export default function GlobalNotesPage() {
                                             <div style={{ gridColumn: 'span 2', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
                                                 <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
                                                     {activeNote.tags.map(t => (
-                                                        <span key={t} style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 600 }}>#{t}</span>
+                                                        <span key={t} className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>#{t}</span>
                                                     ))}
                                                 </div>
                                             </div>
@@ -938,10 +1034,11 @@ export default function GlobalNotesPage() {
                                     <SurfaceCard
                                         variant="inset"
                                         padding="0.9rem"
-                                        style={{ boxShadow: 'none' }}
+                                        style={{ ...createAmbientSurface('#22c55e', 0.24), boxShadow: 'none' }}
                                     >
                                         <SectionHeader
                                             title={<h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', margin: 0 }}>Attachments</h4>}
+                                            actions={<Paperclip size={14} style={{ color: '#22c55e' }} />}
                                             style={{ marginBottom: '1rem' }}
                                         />
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.6rem' }}>
@@ -964,7 +1061,7 @@ export default function GlobalNotesPage() {
                                                         flexShrink: 0
                                                     }}>
                                                         <img
-                                                            src={pb.files.getUrl(activeNote as any, img, { thumb: '100x100' })}
+                                                            src={pb.files.getUrl(activeNote as PocketBaseFileRecord, img, { thumb: '100x100' })}
                                                             alt={img}
                                                             onError={(e) => {
                                                                 (e.target as HTMLImageElement).src = 'https://placehold.co/40x40?text=IMG';
@@ -1027,10 +1124,11 @@ export default function GlobalNotesPage() {
                                     <SurfaceCard
                                         variant="inset"
                                         padding="0.9rem"
-                                        style={{ boxShadow: 'none' }}
+                                        style={{ ...createAmbientSurface('#3b82f6', 0.24), boxShadow: 'none' }}
                                     >
                                         <SectionHeader
                                             title={<h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', margin: 0 }}>Table of Contents</h4>}
+                                            actions={<ListTree size={14} style={{ color: '#3b82f6' }} />}
                                             style={{ marginBottom: '1rem' }}
                                         />
                                         <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -1041,7 +1139,7 @@ export default function GlobalNotesPage() {
                                                     <div
                                                         key={item.id}
                                                         style={{
-                                                            paddingLeft: `${(item.level - 1) * 0.75}rem`,
+                                                            paddingLeft: `calc(${(item.level - 1) * 0.75}rem + 0.5rem)`,
                                                             cursor: 'pointer',
                                                             fontSize: item.level === 1 ? '0.82rem' : '0.78rem',
                                                             fontWeight: item.level === 1 ? 700 : 500,
@@ -1049,9 +1147,11 @@ export default function GlobalNotesPage() {
                                                             overflow: 'hidden',
                                                             textOverflow: 'ellipsis',
                                                             whiteSpace: 'nowrap',
-                                                            padding: '0.25rem 0.5rem',
-                                                            borderRadius: '0.4rem',
-                                                            transition: SAFE_INTERACTIVE_TRANSITION
+                                                            paddingTop: '0.35rem',
+                                                            paddingBottom: '0.35rem',
+                                                            borderRadius: '0.7rem',
+                                                            transition: SAFE_INTERACTIVE_TRANSITION,
+                                                            background: 'color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%)'
                                                         }}
                                                         onClick={() => scrollToSection(item.id)}
                                                         className="hover:bg-accent-glow hover:text-primary"
@@ -1068,9 +1168,26 @@ export default function GlobalNotesPage() {
                         </div>
                     </>
                 ) : (
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                        <Monitor size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
-                        <h3>Select a note or create a new one</h3>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                        <PageHero
+                            eyebrow="Workspace Empty"
+                            title="Select a note or create a new one"
+                            subtitle="Use the left rail to open an existing note, or create a new entry for strategy, process, or reference material."
+                            accent="#4f46e5"
+                            actions={(
+                                <SafeButton onClick={() => createMutation.mutate()} className="hero-btn hero-btn-primary">
+                                    <Plus size={16} />
+                                    New Note
+                                </SafeButton>
+                            )}
+                            style={{ maxWidth: '40rem', width: '100%' }}
+                        >
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem' }}>
+                                <MetricCard label="Notes" value={noteStats.total} helper="Knowledge base records" icon={FileText} accent="#4f46e5" />
+                                <MetricCard label="Critical" value={noteStats.highPriority} helper="High-priority notes" icon={Clock3} accent="#ef4444" />
+                                <MetricCard label="Tagged" value={notes.filter((note) => note.tags?.length).length} helper="Notes with tags" icon={Tags} accent="#22c55e" />
+                            </div>
+                        </PageHero>
                     </div>
                 )}
             </div>
