@@ -46,6 +46,96 @@ interface Note {
     updated: string;
 }
 
+const NOTE_SHELL_STYLE = {
+    height: 'calc(100vh - 2rem)',
+    display: 'flex',
+    overflow: 'hidden',
+    padding: 0,
+    gap: 0,
+} as const;
+
+const NOTE_TOOLBAR_GROUP_STYLE = {
+    marginRight: '0.5rem',
+    background: 'transparent',
+    border: 'none',
+    boxShadow: 'none',
+    padding: 0,
+} as const;
+
+const NOTE_META_OPTIONS = {
+    platforms: [
+        { value: 'General', label: 'General' },
+        { value: 'RSA', label: 'RSA' },
+        { value: 'DSA', label: 'DSA' },
+        { value: 'System', label: 'System' },
+        { value: 'Klook', label: 'Klook' },
+        { value: 'Trip', label: 'Trip' },
+        { value: 'Traveloka', label: 'TVLK' },
+    ],
+    priorities: [
+        { value: 'normal', label: 'Normal' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'high', label: 'High' },
+    ],
+} as const;
+
+const GENERAL_PLATFORM_KEYS = ['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa', 'dsa'] as const;
+
+const getPlatformBadge = (platform?: string) => {
+    const normalized = String(platform || '').toLowerCase();
+    const baseStyle = {
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 800,
+    } as const;
+
+    if (normalized === 'klook') {
+        return {
+            label: 'K',
+            style: { ...baseStyle, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(255, 91, 0, 0.1)', color: '#ff5b00', fontSize: '0.5rem', padding: '0 3px' },
+        };
+    }
+    if (normalized === 'traveloka' || normalized === 'tvlk') {
+        return {
+            label: 'TK',
+            style: { ...baseStyle, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(27, 160, 226, 0.1)', color: '#1ba0e2', fontSize: '0.45rem', padding: '0 3px' },
+        };
+    }
+    if (normalized === 'rsa') {
+        return {
+            label: 'RSA',
+            style: { ...baseStyle, minWidth: 24, height: 14, borderRadius: 3, background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', fontSize: '0.55rem', padding: '0 4px' },
+        };
+    }
+    if (normalized === 'dsa') {
+        return {
+            label: 'DSA',
+            style: { ...baseStyle, minWidth: 24, height: 14, borderRadius: 3, background: 'hsla(271, 81%, 56%, 0.1)', color: 'hsla(271, 81%, 56%, 1)', fontSize: '0.55rem', padding: '0 4px' },
+        };
+    }
+    if (normalized === 'trip') {
+        return {
+            label: 'T',
+            style: { ...baseStyle, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(14, 43, 92, 0.1)', color: '#0e2b5c', fontSize: '0.5rem', padding: '0 3px' },
+        };
+    }
+    if (normalized === 'system') {
+        return {
+            icon: <Settings size={8} />,
+            style: { ...baseStyle, minWidth: 14, height: 14, borderRadius: 3, background: 'var(--bg-subtle)', color: 'var(--text-dim)', fontSize: '0.5rem', padding: '0 3px' },
+        };
+    }
+    if (!platform || normalized === 'general' || !GENERAL_PLATFORM_KEYS.includes(normalized as (typeof GENERAL_PLATFORM_KEYS)[number])) {
+        return {
+            icon: <Globe size={9} strokeWidth={3} />,
+            style: { ...baseStyle, width: 14, height: 14, borderRadius: 3, background: 'hsla(243, 75%, 59%, 0.1)', color: '#4f46e5' },
+        };
+    }
+    return null;
+};
+
 export default function GlobalNotesPage() {
     const queryClient = useQueryClient();
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
@@ -352,8 +442,36 @@ export default function GlobalNotesPage() {
         }
     };
 
+    const toolbarActions = activeNote && !isEditing ? [
+        {
+            key: 'copy',
+            title: 'Copy to Clipboard',
+            onClick: handleCopyToClipboard,
+            content: <Copy size={18} />,
+        },
+        {
+            key: 'pin',
+            title: activeNote.is_pinned ? 'Unpin' : 'Pin',
+            onClick: () => togglePinMutation.mutate(activeNote),
+            content: <Pin size={18} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />,
+        },
+        {
+            key: 'delete',
+            title: confirmingDeleteNote ? 'Confirm Delete' : 'Delete',
+            onClick: () => handleDeleteNote(activeNote.id),
+            className: `hero-btn-ghost ${confirmingDeleteNote ? 'bg-destructive text-white' : 'text-destructive'}`,
+            style: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
+            content: (
+                <>
+                    <Trash2 size={18} />
+                    {confirmingDeleteNote && <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Confirm?</span>}
+                </>
+            ),
+        },
+    ] : [];
+
     return (
-        <div className="page-container global-notes-page" style={{ height: 'calc(100vh - 2rem)', display: 'flex', overflow: 'hidden', padding: 0, gap: 0 }}>
+        <div className="page-container global-notes-page" style={NOTE_SHELL_STYLE}>
             <style>{`
                 ${createSafeInteractionScopeCss('.global-notes-page', SAFE_BUTTON_SELECTORS)}
 
@@ -427,66 +545,35 @@ export default function GlobalNotesPage() {
                 {/* Note List */}
                 <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-content)' }}>
                     {filteredNotes.map(note => (
-                        <div
-                            key={note.id}
-                            onClick={() => {
-                                setSelectedNoteId(note.id);
-                                setIsEditing(false);
-                            }}
-                            style={{
-                                padding: '0.6rem 0.85rem',
-                                borderBottom: '1px solid var(--border-subtle)',
-                                cursor: 'pointer',
-                                background: selectedNoteId === note.id
-                                    ? 'var(--accent-glow)'
-                                    : (note.priority === 'high' ? 'hsla(0, 84%, 60%, 0.03)' : note.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.03)' : 'transparent'),
-                                borderLeft: selectedNoteId === note.id
-                                    ? '3px solid hsl(var(--primary))'
-                                    : (note.priority === 'high' ? '3px solid #ef4444' : note.priority === 'medium' ? '3px solid #f59e0b' : '3px solid transparent'),
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                transition: SAFE_ITEM_TRANSITION,
-                                gap: '0.5rem'
-                            }}
-                            className="note-item-hover"
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flex: 1, overflow: 'hidden' }}>
-                                {String(note.platform || '').toLowerCase() === 'klook' && (
-                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(255, 91, 0, 0.1)', color: '#ff5b00', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>K</div>
-                                )}
-                                {(String(note.platform || '').toLowerCase() === 'traveloka' || String(note.platform || '').toLowerCase() === 'tvlk') && (
-                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(27, 160, 226, 0.1)', color: '#1ba0e2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.45rem', fontWeight: 800, padding: '0 3px' }}>TK</div>
-                                )}
-                                {String(note.platform || '').toLowerCase() === 'rsa' && (
-                                    <div style={{ flexShrink: 0, minWidth: 24, height: 14, borderRadius: 3, background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800, padding: '0 4px' }}>RSA</div>
-                                )}
-                                {String(note.platform || '').toLowerCase() === 'dsa' && (
-                                    <div style={{ flexShrink: 0, minWidth: 24, height: 14, borderRadius: 3, background: 'hsla(271, 81%, 56%, 0.1)', color: 'hsla(271, 81%, 56%, 1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 800, padding: '0 4px' }}>DSA</div>
-                                )}
-                                {String(note.platform || '').toLowerCase() === 'trip' && (
-                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(14, 43, 92, 0.1)', color: '#0e2b5c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>T</div>
-                                )}
-                                {String(note.platform || '').toLowerCase() === 'system' && (
-                                    <div style={{ flexShrink: 0, minWidth: 14, height: 14, borderRadius: 3, background: 'var(--bg-subtle)', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, padding: '0 3px' }}>
-                                        <Settings size={8} />
-                                    </div>
-                                )}
-                                {(!note.platform || String(note.platform || '').toLowerCase() === 'general' || !['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa', 'dsa'].includes(String(note.platform || '').toLowerCase())) && (
-                                    <div style={{
-                                        flexShrink: 0,
-                                        width: 14,
-                                        height: 14,
-                                        borderRadius: 3,
-                                        background: 'hsla(243, 75%, 59%, 0.1)',
-                                        color: '#4f46e5',
+                        (() => {
+                            const badge = getPlatformBadge(note.platform);
+                            return (
+                                <div
+                                    key={note.id}
+                                    onClick={() => {
+                                        setSelectedNoteId(note.id);
+                                        setIsEditing(false);
+                                    }}
+                                    style={{
+                                        padding: '0.6rem 0.85rem',
+                                        borderBottom: '1px solid var(--border-subtle)',
+                                        cursor: 'pointer',
+                                        background: selectedNoteId === note.id
+                                            ? 'var(--accent-glow)'
+                                            : (note.priority === 'high' ? 'hsla(0, 84%, 60%, 0.03)' : note.priority === 'medium' ? 'hsla(38, 92%, 50%, 0.03)' : 'transparent'),
+                                        borderLeft: selectedNoteId === note.id
+                                            ? '3px solid hsl(var(--primary))'
+                                            : (note.priority === 'high' ? '3px solid #ef4444' : note.priority === 'medium' ? '3px solid #f59e0b' : '3px solid transparent'),
                                         display: 'flex',
+                                        justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        <Globe size={9} strokeWidth={3} />
-                                    </div>
-                                )}
+                                        transition: SAFE_ITEM_TRANSITION,
+                                        gap: '0.5rem'
+                                    }}
+                                    className="note-item-hover"
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flex: 1, overflow: 'hidden' }}>
+                                        {badge && <div style={badge.style}>{badge.icon ?? badge.label}</div>}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', overflow: 'hidden', flex: 1 }}>
                                     <span style={{
                                         fontWeight: selectedNoteId === note.id ? 600 : 400,
@@ -514,7 +601,9 @@ export default function GlobalNotesPage() {
                                     {new Date(note.updated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                 </span>
                             </div>
-                        </div>
+                                </div>
+                            );
+                        })()
                     ))}
                     {filteredNotes.length === 0 && (
                         <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
@@ -556,7 +645,7 @@ export default function GlobalNotesPage() {
                             zIndex: 10
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <ToolbarGroup compact style={{ marginRight: '0.5rem', background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}>
+                                <ToolbarGroup compact style={NOTE_TOOLBAR_GROUP_STYLE}>
                                     <SafeButton
                                         onClick={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
                                         className={`hero-btn-ghost ${isLeftSidebarCollapsed ? 'text-primary' : ''}`}
@@ -607,25 +696,17 @@ export default function GlobalNotesPage() {
                                     </>
                                 ) : (
                                     <>
-                                        <SafeButton
-                                            onClick={handleCopyToClipboard}
-                                            className="hero-btn-ghost"
-                                            title="Copy to Clipboard"
-                                        >
-                                            <Copy size={18} />
-                                        </SafeButton>
-                                        <SafeButton onClick={() => togglePinMutation.mutate(activeNote)} className="hero-btn-ghost" title={activeNote.is_pinned ? "Unpin" : "Pin"}>
-                                            <Pin size={18} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />
-                                        </SafeButton>
-                                        <SafeButton
-                                            onClick={() => handleDeleteNote(activeNote.id)}
-                                            className={`hero-btn-ghost ${confirmingDeleteNote ? 'bg-destructive text-white' : 'text-destructive'}`}
-                                            title={confirmingDeleteNote ? "Confirm Delete" : "Delete"}
-                                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                                        >
-                                            <Trash2 size={18} />
-                                            {confirmingDeleteNote && <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Confirm?</span>}
-                                        </SafeButton>
+                                        {toolbarActions.map((action) => (
+                                            <SafeButton
+                                                key={action.key}
+                                                onClick={action.onClick}
+                                                className={action.className || 'hero-btn-ghost'}
+                                                title={action.title}
+                                                style={action.style}
+                                            >
+                                                {action.content}
+                                            </SafeButton>
+                                        ))}
                                         <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
                                         <SafeButton
                                             onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
@@ -677,13 +758,11 @@ export default function GlobalNotesPage() {
                                                             onChange={e => setEditPlatform(e.target.value)}
                                                             style={{ padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-subtle)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.8rem', outline: 'none' }}
                                                         >
-                                                            <option value="General">General</option>
-                                                            <option value="RSA">RSA</option>
-                                                            <option value="DSA">DSA</option>
-                                                            <option value="System">System</option>
-                                                            <option value="Klook">Klook</option>
-                                                            <option value="Trip">Trip</option>
-                                                            <option value="Traveloka">TVLK</option>
+                                                            {NOTE_META_OPTIONS.platforms.map((option) => (
+                                                                <option key={option.value} value={option.value}>
+                                                                    {option.label}
+                                                                </option>
+                                                            ))}
                                                         </select>
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -702,9 +781,11 @@ export default function GlobalNotesPage() {
                                                                 fontSize: '0.8rem', outline: 'none', fontWeight: 600
                                                             }}
                                                         >
-                                                            <option value="normal">Normal</option>
-                                                            <option value="medium">Medium</option>
-                                                            <option value="high">High</option>
+                                                            {NOTE_META_OPTIONS.priorities.map((option) => (
+                                                                <option key={option.value} value={option.value}>
+                                                                    {option.label}
+                                                                </option>
+                                                            ))}
                                                         </select>
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>

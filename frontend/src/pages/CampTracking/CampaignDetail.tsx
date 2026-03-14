@@ -26,6 +26,59 @@ import CampaignHistory from '../../components/campaign/CampaignHistory';
 import CampaignReminders from '../../components/campaign/CampaignReminders';
 import AddReminderModal from '../../components/campaign/AddReminderModal';
 import EditCampaignModal from '../../components/campaign/EditCampaignModal';
+import { SafeButton, SectionHeader, SurfaceCard } from '../../components/common/ui';
+
+const TOP_BAR_STYLE = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    marginTop: '0.5rem',
+} as const;
+
+const TOP_ACTIONS_STYLE = {
+    display: 'flex',
+    gap: '0.75rem',
+} as const;
+
+const HEADER_CARD_STYLE = {
+    borderLeftWidth: '4px',
+    marginBottom: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+} as const;
+
+const DETAIL_GRID_STYLE = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(12, 1fr)',
+    gap: '1.5rem',
+    alignItems: 'stretch',
+} as const;
+
+const INFO_COLUMN_STYLE = {
+    gridColumn: 'span 5',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+} as const;
+
+const UNIFIED_INFO_CARD_STYLE = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.75rem',
+} as const;
+
+const SIDE_PANEL_CARD_STYLE = {
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+} as const;
+
+const SECTION_ICON_STYLE = {
+    padding: '0.5rem',
+    borderRadius: '10px',
+} as const;
 
 export default function CampaignDetail() {
     const { campaignId } = useParams<{ campaignId: string }>();
@@ -66,7 +119,23 @@ export default function CampaignDetail() {
     // Use expanded platform or find in fetched platforms
     const platform = campaign.expand?.platform || platforms.find(p => p.id === campaign.platform);
     const platformColor = platform?.color || 'var(--accent)';
-
+    const campaignMetrics = [
+        {
+            icon: Calendar,
+            label: 'Started',
+            value: formatDate(campaign.created_date),
+        },
+        {
+            icon: DollarSign,
+            label: 'Budget',
+            value: `$${campaign.max_daily_budget?.toLocaleString()}`,
+        },
+        {
+            icon: Tag,
+            label: 'Target CPC',
+            value: `$${campaign.cpc?.toFixed(0)}`,
+        },
+    ];
 
     const handleDelete = async () => {
         if (!campaignId) return;
@@ -86,53 +155,49 @@ export default function CampaignDetail() {
     return (
         <div className="page-container">
             {/* Top Navigation Bar / Breadcrumb */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
-                <button
+            <div style={TOP_BAR_STYLE}>
+                <SafeButton
                     onClick={() => navigate(returnPath)}
                     className="hero-btn hero-btn-ghost"
                     style={{ padding: '0.4rem 0.75rem', marginLeft: '-0.75rem' }}
                 >
                     <ChevronLeft size={18} />
                     <span>Back</span>
-                </button>
+                </SafeButton>
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <button
+                <div style={TOP_ACTIONS_STYLE}>
+                    <SafeButton
                         onClick={() => setIsReminderModalOpen(true)}
                         className="hero-btn hero-btn-secondary"
                         style={{ borderStyle: 'dashed' }}
                     >
                         <Bell size={16} />
                         Add Checkpoint
-                    </button>
-                    <button
+                    </SafeButton>
+                    <SafeButton
                         className="hero-btn hero-btn-primary"
                         onClick={() => setIsEditing(true)}
                     >
                         <Edit3 size={16} />
                         Edit Campaign
-                    </button>
-                    <button
+                    </SafeButton>
+                    <SafeButton
                         className="hero-btn hero-btn-danger"
                         onClick={handleDelete}
                         style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
                     >
                         <Trash2 size={16} />
                         Delete
-                    </button>
+                    </SafeButton>
                 </div>
             </div>
 
             {/* Campaign Header Card - More Compact & Premium */}
-            <div
-                className="hero-card"
+            <SurfaceCard
                 style={{
-                    borderLeft: `4px solid ${platformColor}`,
-                    marginBottom: '1.5rem',
+                    ...HEADER_CARD_STYLE,
+                    borderLeftColor: platformColor,
                     padding: '1.25rem 1.5rem',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '1rem'
                 }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -167,43 +232,30 @@ export default function CampaignDetail() {
                     </div>
                 </div>
 
-                <div style={{
-                    display: 'flex',
-                    gap: '2rem',
-                    paddingTop: '1rem',
-                    borderTop: '1px solid var(--border-subtle)',
-                    color: 'var(--text-dim)',
-                    fontSize: '0.85rem'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Calendar size={14} className="text-primary" />
-                        <span>Started <strong>{formatDate(campaign.created_date)}</strong></span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <DollarSign size={14} className="text-primary" />
-                        <span>Budget <strong>${campaign.max_daily_budget?.toLocaleString()}</strong></span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Tag size={14} className="text-primary" />
-                        <span>Target CPC <strong>${campaign.cpc?.toFixed(0)}</strong></span>
-                    </div>
+                <div style={{ display: 'flex', gap: '2rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
+                    {campaignMetrics.map((metric) => {
+                        const Icon = metric.icon;
+                        return (
+                            <div key={metric.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Icon size={14} className="text-primary" />
+                                <span>{metric.label} <strong>{metric.value}</strong></span>
+                            </div>
+                        );
+                    })}
                 </div>
-            </div>
+            </SurfaceCard>
 
 
             {/* Main Content Grid */}
             <div className="animate-fade">
                 <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(12, 1fr)',
-                    gap: '1.5rem',
-                    alignItems: 'stretch'
+                    ...DETAIL_GRID_STYLE
                 }}>
                     {/* Full Info & Config Column */}
-                    <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div style={INFO_COLUMN_STYLE}>
 
                         {/* Unified Info Card */}
-                        <div className="hero-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+                        <SurfaceCard style={UNIFIED_INFO_CARD_STYLE}>
 
                             {/* Header: Identity & Platform */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
@@ -372,63 +424,70 @@ export default function CampaignDetail() {
                                     </div>
                                 </div>
                             )}
-                        </div>
+                        </SurfaceCard>
                     </div>
 
                     {/* Audit Log Column (Center) */}
                     <div style={{ gridColumn: 'span 4' }}>
-                        <div className="hero-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-                                <div style={{ padding: '0.5rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
-                                    <History size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="hero-section-title" style={{ fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: 0 }}>Auto Log</h3>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>Recent system-detected changes</p>
-                                </div>
-                            </div>
+                        <SurfaceCard style={SIDE_PANEL_CARD_STYLE}>
+                            <SectionHeader
+                                style={{ marginBottom: '1.5rem' }}
+                                title={<span className="hero-section-title" style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>Auto Log</span>}
+                                subtitle="Recent system-detected changes"
+                                titleStyle={{ marginBottom: 0 }}
+                                eyebrow={
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', color: 'hsl(var(--primary))' }}>
+                                        <span style={{ ...SECTION_ICON_STYLE, background: 'var(--accent-glow)' }}>
+                                            <History size={20} />
+                                        </span>
+                                    </span>
+                                }
+                            />
                             <div style={{ flex: 1, overflowY: 'auto' }}>
                                 {campaignId && <CampaignHistory campaignId={campaignId} />}
                             </div>
-                        </div>
+                        </SurfaceCard>
                     </div>
 
                     {/* Reminders Column (Right) */}
                     <div style={{ gridColumn: 'span 3' }}>
-                        <div className="hero-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                    <div style={{ padding: '0.5rem', background: 'hsla(var(--primary) / 0.1)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
-                                        <Bell size={20} />
-                                    </div>
-                                    <div>
-                                        <h3 className="hero-section-title" style={{ fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: 0 }}>Active Checkpoints</h3>
-                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>Performance monitors & actions</p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => setIsReminderModalOpen(true)}
-                                    className="hero-btn-ghost"
-                                    style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
-                                >
-                                    <Plus size={18} />
-                                </button>
-                            </div>
-
+                        <SurfaceCard style={SIDE_PANEL_CARD_STYLE}>
+                            <SectionHeader
+                                style={{ marginBottom: '1.5rem' }}
+                                title={<span className="hero-section-title" style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>Active Checkpoints</span>}
+                                subtitle="Performance monitors & actions"
+                                titleStyle={{ marginBottom: 0 }}
+                                eyebrow={
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', color: 'hsl(var(--primary))' }}>
+                                        <span style={{ ...SECTION_ICON_STYLE, background: 'hsla(var(--primary) / 0.1)' }}>
+                                            <Bell size={20} />
+                                        </span>
+                                    </span>
+                                }
+                                actions={
+                                    <SafeButton
+                                        onClick={() => setIsReminderModalOpen(true)}
+                                        className="hero-btn-ghost"
+                                        style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
+                                    >
+                                        <Plus size={18} />
+                                    </SafeButton>
+                                }
+                            />
                             <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1.5rem' }}>
                                 {campaignId && <CampaignReminders campaignId={campaignId} compact={true} />}
                             </div>
 
                             <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-                                <button
+                                <SafeButton
                                     className="hero-btn hero-btn-secondary"
                                     style={{ width: '100%', justifyContent: 'center', gap: '0.75rem', padding: '0.85rem', fontSize: '0.85rem' }}
                                 >
                                     <ExternalLink size={16} />
                                     Access Platform Manager
-                                </button>
+                                </SafeButton>
                             </div>
-                        </div>
+                        </SurfaceCard>
                     </div>
                 </div>
             </div>

@@ -39,6 +39,88 @@ const VIEW_MODES: Array<{ id: OverviewMode; label: string; icon: typeof LayoutGr
     { id: 'compact', label: 'Compact', icon: LayoutGrid },
 ];
 
+const PAGE_HEADER_STYLE = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2.5rem',
+    marginTop: '1rem',
+    padding: '0 0.5rem',
+} as const;
+
+const FILTER_CLUSTER_STYLE = {
+    marginBottom: '2rem',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'flex-end',
+    gap: '1rem',
+} as const;
+
+const FILTER_CARD_STYLE = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '1rem',
+    borderRadius: '1.25rem',
+    boxShadow: 'var(--shadow-subtle)',
+} as const;
+
+const VIEW_CONTROL_CARD_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    borderRadius: '1.1rem',
+    boxShadow: 'var(--shadow-subtle)',
+} as const;
+
+const STATUS_CARD_STYLE = {
+    marginBottom: '1.5rem',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '0.6rem',
+    border: '1px solid hsla(var(--primary) / 0.1)',
+    boxShadow: 'var(--shadow-glass)',
+    borderRadius: '1.25rem',
+} as const;
+
+const PRIORITY_OPTIONS = [
+    { value: 'all', label: 'Any' },
+    { value: 'normal', label: 'Normal' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'critical', label: 'Critical' },
+] as const;
+
+const REMINDER_CHIP_CONFIG = {
+    overdue: {
+        activeBackground: '#ef4444',
+        inactiveBackground: 'rgba(239, 68, 68, 0.05)',
+        activeBorder: '#ef4444',
+        inactiveBorder: 'rgba(239, 68, 68, 0.12)',
+        activeColor: '#fff',
+        inactiveColor: '#ef4444',
+        activeShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
+    },
+    today: {
+        activeBackground: '#f59e0b',
+        inactiveBackground: 'rgba(245, 158, 11, 0.05)',
+        activeBorder: '#f59e0b',
+        inactiveBorder: 'rgba(245, 158, 11, 0.12)',
+        activeColor: '#fff',
+        inactiveColor: '#f59e0b',
+        activeShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
+    },
+    upcoming: {
+        activeBackground: 'hsl(var(--primary))',
+        inactiveBackground: 'var(--bg-main)',
+        activeBorder: 'hsl(var(--primary))',
+        inactiveBorder: 'var(--border-subtle)',
+        activeColor: '#fff',
+        inactiveColor: 'var(--text-dim)',
+        activeShadow: '0 0 15px hsla(var(--primary) / 0.4)',
+    },
+} as const;
+
 
 const PRIORITY_RANK: Record<string, number> = {
     critical: 0,
@@ -369,6 +451,11 @@ export default function CampOverview() {
         { id: 'all', label: 'All', active: filterShowAll, toggle: setToggleShowAll },
         { id: 'meta', label: 'Metadata', active: filterMetadata, toggle: setToggleMetadata }
     ] as const;
+    const reminderChipConfig = {
+        overdue: REMINDER_CHIP_CONFIG.overdue,
+        today: REMINDER_CHIP_CONFIG.today,
+        upcoming: REMINDER_CHIP_CONFIG.upcoming,
+    };
 
     const sortCampaignsByReminder = (items: EnrichedCampaign[]) =>
         [...items].sort((a, b) => {
@@ -432,14 +519,7 @@ export default function CampOverview() {
                 ${createSafeInteractionScopeCss('.camp-overview-page', [...SAFE_BUTTON_SELECTORS, ...SAFE_CARD_SELECTORS])}
             `}</style>
             {/* Header Area */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '2.5rem',
-                marginTop: '1rem',
-                padding: '0 0.5rem'
-            }}>
+            <div style={PAGE_HEADER_STYLE}>
                 <div>
                     <h1 style={{
                         fontSize: 'var(--text-3xl)',
@@ -501,17 +581,11 @@ export default function CampOverview() {
                 </div>
             </div>
             {/* Filters Cluster */}
-            <div style={{ marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '1rem' }}>
+            <div style={FILTER_CLUSTER_STYLE}>
                 <SurfaceCard
                     variant="inset"
                     padding="0.85rem"
-                    style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '1rem',
-                        borderRadius: '1.25rem',
-                        boxShadow: 'var(--shadow-subtle)',
-                    }}
+                    style={FILTER_CARD_STYLE}
                 >
                     <div className="filter-group">
                         <label>Search Camp</label>
@@ -552,11 +626,11 @@ export default function CampOverview() {
                                 fontWeight: filterPriority !== 'all' && filterPriority !== 'normal' ? 700 : 500
                             }}
                         >
-                            <option value="all">Any</option>
-                            <option value="normal">Normal</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                            <option value="critical">Critical</option>
+                            {PRIORITY_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </SurfaceCard>
@@ -564,13 +638,7 @@ export default function CampOverview() {
                 <SurfaceCard
                     variant="inset"
                     padding="0.5rem 0.85rem"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        borderRadius: '1.1rem',
-                        boxShadow: 'var(--shadow-subtle)',
-                    }}
+                    style={VIEW_CONTROL_CARD_STYLE}
                 >
                     <div className="filter-group">
                         <label style={{ fontSize: '0.65rem', marginBottom: '0.15rem' }}>View Mode</label>
@@ -667,16 +735,7 @@ export default function CampOverview() {
             {/* Status Dashboard Row */}
             <SurfaceCard
                 padding="0.65rem 1.25rem"
-                style={{
-                    marginBottom: '1.5rem',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    border: '1px solid hsla(var(--primary) / 0.1)',
-                    boxShadow: 'var(--shadow-glass)',
-                    borderRadius: '1.25rem'
-                }}
+                style={STATUS_CARD_STYLE}
             >
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center' }}>
                     {/* Review Rate */}
@@ -738,13 +797,13 @@ export default function CampOverview() {
                     <FilterChip
                         active={reminderQuickFilter === 'overdue'}
                         onClick={() => setReminderQuickFilter(reminderQuickFilter === 'overdue' ? 'all' : 'overdue')}
-                        activeBackground="#ef4444"
-                        inactiveBackground="rgba(239, 68, 68, 0.05)"
-                        activeBorder="#ef4444"
-                        inactiveBorder="rgba(239, 68, 68, 0.12)"
-                        activeColor="#fff"
-                        inactiveColor="#ef4444"
-                        activeShadow="0 0 15px rgba(239, 68, 68, 0.4)"
+                        activeBackground={reminderChipConfig.overdue.activeBackground}
+                        inactiveBackground={reminderChipConfig.overdue.inactiveBackground}
+                        activeBorder={reminderChipConfig.overdue.activeBorder}
+                        inactiveBorder={reminderChipConfig.overdue.inactiveBorder}
+                        activeColor={reminderChipConfig.overdue.activeColor}
+                        inactiveColor={reminderChipConfig.overdue.inactiveColor}
+                        activeShadow={reminderChipConfig.overdue.activeShadow}
                         dimmed={reminderQuickFilter !== 'all' && reminderQuickFilter !== 'overdue'}
                         indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'overdue' ? '#fff' : '#ef4444', boxShadow: reminderQuickFilter === 'overdue' ? '0 0 8px #fff' : '0 0 8px #ef4444' }} />}
                     >
@@ -754,13 +813,13 @@ export default function CampOverview() {
                     <FilterChip
                         active={reminderQuickFilter === 'today'}
                         onClick={() => setReminderQuickFilter(reminderQuickFilter === 'today' ? 'all' : 'today')}
-                        activeBackground="#f59e0b"
-                        inactiveBackground="rgba(245, 158, 11, 0.05)"
-                        activeBorder="#f59e0b"
-                        inactiveBorder="rgba(245, 158, 11, 0.12)"
-                        activeColor="#fff"
-                        inactiveColor="#f59e0b"
-                        activeShadow="0 0 15px rgba(245, 158, 11, 0.4)"
+                        activeBackground={reminderChipConfig.today.activeBackground}
+                        inactiveBackground={reminderChipConfig.today.inactiveBackground}
+                        activeBorder={reminderChipConfig.today.activeBorder}
+                        inactiveBorder={reminderChipConfig.today.inactiveBorder}
+                        activeColor={reminderChipConfig.today.activeColor}
+                        inactiveColor={reminderChipConfig.today.inactiveColor}
+                        activeShadow={reminderChipConfig.today.activeShadow}
                         dimmed={reminderQuickFilter !== 'all' && reminderQuickFilter !== 'today'}
                         indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'today' ? '#fff' : '#f59e0b', boxShadow: reminderQuickFilter === 'today' ? '0 0 8px #fff' : '0 0 8px #f59e0b' }} />}
                     >
@@ -770,13 +829,13 @@ export default function CampOverview() {
                     <FilterChip
                         active={reminderQuickFilter === 'upcoming'}
                         onClick={() => setReminderQuickFilter(reminderQuickFilter === 'upcoming' ? 'all' : 'upcoming')}
-                        activeBackground="hsl(var(--primary))"
-                        inactiveBackground="var(--bg-main)"
-                        activeBorder="hsl(var(--primary))"
-                        inactiveBorder="var(--border-subtle)"
-                        activeColor="#fff"
-                        inactiveColor="var(--text-dim)"
-                        activeShadow="0 0 15px hsla(var(--primary) / 0.4)"
+                        activeBackground={reminderChipConfig.upcoming.activeBackground}
+                        inactiveBackground={reminderChipConfig.upcoming.inactiveBackground}
+                        activeBorder={reminderChipConfig.upcoming.activeBorder}
+                        inactiveBorder={reminderChipConfig.upcoming.inactiveBorder}
+                        activeColor={reminderChipConfig.upcoming.activeColor}
+                        inactiveColor={reminderChipConfig.upcoming.inactiveColor}
+                        activeShadow={reminderChipConfig.upcoming.activeShadow}
                         dimmed={reminderQuickFilter !== 'all' && reminderQuickFilter !== 'upcoming'}
                         indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'upcoming' ? '#fff' : 'var(--text-muted)', boxShadow: reminderQuickFilter === 'upcoming' ? '0 0 8px #fff' : 'none' }} />}
                     >

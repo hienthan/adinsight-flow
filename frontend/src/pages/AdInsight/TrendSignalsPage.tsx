@@ -37,6 +37,45 @@ type PreparedSignal = {
     searchable: string;
 };
 
+const TREND_RADAR_HEADER_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    borderRadius: '12px',
+    boxShadow: 'var(--shadow-soft)',
+} as const;
+
+const FILTER_SECTION_STYLE = {
+    marginBottom: '1.5rem',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'flex-end',
+    gap: '0.9rem',
+} as const;
+
+const FILTER_CARD_STYLE = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.75rem',
+    borderRadius: '0.85rem',
+} as const;
+
+const STATUS_VIEW_ITEMS = [
+    { id: "section-peak", label: "At Peak" },
+    { id: "section-active", label: "Active" },
+    { id: "section-upcoming", label: "Pre-alert" },
+] as const;
+
+const MARKETS = ["HK", "TW", "ID", "SG", "MY", "AU"] as const;
+
+const HORIZON_OPTIONS = [
+    { value: "TODAY", label: "Today" },
+    { value: "7", label: "Next 7 days" },
+    { value: "14", label: "Next 14 days" },
+    { value: "30", label: "Next 30 days" },
+    { value: "ALL", label: "All time" },
+] as const;
+
 const PRODUCT_TYPE_LABELS: Record<string, string> = {
     guide_content: "Guide",
     entry_pretrip: "Entry",
@@ -164,6 +203,11 @@ export default function TrendRadarPage() {
     const peak = prepared.filter((x) => x.state === "PEAK");
     const active = prepared.filter((x) => x.state === "ACTIVE");
     const upcoming = prepared.filter((x) => x.state === "IN_PREALERT" || x.state === "UPCOMING_PREALERT");
+    const statusViewItems = [
+        { ...STATUS_VIEW_ITEMS[0], count: peak.length },
+        { ...STATUS_VIEW_ITEMS[1], count: active.length },
+        { ...STATUS_VIEW_ITEMS[2], count: upcoming.length },
+    ];
 
     const activeToShow = (q.trim() || showMoreActive) ? active : active.slice(0, 8);
     const upcomingToShow = (q.trim() || showMoreUpcoming) ? upcoming : upcoming.slice(0, 12);
@@ -220,13 +264,7 @@ export default function TrendRadarPage() {
             <SurfaceCard
                 variant="soft"
                 padding="0.75rem 1.5rem"
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: '1.5rem',
-                    borderRadius: '12px',
-                    boxShadow: 'var(--shadow-soft)'
-                }}
+                style={TREND_RADAR_HEADER_STYLE}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <div
@@ -251,11 +289,11 @@ export default function TrendRadarPage() {
             </SurfaceCard>
 
             {/* Zone 2: Filter Controls (grouped like CampOverview) */}
-            <section style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '0.9rem' }}>
+            <section style={FILTER_SECTION_STYLE}>
                 <SurfaceCard
                     variant="inset"
                     padding="0.65rem"
-                    style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', borderRadius: '0.85rem' }}
+                    style={FILTER_CARD_STYLE}
                 >
                     <div className="filter-group">
                         <label>Search Trends</label>
@@ -282,7 +320,7 @@ export default function TrendRadarPage() {
                             style={{ minWidth: '150px' }}
                         >
                             <option value="ALL">All Markets</option>
-                            {["HK", "TW", "ID", "SG", "MY", "AU"].map(m => <option key={m} value={m}>{m}</option>)}
+                            {MARKETS.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
                     </div>
 
@@ -296,11 +334,11 @@ export default function TrendRadarPage() {
                             }}
                             style={{ minWidth: '160px' }}
                         >
-                            <option value="TODAY">Today</option>
-                            <option value="7">Next 7 days</option>
-                            <option value="14">Next 14 days</option>
-                            <option value="30">Next 30 days</option>
-                            <option value="ALL">All time</option>
+                            {HORIZON_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -349,7 +387,7 @@ export default function TrendRadarPage() {
                 <SurfaceCard
                     variant="inset"
                     padding="0.65rem"
-                    style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', borderRadius: '0.85rem' }}
+                    style={FILTER_CARD_STYLE}
                 >
                     <div className="filter-group">
                         <label>Status View</label>
@@ -365,11 +403,7 @@ export default function TrendRadarPage() {
                                 gap: '0.25rem',
                             }}
                         >
-                            {[
-                                { id: "section-peak", label: "At Peak", count: peak.length },
-                                { id: "section-active", label: "Active", count: active.length },
-                                { id: "section-upcoming", label: "Pre-alert", count: upcoming.length },
-                            ].map((item) => {
+                            {statusViewItems.map((item) => {
                                 const isActive = activeSection === item.id;
                                 return (
                                     <SafeButton

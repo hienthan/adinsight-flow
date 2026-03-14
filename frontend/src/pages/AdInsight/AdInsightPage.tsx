@@ -21,6 +21,37 @@ import { SafeButton } from '../../components/common/ui/SafeButton';
 import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
 
+const HEADER_CARD_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '1.5rem',
+} as const;
+
+const RECORD_COUNT_STYLE = {
+    textAlign: 'center',
+    flex: 1,
+} as const;
+
+const HEADER_ACTIONS_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.6rem',
+    flex: 1,
+    justifyContent: 'flex-end',
+    minHeight: '36px',
+} as const;
+
+const PAGINATION_CARD_STYLE = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '1.5rem',
+    gap: '2rem',
+} as const;
+
+const PAGE_SIZE_OPTIONS = [50, 100, 200, 500] as const;
+
 export default function AdInsightPage() {
     const { platform } = useParams();
     const platformId = (platform === 'traveloka' ? 'traveloka' : 'klook');
@@ -271,12 +302,7 @@ export default function AdInsightPage() {
             <SurfaceCard
                 variant="soft"
                 padding="1rem 1.5rem"
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '1.5rem',
-                }}
+                style={HEADER_CARD_STYLE}
             >
                 {/* Left: Platform Switcher & View Toggle */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
@@ -346,7 +372,7 @@ export default function AdInsightPage() {
                 </div>
 
                 {/* Center: Record Count */}
-                <div style={{ textAlign: 'center', flex: 1 }}>
+                <div style={RECORD_COUNT_STYLE}>
                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))', lineHeight: 1 }}>
                         {totalCount.toLocaleString()}
                     </div>
@@ -356,7 +382,7 @@ export default function AdInsightPage() {
                 </div>
 
                 {/* Right: Actions (Only shown in list view) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, justifyContent: 'flex-end', minHeight: '36px' }}>
+                <div style={HEADER_ACTIONS_STYLE}>
                     {selectedView === 'list' && (
                         <>
                             <SafeButton
@@ -416,13 +442,7 @@ export default function AdInsightPage() {
                 {/* Pagination */}
                 <SurfaceCard
                     padding="1.25rem"
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: '1.5rem',
-                        gap: '2rem'
-                    }}
+                    style={PAGINATION_CARD_STYLE}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Per page:</span>
@@ -438,10 +458,11 @@ export default function AdInsightPage() {
                                 color: 'var(--text-main)'
                             }}
                         >
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                            <option value="200">200</option>
-                            <option value="500">500</option>
+                            {PAGE_SIZE_OPTIONS.map((size) => (
+                                <option key={size} value={size}>
+                                    {size}
+                                </option>
+                            ))}
                         </select>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
                             Showing {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, totalCount)} of {totalCount.toLocaleString()}

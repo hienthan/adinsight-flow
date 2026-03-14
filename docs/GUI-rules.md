@@ -333,6 +333,27 @@ Rule:
 - if a section already has stable behavior, only refactor its UI shell and repeated control markup
 - do not mix section refactor with data-flow rewrites in the same batch
 
+### Phase 4 guidance: page-level cleanup
+
+After a page has passed Phase 3:
+
+- reduce repeated inline style literals by extracting page-local constants
+- extract repeated presentational mapping logic into page-local helpers
+- keep these helpers in the same page file unless they are clearly reusable across multiple pages
+
+Good Phase 4 targets:
+
+- repeated filter option arrays
+- repeated segmented-control item definitions
+- repeated badge rendering logic
+- repeated layout style objects used in one page
+
+Rule:
+
+- page cleanup should reduce JSX density, not redesign the page
+- do not promote page-specific styles into global primitives unless at least two pages genuinely share the same pattern
+- prefer local constants and local helper functions before creating a new shared abstraction
+
 ### Modal shell rule
 
 When refactoring a modal:
@@ -384,6 +405,8 @@ The next safe cleanup steps should be:
 - replace more icon/tool buttons with `SafeButton`
 - expand `ToolbarGroup` and `SectionHeader` usage where title/action rows still repeat
 - reduce inline style volume in large pages
+- use page-local config arrays for repeated tabs, field groups, and summary metrics before introducing new shared abstractions
+- keep page cleanup focused on presentational repetition; do not rewrite chart/data derivation logic just to make JSX shorter
 - lazy-load additional heavy feature areas and modals when justified by bundle analysis
 
 ## Code-Splitting Rules

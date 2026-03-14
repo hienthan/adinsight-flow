@@ -6,6 +6,42 @@ import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campaign';
 import CampaignCard from '../../components/campaign/CampaignCard';
 import EditCampaignModal from '../../components/campaign/EditCampaignModal';
+import { SafeButton, SurfaceCard } from '../../components/common/ui';
+
+const PAGE_HEADER_STYLE = {
+    marginBottom: '1.5rem',
+} as const;
+
+const HEADER_ROW_STYLE = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+} as const;
+
+const LOADING_STATE_STYLE = {
+    padding: '10rem 0',
+    textAlign: 'center',
+    color: 'var(--text-dim)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '1.5rem',
+} as const;
+
+const EMPTY_STATE_STYLE = {
+    padding: '6rem 4rem',
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '1.5rem',
+} as const;
+
+const CAMPAIGN_GRID_STYLE = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: '1.5rem',
+} as const;
 
 export default function PlatformCampaigns() {
     const { platformId } = useParams();
@@ -74,19 +110,21 @@ export default function PlatformCampaigns() {
         setIsEditModalOpen(true);
     };
 
+    const newCampaignPath = `/camp-tracking/new?platformId=${platformId}`;
+
     return (
         <div className="page-container">
             {/* Header */}
-            <div style={{ marginBottom: '1.5rem' }}>
-                <button
+            <div style={PAGE_HEADER_STYLE}>
+                <SafeButton
                     onClick={() => navigate('/camp-tracking')}
                     className="hero-btn hero-btn-ghost"
                     style={{ padding: '0.4rem 0.75rem', marginLeft: '-0.75rem', marginBottom: '1rem' }}
                 >
                     <ChevronLeft size={18} />
                     <span>Back to Tracking</span>
-                </button>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                </SafeButton>
+                <div style={HEADER_ROW_STYLE}>
                     <div>
                         <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: 'hsl(var(--primary))', letterSpacing: '-0.03em' }}>
                             {platform?.display_name || 'Platform Campaigns'}
@@ -95,31 +133,24 @@ export default function PlatformCampaigns() {
                             {campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''} total
                         </p>
                     </div>
-                    <button
+                    <SafeButton
                         className="hero-btn hero-btn-primary"
-                        onClick={() => navigate(`/camp-tracking/new?platformId=${platformId}`)}
+                        onClick={() => navigate(newCampaignPath)}
                     >
                         <Plus size={18} />
                         New Campaign
-                    </button>
+                    </SafeButton>
                 </div>
             </div>
 
             {/* Content */}
             {isLoading ? (
-                <div style={{ padding: '10rem 0', textAlign: 'center', color: 'var(--text-dim)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                <div style={LOADING_STATE_STYLE}>
                     <Loader2 size={40} className="animate-spin" style={{ color: 'hsl(var(--primary))' }} />
                     <div style={{ fontSize: '1.1rem', fontWeight: 600, letterSpacing: '-0.01em' }}>Loading optimized campaigns...</div>
                 </div>
             ) : campaigns.length === 0 ? (
-                <div className="hero-card" style={{
-                    padding: '6rem 4rem',
-                    textAlign: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '1.5rem'
-                }}>
+                <SurfaceCard style={EMPTY_STATE_STYLE}>
                     <div style={{ padding: '2rem', background: 'var(--accent-glow)', borderRadius: '50%', color: 'hsl(var(--primary))' }}>
                         <Plus size={48} />
                     </div>
@@ -129,20 +160,16 @@ export default function PlatformCampaigns() {
                             No campaigns have been created for this platform yet. Start optimization by creating your first one.
                         </p>
                     </div>
-                    <button
+                    <SafeButton
                         className="hero-btn hero-btn-primary"
                         style={{ padding: '1rem 2.5rem' }}
-                        onClick={() => navigate(`/camp-tracking/new?platformId=${platformId}`)}
+                        onClick={() => navigate(newCampaignPath)}
                     >
                         Create First Campaign
-                    </button>
-                </div>
+                    </SafeButton>
+                </SurfaceCard>
             ) : (
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', // More compact grid
-                    gap: '1.5rem',
-                }}>
+                <div style={CAMPAIGN_GRID_STYLE}>
                     {enrichedCampaigns.map((campaign) => (
                         <CampaignCard
                             key={campaign.id}

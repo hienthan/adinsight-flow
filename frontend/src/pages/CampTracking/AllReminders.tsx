@@ -4,6 +4,44 @@ import { Bell, ChevronDown, ChevronRight } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import ReminderItem from '../../components/tracking/ReminderItem';
+import { SurfaceCard } from '../../components/common/ui';
+
+const REMINDER_STATUS_TABS = [
+    { label: 'Pending', value: 'pending' },
+    { label: 'Completed', value: 'completed' },
+    { label: 'All', value: 'all' },
+] as const;
+
+const PAGE_HEADER_STYLE = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '1.5rem',
+} as const;
+
+const PAGE_STACK_STYLE = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.5rem',
+} as const;
+
+const SECTION_TOGGLE_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    cursor: 'pointer',
+    padding: '0.5rem',
+    borderRadius: '8px',
+    transition: 'background-color 0.2s ease',
+    userSelect: 'none',
+} as const;
+
+const GROUP_GRID_STYLE = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+    gap: '0.75rem',
+    padding: '0 0.5rem',
+} as const;
 
 export default function AllReminders() {
     const navigate = useNavigate();
@@ -108,7 +146,7 @@ export default function AllReminders() {
 
     return (
         <div className="page-container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+            <div style={PAGE_HEADER_STYLE}>
                 <div>
                     <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: platform?.color || 'hsl(var(--primary))', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
                         {platform ? `${platform.display_name} Checkpoints` : 'Reminders Dashboard'}
@@ -119,24 +157,15 @@ export default function AllReminders() {
                 </div>
 
                 <div className="hero-tabs">
-                    <button
-                        onClick={() => setFilterStatus('pending')}
-                        className={`hero-tab ${filterStatus === 'pending' ? 'active' : ''}`}
-                    >
-                        Pending
-                    </button>
-                    <button
-                        onClick={() => setFilterStatus('completed')}
-                        className={`hero-tab ${filterStatus === 'completed' ? 'active' : ''}`}
-                    >
-                        Completed
-                    </button>
-                    <button
-                        onClick={() => setFilterStatus('all')}
-                        className={`hero-tab ${filterStatus === 'all' ? 'active' : ''}`}
-                    >
-                        All
-                    </button>
+                    {REMINDER_STATUS_TABS.map((tab) => (
+                        <button
+                            key={tab.value}
+                            onClick={() => setFilterStatus(tab.value)}
+                            className={`hero-tab ${filterStatus === tab.value ? 'active' : ''}`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -160,13 +189,13 @@ export default function AllReminders() {
             </div>
 
             {groupedReminders.length === 0 ? (
-                <div className="hero-card" style={{ textAlign: 'center', padding: '5rem' }}>
+                <SurfaceCard style={{ textAlign: 'center', padding: '5rem' }}>
                     <Bell size={48} style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', opacity: 0.5 }} />
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>All caught up!</h3>
                     <p style={{ color: 'var(--text-dim)' }}>No pending checkpoints found for the selected filters.</p>
-                </div>
+                </SurfaceCard>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={PAGE_STACK_STYLE}>
                     {groupedReminders.map((group: any) => {
                         const isCollapsed = collapsedSections[group.platform.id];
                         return (
@@ -174,15 +203,8 @@ export default function AllReminders() {
                                 <div
                                     onClick={() => toggleSection(group.platform.id)}
                                     style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.75rem',
+                                        ...SECTION_TOGGLE_STYLE,
                                         marginBottom: isCollapsed ? '0' : '1.25rem',
-                                        cursor: 'pointer',
-                                        padding: '0.5rem',
-                                        borderRadius: '8px',
-                                        transition: 'all 0.2s',
-                                        userSelect: 'none'
                                     }}
                                     onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-overlay)'; }}
                                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
@@ -197,12 +219,7 @@ export default function AllReminders() {
                                 </div>
 
                                 {!isCollapsed && (
-                                    <div style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                                        gap: '0.75rem',
-                                        padding: '0 0.5rem'
-                                    }}>
+                                    <div style={GROUP_GRID_STYLE}>
                                         {group.items.map((reminder: any) => (
                                             <ReminderItem
                                                 key={reminder.id}

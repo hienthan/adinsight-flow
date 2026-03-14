@@ -30,6 +30,42 @@ const COLOR_PRESETS = [
     '#e11d48', // Crimson
 ];
 
+const PAGE_HEADER_STYLE = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2.5rem',
+    marginTop: '1rem',
+    padding: '0 0.5rem',
+} as const;
+
+const CONTENT_LAYOUT_STYLE = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '2rem',
+    alignItems: 'start',
+} as const;
+
+const FORM_LAYOUT_STYLE = {
+    width: '100%',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '1.5rem',
+} as const;
+
+const EMPTY_PLATFORM_FORM = {
+    id: '',
+    display_name: '',
+    platform_name: '',
+    color: COLOR_PRESETS[0],
+    metadata: ''
+};
+
+const PLATFORM_FORM_FIELDS = [
+    { name: 'display_name', label: 'Name', disabled: false },
+    { name: 'platform_name', label: 'Slug', disabled: true },
+] as const;
+
 export default function PlatformManagement() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -42,11 +78,7 @@ export default function PlatformManagement() {
 
     // Form state
     const [formData, setFormData] = useState({
-        id: '',
-        display_name: '',
-        platform_name: '',
-        color: COLOR_PRESETS[0],
-        metadata: ''
+        ...EMPTY_PLATFORM_FORM
     });
     const [isEditing, setIsEditing] = useState(false);
     const [viewMode, setViewMode] = useState(true);
@@ -138,7 +170,7 @@ export default function PlatformManagement() {
                 });
             }
         } else {
-            setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
+            setFormData({ ...EMPTY_PLATFORM_FORM });
             setIsEditing(false);
             setViewMode(true);
         }
@@ -218,7 +250,7 @@ export default function PlatformManagement() {
             await pb.collection('campaign_platforms').delete(id);
             setPlatforms(prev => prev.filter(p => p.id !== id));
             if (formData.id === id) {
-                setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
+                setFormData({ ...EMPTY_PLATFORM_FORM });
                 setIsEditing(false);
             }
             setSuccess(`Platform "${name}" deleted.`);
@@ -231,14 +263,7 @@ export default function PlatformManagement() {
     return (
         <div className="page-container" style={{ background: 'var(--bg-main)', minHeight: '100vh', padding: '1rem 2rem 4rem 2rem' }}>
             {/* Header Area */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '2.5rem',
-                marginTop: '1rem',
-                padding: '0 0.5rem'
-            }}>
+            <div style={PAGE_HEADER_STYLE}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                     <SafeButton
                         onClick={() => navigate('/camp-tracking')}
@@ -273,7 +298,7 @@ export default function PlatformManagement() {
                 <SafeButton
                     className="hero-btn hero-btn-primary"
                     onClick={() => {
-                        setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
+                        setFormData({ ...EMPTY_PLATFORM_FORM });
                         setIsEditing(false);
                         setViewMode(false);
                     }}
@@ -288,7 +313,7 @@ export default function PlatformManagement() {
                 </SafeButton>
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'start' }}>
+            <div style={CONTENT_LAYOUT_STYLE}>
                 {/* Sidebar: Platform List - Fixed width */}
                 <SurfaceCard className="no-lift" style={{
                     width: '320px',
@@ -371,7 +396,7 @@ export default function PlatformManagement() {
                     gap: '1.5rem',
                     alignItems: 'start'
                 }}>
-                    <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
+                    <form onSubmit={handleSubmit} style={FORM_LAYOUT_STYLE}>
 
                         {/* 1. Identity Card */}
                         <SurfaceCard className="no-lift" style={{
@@ -418,14 +443,22 @@ export default function PlatformManagement() {
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                <div className="filter-group">
-                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Name</label>
-                                    <input type="text" name="display_name" value={formData.display_name} onChange={handleInputChange} className="hero-input" style={{ width: '100%' }} />
-                                </div>
-                                <div className="filter-group">
-                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Slug</label>
-                                    <input type="text" name="platform_name" value={formData.platform_name} onChange={handleInputChange} disabled={isEditing} className="hero-input" style={{ width: '100%' }} />
-                                </div>
+                                {PLATFORM_FORM_FIELDS.map((field) => (
+                                    <div className="filter-group" key={field.name}>
+                                        <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                            {field.label}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name={field.name}
+                                            value={formData[field.name]}
+                                            onChange={handleInputChange}
+                                            disabled={field.name === 'platform_name' && isEditing}
+                                            className="hero-input"
+                                            style={{ width: '100%' }}
+                                        />
+                                    </div>
+                                ))}
                                 <div>
                                     <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Brand Color</label>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
