@@ -31,6 +31,7 @@ When refactoring a GUI section:
 - preserve the existing layout structure
 - preserve alignment, spacing hierarchy, and visual grouping
 - preserve responsive behavior
+- preserve the existing visual contract for the section, especially in modals and dense dashboard headers
 
 Do not replace markup with a primitive if that primitive changes flex growth, stacking, alignment, or spacing.
 
@@ -38,6 +39,14 @@ Rule:
 
 - refactor behavior and reuse first
 - redesign layout only when explicitly requested
+
+Visual contract includes:
+
+- border radius
+- shadow weight
+- shell/background layering
+- padding hierarchy
+- header and footer chrome
 
 ### 1. Do not use `transition: all`
 
@@ -163,6 +172,7 @@ Rule:
 
 - `SurfaceCard` must not impose flex direction or layout flow unless the caller explicitly asks for it
 - primitives that wrap legacy classes must reset layout-affecting defaults when needed
+- primitives should be layout-neutral and visually predictable before being used as drop-in replacements
 
 ## Current Shared Motion Helpers
 
@@ -278,6 +288,42 @@ When touching old GUI code:
 4. Replace duplicated chip logic with `FilterChip`.
 5. Replace repeated surface wrappers with `SurfaceCard` where appropriate.
 6. Only after reuse is in place, consider deeper visual cleanup.
+
+### Phase 2 guidance: leaf components first
+
+When refactoring the app incrementally:
+
+- prefer leaf components before page sections
+- prefer self-contained modals, cards, list items, and toolbar items before page wrappers
+- do not mix page layout refactor into a leaf-component cleanup task
+
+Good Phase 2 targets:
+
+- item cards
+- modal chrome
+- compact action rows
+- filter widgets
+- small reusable section blocks
+
+Avoid in Phase 2:
+
+- page grid restructuring
+- shell layout changes
+- route composition changes unless explicitly doing performance work
+
+### Modal shell rule
+
+When refactoring a modal:
+
+- use one primary visual shell only
+- do not stack an extra wrapper with its own background and shadow unless the old modal already used that pattern
+- preserve the previous overlay darkness unless redesign is requested
+- preserve radius, overflow clipping, header/body/footer spacing, and max-height behavior
+
+Common regression to avoid:
+
+- outer wrapper becomes square while inner surface is rounded
+- modal feels heavier because shell styling is duplicated
 
 ## Future Direction
 

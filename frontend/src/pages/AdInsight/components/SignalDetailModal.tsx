@@ -4,6 +4,7 @@ import { TrendSignal, SignalState, Destination } from "../types";
 import { formatDate } from "../utils";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { SafeButton, SurfaceCard } from "../../../components/common/ui";
 
 interface SignalDetailModalProps {
     isOpen: boolean;
@@ -57,20 +58,20 @@ export const SignalDetailModal = ({
             }}
             onClick={onClose}
         >
-            <div
-                className="hero-card animate-fade"
+            <SurfaceCard
+                className="animate-fade"
+                padding="0"
+                radius="1rem"
                 style={{
                     width: '100%',
                     maxWidth: '800px',
                     display: 'flex',
                     flexDirection: 'column',
-                    padding: '0',
                     background: 'var(--bg-content)',
                     maxHeight: '90vh',
                     overflowY: 'auto',
                     position: 'relative',
                     boxShadow: 'var(--shadow-medium)',
-                    borderRadius: '1rem',
                     pointerEvents: 'auto',
                     /* GPU hack removed */
                 }}
@@ -96,13 +97,13 @@ export const SignalDetailModal = ({
                         </div>
                     </div>
 
-                    <button
+                    <SafeButton
                         onClick={onClose}
                         className="hero-btn-ghost"
                         style={{ padding: '0.5rem', borderRadius: '50%' }}
                     >
                         <X size={20} />
-                    </button>
+                    </SafeButton>
                 </div>
 
                 {/* Content Body */}
@@ -189,7 +190,7 @@ export const SignalDetailModal = ({
                                         onValueChange={setNoteDraft}
                                         classNames={{
                                             input: "text-base font-medium p-6",
-                                            inputWrapper: "border border-(--border-subtle) hover:border-[hsl(var(--primary))] focus-within:!border-[hsl(var(--primary))] transition-all shadow-inner bg-(--bg-main) rounded-2xl"
+                                            inputWrapper: "border border-(--border-subtle) hover:border-[hsl(var(--primary))] focus-within:!border-[hsl(var(--primary))] transition-colors shadow-inner bg-(--bg-main) rounded-2xl"
                                         }}
                                         style={{ color: 'var(--text-main)' }}
                                     />
@@ -219,7 +220,7 @@ export const SignalDetailModal = ({
                         {!isSaving && <Save size={18} />}
                     </Button>
                 </div>
-            </div>
+            </SurfaceCard>
         </div>
     );
 

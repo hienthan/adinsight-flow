@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Trash2, Calendar, CheckCircle, AlertCircle, Send } from 'lucide-react';
 import { CampaignReminder } from '../../types/campaign';
 import { formatDate } from '../../lib/utils';
+import { SafeButton, SurfaceCard } from '../common/ui';
 
 interface ReminderItemProps {
     reminder: CampaignReminder;
@@ -34,10 +35,10 @@ export default function ReminderItem({
     const isOverdue = reminder.status === 'pending' && new Date(reminder.reminder_date) < new Date();
 
     return (
-        <div
-            className="hero-card animate-fade"
+        <SurfaceCard
+            className="animate-fade"
+            padding="0.45rem 0.65rem"
             style={{
-                padding: '0.45rem 0.65rem',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.25rem',
@@ -150,7 +151,7 @@ export default function ReminderItem({
                                     }
                                 }}
                             />
-                            <button
+                            <SafeButton
                                 className="hero-btn hero-btn-primary"
                                 style={{ padding: '0.2rem 0.6rem', height: 'auto' }}
                                 aria-label="Send notes"
@@ -160,21 +161,21 @@ export default function ReminderItem({
                                 }}
                             >
                                 <Send size={12} />
-                            </button>
+                            </SafeButton>
                         </div>
                     )}
                 </div>
 
                 {onDelete && (
-                    <button
+                    <SafeButton
                         onClick={() => { if (confirm('Remove this log entry?')) onDelete(reminder.id); }}
                         className="hero-btn-ghost text-destructive"
                         style={{ padding: '0.15rem', borderRadius: '4px', height: 'auto', flexShrink: 0 }}
                     >
                         <Trash2 size={12} />
-                    </button>
+                    </SafeButton>
                 )}
             </div>
-        </div>
+        </SurfaceCard>
     );
 }

@@ -5,6 +5,7 @@ import RichTextEditor from '../common/RichTextEditor';
 import { pb } from '../../lib/pocketbase';
 import { useQueryClient } from '@tanstack/react-query';
 import { normalizeHtmlForCompare } from '../../lib/noteHtml';
+import { SafeButton, SurfaceCard, SectionHeader } from '../common/ui';
 
 interface MetadataModalProps {
     isOpen: boolean;
@@ -76,8 +77,11 @@ export default function MetadataModal({
             }}
             onClick={onClose}
         >
-            <div
-                className="hero-card animate-fade"
+            <SurfaceCard
+                className="animate-fade"
+                padding="0.5rem 0.75rem"
+                radius="1rem"
+                onClick={e => e.stopPropagation()}
                 style={{
                     width: '100%',
                     maxWidth: '800px',
@@ -85,42 +89,42 @@ export default function MetadataModal({
                     minHeight: '350px',
                     display: 'flex',
                     flexDirection: 'column',
-                    background: 'var(--bg-content)',
-                    padding: '0.5rem 0.75rem',
                     boxShadow: 'var(--shadow-2xl)',
                     pointerEvents: 'auto',
-                    /* GPU hack removed */
+                    overflow: 'hidden',
                 }}
-                onClick={e => e.stopPropagation()}
             >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                    <h3 className="hero-section-title" style={{ marginBottom: 0, fontSize: '0.9rem' }}>{displayTitle}</h3>
-                    <button onClick={onClose} className="hero-btn hero-btn-ghost" style={{ padding: '0.1rem' }}>
-                        <X size={18} />
-                    </button>
-                </div>
-
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginBottom: '0.5rem', minHeight: '0' }}>
-                    <RichTextEditor
-                        value={content}
-                        onChange={setContent}
-                        placeholder="Detailed metadata support..."
-                        style={{ flex: 1, display: 'flex', flexDirection: 'column', border: 'none', borderRadius: 0 }}
-                        contentStyle={{ flex: 1 }}
-                        maxHeight="100%"
+                    <SectionHeader
+                        title={<h3 className="hero-section-title" style={{ marginBottom: 0, fontSize: '0.9rem' }}>{displayTitle}</h3>}
+                        actions={
+                            <SafeButton onClick={onClose} className="hero-btn hero-btn-ghost" style={{ padding: '0.1rem' }}>
+                                <X size={18} />
+                            </SafeButton>
+                        }
+                        style={{ marginBottom: '0.35rem' }}
                     />
-                </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                    <button onClick={onClose} className="hero-btn hero-btn-ghost" style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}>
-                        Cancel
-                    </button>
-                    <button onClick={handleSave} disabled={isSaving || !hasChanges} className="hero-btn hero-btn-primary" style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}>
-                        <Save size={12} style={{ marginRight: '0.25rem' }} />
-                        {isSaving ? 'Saving...' : 'Save Metadata'}
-                    </button>
-                </div>
-            </div>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginBottom: '0.5rem', minHeight: '0' }}>
+                        <RichTextEditor
+                            value={content}
+                            onChange={setContent}
+                            placeholder="Detailed metadata support..."
+                            style={{ flex: 1, display: 'flex', flexDirection: 'column', border: 'none', borderRadius: 0 }}
+                            contentStyle={{ flex: 1 }}
+                            maxHeight="100%"
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                        <SafeButton onClick={onClose} className="hero-btn hero-btn-ghost" style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}>
+                            Cancel
+                        </SafeButton>
+                        <SafeButton onClick={handleSave} disabled={isSaving || !hasChanges} className="hero-btn hero-btn-primary" style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}>
+                            <Save size={12} style={{ marginRight: '0.25rem' }} />
+                            {isSaving ? 'Saving...' : 'Save Metadata'}
+                        </SafeButton>
+                    </div>
+            </SurfaceCard>
         </div>
     );
 
