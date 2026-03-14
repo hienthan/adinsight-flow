@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { CampaignPlatform, CampaignReminder } from '../../types/campaign';
-import RichTextEditor from '../common/RichTextEditor';
+import LazyRichTextEditor from '../common/LazyRichTextEditor';
 import { htmlToPlainText } from '../../lib/noteHtml';
 import ReminderItem from '../tracking/ReminderItem';
 import AddPlatformReminderModal from '../campaign/AddPlatformReminderModal';
@@ -526,7 +526,7 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
             {isExpanded && (
                 <div style={{ padding: '0 1rem 1rem 1rem' }}>
                     <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
-                        <RichTextEditor
+                        <LazyRichTextEditor
                             value={localContent}
                             onChange={setLocalContent}
                             placeholder={`Strategy for ${platform.display_name}...`}

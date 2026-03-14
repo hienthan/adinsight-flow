@@ -431,6 +431,43 @@ Do not:
 - over-fragment related components that always render together
 - add code-splitting before basic reuse and cleanup are in place
 
+## Chunking Rules
+
+When the route-level splits are already in place but the main chunk is still too large:
+
+- audit dependency families before changing build config
+- split vendor code by feature boundary, not alphabetically and not one-package-per-chunk
+- keep chunk groups stable enough that future features can reuse browser cache
+
+Preferred chunk families in this app:
+
+- `react-core`: React runtime only
+- `app-framework`: router, query client, toast infrastructure
+- `data-client`: PocketBase and date helpers used across many features
+- `ui-kit`: HeroUI and related interaction/runtime packages
+- `editor-markdown`: Tiptap, markdown, sanitization, syntax highlighting
+- `charts`: charting and data-viz dependencies
+- `dnd`: drag and drop runtime
+
+Preferred lazy boundaries in this app:
+
+- feature providers like `HeroUIProvider` should live at the smallest route subtree that actually uses them
+- chart dashboards should be lazy if the default view is still table/list
+- editor runtimes should be lazy at modal or expanded-panel boundaries when the editor is not immediately needed
+- when a heavy UI kit is only used for simple `Button` or `Chip` cases, prefer local primitives before adding more chunk rules
+
+Do:
+
+- keep heavy editor/chart dependencies out of the shell bundle
+- split feature-heavy vendor groups even if some routes already lazy-load
+- prefer a few meaningful shared chunks over lots of tiny vendor shards
+
+Do not:
+
+- create one chunk per package without evidence
+- split tiny utility packages just because they are in `node_modules`
+- refactor product code for bundle reasons before checking whether build config can solve the problem first
+
 ## Non-Goals
 
 These rules are not saying:

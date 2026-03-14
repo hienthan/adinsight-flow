@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save } from 'lucide-react';
-import RichTextEditor from '../common/RichTextEditor';
+import LazyRichTextEditor from '../common/LazyRichTextEditor';
 import { pb } from '../../lib/pocketbase';
 import { useQueryClient } from '@tanstack/react-query';
 import { normalizeHtmlForCompare } from '../../lib/noteHtml';
@@ -118,7 +118,7 @@ export default function MetadataModal({
                 </div>
 
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1rem 1.5rem 0 1.5rem', minHeight: '0' }}>
-                        <RichTextEditor
+                        <LazyRichTextEditor
                             value={content}
                             onChange={setContent}
                             placeholder="Detailed metadata support..."

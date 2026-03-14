@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { Suspense, lazy, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Globe, Download, LayoutDashboard, List } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
@@ -9,7 +9,6 @@ import { InsightDataTable } from './InsightDataTable';
 import { InsightFilterBar } from './InsightFilterBar';
 import { InsightExportModal } from './InsightExportModal';
 import { InsightActionBar } from './InsightActionBar';
-import { AdInsightDashboard } from './Dashboard/AdInsightDashboard';
 import { buildFilterString } from './insightUtils';
 import { PageRecord } from '../../types/adinsight';
 import {
@@ -20,6 +19,11 @@ import {
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
+import { AdInsightProviderBoundary } from './AdInsightProviderBoundary';
+
+const AdInsightDashboard = lazy(() =>
+    import('./Dashboard/AdInsightDashboard').then((module) => ({ default: module.AdInsightDashboard })),
+);
 
 const HEADER_CARD_STYLE = {
     display: 'flex',
@@ -278,7 +282,8 @@ export default function AdInsightPage() {
     ) || (filters.sitemap_tag !== config.defaultSitemapTags[0]);
 
     return (
-        <div className="page-container adinsight-page">
+        <AdInsightProviderBoundary>
+            <div className="page-container adinsight-page">
             <style>{`
                 ${createSafeInteractionScopeCss('.adinsight-page', [...SAFE_BUTTON_SELECTORS, ...SAFE_CARD_SELECTORS])}
             `}</style>
@@ -507,9 +512,12 @@ export default function AdInsightPage() {
 
                 </>
             ) : (
-                <AdInsightDashboard platformInfo={config} sitemapTags={sitemapTags} />
+                <Suspense fallback={<div style={{ padding: '2rem', color: 'var(--text-dim)', fontWeight: 700 }}>Loading dashboard...</div>}>
+                    <AdInsightDashboard platformInfo={config} sitemapTags={sitemapTags} />
+                </Suspense>
             )}
 
-        </div>
+            </div>
+        </AdInsightProviderBoundary>
     );
 }

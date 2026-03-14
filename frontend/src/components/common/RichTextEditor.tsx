@@ -85,7 +85,7 @@ const ResizableImage = (ImageResize as any).extend({
     name: 'image',
 });
 
-interface RichTextEditorProps {
+export interface RichTextEditorProps {
     value: string;
     onChange: (nextHtml: string) => void;
     placeholder?: string;

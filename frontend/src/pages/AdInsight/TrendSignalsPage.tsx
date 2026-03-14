@@ -9,6 +9,7 @@ import { SignalRow } from "./components/SignalRow";
 import { StrategyNotesModal } from "./components/StrategyNotesModal.tsx";
 import { SectionHeader, EmptyState, CompactEmptyState } from "./components/SectionUI";
 import { SafeButton, SurfaceCard, ToolbarGroup } from "../../components/common/ui";
+import { AdInsightProviderBoundary } from "./AdInsightProviderBoundary";
 
 // Import shared types and utils
 import { TrendSignal, SignalState, Market, Priority } from "./types";
@@ -259,7 +260,8 @@ export default function TrendRadarPage() {
     }
 
     return (
-        <div className="page-container w-full px-8 py-8 animate-fade">
+        <AdInsightProviderBoundary>
+            <div className="page-container w-full px-8 py-8 animate-fade">
             {/* Zone 1: Header Summary Card - Compact Version */}
             <SurfaceCard
                 variant="soft"
@@ -518,6 +520,7 @@ export default function TrendRadarPage() {
                 handleSaveNotes={handleSaveNotes}
                 isSavingNotes={isSavingNotes}
             />
-        </div>
+            </div>
+        </AdInsightProviderBoundary>
     );
 }

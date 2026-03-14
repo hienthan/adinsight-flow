@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { CampaignPlatform } from '../../types/campaign';
-import RichTextEditor from '../../components/common/RichTextEditor';
+import LazyRichTextEditor from '../../components/common/LazyRichTextEditor';
 import { SafeButton, SectionHeader, SurfaceCard } from '../../components/common/ui';
 
 const COLOR_PRESETS = [
@@ -515,7 +515,7 @@ export default function PlatformManagement() {
                                 />
                             ) : (
                                 <div style={{ flex: 1 }}>
-                                    <RichTextEditor
+                                    <LazyRichTextEditor
                                         value={formData.metadata}
                                         onChange={html => setFormData(p => ({ ...p, metadata: html }))}
                                         minHeight={300}
