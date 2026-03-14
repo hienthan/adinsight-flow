@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Search, AlertCircle } from 'lucide-react';
 import { FilterDef } from '../../types/adinsight';
 import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown';
+import { SafeButton, SurfaceCard } from '../../components/common/ui';
+import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
 
 interface InsightFilterBarProps {
     filters: FilterDef[];
@@ -188,13 +190,18 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
     const exclusionBaseFilters = filters.filter(f => excludeIds.includes(f.id));
 
     return (
-        <section className="filter-container" style={{ position: 'relative', zIndex: 60, display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--bg-card)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-soft)', marginBottom: '1.5rem' }}>
+        <SurfaceCard
+            className="filter-container"
+            variant="soft"
+            style={{ position: 'relative', zIndex: 60, display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem', overflow: 'visible' }}
+        >
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
                 {mainFilters.map(f => renderFilter(f))}
 
-                <button
+                <SafeButton
                     onClick={() => setIsExcludeVisible(!isExcludeVisible)}
                     className="exclude-toggle"
+                    aria-pressed={isExcludeVisible}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -203,7 +210,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                         padding: '0.6rem',
                         borderRadius: '10px',
                         border: '1px solid',
-                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transition: SAFE_INTERACTIVE_TRANSITION,
                         alignSelf: 'flex-end',
                         width: '40px',
                         height: '40px',
@@ -211,7 +218,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     title="Toggle Exclusions"
                 >
                     <AlertCircle size={20} className="exclude-icon" />
-                </button>
+                </SafeButton>
             </div>
 
             {isExcludeVisible && (
@@ -344,6 +351,6 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     }
                 `}
             </style>
-        </section>
+        </SurfaceCard>
     );
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import { ExternalLink, MapPin, ArrowUp, ArrowDown } from 'lucide-react';
 import { PageRecord, ColumnDef } from '../../types/adinsight';
 import { getTierStyle, getFunnelStyle } from './styles';
+import { SurfaceCard } from '../../components/common/ui';
 
 interface InsightDataTableProps {
     records: PageRecord[];
@@ -52,7 +53,7 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
     const allSelected = records.length > 0 && records.every(r => selectedIds.includes(r.id));
 
     return (
-        <div className="data-table-container hero-card" style={{ padding: 0 }}>
+        <SurfaceCard className="data-table-container" padding={0}>
             <table className="data-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                     <tr>
@@ -100,7 +101,7 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                 borderLeft: isSelected
                                     ? '4px solid hsl(var(--primary))'
                                     : (is404 ? '4px solid rgba(245, 158, 11, 0.5)' : '4px solid transparent'),
-                                transition: 'all 0.2s ease'
+                                transition: 'background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease'
                             }}>
                                 {onSelect && (
                                     <td style={{ textAlign: 'center' }}>
@@ -297,6 +298,6 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                     )}
                 </tbody>
             </table>
-        </div>
+        </SurfaceCard>
     );
 };

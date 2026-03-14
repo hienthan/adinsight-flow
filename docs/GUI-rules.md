@@ -311,6 +311,28 @@ Avoid in Phase 2:
 - shell layout changes
 - route composition changes unless explicitly doing performance work
 
+### Phase 3 guidance: section-level refactor
+
+After leaf components are stable:
+
+- refactor one page section family at a time
+- keep query, filtering, sorting, and mutation logic in place
+- change section chrome, wrappers, and action rows before touching content rendering internals
+
+Good Phase 3 targets:
+
+- page headers
+- filter clusters
+- status bars
+- empty states
+- pagination bars
+- table wrappers and table chrome, but not row business logic in the same batch
+
+Rule:
+
+- if a section already has stable behavior, only refactor its UI shell and repeated control markup
+- do not mix section refactor with data-flow rewrites in the same batch
+
 ### Modal shell rule
 
 When refactoring a modal:
@@ -324,6 +346,22 @@ Common regression to avoid:
 
 - outer wrapper becomes square while inner surface is rounded
 - modal feels heavier because shell styling is duplicated
+
+### Overflow and stacking rule
+
+When a primitive wraps a legacy class that has `overflow: hidden`, treat that as part of the visual contract, not as a safe default for all use cases.
+
+Rule:
+
+- any section that contains dropdowns, popovers, or menus must explicitly allow visible overflow on the relevant shell
+- fix clipping at the shell that creates the clipping context before raising `z-index`
+- only use higher `z-index` after overflow clipping has been removed or confirmed not to be the cause
+
+Known root cause:
+
+- `SurfaceCard` inherits `hero-card`
+- `hero-card` applies `overflow: hidden`
+- this can clip `MultiSelectDropdown` menus inside filter bars and make it look like the table is covering the dropdown
 
 ## Future Direction
 

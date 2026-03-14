@@ -359,7 +359,7 @@ export default function AdInsightPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, justifyContent: 'flex-end', minHeight: '36px' }}>
                     {selectedView === 'list' && (
                         <>
-                            <button
+                            <SafeButton
                                 onClick={handleReset}
                                 className="hero-btn"
                                 style={{
@@ -373,9 +373,9 @@ export default function AdInsightPage() {
                                 }}
                             >
                                 Reset
-                            </button>
+                            </SafeButton>
 
-                            <button
+                            <SafeButton
                                 onClick={() => setIsExportModalOpen(true)}
                                 disabled={exporting}
                                 className="hero-btn hero-btn-primary"
@@ -383,7 +383,7 @@ export default function AdInsightPage() {
                             >
                                 <Download size={16} />
                                 {exporting ? 'Exporting...' : 'CSV'}
-                            </button>
+                            </SafeButton>
                         </>
                     )}
                 </div>
@@ -414,14 +414,13 @@ export default function AdInsightPage() {
                 />
 
                 {/* Pagination */}
-                <div
-                    className="hero-card"
+                <SurfaceCard
+                    padding="1.25rem"
                     style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         marginTop: '1.5rem',
-                        padding: '1.25rem',
                         gap: '2rem'
                     }}
                 >
@@ -450,29 +449,29 @@ export default function AdInsightPage() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <button
+                        <SafeButton
                             onClick={() => fetchPages(currentPage - 1)}
                             disabled={currentPage === 1 || loading}
                             className="hero-btn hero-btn-secondary"
                             style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
                         >
                             ← Prev
-                        </button>
+                        </SafeButton>
 
                         <span style={{ fontSize: '0.9rem', color: 'var(--text-main)', padding: '0 0.5rem', fontWeight: 700 }}>
                             Page {currentPage} / {totalPages}
                         </span>
 
-                        <button
+                        <SafeButton
                             onClick={() => fetchPages(currentPage + 1)}
                             disabled={currentPage === totalPages || loading}
                             className="hero-btn hero-btn-secondary"
                             style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
                         >
                             Next →
-                        </button>
+                        </SafeButton>
                     </div>
-                </div>
+                </SurfaceCard>
             </div>
 
             {/* Export Modal */}

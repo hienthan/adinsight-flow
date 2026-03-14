@@ -93,7 +93,7 @@ export const StrategyNotesModal: React.FC<StrategyNotesModalProps> = ({
                                                 "!py-6",
                                                 "hover:border-primary/50",
                                                 "focus-within:!border-primary/70",
-                                                "transition-all duration-300",
+                                                "transition-colors duration-300",
                                             ].join(" "),
                                             input: "text-[15px] leading-relaxed font-medium text-(--text-main) placeholder:text-(--text-muted)/40"
                                         }}
@@ -126,7 +126,7 @@ export const StrategyNotesModal: React.FC<StrategyNotesModalProps> = ({
                                 <Button
                                     variant="light"
                                     onPress={onClose}
-                                    className="px-8 font-bold text-sm h-14 rounded-xl text-(--text-dim) hover:bg-(--bg-overlay) transition-all"
+                                    className="px-8 font-bold text-sm h-14 rounded-xl text-(--text-dim) hover:bg-(--bg-overlay) transition-colors"
                                 >
                                     Cancel
                                 </Button>
@@ -138,7 +138,7 @@ export const StrategyNotesModal: React.FC<StrategyNotesModalProps> = ({
                                     }}
                                     isLoading={isSavingNotes}
                                     isDisabled={selectedSignal?.notes === draftNotes}
-                                    className="px-10 h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-black text-[11px] uppercase tracking-[0.12em] transition-all"
+                                    className="px-10 h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-black text-[11px] uppercase tracking-[0.12em] transition-colors"
                                 >
                                     {isSavingNotes ? 'Saving...' : 'Update'}
                                 </Button>

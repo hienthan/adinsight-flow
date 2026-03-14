@@ -15,6 +15,8 @@ import {
 } from '../../lib/uiMotion';
 import { FilterChip } from '../../components/common/ui/FilterChip';
 import { SafeButton } from '../../components/common/ui/SafeButton';
+import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
+import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
 
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type OverviewMode = 'comfortable' | 'compact';
@@ -362,6 +364,12 @@ export default function CampOverview() {
         overdueCount: summary.overdue
     };
 
+    const quickFilters = [
+        { id: 'alerts', label: 'Alerts', active: alertsOnlyEnabled, toggle: setToggleReminders },
+        { id: 'all', label: 'All', active: filterShowAll, toggle: setToggleShowAll },
+        { id: 'meta', label: 'Metadata', active: filterMetadata, toggle: setToggleMetadata }
+    ] as const;
+
     const sortCampaignsByReminder = (items: EnrichedCampaign[]) =>
         [...items].sort((a, b) => {
             // 1. Status (Active/Testing -> Archived -> Paused)
@@ -478,7 +486,7 @@ export default function CampOverview() {
                         Reset Filters
                     </SafeButton>
 
-                    <button
+                    <SafeButton
                         onClick={() => openEdit(null as any)}
                         className="hero-btn hero-btn-primary"
                         style={{
@@ -489,21 +497,22 @@ export default function CampOverview() {
                     >
                         <Plus size={20} strokeWidth={3} />
                         New Campaign
-                    </button>
+                    </SafeButton>
                 </div>
             </div>
             {/* Filters Cluster */}
             <div style={{ marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '1rem' }}>
-                <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '1rem',
-                    padding: '0.85rem',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '1.25rem',
-                    background: 'var(--bg-overlay)',
-                    boxShadow: 'var(--shadow-subtle)',
-                }}>
+                <SurfaceCard
+                    variant="inset"
+                    padding="0.85rem"
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '1rem',
+                        borderRadius: '1.25rem',
+                        boxShadow: 'var(--shadow-subtle)',
+                    }}
+                >
                     <div className="filter-group">
                         <label>Search Camp</label>
                         <input
@@ -550,21 +559,25 @@ export default function CampOverview() {
                             <option value="critical">Critical</option>
                         </select>
                     </div>
-                </div>
+                </SurfaceCard>
 
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    padding: '0.5rem 0.85rem',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '1.1rem',
-                    background: 'var(--bg-overlay)',
-                    boxShadow: 'var(--shadow-subtle)',
-                }}>
+                <SurfaceCard
+                    variant="inset"
+                    padding="0.5rem 0.85rem"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        borderRadius: '1.1rem',
+                        boxShadow: 'var(--shadow-subtle)',
+                    }}
+                >
                     <div className="filter-group">
                         <label style={{ fontSize: '0.65rem', marginBottom: '0.15rem' }}>View Mode</label>
-                        <div
+                        <ToolbarGroup
+                            compact
+                            role="group"
+                            aria-label="Toggle campaign overview view mode"
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -579,10 +592,11 @@ export default function CampOverview() {
                                 const isActive = viewMode === mode.id;
                                 const Icon = mode.icon;
                                 return (
-                                    <button
+                                    <SafeButton
                                         key={mode.id}
                                         onClick={() => setViewMode(mode.id)}
                                         className="hero-btn"
+                                        aria-pressed={isActive}
                                         style={{
                                             padding: '0.35rem 0.75rem',
                                             borderRadius: '8px',
@@ -596,10 +610,10 @@ export default function CampOverview() {
                                     >
                                         <Icon size={12} />
                                         {mode.label}
-                                    </button>
+                                    </SafeButton>
                                 );
                             })}
-                        </div>
+                        </ToolbarGroup>
                     </div>
 
                     <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
@@ -607,14 +621,11 @@ export default function CampOverview() {
                     <div className="filter-group">
                         <label style={{ fontSize: '0.65rem', marginBottom: '0.15rem' }}>Quick Filters</label>
                         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-                            {[
-                                { id: 'alerts', label: 'Alerts', active: alertsOnlyEnabled, toggle: setToggleReminders },
-                                { id: 'all', label: 'All', active: filterShowAll, toggle: setToggleShowAll },
-                                { id: 'meta', label: 'Metadata', active: filterMetadata, toggle: setToggleMetadata }
-                            ].map((item) => (
-                                <div
+                            {quickFilters.map((item) => (
+                                <SafeButton
                                     key={item.id}
                                     onClick={item.toggle}
+                                    aria-pressed={item.active}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -644,28 +655,29 @@ export default function CampOverview() {
                                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: item.active ? 'hsl(var(--primary))' : 'var(--text-dim)' }}>
                                         {item.label}
                                     </span>
-                                </div>
+                                </SafeButton>
                             ))}
                         </div>
                     </div>
-                </div>
+                </SurfaceCard>
 
                 <div style={{ flex: 1 }} />
             </div>
 
             {/* Status Dashboard Row */}
-            <div style={{
-                marginBottom: '1.5rem',
-                padding: '0.65rem 1.25rem',
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                gap: '0.6rem',
-                background: 'var(--bg-content)',
-                border: '1px solid hsla(var(--primary) / 0.1)',
-                boxShadow: 'var(--shadow-glass)',
-                borderRadius: '1.25rem'
-            }}>
+            <SurfaceCard
+                padding="0.65rem 1.25rem"
+                style={{
+                    marginBottom: '1.5rem',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    border: '1px solid hsla(var(--primary) / 0.1)',
+                    boxShadow: 'var(--shadow-glass)',
+                    borderRadius: '1.25rem'
+                }}
+            >
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center' }}>
                     {/* Review Rate */}
                     <div style={{
@@ -771,7 +783,7 @@ export default function CampOverview() {
                         Next 3 days: {summary.upcoming}
                     </FilterChip>
                 </div>
-            </div >
+            </SurfaceCard>
 
             {/* Campaign Cards Grid */}
             {
@@ -803,30 +815,31 @@ export default function CampOverview() {
                         ))}
                     </div>
                 ) : filteredCampaigns.length === 0 ? (
-                    <div style={{
-                        padding: '4rem 2rem',
-                        textAlign: 'center',
-                        background: 'var(--bg-content)',
-                        borderRadius: '2rem',
-                        border: '1px dashed var(--border-subtle)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '1.5rem'
-                    }}>
+                    <SurfaceCard
+                        padding="4rem 2rem"
+                        style={{
+                            textAlign: 'center',
+                            borderRadius: '2rem',
+                            border: '1px dashed var(--border-subtle)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '1.5rem'
+                        }}
+                    >
                         <div style={{ fontSize: '3rem' }}>🔍</div>
                         <div>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.5rem' }}>No campaigns found</h3>
                             <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>Try adjusting your filters or search keywords.</p>
                         </div>
-                        <button
+                        <SafeButton
                             onClick={() => setSearchParams({})}
                             className="hero-btn hero-btn-primary"
                             style={{ padding: '0.75rem 1.75rem', borderRadius: '12px' }}
                         >
                             Clear All Filters
-                        </button>
-                    </div>
+                        </SafeButton>
+                    </SurfaceCard>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         {groupedCampaigns.map((group) => {

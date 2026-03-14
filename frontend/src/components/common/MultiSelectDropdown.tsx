@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Check, ChevronDown, X, Search } from 'lucide-react';
+import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
 
 interface Option {
     label: string;
@@ -80,7 +81,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ option
                     fontSize: 'var(--text-sm)',
                     fontWeight: 500,
                     color: 'var(--text-main)',
-                    transition: 'all 0.15s ease',
+                    transition: SAFE_INTERACTIVE_TRANSITION,
                     fontFamily: 'var(--font-main)'
                 }}
             >
@@ -111,7 +112,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ option
                     border: '1px solid var(--border-subtle)',
                     borderRadius: '0.65rem',
                     boxShadow: 'var(--shadow-medium)',
-                    zIndex: 50,
+                    zIndex: 120,
                     maxHeight: '220px',
                     overflowY: 'auto',
                     padding: '0.25rem'
