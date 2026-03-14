@@ -13,6 +13,7 @@ import {
 import { pb } from '../../lib/pocketbase';
 import { CampaignPlatform } from '../../types/campaign';
 import RichTextEditor from '../../components/common/RichTextEditor';
+import { SafeButton, SectionHeader, SurfaceCard } from '../../components/common/ui';
 
 const COLOR_PRESETS = [
     '#3b82f6', // Bright Blue
@@ -239,13 +240,13 @@ export default function PlatformManagement() {
                 padding: '0 0.5rem'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                    <button
+                    <SafeButton
                         onClick={() => navigate('/camp-tracking')}
                         className="hero-btn-ghost"
                         style={{ padding: '0.65rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', background: 'var(--bg-overlay)' }}
                     >
                         <ChevronLeft size={22} />
-                    </button>
+                    </SafeButton>
                     <div>
                         <h1 style={{
                             fontSize: 'var(--text-3xl)',
@@ -269,7 +270,7 @@ export default function PlatformManagement() {
                     </div>
                 </div>
 
-                <button
+                <SafeButton
                     className="hero-btn hero-btn-primary"
                     onClick={() => {
                         setFormData({ id: '', display_name: '', platform_name: '', color: COLOR_PRESETS[0], metadata: '' });
@@ -284,28 +285,30 @@ export default function PlatformManagement() {
                 >
                     <Plus size={20} strokeWidth={3} />
                     Add Platform
-                </button>
+                </SafeButton>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'start' }}>
                 {/* Sidebar: Platform List - Fixed width */}
-                <div className="hero-card no-lift" style={{
+                <SurfaceCard className="no-lift" style={{
                     width: '320px',
                     flexShrink: 0,
-                    padding: '1.5rem',
-                    background: 'var(--bg-content)',
-                    border: '1px solid var(--border-subtle)',
                     boxShadow: 'var(--shadow-glass)',
                     borderRadius: '1.5rem',
                     position: 'sticky',
                     top: '1rem'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                        <div style={{ padding: '0.5rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
-                            <Globe size={20} strokeWidth={2.5} />
-                        </div>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Channels</h3>
-                    </div>
+                    <SectionHeader
+                        title={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ padding: '0.5rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
+                                    <Globe size={20} strokeWidth={2.5} />
+                                </div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Channels</h3>
+                            </div>
+                        }
+                        style={{ marginBottom: '1.5rem' }}
+                    />
 
                     {loading ? (
                         <div style={{ padding: '2rem', display: 'flex', justifyContent: 'center' }}><Loader2 className="animate-spin" /></div>
@@ -341,12 +344,12 @@ export default function PlatformManagement() {
                                                                 {platform.display_name}
                                                             </span>
                                                         </div>
-                                                        <button
+                                                        <SafeButton
                                                             onClick={(e) => { e.stopPropagation(); handleDelete(platform.id, platform.display_name); }}
                                                             style={{ border: 'none', background: 'none', color: '#ef4444', opacity: 0.5, cursor: 'pointer', padding: '4px' }}
                                                         >
                                                             <Trash2 size={13} />
-                                                        </button>
+                                                        </SafeButton>
                                                     </div>
                                                 )}
                                             </Draggable>
@@ -357,7 +360,7 @@ export default function PlatformManagement() {
                             </Droppable>
                         </DragDropContext>
                     )}
-                </div>
+                </SurfaceCard>
 
                 {/* Content Area - Responsive Wrapping */}
                 <div style={{
@@ -371,11 +374,9 @@ export default function PlatformManagement() {
                     <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
 
                         {/* 1. Identity Card */}
-                        <div className="hero-card no-lift" style={{
+                        <SurfaceCard className="no-lift" style={{
                             flex: '0 1 400px',
-                            padding: '2rem',
                             border: isEditing ? '1px solid hsla(var(--primary) / 0.25)' : '1px solid var(--border-subtle)',
-                            background: 'var(--bg-content)',
                             boxShadow: 'var(--shadow-glass)',
                             borderRadius: '1.5rem',
                             display: 'flex',
@@ -391,15 +392,15 @@ export default function PlatformManagement() {
                                 <div style={{ display: 'flex', gap: '10px' }}>
                                     {(!viewMode || isDirty || !isEditing) && (
                                         <>
-                                            <button
+                                            <SafeButton
                                                 type="button"
                                                 onClick={handleCancel}
                                                 className="hero-btn-ghost"
                                                 style={{ padding: '0.6rem 1.2rem', borderRadius: '10px' }}
                                             >
                                                 Cancel
-                                            </button>
-                                            <button
+                                            </SafeButton>
+                                            <SafeButton
                                                 type="submit"
                                                 disabled={submitting || (isEditing && !isDirty)}
                                                 className="hero-btn-primary"
@@ -410,7 +411,7 @@ export default function PlatformManagement() {
                                                 }}
                                             >
                                                 {submitting ? 'Saving' : (isEditing ? 'Update' : 'Save')}
-                                            </button>
+                                            </SafeButton>
                                         </>
                                     )}
                                 </div>
@@ -429,7 +430,7 @@ export default function PlatformManagement() {
                                     <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Brand Color</label>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
                                         {COLOR_PRESETS.map(c => (
-                                            <button
+                                            <SafeButton
                                                 key={c}
                                                 type="button"
                                                 onClick={() => setFormData(p => ({ ...p, color: c }))}
@@ -438,19 +439,18 @@ export default function PlatformManagement() {
                                                     border: formData.color === c ? '3px solid var(--text-main)' : '1px solid var(--border-subtle)',
                                                     cursor: 'pointer'
                                                 }}
-                                            />
+                                            >
+                                                <span style={{ display: 'none' }}>{c}</span>
+                                            </SafeButton>
                                         ))}
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </SurfaceCard>
 
                         {/* 2. Strategic Notes */}
-                        <div className="hero-card no-lift" style={{
+                        <SurfaceCard className="no-lift" style={{
                             flex: '1 1 600px',
-                            padding: '2rem',
-                            background: 'var(--bg-content)',
-                            border: '1px solid var(--border-subtle)',
                             boxShadow: 'var(--shadow-glass)',
                             borderRadius: '1.5rem',
                             display: 'flex',
@@ -464,9 +464,9 @@ export default function PlatformManagement() {
                                     <h3 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.03em' }}>Strategic Notes</h3>
                                 </div>
                                 {viewMode && isEditing && (
-                                    <button type="button" onClick={() => setViewMode(false)} className="hero-btn-ghost" style={{ fontSize: '0.8rem' }}>
+                                    <SafeButton type="button" onClick={() => setViewMode(false)} className="hero-btn-ghost" style={{ fontSize: '0.8rem' }}>
                                         Edit Alignment
-                                    </button>
+                                    </SafeButton>
                                 )}
                             </div>
 
@@ -489,7 +489,7 @@ export default function PlatformManagement() {
                                     />
                                 </div>
                             )}
-                        </div>
+                        </SurfaceCard>
                     </form>
                 </div>
             </div>

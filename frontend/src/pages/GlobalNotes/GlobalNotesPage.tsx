@@ -31,6 +31,7 @@ import {
 import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
+import { SectionHeader } from '../../components/common/ui/SectionHeader';
 
 interface Note {
     id: string;
@@ -783,8 +784,15 @@ export default function GlobalNotesPage() {
                                 flexShrink: 0
                             }}>
                                 {/* Meta Section - Minimalized */}
-                                <div>
-                                    <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.8rem', letterSpacing: '0.05em' }}>Information</h4>
+                                <SurfaceCard
+                                    variant="inset"
+                                    padding="0.9rem"
+                                    style={{ boxShadow: 'none' }}
+                                >
+                                    <SectionHeader
+                                        title={<h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', margin: 0 }}>Information</h4>}
+                                        style={{ marginBottom: '0.8rem' }}
+                                    />
 
                                     <div style={{
                                         display: 'grid',
@@ -842,12 +850,19 @@ export default function GlobalNotesPage() {
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                </SurfaceCard>
 
                                 {/* Attachments Section */}
                                 {activeNote.images && activeNote.images.length > 0 && (
-                                    <div>
-                                        <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', letterSpacing: '0.05em' }}>Attachments</h4>
+                                    <SurfaceCard
+                                        variant="inset"
+                                        padding="0.9rem"
+                                        style={{ boxShadow: 'none' }}
+                                    >
+                                        <SectionHeader
+                                            title={<h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', margin: 0 }}>Attachments</h4>}
+                                            style={{ marginBottom: '1rem' }}
+                                        />
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.6rem' }}>
                                             {activeNote.images.map((img: string) => (
                                                 <div key={img} style={{
@@ -923,13 +938,20 @@ export default function GlobalNotesPage() {
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
+                                    </SurfaceCard>
                                 )}
 
                                 {/* TOC Section */}
                                 {!isEditing && (
-                                    <div>
-                                        <h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem', letterSpacing: '0.05em' }}>Table of Contents</h4>
+                                    <SurfaceCard
+                                        variant="inset"
+                                        padding="0.9rem"
+                                        style={{ boxShadow: 'none' }}
+                                    >
+                                        <SectionHeader
+                                            title={<h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', margin: 0 }}>Table of Contents</h4>}
+                                            style={{ marginBottom: '1rem' }}
+                                        />
                                         <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                             {renderedNote.headings.length === 0 ? (
                                                 <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.75rem' }}>No sections found</div>
@@ -959,7 +981,7 @@ export default function GlobalNotesPage() {
                                                 ))
                                             )}
                                         </div>
-                                    </div>
+                                    </SurfaceCard>
                                 )}
                             </div>
                         </div>

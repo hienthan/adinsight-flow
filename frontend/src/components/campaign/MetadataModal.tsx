@@ -6,6 +6,7 @@ import { pb } from '../../lib/pocketbase';
 import { useQueryClient } from '@tanstack/react-query';
 import { normalizeHtmlForCompare } from '../../lib/noteHtml';
 import { SafeButton, SurfaceCard, SectionHeader } from '../common/ui';
+import { SAFE_BUTTON_SELECTORS, createSafeInteractionScopeCss } from '../../lib/uiMotion';
 
 interface MetadataModalProps {
     isOpen: boolean;
@@ -64,23 +65,27 @@ export default function MetadataModal({
 
     const modalContent = (
         <div
+            className="metadata-modal"
             style={{
                 position: 'fixed',
                 top: 0, left: 0, right: 0, bottom: 0,
-                background: 'rgba(0, 0, 0, 0.8)',
+                background: 'rgba(2, 6, 23, 0.75)',
                 /* GPU hack removed */
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 zIndex: 2000,
-                padding: '0.25rem'
+                padding: '1.5rem'
             }}
             onClick={onClose}
         >
+            <style>{`
+                ${createSafeInteractionScopeCss('.metadata-modal', SAFE_BUTTON_SELECTORS)}
+            `}</style>
             <SurfaceCard
                 className="animate-fade"
-                padding="0.5rem 0.75rem"
-                radius="1rem"
+                padding={0}
+                radius="2rem"
                 onClick={e => e.stopPropagation()}
                 style={{
                     width: '100%',
@@ -89,22 +94,30 @@ export default function MetadataModal({
                     minHeight: '350px',
                     display: 'flex',
                     flexDirection: 'column',
-                    boxShadow: 'var(--shadow-2xl)',
+                    boxShadow: 'var(--shadow-large)',
                     pointerEvents: 'auto',
                     overflow: 'hidden',
                 }}
             >
+                <div
+                    style={{
+                        padding: '1.35rem 1.5rem 1rem 1.5rem',
+                        borderBottom: '1px solid var(--border-subtle)',
+                        background: 'var(--bg-overlay)',
+                    }}
+                >
                     <SectionHeader
-                        title={<h3 className="hero-section-title" style={{ marginBottom: 0, fontSize: '0.9rem' }}>{displayTitle}</h3>}
+                        title={<h3 className="hero-section-title" style={{ marginBottom: 0, fontSize: '0.95rem' }}>{displayTitle}</h3>}
                         actions={
                             <SafeButton onClick={onClose} className="hero-btn hero-btn-ghost" style={{ padding: '0.1rem' }}>
                                 <X size={18} />
                             </SafeButton>
                         }
-                        style={{ marginBottom: '0.35rem' }}
+                        style={{ marginBottom: 0 }}
                     />
+                </div>
 
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginBottom: '0.5rem', minHeight: '0' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1rem 1.5rem 0 1.5rem', minHeight: '0' }}>
                         <RichTextEditor
                             value={content}
                             onChange={setContent}
@@ -115,7 +128,7 @@ export default function MetadataModal({
                         />
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', padding: '0 1.5rem 1.25rem 1.5rem' }}>
                         <SafeButton onClick={onClose} className="hero-btn hero-btn-ghost" style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}>
                             Cancel
                         </SafeButton>

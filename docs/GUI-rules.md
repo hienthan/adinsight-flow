@@ -363,6 +363,19 @@ Known root cause:
 - `hero-card` applies `overflow: hidden`
 - this can clip `MultiSelectDropdown` menus inside filter bars and make it look like the table is covering the dropdown
 
+### Modal parity rule
+
+When a modal belongs to an existing modal family in the app:
+
+- keep overlay tone and opacity aligned with sibling modals
+- keep shell radius and shadow tier aligned unless the modal is intentionally a different type
+- if a modal embeds an editor or sticky toolbar, add a local safe interaction scope for modal actions instead of relying on global `hero-*` hover behavior
+
+Common regression to avoid:
+
+- one modal uses a darker black overlay while the rest use the blue-tinted shell overlay
+- editor toolbars inside modals reintroduce cursor flicker because button hover behavior is not locally neutralized
+
 ## Future Direction
 
 The next safe cleanup steps should be:

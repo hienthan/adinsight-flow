@@ -1,13 +1,14 @@
 import { useMemo, useState, useEffect } from "react";
 import { pb } from "../../lib/pocketbase";
 import { useDisclosure } from "@heroui/react";
-import { Search, Sparkles, TrendingUp, Calendar, Info } from "lucide-react";
+import { Search, Sparkles, TrendingUp, Calendar, Info, Check } from "lucide-react";
 import { toast } from "sonner";
 
 // Import extracted components
 import { SignalRow } from "./components/SignalRow";
 import { StrategyNotesModal } from "./components/StrategyNotesModal.tsx";
 import { SectionHeader, EmptyState, CompactEmptyState } from "./components/SectionUI";
+import { SafeButton, SurfaceCard, ToolbarGroup } from "../../components/common/ui";
 
 // Import shared types and utils
 import { TrendSignal, SignalState, Market, Priority } from "./types";
@@ -216,15 +217,13 @@ export default function TrendRadarPage() {
     return (
         <div className="page-container w-full px-8 py-8 animate-fade">
             {/* Zone 1: Header Summary Card - Compact Version */}
-            <div
-                className="hero-card"
+            <SurfaceCard
+                variant="soft"
+                padding="0.75rem 1.5rem"
                 style={{
                     display: 'flex',
                     alignItems: 'center',
                     marginBottom: '1.5rem',
-                    padding: '0.75rem 1.5rem',
-                    background: 'var(--bg-content)',
-                    border: '1px solid var(--border-subtle)',
                     borderRadius: '12px',
                     boxShadow: 'var(--shadow-soft)'
                 }}
@@ -249,11 +248,15 @@ export default function TrendRadarPage() {
                         </p>
                     </div>
                 </div>
-            </div>
+            </SurfaceCard>
 
             {/* Zone 2: Filter Controls (grouped like CampOverview) */}
             <section style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '0.9rem' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: '0.85rem', background: 'var(--bg-overlay)' }}>
+                <SurfaceCard
+                    variant="inset"
+                    padding="0.65rem"
+                    style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', borderRadius: '0.85rem' }}
+                >
                     <div className="filter-group">
                         <label>Search Trends</label>
                         <div style={{ position: 'relative' }}>
@@ -303,7 +306,7 @@ export default function TrendRadarPage() {
 
                     <div className="filter-group">
                         <label style={{ opacity: 0 }}>&nbsp;</label>
-                        <label
+                        <SafeButton
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -321,22 +324,37 @@ export default function TrendRadarPage() {
                                 letterSpacing: 'normal',
                                 color: includeBaseline ? 'hsl(var(--primary))' : 'var(--text-dim)',
                             }}
+                            onClick={() => setIncludeBaseline(!includeBaseline)}
                         >
-                            <input
-                                type="checkbox"
-                                checked={includeBaseline}
-                                onChange={(e) => setIncludeBaseline(e.target.checked)}
-                                style={{ width: '14px', height: '14px', accentColor: 'hsl(var(--primary))', cursor: 'pointer' }}
-                            />
+                            <span
+                                style={{
+                                    width: '14px',
+                                    height: '14px',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: includeBaseline ? 'hsl(var(--primary))' : 'var(--bg-content)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white',
+                                }}
+                            >
+                                {includeBaseline && <Check size={10} strokeWidth={4} />}
+                            </span>
                             Baseline
-                        </label>
+                        </SafeButton>
                     </div>
-                </div>
+                </SurfaceCard>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', padding: '0.65rem', border: '1px solid var(--border-subtle)', borderRadius: '0.85rem', background: 'var(--bg-overlay)' }}>
+                <SurfaceCard
+                    variant="inset"
+                    padding="0.65rem"
+                    style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', borderRadius: '0.85rem' }}
+                >
                     <div className="filter-group">
                         <label>Status View</label>
-                        <div
+                        <ToolbarGroup
+                            compact
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -354,10 +372,11 @@ export default function TrendRadarPage() {
                             ].map((item) => {
                                 const isActive = activeSection === item.id;
                                 return (
-                                    <button
+                                    <SafeButton
                                         key={item.id}
                                         onClick={() => scrollToSection(item.id)}
                                         className="hero-btn"
+                                        aria-pressed={isActive}
                                         style={{
                                             padding: '0.4rem 0.7rem',
                                             borderRadius: '0.5rem',
@@ -373,12 +392,12 @@ export default function TrendRadarPage() {
                                     >
                                         {item.label}
                                         <span style={{ fontWeight: 800, opacity: isActive ? 1 : 0.8 }}>{item.count}</span>
-                                    </button>
+                                    </SafeButton>
                                 );
                             })}
-                        </div>
+                        </ToolbarGroup>
                     </div>
-                </div>
+                </SurfaceCard>
             </section>
 
             {/* Zone 3: Content Sections */}
@@ -415,9 +434,9 @@ export default function TrendRadarPage() {
                             />
                         ))}
                         {!q.trim() && !showMoreActive && active.length > 8 && (
-                            <button onClick={() => setShowMoreActive(true)} className="mt-4 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200">
+                            <SafeButton onClick={() => setShowMoreActive(true)} className="mt-4 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-200">
                                 Show {active.length - 8} more active trends ↓
-                            </button>
+                            </SafeButton>
                         )}
                     </div>
                 </section>
@@ -437,21 +456,21 @@ export default function TrendRadarPage() {
                             />
                         ))}
                         {!q.trim() && !showMoreUpcoming && upcoming.length > 12 && (
-                            <button onClick={() => setShowMoreUpcoming(true)} className="mt-4 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200">
+                            <SafeButton onClick={() => setShowMoreUpcoming(true)} className="mt-4 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-200">
                                 Show {upcoming.length - 12} more upcoming trends ↓
-                            </button>
+                            </SafeButton>
                         )}
                     </div>
                 </section>
 
                 {horizon !== 'ALL' && (
-                    <div className="mt-4 mx-2 p-4 rounded-xl bg-blue-50/50 border border-blue-100 flex items-start gap-3">
+                    <SurfaceCard className="mt-4 mx-2 flex items-start gap-3" padding="1rem" style={{ background: 'rgba(239, 246, 255, 0.7)', border: '1px solid rgba(191, 219, 254, 1)' }}>
                         <Info size={16} className="text-blue-500 mt-0.5" />
                         <div className="flex-1">
                             <p className="text-xs font-medium text-slate-600 mb-1">Some trends may be hidden because they fall outside the selected timeframe (<strong>{horizon === 'TODAY' ? 'Today' : `Next ${horizon} Days`}</strong>).</p>
-                            <button onClick={() => setHorizon('ALL')} className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-700 underline">View All Timeframes</button>
+                            <SafeButton onClick={() => setHorizon('ALL')} className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-700 underline">View All Timeframes</SafeButton>
                         </div>
-                    </div>
+                    </SurfaceCard>
                 )}
             </div>
 
