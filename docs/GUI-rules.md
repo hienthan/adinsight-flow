@@ -100,6 +100,11 @@ Use scoped helpers from [`frontend/src/lib/uiMotion.ts`](/Users/hienthan/Develop
 
 Use these first before introducing new inline patterns.
 
+Import rule:
+
+- prefer importing shared GUI primitives from [`frontend/src/components/common/ui/index.ts`](/Users/hienthan/Developments/GoogleAds/crawler-demo/frontend/src/components/common/ui/index.ts) when possible
+- add new reusable GUI primitives to the same folder and re-export them there
+
 ### `SafeButton`
 
 File:
