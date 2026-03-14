@@ -1,7 +1,7 @@
 import { AlertTriangle, ArrowRight, Sparkles } from 'lucide-react';
 import { SafeButton, SurfaceCard } from '../../components/common/ui';
 import type { CampaignRouteRecord, RouteGapSignal } from './types';
-import { getRouteHealthState } from './utils';
+import { ROUTE_HEALTH_META, getRouteHealthState, getSourceMarketMeta } from './utils';
 
 interface OutboundMapSignalsProps {
     gapSignals: RouteGapSignal[];
@@ -18,7 +18,14 @@ export default function OutboundMapSignals({
 }: OutboundMapSignalsProps) {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
-            <SurfaceCard variant="default" radius="20px">
+            <SurfaceCard
+                variant="default"
+                radius="22px"
+                style={{
+                    background: 'linear-gradient(180deg, var(--bg-content) 0%, rgba(59,130,246,0.05) 100%)',
+                    border: '1px solid rgba(59,130,246,0.18)',
+                }}
+            >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{
                         width: '42px',
@@ -52,13 +59,21 @@ export default function OutboundMapSignals({
                                 subtitle={`Missing coverage for ${signal.destinationCode}`}
                                 actionLabel="Create"
                                 onAction={() => onCreateGap(signal)}
+                                accentColor={getSourceMarketMeta(signal.sourceMarket).color}
                             />
                         ))
                     )}
                 </div>
             </SurfaceCard>
 
-            <SurfaceCard variant="default" radius="20px">
+            <SurfaceCard
+                variant="default"
+                radius="22px"
+                style={{
+                    background: 'linear-gradient(180deg, var(--bg-content) 0%, rgba(245,158,11,0.05) 100%)',
+                    border: '1px solid rgba(245,158,11,0.18)',
+                }}
+            >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{
                         width: '42px',
@@ -92,6 +107,7 @@ export default function OutboundMapSignals({
                                 subtitle={`${route.status} | ${getRouteHealthState(route)}`}
                                 actionLabel="Open"
                                 onAction={() => onSelectRoute(route)}
+                                accentColor={ROUTE_HEALTH_META[getRouteHealthState(route)].color}
                             />
                         ))
                     )}
@@ -106,25 +122,38 @@ function SignalRow({
     subtitle,
     actionLabel,
     onAction,
+    accentColor,
 }: {
     title: string;
     subtitle: string;
     actionLabel: string;
     onAction: () => void;
+    accentColor: string;
 }) {
     return (
         <div style={{
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '16px',
+            border: `1px solid ${accentColor}28`,
+            borderRadius: '18px',
             padding: '0.9rem 1rem',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.96) 100%)',
+            background: `linear-gradient(135deg, ${accentColor}10 0%, var(--bg-content) 58%, var(--bg-main) 100%)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '1rem',
+            boxShadow: 'var(--shadow-subtle)',
+            position: 'relative',
+            overflow: 'hidden',
         }}>
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: '4px',
+                background: accentColor,
+            }} />
             <div>
-                <div style={{ fontWeight: 800 }}>{title}</div>
+                <div style={{ fontWeight: 800, letterSpacing: '-0.02em' }}>{title}</div>
                 <div style={{ marginTop: '0.3rem', color: 'var(--text-dim)', fontSize: '0.82rem', fontWeight: 600 }}>
                     {subtitle}
                 </div>
@@ -133,9 +162,9 @@ function SignalRow({
                 onClick={onAction}
                 style={{
                     borderRadius: '12px',
-                    border: '1px solid var(--border-subtle)',
-                    background: 'var(--bg-content)',
-                    color: 'var(--text-main)',
+                    border: `1px solid ${accentColor}26`,
+                    background: `linear-gradient(135deg, ${accentColor}14 0%, var(--bg-content) 100%)`,
+                    color: accentColor,
                     fontWeight: 800,
                     padding: '0.7rem 0.9rem',
                     display: 'inline-flex',
@@ -155,11 +184,12 @@ function EmptyMessage({ message }: { message: string }) {
     return (
         <div style={{
             border: '1px dashed var(--border-subtle)',
-            borderRadius: '16px',
+            borderRadius: '18px',
             padding: '1rem',
             color: 'var(--text-dim)',
             fontWeight: 600,
             lineHeight: 1.6,
+            background: 'linear-gradient(180deg, var(--bg-main) 0%, var(--bg-content) 100%)',
         }}>
             {message}
         </div>

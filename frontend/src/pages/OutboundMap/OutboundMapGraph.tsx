@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { SurfaceCard } from '../../components/common/ui';
+import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
 import type { RouteGraphEdge, RouteGraphNode } from './types';
-import { ROUTE_STATUS_META } from './utils';
+import { ROUTE_STATUS_META, getSourceMarketMeta } from './utils';
 
 interface OutboundMapGraphProps {
     sourceNodes: RouteGraphNode[];
@@ -20,14 +22,43 @@ export default function OutboundMapGraph({
     edges,
     onSelectRoute,
 }: OutboundMapGraphProps) {
+    const [hoveredEdgeId, setHoveredEdgeId] = useState<string>();
     const sourceY = new Map(sourceNodes.map((node, index) => [node.id, 80 + index * ROW_HEIGHT]));
     const destinationY = new Map(destinationNodes.map((node, index) => [node.id, 80 + index * ROW_HEIGHT]));
     const svgHeight = Math.max(sourceNodes.length, destinationNodes.length) * ROW_HEIGHT + 120;
 
     return (
-        <SurfaceCard variant="default" radius="20px" style={{ padding: '1rem', overflowX: 'auto' }}>
+        <SurfaceCard
+            variant="default"
+            radius="24px"
+            style={{
+                padding: '1rem',
+                overflowX: 'auto',
+                background: 'linear-gradient(180deg, var(--bg-content) 0%, rgba(15,23,42,0.02) 100%)',
+                position: 'relative',
+            }}
+        >
             <div style={{ minWidth: '920px', height: `${svgHeight}px`, position: 'relative' }}>
                 <svg width="920" height={svgHeight} style={{ position: 'absolute', inset: 0 }}>
+                    {edges.map((edge) => {
+                        const fromY = sourceY.get(edge.sourceId) ?? 0;
+                        const toY = destinationY.get(edge.destinationId) ?? 0;
+                        const statusMeta = ROUTE_STATUS_META[edge.status];
+                        const d = `M ${LEFT_X + 120} ${fromY + NODE_HEIGHT / 2} C 420 ${fromY + NODE_HEIGHT / 2}, 490 ${toY + NODE_HEIGHT / 2}, ${RIGHT_X} ${toY + NODE_HEIGHT / 2}`;
+
+                        return (
+                            <path
+                                key={`glow-${edge.id}`}
+                                d={d}
+                                stroke={statusMeta.color}
+                                strokeOpacity={hoveredEdgeId === edge.id ? 0.28 : 0}
+                                strokeWidth={hoveredEdgeId === edge.id ? 14 : 0}
+                                fill="none"
+                                style={{ transition: SAFE_INTERACTIVE_TRANSITION, pointerEvents: 'none' }}
+                            />
+                        );
+                    })}
+
                     {edges.map((edge) => {
                         const fromY = sourceY.get(edge.sourceId) ?? 0;
                         const toY = destinationY.get(edge.destinationId) ?? 0;
@@ -40,10 +71,12 @@ export default function OutboundMapGraph({
                                 key={edge.id}
                                 d={d}
                                 stroke={statusMeta.color}
-                                strokeOpacity={0.72}
+                                strokeOpacity={hoveredEdgeId && hoveredEdgeId !== edge.id ? 0.22 : 0.74}
                                 strokeWidth={strokeWidth}
                                 fill="none"
-                                style={{ cursor: 'pointer' }}
+                                style={{ cursor: 'pointer', transition: SAFE_INTERACTIVE_TRANSITION }}
+                                onMouseEnter={() => setHoveredEdgeId(edge.id)}
+                                onMouseLeave={() => setHoveredEdgeId(undefined)}
                                 onClick={() => onSelectRoute(edge.route.id)}
                             />
                         );
@@ -81,6 +114,7 @@ function NodeCard({
     top: number;
     align: 'left' | 'right';
 }) {
+    const sourceMeta = align === 'left' ? getSourceMarketMeta(label) : null;
     const anchoredStyle = align === 'left'
         ? { left: '1rem' as const }
         : { right: '1rem' as const, textAlign: 'right' as const };
@@ -92,9 +126,11 @@ function NodeCard({
                 top,
                 width: '120px',
                 height: `${NODE_HEIGHT}px`,
-                borderRadius: '16px',
-                border: '1px solid var(--border-subtle)',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.96) 100%)',
+                borderRadius: '18px',
+                border: `1px solid ${sourceMeta ? `${sourceMeta.color}33` : 'var(--border-subtle)'}`,
+                background: sourceMeta
+                    ? `linear-gradient(135deg, ${sourceMeta.soft} 0%, var(--bg-content) 100%)`
+                    : 'linear-gradient(180deg, var(--bg-content) 0%, rgba(148,163,184,0.06) 100%)',
                 boxShadow: 'var(--shadow-subtle)',
                 display: 'flex',
                 alignItems: 'center',
@@ -102,6 +138,7 @@ function NodeCard({
                 padding: '0 1rem',
                 fontWeight: 800,
                 color: 'var(--text-main)',
+                transition: SAFE_INTERACTIVE_TRANSITION,
                 ...anchoredStyle,
             }}
         >

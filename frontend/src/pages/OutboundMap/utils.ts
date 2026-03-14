@@ -9,6 +9,24 @@ export const ROUTE_STATUS_META = {
     archived: { label: 'Archived', color: '#94a3b8', soft: 'rgba(148, 163, 184, 0.16)' },
 } as const;
 
+export const SOURCE_MARKET_META: Record<string, { label: string; color: string; soft: string; glow: string }> = {
+    HK: { label: 'Hong Kong', color: '#fb7185', soft: 'rgba(251, 113, 133, 0.13)', glow: 'rgba(251, 113, 133, 0.22)' },
+    TW: { label: 'Taiwan', color: '#06b6d4', soft: 'rgba(6, 182, 212, 0.13)', glow: 'rgba(6, 182, 212, 0.22)' },
+    ID: { label: 'Indonesia', color: '#f97316', soft: 'rgba(249, 115, 22, 0.13)', glow: 'rgba(249, 115, 22, 0.22)' },
+    SG: { label: 'Singapore', color: '#8b5cf6', soft: 'rgba(139, 92, 246, 0.13)', glow: 'rgba(139, 92, 246, 0.22)' },
+    MY: { label: 'Malaysia', color: '#14b8a6', soft: 'rgba(20, 184, 166, 0.13)', glow: 'rgba(20, 184, 166, 0.22)' },
+    VN: { label: 'Vietnam', color: '#eab308', soft: 'rgba(234, 179, 8, 0.16)', glow: 'rgba(234, 179, 8, 0.22)' },
+    PH: { label: 'Philippines', color: '#3b82f6', soft: 'rgba(59, 130, 246, 0.13)', glow: 'rgba(59, 130, 246, 0.22)' },
+};
+
+export const ROUTE_HEALTH_META = {
+    healthy: { label: 'Healthy', color: '#10b981', soft: 'rgba(16, 185, 129, 0.12)' },
+    stale: { label: 'Stale', color: '#f97316', soft: 'rgba(249, 115, 22, 0.13)' },
+    unmapped: { label: 'Unmapped', color: '#ef4444', soft: 'rgba(239, 68, 68, 0.13)' },
+    paused: { label: 'Paused', color: '#f59e0b', soft: 'rgba(245, 158, 11, 0.13)' },
+    planned: { label: 'Planned', color: '#3b82f6', soft: 'rgba(59, 130, 246, 0.13)' },
+} as const;
+
 export const ROUTE_PRIORITY_META = {
     low: { label: 'Low', color: '#94a3b8' },
     medium: { label: 'Medium', color: '#0ea5e9' },
@@ -267,4 +285,13 @@ export const deriveAttentionRoutes = (routes: CampaignRouteRecord[]) => {
             const rightScore = getRouteHealthState(right) === 'unmapped' ? 0 : getRouteHealthState(right) === 'stale' ? 1 : 2;
             return leftScore - rightScore || left.route_name.localeCompare(right.route_name);
         });
+};
+
+export const getSourceMarketMeta = (sourceMarket: string) => {
+    return SOURCE_MARKET_META[sourceMarket] || {
+        label: sourceMarket,
+        color: '#6366f1',
+        soft: 'rgba(99, 102, 241, 0.13)',
+        glow: 'rgba(99, 102, 241, 0.22)',
+    };
 };

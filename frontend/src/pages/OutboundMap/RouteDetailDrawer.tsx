@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { X, Pencil } from 'lucide-react';
 import { SafeButton } from '../../components/common/ui';
 import type { CampaignRouteRecord } from './types';
-import { ROUTE_PRIORITY_META, ROUTE_STATUS_META, getRouteHealthState } from './utils';
+import { ROUTE_HEALTH_META, ROUTE_PRIORITY_META, ROUTE_STATUS_META, getRouteHealthState, getSourceMarketMeta } from './utils';
 
 interface RouteDetailDrawerProps {
     route?: CampaignRouteRecord;
@@ -19,6 +19,8 @@ export default function RouteDetailDrawer({ route, routes = [], onClose, onEdit,
     const priorityMeta = route.priority ? ROUTE_PRIORITY_META[route.priority] : undefined;
     const campaigns = route.expand?.campaigns || [];
     const health = getRouteHealthState(route);
+    const healthMeta = ROUTE_HEALTH_META[health];
+    const sourceMeta = getSourceMarketMeta(route.source_market);
 
     return (
         <div style={{
@@ -51,9 +53,20 @@ export default function RouteDetailDrawer({ route, routes = [], onClose, onEdit,
                     padding: '1.5rem',
                     overflowY: 'auto',
                     pointerEvents: 'auto',
+                    backgroundImage: `radial-gradient(circle at top right, ${sourceMeta.glow} 0%, rgba(255,255,255,0) 32%)`,
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    padding: '1.15rem',
+                    borderRadius: '20px',
+                    background: `linear-gradient(145deg, ${sourceMeta.soft} 0%, ${statusMeta.soft} 42%, rgba(255,255,255,0.98) 100%)`,
+                    border: `1px solid ${sourceMeta.color}26`,
+                    boxShadow: `0 22px 34px -28px ${sourceMeta.glow}`,
+                }}>
                     <div>
                         <div style={{ color: 'var(--text-dim)', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                             Route Detail
@@ -61,6 +74,11 @@ export default function RouteDetailDrawer({ route, routes = [], onClose, onEdit,
                         <h2 style={{ marginTop: '0.45rem', fontSize: '1.85rem', lineHeight: 1.1, letterSpacing: '-0.04em' }}>
                             {route.route_name}
                         </h2>
+                        <div style={{ marginTop: '0.65rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <Tag tone={sourceMeta.color}>{sourceMeta.label}</Tag>
+                            <Tag tone={statusMeta.color}>{statusMeta.label}</Tag>
+                            <Tag tone={healthMeta.color}>{healthMeta.label}</Tag>
+                        </div>
                     </div>
 
                     <SafeButton
@@ -80,8 +98,6 @@ export default function RouteDetailDrawer({ route, routes = [], onClose, onEdit,
                 </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem', marginTop: '1rem' }}>
-                    <Tag tone={statusMeta.color}>{statusMeta.label}</Tag>
-                    <Tag>{health}</Tag>
                     {route.is_core_route && <Tag tone="hsl(var(--primary))">Core Route</Tag>}
                     {priorityMeta && <Tag tone={priorityMeta.color}>{priorityMeta.label}</Tag>}
                 </div>
@@ -94,23 +110,42 @@ export default function RouteDetailDrawer({ route, routes = [], onClose, onEdit,
                         <div style={{ display: 'grid', gap: '0.7rem' }}>
                             {routes.map((candidate) => {
                                 const active = candidate.id === route.id;
+                                const candidateStatus = ROUTE_STATUS_META[candidate.status];
+                                const candidateSource = getSourceMarketMeta(candidate.source_market);
                                 return (
                                     <button
                                         key={candidate.id}
                                         type="button"
                                         onClick={() => onSelectRoute?.(candidate)}
                                         style={{
-                                            borderRadius: '14px',
-                                            border: `1px solid ${active ? 'hsla(var(--primary) / 0.22)' : 'var(--border-subtle)'}`,
-                                            background: active ? 'linear-gradient(135deg, hsla(var(--primary) / 0.12) 0%, rgba(255,255,255,0.98) 100%)' : 'var(--bg-main)',
+                                            borderRadius: '16px',
+                                            border: `1px solid ${active ? `${candidateSource.color}33` : 'var(--border-subtle)'}`,
+                                            background: active
+                                                ? `linear-gradient(135deg, ${candidateSource.soft} 0%, ${candidateStatus.soft} 55%, rgba(255,255,255,0.98) 100%)`
+                                                : 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.96) 100%)',
                                             padding: '0.9rem 1rem',
                                             textAlign: 'left',
                                             cursor: 'pointer',
+                                            boxShadow: active ? `0 18px 28px -24px ${candidateSource.glow}` : 'none',
                                         }}
                                     >
-                                        <div style={{ fontWeight: 800 }}>{candidate.expand?.platform?.display_name || 'Unassigned'}</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+                                            <div style={{ fontWeight: 800 }}>{candidate.expand?.platform?.display_name || 'Unassigned'}</div>
+                                            <span style={{
+                                                width: '10px',
+                                                height: '10px',
+                                                borderRadius: '999px',
+                                                background: candidateStatus.color,
+                                                boxShadow: `0 0 0 5px ${candidateStatus.soft}`,
+                                                flexShrink: 0,
+                                            }} />
+                                        </div>
                                         <div style={{ marginTop: '0.25rem', color: 'var(--text-dim)', fontSize: '0.8rem', fontWeight: 600 }}>
                                             {candidate.route_name}
+                                        </div>
+                                        <div style={{ marginTop: '0.55rem', display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                                            <Tag tone={candidateSource.color}>{candidate.source_market}</Tag>
+                                            <Tag tone={candidateStatus.color}>{candidateStatus.label}</Tag>
                                         </div>
                                     </button>
                                 );
@@ -138,14 +173,19 @@ export default function RouteDetailDrawer({ route, routes = [], onClose, onEdit,
                                 key={campaign.id}
                                 style={{
                                     border: '1px solid var(--border-subtle)',
-                                    borderRadius: '14px',
+                                    borderRadius: '16px',
                                     padding: '0.9rem 1rem',
-                                    background: 'var(--bg-main)',
+                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.96) 100%)',
                                 }}
                             >
-                                <div style={{ fontWeight: 800 }}>{campaign.name}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+                                    <div style={{ fontWeight: 800 }}>{campaign.name}</div>
+                                    <Tag tone={campaign.status === 'active' ? '#10b981' : campaign.status === 'paused' ? '#f59e0b' : '#94a3b8'}>
+                                        {campaign.status}
+                                    </Tag>
+                                </div>
                                 <div style={{ marginTop: '0.35rem', color: 'var(--text-dim)', fontSize: '0.8rem', fontWeight: 600 }}>
-                                    {campaign.status} | {campaign.priority || 'normal'}
+                                    Priority: {campaign.priority || 'normal'}
                                 </div>
                             </div>
                         )) : (

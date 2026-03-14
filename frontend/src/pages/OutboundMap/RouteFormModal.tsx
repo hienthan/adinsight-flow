@@ -5,7 +5,7 @@ import { SafeButton } from '../../components/common/ui';
 import type { CountryOption } from '../../hooks/useCountryOptions';
 import type { Campaign, CampaignPlatform } from '../../types/campaign';
 import type { CampaignRouteFormValues } from './types';
-import { DEFAULT_ROUTE_FORM_VALUES, DEFAULT_SEASONAL_TAGS, buildRouteName } from './utils';
+import { DEFAULT_ROUTE_FORM_VALUES, DEFAULT_SEASONAL_TAGS, ROUTE_STATUS_META, buildRouteName, getSourceMarketMeta } from './utils';
 
 interface RouteFormModalProps {
     open: boolean;
@@ -107,6 +107,8 @@ export default function RouteFormModal({
         formValues.destination_country || 'Destination',
         formValues.destination_city || undefined,
     );
+    const sourceMeta = getSourceMarketMeta(formValues.source_market);
+    const statusMeta = ROUTE_STATUS_META[formValues.status];
 
     if (!open) return null;
 
@@ -122,12 +124,23 @@ export default function RouteFormModal({
                 maxHeight: '90vh',
                 overflowY: 'auto',
                 background: 'var(--bg-content)',
-                borderRadius: '24px',
+                borderRadius: '28px',
                 border: '1px solid var(--border-subtle)',
                 boxShadow: 'var(--shadow-large)',
-                padding: '1.5rem',
+                padding: '1.35rem',
+                backgroundImage: `radial-gradient(circle at top right, ${sourceMeta.glow} 0%, rgba(255,255,255,0) 28%)`,
             }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    padding: '1.15rem 1.2rem',
+                    borderRadius: '22px',
+                    background: `linear-gradient(145deg, ${sourceMeta.soft} 0%, ${statusMeta.soft} 42%, var(--bg-content) 100%)`,
+                    border: `1px solid ${sourceMeta.color}28`,
+                    boxShadow: `0 20px 32px -28px ${sourceMeta.glow}`,
+                }}>
                     <div>
                         <div style={{ color: 'var(--text-dim)', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                             Outbound Route
@@ -135,6 +148,16 @@ export default function RouteFormModal({
                         <h2 style={{ marginTop: '0.35rem', fontSize: '1.75rem', letterSpacing: '-0.04em' }}>{title}</h2>
                         <div style={{ marginTop: '0.55rem', color: 'var(--text-dim)', fontWeight: 700 }}>
                             {routePreview}
+                        </div>
+                        <div style={{ marginTop: '0.7rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <PreviewTag tone={sourceMeta.color}>{sourceMeta.label}</PreviewTag>
+                            <PreviewTag tone={statusMeta.color}>{statusMeta.label}</PreviewTag>
+                            {selectedCountry && <PreviewTag>{selectedCountry.code}</PreviewTag>}
+                            {formValues.platform && (
+                                <PreviewTag>
+                                    {platforms.find((platform) => platform.id === formValues.platform)?.display_name || 'Platform'}
+                                </PreviewTag>
+                            )}
                         </div>
                     </div>
 
@@ -154,8 +177,9 @@ export default function RouteFormModal({
                     </SafeButton>
                 </div>
 
-                <div style={{ marginTop: '1.4rem', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '1rem' }}>
-                    <Field label="Platform">
+                <SectionCard title="Route Identity" tone={sourceMeta.soft}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '1rem' }}>
+                        <Field label="Platform">
                         <select value={formValues.platform} onChange={(event) => updateField('platform', event.target.value)} style={selectStyle}>
                             <option value="">Unassigned</option>
                             {platforms.map((platform) => (
@@ -164,9 +188,9 @@ export default function RouteFormModal({
                                 </option>
                             ))}
                         </select>
-                    </Field>
+                        </Field>
 
-                    <Field label="Source Market">
+                        <Field label="Source Market">
                         <select value={formValues.source_market} onChange={(event) => updateField('source_market', event.target.value)} style={selectStyle}>
                             {['HK', 'TW', 'ID', 'SG', 'MY', 'VN', 'PH'].map((market) => (
                                 <option key={market} value={market}>
@@ -174,9 +198,9 @@ export default function RouteFormModal({
                                 </option>
                             ))}
                         </select>
-                    </Field>
+                        </Field>
 
-                    <Field label="Destination Country">
+                        <Field label="Destination Country">
                         <select value={formValues.destination_country} onChange={(event) => updateField('destination_country', event.target.value)} style={selectStyle}>
                             <option value="">Select destination</option>
                             {countryOptions.map((country) => (
@@ -185,31 +209,31 @@ export default function RouteFormModal({
                                 </option>
                             ))}
                         </select>
-                    </Field>
+                        </Field>
 
-                    <Field label="Destination Country Code">
+                        <Field label="Destination Country Code">
                         <input value={formValues.destination_country_code} readOnly style={{ ...inputStyle, color: 'var(--text-dim)', background: 'rgba(148,163,184,0.06)' }} />
-                    </Field>
+                        </Field>
 
-                    <Field label="Destination City">
+                        <Field label="Destination City">
                         <input
                             value={formValues.destination_city}
                             onChange={(event) => updateField('destination_city', event.target.value)}
                             placeholder="Optional"
                             style={inputStyle}
                         />
-                    </Field>
+                        </Field>
 
-                    <Field label="Status">
+                        <Field label="Status">
                         <select value={formValues.status} onChange={(event) => updateField('status', event.target.value as CampaignRouteFormValues['status'])} style={selectStyle}>
                             <option value="active">Active</option>
                             <option value="planned">Planned</option>
                             <option value="paused">Paused</option>
                             <option value="archived">Archived</option>
                         </select>
-                    </Field>
+                        </Field>
 
-                    <Field label="Priority">
+                        <Field label="Priority">
                         <select value={formValues.priority} onChange={(event) => updateField('priority', event.target.value as CampaignRouteFormValues['priority'])} style={selectStyle}>
                             <option value="">None</option>
                             <option value="low">Low</option>
@@ -217,38 +241,42 @@ export default function RouteFormModal({
                             <option value="high">High</option>
                             <option value="critical">Critical</option>
                         </select>
-                    </Field>
+                        </Field>
 
-                    <Field label="Owner">
+                        <Field label="Owner">
                         <input
                             value={formValues.owner}
                             onChange={(event) => updateField('owner', event.target.value)}
                             placeholder="Optional"
                             style={inputStyle}
                         />
-                    </Field>
+                        </Field>
+                    </div>
+                </SectionCard>
 
-                    <Field label="Start Date">
+                <SectionCard title="Timing And Planning" tone={statusMeta.soft}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '1rem' }}>
+                        <Field label="Start Date">
                         <input type="date" value={formValues.start_date} onChange={(event) => updateField('start_date', event.target.value)} style={inputStyle} />
-                    </Field>
+                        </Field>
 
-                    <Field label="End Date">
+                        <Field label="End Date">
                         <input type="date" value={formValues.end_date} onChange={(event) => updateField('end_date', event.target.value)} style={inputStyle} />
-                    </Field>
+                        </Field>
 
-                    <Field label="Last Reviewed">
+                        <Field label="Last Reviewed">
                         <input type="date" value={formValues.last_reviewed_date} onChange={(event) => updateField('last_reviewed_date', event.target.value)} style={inputStyle} />
-                    </Field>
+                        </Field>
 
-                    <Field label="Budget Hint">
+                        <Field label="Budget Hint">
                         <input value={formValues.budget_hint} onChange={(event) => updateField('budget_hint', event.target.value)} placeholder="Optional" style={inputStyle} />
-                    </Field>
+                        </Field>
 
-                    <Field label="Target ROAS Hint">
+                        <Field label="Target ROAS Hint">
                         <input value={formValues.target_roas_hint} onChange={(event) => updateField('target_roas_hint', event.target.value)} placeholder="Optional" style={inputStyle} />
-                    </Field>
+                        </Field>
 
-                    <Field label="Core Route">
+                        <Field label="Core Route">
                         <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700, color: 'var(--text-main)', paddingTop: '0.6rem' }}>
                             <input
                                 type="checkbox"
@@ -257,11 +285,13 @@ export default function RouteFormModal({
                             />
                             Mark as strategic route
                         </label>
-                    </Field>
-                </div>
+                        </Field>
+                    </div>
+                </SectionCard>
 
                 <div style={{ marginTop: '1.1rem', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '1rem' }}>
-                    <Field label="Campaigns">
+                    <SectionCard title="Campaign Mapping">
+                        <Field label="Campaigns">
                         <MultiSelectDropdown
                             options={campaignOptions}
                             value={formValues.campaigns.join('|')}
@@ -270,9 +300,16 @@ export default function RouteFormModal({
                             width="100%"
                             showSearch
                         />
-                    </Field>
+                        </Field>
+                        <div style={{ marginTop: '0.75rem', color: 'var(--text-dim)', fontSize: '0.8rem', lineHeight: 1.6 }}>
+                            {formValues.platform
+                                ? `${visibleCampaigns.length} campaigns available for the selected platform.`
+                                : `Showing all ${visibleCampaigns.length} campaigns until a platform is selected.`}
+                        </div>
+                    </SectionCard>
 
-                    <Field label="Seasonal Tags">
+                    <SectionCard title="Seasonality">
+                        <Field label="Seasonal Tags">
                         <MultiSelectDropdown
                             options={DEFAULT_SEASONAL_TAGS.map((tag) => ({ label: tag, value: tag }))}
                             value={formValues.seasonal_tags.join('|')}
@@ -280,24 +317,41 @@ export default function RouteFormModal({
                             placeholder="Select tags"
                             width="100%"
                         />
-                    </Field>
+                        </Field>
+                    </SectionCard>
                 </div>
 
-                <Field label="Notes" style={{ marginTop: '1rem' }}>
-                    <textarea
-                        value={formValues.notes}
-                        onChange={(event) => updateField('notes', event.target.value)}
-                        placeholder="Operational note, route rationale, seasonality..."
-                        style={{
-                            ...inputStyle,
-                            minHeight: '150px',
-                            resize: 'vertical',
-                            lineHeight: 1.6,
-                        }}
-                    />
-                </Field>
+                <SectionCard title="Notes" style={{ marginTop: '1rem' }}>
+                    <Field label="Route Notes">
+                        <textarea
+                            value={formValues.notes}
+                            onChange={(event) => updateField('notes', event.target.value)}
+                            placeholder="Operational note, route rationale, seasonality..."
+                            style={{
+                                ...inputStyle,
+                                minHeight: '150px',
+                                resize: 'vertical',
+                                lineHeight: 1.6,
+                            }}
+                        />
+                    </Field>
+                </SectionCard>
 
-                <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <div style={{
+                    marginTop: '1.4rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    alignItems: 'center',
+                    position: 'sticky',
+                    bottom: '-1px',
+                    padding: '1rem 0 0.2rem 0',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--bg-content) 20%)',
+                }}>
+                    <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', fontWeight: 600 }}>
+                        {formValues.destination_country ? routePreview : 'Select destination to build this route.'}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <SafeButton
                         onClick={onClose}
                         style={{
@@ -326,6 +380,7 @@ export default function RouteFormModal({
                     >
                         {isSaving ? 'Saving...' : 'Save Route'}
                     </SafeButton>
+                    </div>
                 </div>
             </div>
         </div>
@@ -367,3 +422,51 @@ const selectStyle: CSSProperties = {
     ...inputStyle,
     appearance: 'none',
 };
+
+function PreviewTag({ children, tone }: { children: ReactNode; tone?: string }) {
+    return (
+        <span style={{
+            borderRadius: '999px',
+            padding: '0.35rem 0.6rem',
+            border: '1px solid var(--border-subtle)',
+            background: tone ? `${tone}14` : 'rgba(148,163,184,0.1)',
+            color: tone || 'var(--text-dim)',
+            fontSize: '0.74rem',
+            fontWeight: 800,
+        }}>
+            {children}
+        </span>
+    );
+}
+
+function SectionCard({
+    title,
+    children,
+    tone,
+    style,
+}: {
+    title: string;
+    children: ReactNode;
+    tone?: string;
+    style?: CSSProperties;
+}) {
+    return (
+        <div
+            style={{
+                marginTop: '1.1rem',
+                padding: '1rem',
+                borderRadius: '20px',
+                border: '1px solid var(--border-subtle)',
+                background: tone
+                    ? `linear-gradient(180deg, ${tone} 0%, var(--bg-content) 100%)`
+                    : 'linear-gradient(180deg, rgba(148,163,184,0.06) 0%, var(--bg-content) 100%)',
+                ...style,
+            }}
+        >
+            <div style={{ marginBottom: '0.9rem', color: 'var(--text-dim)', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                {title}
+            </div>
+            {children}
+        </div>
+    );
+}

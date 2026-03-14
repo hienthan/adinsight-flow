@@ -205,7 +205,13 @@ export default function OutboundMapPage() {
     const hasError = routesQuery.error || platformsQuery.error || campaignsQuery.error;
 
     return (
-        <div className="page-container" style={{ paddingBottom: '4rem' }}>
+        <div
+            className="page-container"
+            style={{
+                paddingBottom: '4rem',
+                backgroundImage: 'radial-gradient(circle at top left, rgba(6,182,212,0.045) 0%, rgba(255,255,255,0) 28%), radial-gradient(circle at top right, rgba(251,113,133,0.04) 0%, rgba(255,255,255,0) 30%)',
+            }}
+        >
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -213,7 +219,34 @@ export default function OutboundMapPage() {
                 gap: '1rem',
                 marginBottom: '1.5rem',
                 marginTop: '1rem',
+                padding: '1.3rem 1.4rem',
+                borderRadius: '26px',
+                background: 'linear-gradient(140deg, var(--bg-content) 0%, rgba(148,163,184,0.04) 48%, var(--bg-content) 100%)',
+                border: '1px solid rgba(148,163,184,0.14)',
+                boxShadow: '0 24px 40px -34px rgba(15,23,42,0.28)',
+                position: 'relative',
+                overflow: 'hidden',
             }}>
+                <div style={{
+                    position: 'absolute',
+                    top: '-34px',
+                    right: '-34px',
+                    width: '140px',
+                    height: '140px',
+                    borderRadius: '999px',
+                    background: 'rgba(6,182,212,0.07)',
+                    filter: 'blur(16px)',
+                }} />
+                <div style={{
+                    position: 'absolute',
+                    bottom: '-50px',
+                    left: '-34px',
+                    width: '150px',
+                    height: '150px',
+                    borderRadius: '999px',
+                    background: 'rgba(251,113,133,0.06)',
+                    filter: 'blur(18px)',
+                }} />
                 <div>
                     <div style={{ color: 'var(--text-dim)', fontWeight: 800, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                         Camp Tracking

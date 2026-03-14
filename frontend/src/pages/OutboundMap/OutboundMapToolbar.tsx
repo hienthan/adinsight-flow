@@ -58,27 +58,30 @@ export default function OutboundMapToolbar({
         <SurfaceCard variant="soft" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
-                    <ToolbarGroup compact>
-                        <select
-                            value={filters.platform}
-                            onChange={(event) => updateField('platform', event.target.value)}
-                            style={{
-                                border: 'none',
-                                background: 'transparent',
-                                color: 'var(--text-main)',
-                                minWidth: '150px',
-                                outline: 'none',
-                                fontWeight: 600,
-                            }}
-                        >
-                            <option value="">All Platforms</option>
-                            {platforms.map((platform) => (
-                                <option key={platform.id} value={platform.id}>
-                                    {platform.display_name}
-                                </option>
-                            ))}
-                        </select>
-                    </ToolbarGroup>
+                    <div className="filter-group">
+                        <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: '0.35rem' }}>Platform</label>
+                        <ToolbarGroup compact style={{ width: '150px' }}>
+                            <select
+                                value={filters.platform}
+                                onChange={(event) => updateField('platform', event.target.value)}
+                                style={{
+                                    border: 'none',
+                                    background: 'transparent',
+                                    color: 'var(--text-main)',
+                                    width: '100%',
+                                    outline: 'none',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                <option value="">All Platforms</option>
+                                {platforms.map((platform) => (
+                                    <option key={platform.id} value={platform.id}>
+                                        {platform.display_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </ToolbarGroup>
+                    </div>
 
                     <div className="filter-group">
                         <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: '0.35rem' }}>Source</label>

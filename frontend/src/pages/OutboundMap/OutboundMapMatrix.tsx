@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { SafeButton, SurfaceCard } from '../../components/common/ui';
 import type { CampaignRouteRecord } from './types';
-import { ROUTE_STATUS_META, getRouteHealthState } from './utils';
+import { ROUTE_HEALTH_META, ROUTE_STATUS_META, getRouteHealthState, getSourceMarketMeta } from './utils';
 
 interface OutboundMapMatrixProps {
     sourceMarkets: string[];
@@ -66,6 +66,8 @@ interface MatrixRowProps {
 }
 
 function MatrixRow({ sourceMarket, destinations, cells, onSelectRoutes, onQuickAdd }: MatrixRowProps) {
+    const sourceMeta = getSourceMarketMeta(sourceMarket);
+
     return (
         <>
             <div style={{
@@ -73,12 +75,25 @@ function MatrixRow({ sourceMarket, destinations, cells, onSelectRoutes, onQuickA
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '1rem',
-                borderRadius: '16px',
-                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.03) 0%, rgba(59, 130, 246, 0.07) 100%)',
-                border: '1px solid var(--border-subtle)',
+                borderRadius: '18px',
+                background: `linear-gradient(135deg, ${sourceMeta.soft} 0%, var(--bg-content) 100%)`,
+                border: `1px solid ${sourceMeta.color}2a`,
                 fontWeight: 800,
                 letterSpacing: '-0.02em',
+                boxShadow: `inset 4px 0 0 ${sourceMeta.color}`,
+                position: 'relative',
+                overflow: 'hidden',
             }}>
+                <div style={{
+                    position: 'absolute',
+                    right: '-18px',
+                    top: '-18px',
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '999px',
+                    background: sourceMeta.glow,
+                    filter: 'blur(6px)',
+                }} />
                 {sourceMarket}
             </div>
 
@@ -91,16 +106,26 @@ function MatrixRow({ sourceMarket, destinations, cells, onSelectRoutes, onQuickA
                         <div
                             key={`${sourceMarket}|${destination.code}`}
                             style={{
-                                minHeight: '108px',
-                                borderRadius: '18px',
-                                border: '1px dashed rgba(148, 163, 184, 0.45)',
-                                background: 'linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(248,250,252,0.95) 100%)',
+                                minHeight: '118px',
+                                borderRadius: '20px',
+                                border: `1px dashed ${sourceMeta.color}55`,
+                                background: `linear-gradient(160deg, ${sourceMeta.soft} 0%, var(--bg-content) 56%, var(--bg-main) 100%)`,
                                 padding: '1rem',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'space-between',
+                                position: 'relative',
+                                overflow: 'hidden',
                             }}
                         >
+                            <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: '4px',
+                                background: `linear-gradient(90deg, ${sourceMeta.color} 0%, transparent 100%)`,
+                            }} />
                             <div style={{ color: 'var(--text-dim)', fontWeight: 700, fontSize: '0.85rem' }}>
                                 No route
                             </div>
@@ -129,6 +154,7 @@ function MatrixRow({ sourceMarket, destinations, cells, onSelectRoutes, onQuickA
                 const statusMeta = ROUTE_STATUS_META[route.status];
                 const campaignCount = cell.campaignCount;
                 const healthState = getRouteHealthState(route);
+                const healthMeta = ROUTE_HEALTH_META[healthState];
                 const routeCount = cell.routes.length;
                 const platforms = cell.routes
                     .map((item) => item.expand?.platform?.display_name)
@@ -141,10 +167,10 @@ function MatrixRow({ sourceMarket, destinations, cells, onSelectRoutes, onQuickA
                         type="button"
                         onClick={() => onSelectRoutes(cell.routes)}
                         style={{
-                            minHeight: '108px',
-                            borderRadius: '18px',
-                            border: `1px solid ${statusMeta.color}33`,
-                            background: `linear-gradient(180deg, ${statusMeta.soft} 0%, rgba(255,255,255,0.98) 100%)`,
+                            minHeight: '118px',
+                            borderRadius: '20px',
+                            border: `1px solid ${routeCount > 1 ? sourceMeta.color : statusMeta.color}33`,
+                            background: `linear-gradient(160deg, ${sourceMeta.soft} 0%, ${statusMeta.soft} 32%, var(--bg-content) 72%, var(--bg-main) 100%)`,
                             padding: '1rem',
                             display: 'flex',
                             flexDirection: 'column',
@@ -152,15 +178,38 @@ function MatrixRow({ sourceMarket, destinations, cells, onSelectRoutes, onQuickA
                             justifyContent: 'space-between',
                             cursor: 'pointer',
                             textAlign: 'left',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            boxShadow: `0 12px 22px -18px ${sourceMeta.glow}`,
                         }}
                     >
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '4px',
+                            background: routeCount > 1
+                                ? `linear-gradient(90deg, ${sourceMeta.color} 0%, ${statusMeta.color} 62%, transparent 100%)`
+                                : `linear-gradient(90deg, ${statusMeta.color} 0%, transparent 100%)`,
+                        }} />
+                        <div style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '999px',
+                            background: routeCount > 1 ? sourceMeta.glow : statusMeta.soft,
+                            filter: 'blur(10px)',
+                        }} />
                         <div style={{ display: 'flex', width: '100%', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                             <div>
                                 <div style={{ fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.2 }}>
                                     {campaignCount} campaign{campaignCount === 1 ? '' : 's'}
                                 </div>
                                 {routeCount > 1 && (
-                                    <div style={{ marginTop: '0.2rem', color: 'var(--text-dim)', fontSize: '0.74rem', fontWeight: 800 }}>
+                                    <div style={{ marginTop: '0.2rem', color: sourceMeta.color, fontSize: '0.74rem', fontWeight: 800 }}>
                                         {routeCount} routes in this cell
                                     </div>
                                 )}
@@ -182,7 +231,7 @@ function MatrixRow({ sourceMarket, destinations, cells, onSelectRoutes, onQuickA
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
                             <Badge>{statusMeta.label}</Badge>
                             {route.is_core_route && <Badge accent>Core</Badge>}
-                            <Badge subtle>{healthState}</Badge>
+                            <Badge subtle tone={healthMeta.color}>{healthState}</Badge>
                             {platforms.map((platform) => (
                                 <Badge key={platform}>{platform}</Badge>
                             ))}
@@ -201,10 +250,12 @@ function Badge({
     children,
     accent = false,
     subtle = false,
+    tone,
 }: {
     children: ReactNode;
     accent?: boolean;
     subtle?: boolean;
+    tone?: string;
 }) {
     return (
         <span style={{
@@ -213,9 +264,9 @@ function Badge({
             fontSize: '0.72rem',
             fontWeight: 800,
             textTransform: 'capitalize',
-            border: `1px solid ${accent ? 'hsla(var(--primary) / 0.2)' : 'var(--border-subtle)'}`,
-            background: accent ? 'hsla(var(--primary) / 0.12)' : subtle ? 'rgba(15, 23, 42, 0.04)' : 'rgba(255,255,255,0.7)',
-            color: accent ? 'hsl(var(--primary))' : 'var(--text-dim)',
+            border: `1px solid ${accent ? 'hsla(var(--primary) / 0.2)' : tone ? `${tone}30` : 'var(--border-subtle)'}`,
+            background: accent ? 'hsla(var(--primary) / 0.12)' : subtle ? (tone ? `${tone}14` : 'rgba(148, 163, 184, 0.10)') : 'rgba(148, 163, 184, 0.12)',
+            color: accent ? 'hsl(var(--primary))' : tone || 'var(--text-dim)',
         }}>
             {children}
         </span>
