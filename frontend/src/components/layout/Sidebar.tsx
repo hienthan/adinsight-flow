@@ -15,6 +15,11 @@ import {
 import { pb } from '../../lib/pocketbase';
 import { CampaignReminder } from '../../types/campaign';
 import { cn } from '../../lib/utils';
+import {
+    SAFE_INTERACTIVE_TRANSITION,
+    SAFE_NAV_SELECTORS,
+    createSafeInteractionScopeCss,
+} from '../../lib/uiMotion';
 
 interface SidebarProps {
     collapsed: boolean;
@@ -134,7 +139,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     background: active ? 'white' : theme.bg,
                     color: theme.main,
                     boxShadow: active ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
-                    transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
+                    transition: SAFE_INTERACTIVE_TRANSITION,
                     flexShrink: 0,
                     border: active ? '1px solid var(--border-subtle)' : '1px solid transparent'
                 }}>
@@ -176,15 +181,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     return (
         <aside className={cn("sidebar", collapsed && "collapsed")}>
             <style>{`
-                .sidebar .nav-item,
-                .sidebar .nav-item-header {
-                    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
-                }
-
-                .sidebar .nav-item:hover,
-                .sidebar .nav-item-header:hover {
-                    transform: none;
-                }
+                ${createSafeInteractionScopeCss('.sidebar', SAFE_NAV_SELECTORS)}
             `}</style>
             <button className="collapse-btn" onClick={onToggle}>
                 {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
@@ -263,7 +260,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         fontSize: '0.9rem',
                         cursor: 'pointer',
                         borderRadius: '0.85rem',
-                        transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease'
+                        transition: SAFE_INTERACTIVE_TRANSITION
                     }}
                     className="nav-item-header"
                 >

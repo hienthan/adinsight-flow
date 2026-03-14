@@ -7,6 +7,14 @@ import EditCampaignModal from '../../components/campaign/EditCampaignModal';
 import { Campaign, CampaignPlatform, CampaignReminder } from '../../types/campaign';
 import { pb } from '../../lib/pocketbase';
 import { htmlToPlainText } from '../../lib/noteHtml';
+import {
+    SAFE_BUTTON_SELECTORS,
+    SAFE_CARD_SELECTORS,
+    SAFE_INTERACTIVE_TRANSITION,
+    createSafeInteractionScopeCss,
+} from '../../lib/uiMotion';
+import { FilterChip } from '../../components/common/ui/FilterChip';
+import { SafeButton } from '../../components/common/ui/SafeButton';
 
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type OverviewMode = 'comfortable' | 'compact';
@@ -413,20 +421,7 @@ export default function CampOverview() {
     return (
         <div className="page-container camp-overview-page">
             <style>{`
-                .camp-overview-page .hero-btn,
-                .camp-overview-page .hero-btn-ghost,
-                .camp-overview-page .hero-btn-primary,
-                .camp-overview-page .hero-card {
-                    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
-                }
-
-                .camp-overview-page .hero-btn:hover,
-                .camp-overview-page .hero-btn-ghost:hover,
-                .camp-overview-page .hero-btn-primary:hover,
-                .camp-overview-page .hero-card:hover {
-                    transform: none;
-                    filter: none;
-                }
+                ${createSafeInteractionScopeCss('.camp-overview-page', [...SAFE_BUTTON_SELECTORS, ...SAFE_CARD_SELECTORS])}
             `}</style>
             {/* Header Area */}
             <div style={{
@@ -459,7 +454,7 @@ export default function CampOverview() {
                     </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <button
+                    <SafeButton
                         onClick={() => {
                             setSearchParams({});
                         }}
@@ -474,7 +469,6 @@ export default function CampOverview() {
                             visibility: hasActiveFilters ? 'visible' : 'hidden',
                             pointerEvents: hasActiveFilters ? 'auto' : 'none',
                             color: hasActiveFilters ? 'white' : 'var(--text-dim)',
-                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
                             boxShadow: hasActiveFilters ? '0 4px 12px hsla(var(--primary) / 0.3)' : 'var(--shadow-subtle)',
                             display: 'flex',
                             alignItems: 'center',
@@ -482,7 +476,7 @@ export default function CampOverview() {
                         }}
                     >
                         Reset Filters
-                    </button>
+                    </SafeButton>
 
                     <button
                         onClick={() => openEdit(null as any)}
@@ -630,7 +624,7 @@ export default function CampOverview() {
                                         border: `1px solid ${item.active ? 'hsl(var(--primary))' : 'var(--border-subtle)'}`,
                                         borderRadius: '10px',
                                         cursor: 'pointer',
-                                        transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
+                                        transition: SAFE_INTERACTIVE_TRANSITION,
                                         userSelect: 'none',
                                     }}
                                 >
@@ -643,7 +637,7 @@ export default function CampOverview() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease'
+                                        transition: SAFE_INTERACTIVE_TRANSITION
                                     }}>
                                         {item.active && <Check size={10} strokeWidth={4} color="white" />}
                                     </div>
@@ -695,127 +689,87 @@ export default function CampOverview() {
 
                     <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', marginRight: '0.5rem' }} />
 
-                    {/* 1. Critical */}
-                    <div
+                    <FilterChip
+                        active={filterPriority === 'critical'}
                         onClick={() => setFilterPriority(filterPriority === 'critical' ? 'all' : 'critical')}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.4rem 0.85rem',
-                            borderRadius: '10px',
-                            border: `1px solid ${filterPriority === 'critical' ? '#d946ef' : 'rgba(217, 70, 239, 0.12)'}`,
-                            background: filterPriority === 'critical' ? '#d946ef' : 'rgba(217, 70, 239, 0.05)',
-                            fontSize: '0.8rem',
-                            fontWeight: 800,
-                            color: filterPriority === 'critical' ? '#fff' : '#d946ef',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
-                            boxShadow: filterPriority === 'critical' ? '0 0 15px rgba(217, 70, 239, 0.4)' : 'none',
-                            opacity: (filterPriority !== 'all' && filterPriority !== 'critical') ? 0.55 : 1
-                        }}
+                        activeBackground="#d946ef"
+                        inactiveBackground="rgba(217, 70, 239, 0.05)"
+                        activeBorder="#d946ef"
+                        inactiveBorder="rgba(217, 70, 239, 0.12)"
+                        activeColor="#fff"
+                        inactiveColor="#d946ef"
+                        activeShadow="0 0 15px rgba(217, 70, 239, 0.4)"
+                        dimmed={filterPriority !== 'all' && filterPriority !== 'critical'}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterPriority === 'critical' ? '#fff' : '#d946ef', boxShadow: filterPriority === 'critical' ? '0 0 8px #fff' : '0 0 8px #d946ef' }} />}
                     >
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterPriority === 'critical' ? '#fff' : '#d946ef', boxShadow: filterPriority === 'critical' ? '0 0 8px #fff' : '0 0 8px #d946ef' }} />
                         Critical: {summary.critical}
-                    </div>
+                    </FilterChip>
 
-                    {/* 2. High */}
-                    <div
+                    <FilterChip
+                        active={filterPriority === 'high'}
                         onClick={() => setFilterPriority(filterPriority === 'high' ? 'all' : 'high')}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.4rem 0.85rem',
-                            borderRadius: '10px',
-                            border: `1px solid ${filterPriority === 'high' ? '#ef4444' : 'rgba(239, 68, 68, 0.12)'}`,
-                            background: filterPriority === 'high' ? '#ef4444' : 'rgba(239, 68, 68, 0.05)',
-                            fontSize: '0.8rem',
-                            fontWeight: 800,
-                            color: filterPriority === 'high' ? '#fff' : '#ef4444',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
-                            boxShadow: filterPriority === 'high' ? '0 0 15px rgba(239, 68, 68, 0.4)' : 'none',
-                            opacity: (filterPriority !== 'all' && filterPriority !== 'high') ? 0.55 : 1
-                        }}
+                        activeBackground="#ef4444"
+                        inactiveBackground="rgba(239, 68, 68, 0.05)"
+                        activeBorder="#ef4444"
+                        inactiveBorder="rgba(239, 68, 68, 0.12)"
+                        activeColor="#fff"
+                        inactiveColor="#ef4444"
+                        activeShadow="0 0 15px rgba(239, 68, 68, 0.4)"
+                        dimmed={filterPriority !== 'all' && filterPriority !== 'high'}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterPriority === 'high' ? '#fff' : '#ef4444', boxShadow: filterPriority === 'high' ? '0 0 8px #fff' : '0 0 8px #ef4444' }} />}
                     >
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterPriority === 'high' ? '#fff' : '#ef4444', boxShadow: filterPriority === 'high' ? '0 0 8px #fff' : '0 0 8px #ef4444' }} />
                         High: {summary.high}
-                    </div>
+                    </FilterChip>
 
                     <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)', margin: '0 0.25rem', opacity: (filterPriority !== 'all' || reminderQuickFilter !== 'all') ? 0.3 : 1 }} />
 
-                    {/* 3. Overdue */}
-                    <div
+                    <FilterChip
+                        active={reminderQuickFilter === 'overdue'}
                         onClick={() => setReminderQuickFilter(reminderQuickFilter === 'overdue' ? 'all' : 'overdue')}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.4rem 0.85rem',
-                            borderRadius: '10px',
-                            border: `1px solid ${reminderQuickFilter === 'overdue' ? '#ef4444' : 'rgba(239, 68, 68, 0.12)'}`,
-                            background: reminderQuickFilter === 'overdue' ? '#ef4444' : 'rgba(239, 68, 68, 0.05)',
-                            fontSize: '0.8rem',
-                            fontWeight: 800,
-                            color: reminderQuickFilter === 'overdue' ? '#fff' : '#ef4444',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
-                            boxShadow: reminderQuickFilter === 'overdue' ? '0 0 15px rgba(239, 68, 68, 0.4)' : 'none',
-                            opacity: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'overdue') ? 0.55 : 1
-                        }}
+                        activeBackground="#ef4444"
+                        inactiveBackground="rgba(239, 68, 68, 0.05)"
+                        activeBorder="#ef4444"
+                        inactiveBorder="rgba(239, 68, 68, 0.12)"
+                        activeColor="#fff"
+                        inactiveColor="#ef4444"
+                        activeShadow="0 0 15px rgba(239, 68, 68, 0.4)"
+                        dimmed={reminderQuickFilter !== 'all' && reminderQuickFilter !== 'overdue'}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'overdue' ? '#fff' : '#ef4444', boxShadow: reminderQuickFilter === 'overdue' ? '0 0 8px #fff' : '0 0 8px #ef4444' }} />}
                     >
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'overdue' ? '#fff' : '#ef4444', boxShadow: reminderQuickFilter === 'overdue' ? '0 0 8px #fff' : '0 0 8px #ef4444' }} />
                         Overdue: {summary.overdue}
-                    </div>
+                    </FilterChip>
 
-                    {/* 4. Today */}
-                    <div
+                    <FilterChip
+                        active={reminderQuickFilter === 'today'}
                         onClick={() => setReminderQuickFilter(reminderQuickFilter === 'today' ? 'all' : 'today')}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.4rem 0.85rem',
-                            borderRadius: '10px',
-                            border: `1px solid ${reminderQuickFilter === 'today' ? '#f59e0b' : 'rgba(245, 158, 11, 0.12)'}`,
-                            background: reminderQuickFilter === 'today' ? '#f59e0b' : 'rgba(245, 158, 11, 0.05)',
-                            fontSize: '0.8rem',
-                            fontWeight: 800,
-                            color: reminderQuickFilter === 'today' ? '#fff' : '#f59e0b',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
-                            boxShadow: reminderQuickFilter === 'today' ? '0 0 15px rgba(245, 158, 11, 0.4)' : 'none',
-                            opacity: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'today') ? 0.55 : 1
-                        }}
+                        activeBackground="#f59e0b"
+                        inactiveBackground="rgba(245, 158, 11, 0.05)"
+                        activeBorder="#f59e0b"
+                        inactiveBorder="rgba(245, 158, 11, 0.12)"
+                        activeColor="#fff"
+                        inactiveColor="#f59e0b"
+                        activeShadow="0 0 15px rgba(245, 158, 11, 0.4)"
+                        dimmed={reminderQuickFilter !== 'all' && reminderQuickFilter !== 'today'}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'today' ? '#fff' : '#f59e0b', boxShadow: reminderQuickFilter === 'today' ? '0 0 8px #fff' : '0 0 8px #f59e0b' }} />}
                     >
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'today' ? '#fff' : '#f59e0b', boxShadow: reminderQuickFilter === 'today' ? '0 0 8px #fff' : '0 0 8px #f59e0b' }} />
                         Today: {summary.today}
-                    </div>
+                    </FilterChip>
 
-                    {/* 5. Next 3 days */}
-                    <div
+                    <FilterChip
+                        active={reminderQuickFilter === 'upcoming'}
                         onClick={() => setReminderQuickFilter(reminderQuickFilter === 'upcoming' ? 'all' : 'upcoming')}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.4rem 0.85rem',
-                            borderRadius: '10px',
-                            border: `1px solid ${reminderQuickFilter === 'upcoming' ? 'hsl(var(--primary))' : 'var(--border-subtle)'}`,
-                            background: reminderQuickFilter === 'upcoming' ? 'hsl(var(--primary))' : 'var(--bg-main)',
-                            fontSize: '0.8rem',
-                            fontWeight: 800,
-                            color: reminderQuickFilter === 'upcoming' ? '#fff' : 'var(--text-dim)',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
-                            boxShadow: reminderQuickFilter === 'upcoming' ? '0 0 15px hsla(var(--primary) / 0.4)' : 'none',
-                            opacity: (reminderQuickFilter !== 'all' && reminderQuickFilter !== 'upcoming') ? 0.55 : 1
-                        }}
+                        activeBackground="hsl(var(--primary))"
+                        inactiveBackground="var(--bg-main)"
+                        activeBorder="hsl(var(--primary))"
+                        inactiveBorder="var(--border-subtle)"
+                        activeColor="#fff"
+                        inactiveColor="var(--text-dim)"
+                        activeShadow="0 0 15px hsla(var(--primary) / 0.4)"
+                        dimmed={reminderQuickFilter !== 'all' && reminderQuickFilter !== 'upcoming'}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'upcoming' ? '#fff' : 'var(--text-muted)', boxShadow: reminderQuickFilter === 'upcoming' ? '0 0 8px #fff' : 'none' }} />}
                     >
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: reminderQuickFilter === 'upcoming' ? '#fff' : 'var(--text-muted)', boxShadow: reminderQuickFilter === 'upcoming' ? '0 0 8px #fff' : 'none' }} />
                         Next 3 days: {summary.upcoming}
-                    </div>
+                    </FilterChip>
                 </div>
             </div >
 
@@ -889,7 +843,7 @@ export default function CampOverview() {
                                             cursor: 'pointer',
                                             padding: '0.5rem',
                                             borderRadius: '8px',
-                                            transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease',
+                                            transition: SAFE_INTERACTIVE_TRANSITION,
                                             userSelect: 'none'
                                         }}
                                         onMouseEnter={(e) => {

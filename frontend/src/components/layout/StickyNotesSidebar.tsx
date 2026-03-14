@@ -18,6 +18,12 @@ import RichTextEditor from '../common/RichTextEditor';
 import { htmlToPlainText } from '../../lib/noteHtml';
 import ReminderItem from '../tracking/ReminderItem';
 import AddPlatformReminderModal from '../campaign/AddPlatformReminderModal';
+import {
+    SAFE_BUTTON_SELECTORS,
+    SAFE_CARD_SELECTORS,
+    SAFE_INTERACTIVE_TRANSITION,
+    createSafeInteractionScopeCss,
+} from '../../lib/uiMotion';
 
 // --- UI HELPERS ---
 
@@ -202,20 +208,8 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
             }}
         >
             <style>{`
-                .sticky-sidebar-shell .hero-btn,
-                .sticky-sidebar-shell .hero-btn-ghost {
-                    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
-                }
-
-                .sticky-sidebar-shell .hero-btn:hover,
-                .sticky-sidebar-shell .hero-btn-ghost:hover {
-                    transform: none;
-                    filter: none;
-                }
-
-                .sticky-sidebar-shell .hero-card:hover {
-                    transform: none;
-                }
+                ${createSafeInteractionScopeCss('.sticky-sidebar-shell', SAFE_BUTTON_SELECTORS)}
+                ${createSafeInteractionScopeCss('.sticky-sidebar-shell', SAFE_CARD_SELECTORS)}
             `}</style>
             {/* Toggle Tab */}
             <div
@@ -461,7 +455,7 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
             border: '1px solid var(--border-subtle)',
             borderRadius: '12px',
             overflow: 'hidden',
-            transition: 'background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+            transition: SAFE_INTERACTIVE_TRANSITION,
             boxShadow: isExpanded ? 'inset 0 2px 4px rgba(0,0,0,0.02)' : 'var(--shadow-soft)'
         }}>
             <div

@@ -2,6 +2,7 @@ import { Card, CardHeader, CardBody, CardFooter, Chip } from "@heroui/react";
 import { ChevronRight, MapPin, Bell } from "lucide-react";
 import { TrendSignal, SignalState, Destination } from "../types";
 import { getStateColor, getPriorityColor, formatDate } from "../utils";
+import { SAFE_INTERACTIVE_TRANSITION } from "../../../lib/uiMotion";
 
 interface SignalCardProps {
     signal: TrendSignal & { state: SignalState; start: Date; end: Date; pre_alert_date: Date };
@@ -21,7 +22,7 @@ export const SignalCard = ({ signal, onOpen }: SignalCardProps) => {
         >
             <style>{`
                 .signal-card {
-                    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+                    transition: ${SAFE_INTERACTIVE_TRANSITION};
                 }
             `}</style>
             <CardHeader style={{ padding: "40px 40px 24px 40px" }} className="flex flex-col items-start gap-4">

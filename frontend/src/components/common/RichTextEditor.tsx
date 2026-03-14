@@ -8,6 +8,11 @@ import ImageResize from 'tiptap-extension-resize-image';
 import { Extension } from '@tiptap/core';
 import { Bold, Italic, Minus, Pilcrow, List, ListOrdered } from 'lucide-react';
 import { normalizeHtmlForCompare, toEditorHtml } from '../../lib/noteHtml';
+import {
+    SAFE_BUTTON_SELECTORS,
+    SAFE_INTERACTIVE_TRANSITION,
+    createSafeInteractionScopeCss,
+} from '../../lib/uiMotion';
 
 const MIN_FONT_SIZE = 12;
 const MAX_FONT_SIZE = 24;
@@ -106,7 +111,6 @@ export default function RichTextEditor({
     variant = 'default',
 }: RichTextEditorProps) {
     const initialHtml = useMemo(() => toEditorHtml(value || ''), [value]);
-    const controlTransition = 'background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease';
 
     const isMinimal = variant === 'minimal';
 
@@ -225,16 +229,7 @@ export default function RichTextEditor({
             }}
         >
             <style>{`
-                .rich-text-editor-shell .hero-btn,
-                .rich-text-editor-shell .hero-btn-ghost {
-                    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
-                }
-
-                .rich-text-editor-shell .hero-btn:hover,
-                .rich-text-editor-shell .hero-btn-ghost:hover {
-                    transform: none;
-                    filter: none;
-                }
+                ${createSafeInteractionScopeCss('.rich-text-editor-shell', SAFE_BUTTON_SELECTORS)}
             `}</style>
             <div
                 style={{
@@ -251,26 +246,26 @@ export default function RichTextEditor({
             >
                 {!isMinimal && (
                     <>
-                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', transition: controlTransition }} onClick={() => editor.chain().focus().toggleBold().run()}>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', transition: SAFE_INTERACTIVE_TRANSITION }} onClick={() => editor.chain().focus().toggleBold().run()}>
                             <Bold size={13} />
                         </button>
-                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', transition: controlTransition }} onClick={() => editor.chain().focus().toggleItalic().run()}>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', transition: SAFE_INTERACTIVE_TRANSITION }} onClick={() => editor.chain().focus().toggleItalic().run()}>
                             <Italic size={13} />
                         </button>
-                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', transition: controlTransition }} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', transition: SAFE_INTERACTIVE_TRANSITION }} onClick={() => editor.chain().focus().setHorizontalRule().run()}>
                             <Minus size={13} />
                         </button>
-                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', color: editor.isActive('bulletList') ? 'hsl(var(--primary))' : 'inherit', transition: controlTransition }} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', color: editor.isActive('bulletList') ? 'hsl(var(--primary))' : 'inherit', transition: SAFE_INTERACTIVE_TRANSITION }} onClick={() => editor.chain().focus().toggleBulletList().run()}>
                             <List size={13} />
                         </button>
-                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', color: editor.isActive('orderedList') ? 'hsl(var(--primary))' : 'inherit', transition: controlTransition }} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+                        <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', color: editor.isActive('orderedList') ? 'hsl(var(--primary))' : 'inherit', transition: SAFE_INTERACTIVE_TRANSITION }} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
                             <ListOrdered size={13} />
                         </button>
                     </>
                 )}
 
                 {!isMinimal && (
-                    <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', transition: controlTransition }} onClick={() => editor.chain().focus().unsetColor().unsetFontSize().run()}>
+                    <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', transition: SAFE_INTERACTIVE_TRANSITION }} onClick={() => editor.chain().focus().unsetColor().unsetFontSize().run()}>
                         <Pilcrow size={13} />
                     </button>
                 )}
@@ -280,7 +275,7 @@ export default function RichTextEditor({
                         <button
                             type="button"
                             className="hero-btn hero-btn-ghost"
-                            style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)', transition: controlTransition }}
+                            style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)', transition: SAFE_INTERACTIVE_TRANSITION }}
                             onClick={() => {
                                 const next = normalizeFontSize(getCurrentFontSize() - FONT_STEP);
                                 editor.chain().focus().setFontSize(String(next)).run();
@@ -292,7 +287,7 @@ export default function RichTextEditor({
                         <button
                             type="button"
                             className="hero-btn hero-btn-ghost"
-                            style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)', transition: controlTransition }}
+                            style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)', transition: SAFE_INTERACTIVE_TRANSITION }}
                             onClick={() => {
                                 const next = normalizeFontSize(getCurrentFontSize() + FONT_STEP);
                                 editor.chain().focus().setFontSize(String(next)).run();
@@ -325,7 +320,7 @@ export default function RichTextEditor({
                         key={swatch.label}
                         type="button"
                         className="hero-btn hero-btn-ghost"
-                        style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)', transition: controlTransition }}
+                        style={{ padding: '0.25rem 0.45rem', fontSize: 'var(--text-xs)', transition: SAFE_INTERACTIVE_TRANSITION }}
                         onClick={() => {
                             if (!swatch.value) editor.chain().focus().unsetColor().run();
                             else editor.chain().focus().setColor(swatch.value).run();

@@ -2,6 +2,7 @@ import React from "react";
 import { Button, Chip } from "@heroui/react";
 import { MapPin, Info, Tag, Edit3, TrendingUp, Sparkles, Zap, Calendar, ArrowRight, Bell } from "lucide-react";
 import { Destination } from "../types";
+import { SAFE_INTERACTIVE_TRANSITION } from "../../../lib/uiMotion";
 
 type SignalState = "PEAK" | "ACTIVE" | "IN_PREALERT" | "UPCOMING_PREALERT" | "ENDED";
 type ResolvedDates = {
@@ -155,7 +156,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                 marginBottom: "16px", // Balanced separation
                 display: "block",
                 width: "100%",
-                transition: 'background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease'
+                transition: SAFE_INTERACTIVE_TRANSITION
             }}
         >
             <style>{`

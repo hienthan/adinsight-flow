@@ -1,6 +1,11 @@
 import { Moon, Sun, Layout, TrendingUp, Zap, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTrendCounts } from '../../hooks/useTrendCounts';
+import {
+    SAFE_THEME_TOGGLE_SELECTORS,
+    createSafeInteractionScopeCss,
+} from '../../lib/uiMotion';
+import { SafeButton } from '../common/ui/SafeButton';
 
 interface HeaderProps {
     darkMode: boolean;
@@ -27,14 +32,7 @@ export default function Header({
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <style>{`
-                        .header-shell .theme-toggle {
-                            transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
-                        }
-
-                        .header-shell .theme-toggle:hover {
-                            transform: none;
-                            filter: none;
-                        }
+                        ${createSafeInteractionScopeCss('.header-shell', SAFE_THEME_TOGGLE_SELECTORS)}
                     `}</style>
                     <AnimatePresence>
                         {!loading && (active > 0 || preAlert > 0 || upcoming > 0) && (
@@ -92,7 +90,7 @@ export default function Header({
                         )}
                     </AnimatePresence>
 
-                    <button
+                    <SafeButton
                         onClick={onToggleStickySidebar}
                         className="theme-toggle"
                         title={stickySidebarOpen ? 'Close Sticky Hub' : 'Open Sticky Hub'}
@@ -108,15 +106,14 @@ export default function Header({
                             gap: '0.5rem',
                             fontSize: '0.75rem',
                             fontWeight: 700,
-                            transition: 'background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease',
                             boxShadow: 'var(--shadow-soft)'
                         }}
                     >
                         <Layout size={18} />
                         <span>Sticky Hub</span>
-                    </button>
+                    </SafeButton>
 
-                    <button
+                    <SafeButton
                         onClick={onToggleDarkMode}
                         className="theme-toggle"
                         title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
@@ -127,7 +124,6 @@ export default function Header({
                             border: '1px solid var(--border-subtle)',
                             color: darkMode ? '#fbbf24' : 'var(--text-dim)',
                             cursor: 'pointer',
-                            transition: 'background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -135,7 +131,7 @@ export default function Header({
                         }}
                     >
                         {darkMode ? <Sun size={18} fill="currentColor" /> : <Moon size={18} fill="#64748b" />}
-                    </button>
+                    </SafeButton>
                 </div>
             </header>
         </div>

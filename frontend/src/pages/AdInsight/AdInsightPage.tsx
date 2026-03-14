@@ -12,6 +12,12 @@ import { InsightActionBar } from './InsightActionBar';
 import { AdInsightDashboard } from './Dashboard/AdInsightDashboard';
 import { buildFilterString } from './insightUtils';
 import { PageRecord } from '../../types/adinsight';
+import {
+    SAFE_BUTTON_SELECTORS,
+    SAFE_CARD_SELECTORS,
+    createSafeInteractionScopeCss,
+} from '../../lib/uiMotion';
+import { SafeButton } from '../../components/common/ui/SafeButton';
 
 export default function AdInsightPage() {
     const { platform } = useParams();
@@ -241,22 +247,7 @@ export default function AdInsightPage() {
     return (
         <div className="page-container adinsight-page">
             <style>{`
-                .adinsight-page .hero-btn,
-                .adinsight-page .hero-btn-ghost,
-                .adinsight-page .hero-btn-primary,
-                .adinsight-page .hero-btn-secondary,
-                .adinsight-page .hero-card {
-                    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
-                }
-
-                .adinsight-page .hero-btn:hover,
-                .adinsight-page .hero-btn-ghost:hover,
-                .adinsight-page .hero-btn-primary:hover,
-                .adinsight-page .hero-btn-secondary:hover,
-                .adinsight-page .hero-card:hover {
-                    transform: none;
-                    filter: none;
-                }
+                ${createSafeInteractionScopeCss('.adinsight-page', [...SAFE_BUTTON_SELECTORS, ...SAFE_CARD_SELECTORS])}
             `}</style>
             <InsightActionBar
                 selectedCount={selectedIds.length}
@@ -325,7 +316,7 @@ export default function AdInsightPage() {
                             marginLeft: '0.5rem'
                         }}
                     >
-                        <button
+                        <SafeButton
                             aria-label="List View"
                             aria-pressed={selectedView === 'list'}
                             onClick={() => setSelectedView('list')}
@@ -335,12 +326,11 @@ export default function AdInsightPage() {
                                 width: '34px', height: '34px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'list' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'list' ? 'white' : 'var(--text-dim)',
-                                transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease'
                             }}
                         >
                             <List size={14} />
-                        </button>
-                        <button
+                        </SafeButton>
+                        <SafeButton
                             aria-label="Dashboard Intelligence View"
                             aria-pressed={selectedView === 'dashboard'}
                             onClick={() => setSelectedView('dashboard')}
@@ -350,11 +340,10 @@ export default function AdInsightPage() {
                                 width: '34px', height: '34px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'dashboard' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'dashboard' ? 'white' : 'var(--text-dim)',
-                                transition: 'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease'
                             }}
                         >
                             <LayoutDashboard size={14} />
-                        </button>
+                        </SafeButton>
                     </div>
                 </div>
 

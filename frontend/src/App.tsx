@@ -19,6 +19,7 @@ import AllChanges from './pages/CampTracking/AllChanges';
 import CampaignFormPage from './pages/CampTracking/CampaignFormPage';
 import PlatformManagement from './pages/CampTracking/PlatformManagement';
 import GlobalNotesPage from './pages/GlobalNotes/GlobalNotesPage';
+import { SAFE_PANEL_TRANSITION } from './lib/uiMotion';
 
 import './App.css';
 
@@ -53,7 +54,7 @@ function App() {
         className={`main-wrapper ${sidebarCollapsed ? 'full' : ''}`}
         style={{
           marginRight: stickySidebarOpen ? '420px' : '48px',
-          transition: 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          transition: SAFE_PANEL_TRANSITION
         }}
       >
         <Header
