@@ -300,10 +300,10 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                         )
                     })}
                     {loading && (
-                        <tr><td colSpan={columns.length} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>Loading next batch...</td></tr>
+                        <tr><td colSpan={columns.length + (onSelect ? 1 : 0)} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>Loading next batch...</td></tr>
                     )}
                     {records.length === 0 && !loading && (
-                        <tr><td colSpan={columns.length} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-dim)' }}>No records found for active filters.</td></tr>
+                        <tr><td colSpan={columns.length + (onSelect ? 1 : 0)} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-dim)' }}>No records found for active filters.</td></tr>
                     )}
                 </tbody>
             </table>

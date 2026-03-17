@@ -87,11 +87,11 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
                     return `${baseKey} ${operator} "${cleanVal}"`;
                 });
 
-                if (subQueries.length > 1) {
-                    parts.push(`(${subQueries.join(joinner)})`);
-                } else {
-                    parts.push(subQueries[0]);
-                }
+                const groupedQuery = subQueries.length > 1
+                    ? `(${subQueries.join(joinner)})`
+                    : subQueries[0];
+
+                parts.push(groupedQuery.startsWith('(') ? groupedQuery : `(${groupedQuery})`);
             }
         }
     });

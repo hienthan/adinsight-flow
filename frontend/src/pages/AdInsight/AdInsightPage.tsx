@@ -1,6 +1,6 @@
-import { Suspense, lazy, useState, useCallback, useMemo } from 'react';
+import { Suspense, lazy, useState, useCallback, useMemo, startTransition } from 'react';
 import { useParams } from 'react-router-dom';
-import { Globe, Download, LayoutDashboard, List, RefreshCw, Database, Filter, Sparkles } from 'lucide-react';
+import { Globe, Download, LayoutDashboard, List, RefreshCw } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { usePlatformAnalytics } from '../../hooks/usePlatformAnalytics';
 import { usePlatformMeta } from '../../hooks/usePlatformMeta';
@@ -19,17 +19,12 @@ import {
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
-import { MetricCard, PageHero } from '../../components/common/ui';
+import { createAmbientSurface, createPremiumBadgeStyle } from '../../components/common/ui';
 import { AdInsightProviderBoundary } from './AdInsightProviderBoundary';
 
 const AdInsightDashboard = lazy(() =>
     import('./Dashboard/AdInsightDashboard').then((module) => ({ default: module.AdInsightDashboard })),
 );
-
-const RECORD_COUNT_STYLE = {
-    textAlign: 'center',
-    flex: 1,
-} as const;
 
 const HEADER_ACTIONS_STYLE = {
     display: 'flex',
@@ -46,6 +41,15 @@ const PAGINATION_CARD_STYLE = {
     alignItems: 'center',
     marginTop: '1.5rem',
     gap: '2rem',
+} as const;
+
+const VIEW_TOOLBAR_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '1rem',
+    flexWrap: 'wrap',
+    marginBottom: '1rem',
 } as const;
 
 const PAGE_SIZE_OPTIONS = [50, 100, 200, 500] as const;
@@ -114,8 +118,6 @@ export default function AdInsightPage() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
-
-
     const handleSelect = useCallback((id: string) => {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     }, []);
@@ -157,7 +159,12 @@ export default function AdInsightPage() {
         setFilters(initialFilters);
     };
 
-
+    const handleViewChange = useCallback((view: 'list' | 'dashboard') => {
+        startTransition(() => {
+            setSelectedView(view);
+            setSelectedIds([]);
+        });
+    }, []);
 
     const handleExport = async (selectedFields: string[], customFileName: string, customLabel?: string) => {
         try {
@@ -295,12 +302,6 @@ export default function AdInsightPage() {
         !['sitemap_tag', 'titleKey'].includes(k) && filters[k]
     ) || (filters.sitemap_tag !== config.defaultSitemapTags[0]);
 
-    const summaryCards = [
-        { label: 'Records', value: totalCount.toLocaleString(), helper: isFiltered ? 'filtered universe' : 'full universe', icon: Database, accent: '59, 130, 246' },
-        { label: 'Selected', value: selectedIds.length.toLocaleString(), helper: selectedIds.length > 0 ? 'ready for bulk action' : 'nothing selected', icon: Sparkles, accent: '20, 184, 166' },
-        { label: 'Pattern', value: filters.sitemap_tag || config.defaultSitemapTags[0], helper: config.collection, icon: Filter, accent: '168, 85, 247' },
-    ] as const;
-
     return (
         <AdInsightProviderBoundary>
             <div className="page-container adinsight-page">
@@ -321,65 +322,26 @@ export default function AdInsightPage() {
                     handleBulkUpdate(finalPayload);
                 }}
                 isUpdating={isBulkUpdating}
+                allowTierUpdate={platformId !== 'traveloka'}
             />
 
-            <PageHero
-                eyebrow="AdInsight Workspace"
-                title={`${config.name} Analytics`}
-                subtitle={`Operator-first SEO analytics surface for ${config.collection}.`}
-                accent="#3b82f6"
-                actions={(
-                    <div style={HEADER_ACTIONS_STYLE}>
-                        {selectedView === 'list' && (
-                            <>
-                                <SafeButton
-                                    onClick={() => fetchPages(currentPage)}
-                                    className="hero-btn hero-btn-ghost"
-                                    style={{
-                                        padding: '0.6rem 0.85rem',
-                                        gap: '0.45rem',
-                                        fontSize: '13px',
-                                        borderRadius: '10px',
-                                        background: 'var(--bg-overlay)',
-                                        border: '1px solid var(--border-subtle)',
-                                    }}
-                                >
-                                    <RefreshCw size={15} />
-                                    Refresh
-                                </SafeButton>
-                                <SafeButton
-                                    onClick={handleReset}
-                                    className="hero-btn"
-                                    style={{
-                                        padding: '0.6rem 1rem',
-                                        fontSize: '13px',
-                                        fontWeight: 700,
-                                        visibility: isFiltered ? 'visible' : 'hidden',
-                                        border: '1px solid var(--border-subtle)',
-                                        background: 'var(--bg-overlay)',
-                                        borderRadius: '10px'
-                                    }}
-                                >
-                                    Reset
-                                </SafeButton>
-                                <SafeButton
-                                    onClick={() => setIsExportModalOpen(true)}
-                                    disabled={exporting}
-                                    className="hero-btn hero-btn-primary"
-                                    style={{ padding: '0.6rem 1.2rem', gap: '0.5rem', fontSize: '13px', borderRadius: '10px' }}
-                                >
-                                    <Download size={16} />
-                                    {exporting ? 'Exporting...' : 'CSV'}
-                                </SafeButton>
-                            </>
-                        )}
-                    </div>
-                )}
-                style={{ marginBottom: '1.5rem' }}
+            <SurfaceCard
+                padding="1rem 1.1rem"
+                style={{
+                    ...VIEW_TOOLBAR_STYLE,
+                    borderRadius: '1.35rem',
+                    paddingBlock: '1.05rem',
+                    ...createAmbientSurface('#3b82f6', 0.38),
+                    background: [
+                        'radial-gradient(circle at top left, rgba(59, 130, 246, 0.14) 0%, transparent 24%)',
+                        'radial-gradient(circle at 85% 120%, rgba(20, 184, 166, 0.1) 0%, transparent 28%)',
+                        'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 98%, white 2%) 0%, color-mix(in srgb, var(--bg-content) 91%, var(--bg-main) 9%) 100%)',
+                    ].join(', '),
+                    boxShadow: '0 26px 44px -34px rgba(15, 23, 42, 0.74)',
+                    border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.28) 22%)',
+                }}
             >
-                {/* Left: Platform Switcher & View Toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
                             width: '42px',
@@ -395,13 +357,15 @@ export default function AdInsightPage() {
                             <Globe size={18} />
                         </div>
                         <div>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', margin: 0 }}>
+                            <span className="hero-badge" style={{ marginBottom: '0.38rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                                AdInsight Workspace
+                            </span>
+                            <p style={{ fontSize: '0.82rem', color: 'var(--text-main)', margin: '0.12rem 0 0', fontWeight: 700 }}>
                                 Collection: {config.collection}
                             </p>
                         </div>
                     </div>
 
-                    {/* View Toggle integrated into the left side navigation */}
                     <ToolbarGroup
                         compact
                         role="group"
@@ -416,7 +380,7 @@ export default function AdInsightPage() {
                         <SafeButton
                             aria-label="List View"
                             aria-pressed={selectedView === 'list'}
-                            onClick={() => setSelectedView('list')}
+                            onClick={() => handleViewChange('list')}
                             title="List View"
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -430,7 +394,7 @@ export default function AdInsightPage() {
                         <SafeButton
                             aria-label="Dashboard Intelligence View"
                             aria-pressed={selectedView === 'dashboard'}
-                            onClick={() => setSelectedView('dashboard')}
+                            onClick={() => handleViewChange('dashboard')}
                             title="Dashboard Intelligence"
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -443,135 +407,197 @@ export default function AdInsightPage() {
                         </SafeButton>
                     </ToolbarGroup>
                 </div>
-                <div style={RECORD_COUNT_STYLE}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'hsl(var(--primary))', lineHeight: 1 }}>
-                        {totalCount.toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', marginTop: '0.25rem' }}>
-                        {isFiltered ? 'Matching Records' : 'Total Records'}
-                    </div>
+                <div style={HEADER_ACTIONS_STYLE}>
+                    {selectedView === 'list' && (
+                        <>
+                            <SafeButton
+                                onClick={() => fetchPages(currentPage)}
+                                className="hero-btn hero-btn-ghost"
+                                style={{
+                                    padding: '0.6rem 0.85rem',
+                                    gap: '0.45rem',
+                                    fontSize: '13px',
+                                    borderRadius: '10px',
+                                    background: 'var(--bg-overlay)',
+                                    border: '1px solid var(--border-subtle)',
+                                }}
+                            >
+                                <RefreshCw size={15} />
+                                Refresh
+                            </SafeButton>
+                            <SafeButton
+                                onClick={handleReset}
+                                className="hero-btn"
+                                style={{
+                                    padding: '0.6rem 1rem',
+                                    fontSize: '13px',
+                                    fontWeight: 700,
+                                    visibility: isFiltered ? 'visible' : 'hidden',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: 'var(--bg-overlay)',
+                                    borderRadius: '10px'
+                                }}
+                            >
+                                Reset
+                            </SafeButton>
+                            <SafeButton
+                                onClick={() => setIsExportModalOpen(true)}
+                                disabled={exporting}
+                                className="hero-btn hero-btn-primary"
+                                style={{ padding: '0.6rem 1.2rem', gap: '0.5rem', fontSize: '13px', borderRadius: '10px' }}
+                            >
+                                <Download size={16} />
+                                {exporting ? 'Exporting...' : 'CSV'}
+                            </SafeButton>
+                        </>
+                    )}
                 </div>
-                </div>
-            </PageHero>
-
-            <div
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                    gap: '0.9rem',
-                    marginBottom: '1.15rem',
-                }}
-            >
-                {summaryCards.map((card) => {
-                    const Icon = card.icon;
-                    return (
-                        <MetricCard
-                            key={card.label}
-                            label={card.label}
-                            value={card.value}
-                            helper={card.helper}
-                            icon={Icon}
-                            accent={`rgb(${card.accent})`}
-                        />
-                    );
-                })}
-            </div>
+            </SurfaceCard>
 
             {selectedView === 'list' ? (
                 <>
+                    <SurfaceCard
+                        padding="1rem 1.2rem"
+                        style={{
+                            marginBottom: '1.5rem',
+                            borderRadius: '1.75rem',
+                            ...createAmbientSurface('#3b82f6', 0.78),
+                            background: [
+                                'radial-gradient(circle at top right, rgba(59, 130, 246, 0.14) 0%, transparent 24%)',
+                                'radial-gradient(circle at 18% 110%, rgba(245, 158, 11, 0.08) 0%, transparent 28%)',
+                                'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
+                            ].join(', '),
+                            boxShadow: '0 30px 54px -38px rgba(15, 23, 42, 0.78)',
+                            border: '1px solid color-mix(in srgb, var(--border-subtle) 76%, rgba(59, 130, 246, 0.24) 24%)',
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                            <div>
+                                <span className="hero-badge" style={{ marginBottom: '0.55rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                                    AdInsight Workspace
+                                </span>
+                                <h1 style={{ margin: '0.2rem 0 0', fontSize: '1.75rem', lineHeight: 1.05, color: 'var(--text-main)', fontWeight: 850 }}>
+                                    {config.name} Analytics
+                                </h1>
+                                <p style={{ margin: '0.35rem 0 0', color: 'var(--text-dim)', fontWeight: 600 }}>
+                                    Operator-first SEO analytics surface for {config.collection}.
+                                </p>
+                                <p style={{ margin: '1rem 0 0', color: 'var(--text-main)', fontWeight: 700, maxWidth: '38rem' }}>
+                                    Use list mode for record QA, bulk actions, and exports.
+                                </p>
+                            </div>
+                            <div style={{
+                                minWidth: '190px',
+                                padding: '1rem 1.15rem',
+                                borderRadius: '1.25rem',
+                                textAlign: 'center',
+                                background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 88%, white 12%) 0%, color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%) 100%)',
+                                border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.22) 22%)',
+                                boxShadow: 'inset 0 1px 0 color-mix(in srgb, white 42%, transparent), 0 18px 32px -28px rgba(59, 130, 246, 0.38)',
+                                backdropFilter: 'blur(10px)',
+                            }}>
+                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>
+                                    Live Universe
+                                </div>
+                                <div style={{ fontSize: '1.8rem', fontWeight: 850, color: 'hsl(var(--primary))', lineHeight: 1 }}>
+                                    {totalCount.toLocaleString()}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', marginTop: '0.35rem', letterSpacing: '0.05em' }}>
+                                    {isFiltered ? 'Matching Records' : 'Total Records'}
+                                </div>
+                            </div>
+                        </div>
+                    </SurfaceCard>
+
                     <InsightFilterBar
                         filters={config.filters}
-                currentValues={filters}
-                onFilterChange={handleFilterChange}
-                countries={countries}
-                sitemapTags={sitemapTags}
-            />
+                        currentValues={filters}
+                        onFilterChange={handleFilterChange}
+                        countries={countries}
+                        sitemapTags={sitemapTags}
+                    />
 
-            {/* Main Content Table */}
-            <div className="animate-fade">
-                <InsightDataTable
-                    records={records}
-                    columns={config.columns}
-                    loading={loading || isBulkUpdating}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={handleSortChange}
-                    selectedIds={selectedIds}
-                    onSelect={handleSelect}
-                    onSelectAll={handleSelectAll}
-                />
+                    <div className="animate-fade">
+                        <InsightDataTable
+                            records={records}
+                            columns={config.columns}
+                            loading={loading || isBulkUpdating}
+                            sortField={sortField}
+                            sortDirection={sortDirection}
+                            onSort={handleSortChange}
+                            selectedIds={selectedIds}
+                            onSelect={handleSelect}
+                            onSelectAll={handleSelectAll}
+                        />
 
-                {/* Pagination */}
-                <SurfaceCard
-                    padding="1.25rem"
-                    style={{
-                        ...PAGINATION_CARD_STYLE,
-                        borderRadius: '1.45rem',
-                        background: 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
-                        boxShadow: '0 18px 34px -30px rgba(15, 23, 42, 0.62)',
-                    }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Per page:</span>
-                        <select
-                            value={perPage}
-                            onChange={(e) => setPerPage(Number(e.target.value))}
+                        <SurfaceCard
+                            padding="1.25rem"
                             style={{
-                                padding: '0.4rem',
-                                borderRadius: '0.75rem',
-                                border: '1px solid var(--border-subtle)',
-                                background: 'var(--bg-content)',
-                                fontSize: '0.85rem',
-                                color: 'var(--text-main)'
+                                ...PAGINATION_CARD_STYLE,
+                                borderRadius: '1.45rem',
+                                background: 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
+                                boxShadow: '0 18px 34px -30px rgba(15, 23, 42, 0.62)',
                             }}
                         >
-                            {PAGE_SIZE_OPTIONS.map((size) => (
-                                <option key={size} value={size}>
-                                    {size}
-                                </option>
-                            ))}
-                        </select>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-                            Showing {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, totalCount)} of {totalCount.toLocaleString()}
-                        </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Per page:</span>
+                                <select
+                                    value={perPage}
+                                    onChange={(e) => setPerPage(Number(e.target.value))}
+                                    style={{
+                                        padding: '0.4rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'var(--bg-content)',
+                                        fontSize: '0.85rem',
+                                        color: 'var(--text-main)'
+                                    }}
+                                >
+                                    {PAGE_SIZE_OPTIONS.map((size) => (
+                                        <option key={size} value={size}>
+                                            {size}
+                                        </option>
+                                    ))}
+                                </select>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                                    Showing {((currentPage - 1) * perPage) + 1}-{Math.min(currentPage * perPage, totalCount)} of {totalCount.toLocaleString()}
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <SafeButton
+                                    onClick={() => fetchPages(currentPage - 1)}
+                                    disabled={currentPage === 1 || loading}
+                                    className="hero-btn hero-btn-secondary"
+                                    style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                                >
+                                    ← Prev
+                                </SafeButton>
+
+                                <span style={{ fontSize: '0.9rem', color: 'var(--text-main)', padding: '0 0.5rem', fontWeight: 700 }}>
+                                    Page {currentPage} / {totalPages}
+                                </span>
+
+                                <SafeButton
+                                    onClick={() => fetchPages(currentPage + 1)}
+                                    disabled={currentPage === totalPages || loading}
+                                    className="hero-btn hero-btn-secondary"
+                                    style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                                >
+                                    Next →
+                                </SafeButton>
+                            </div>
+                        </SurfaceCard>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <SafeButton
-                            onClick={() => fetchPages(currentPage - 1)}
-                            disabled={currentPage === 1 || loading}
-                            className="hero-btn hero-btn-secondary"
-                            style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
-                        >
-                            ← Prev
-                        </SafeButton>
-
-                        <span style={{ fontSize: '0.9rem', color: 'var(--text-main)', padding: '0 0.5rem', fontWeight: 700 }}>
-                            Page {currentPage} / {totalPages}
-                        </span>
-
-                        <SafeButton
-                            onClick={() => fetchPages(currentPage + 1)}
-                            disabled={currentPage === totalPages || loading}
-                            className="hero-btn hero-btn-secondary"
-                            style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
-                        >
-                            Next →
-                        </SafeButton>
-                    </div>
-                </SurfaceCard>
-            </div>
-
-            {/* Export Modal */}
-            <InsightExportModal
-                isOpen={isExportModalOpen}
-                onClose={() => setIsExportModalOpen(false)}
-                onExport={handleExport}
-                fields={config.exportFields}
-                totalCount={totalCount}
-                isExporting={exporting}
-            />
-
+                    <InsightExportModal
+                        isOpen={isExportModalOpen}
+                        onClose={() => setIsExportModalOpen(false)}
+                        onExport={handleExport}
+                        fields={config.exportFields}
+                        totalCount={totalCount}
+                        isExporting={exporting}
+                    />
                 </>
             ) : (
                 <Suspense fallback={<div style={{ padding: '2rem', color: 'var(--text-dim)', fontWeight: 700 }}>Loading dashboard...</div>}>

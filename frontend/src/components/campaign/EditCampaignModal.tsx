@@ -10,7 +10,6 @@ import { pb } from '../../lib/pocketbase';
 import { Campaign } from '../../types/campaign';
 import { SafeButton } from '../common/ui/SafeButton';
 import { SurfaceCard } from '../common/ui/SurfaceCard';
-import { ModalHero } from '../common/ui/ModalHero';
 import { createPremiumBadgeStyle } from '../common/ui/premium';
 import { SAFE_BUTTON_SELECTORS, SAFE_CARD_SELECTORS, createSafeInteractionScopeCss } from '../../lib/uiMotion';
 
@@ -139,28 +138,22 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                         <div
                             style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'minmax(0, 1.4fr) minmax(240px, 0.9fr)',
-                                gap: '0.9rem',
-                                padding: '0.45rem',
-                                marginBottom: '0.8rem',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                gap: '0.85rem',
+                                padding: '0.25rem 0.45rem 0.45rem',
+                                marginBottom: '0.2rem',
                             }}
                         >
-                            <ModalHero
-                                eyebrow={campaignId ? 'Edit Campaign' : 'Create Campaign'}
-                                title={campaignId ? 'Edit Tracking Strategy' : 'Create New Campaign'}
-                                subtitle="Keep platform, priority, operating notes, reminders, and autolog context in one premium edit surface."
-                                actions={(
-                                    <SafeButton
-                                        onClick={onClose}
-                                        className="hero-btn hero-btn-ghost"
-                                        style={{ padding: '0.55rem', borderRadius: '0.95rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
-                                    >
-                                        <X size={18} />
-                                    </SafeButton>
-                                )}
-                            >
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.95rem' }}>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                    {campaignId ? 'Edit Campaign' : 'Create Campaign'}
+                                </div>
+                                <div style={{ marginTop: '0.18rem', fontSize: '1.25rem', fontWeight: 850, letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
+                                    {campaignId ? 'Edit Tracking Strategy' : 'Create New Campaign'}
+                                </div>
+                                <div style={{ marginTop: '0.45rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                                     <span style={{ ...chipStyle('rgba(99, 102, 241, 0.12)', 'rgba(99, 102, 241, 0.2)', '#a5b4fc'), ...createPremiumBadgeStyle('#6366f1', { textColor: '#a5b4fc' }) }}>
                                         {campaign?.status || 'draft'}
                                     </span>
@@ -168,41 +161,25 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                         {campaign?.priority || 'normal'}
                                     </span>
                                     <span style={chipStyle('rgba(148, 163, 184, 0.12)', 'rgba(148, 163, 184, 0.2)', 'var(--text-dim)')}>
-                                        {campaign?.is_dsa === false ? 'manual' : 'dsa support'}
+                                        {isFormSubmitting ? 'saving' : isFormDirty ? 'unsaved' : 'stable'}
                                     </span>
                                 </div>
-                            </ModalHero>
+                            </div>
 
-                            <SurfaceCard
-                                padding="1.05rem 1.1rem"
-                                radius="1.5rem"
-                                style={{
-                                    background: 'linear-gradient(180deg, rgba(20, 184, 166, 0.12) 0%, var(--bg-overlay) 100%)',
-                                    border: '1px solid rgba(20, 184, 166, 0.16)',
-                                }}
-                            >
-                                <div style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                                    Save State
-                                </div>
-                                <div style={{ marginTop: '0.5rem', fontSize: '1.35rem', fontWeight: 850, letterSpacing: '-0.04em', color: 'var(--text-main)' }}>
-                                    {isFormSubmitting ? 'Saving…' : isFormDirty ? 'Unsaved changes' : 'Stable'}
-                                </div>
-                                <div style={{ marginTop: '0.45rem', color: 'var(--text-dim)', fontSize: '0.82rem', lineHeight: 1.5 }}>
-                                    {campaignId
-                                        ? 'Update strategy safely without leaving the campaign stream.'
-                                        : 'Create first, then attach reminders and inspect autolog.'}
-                                </div>
-                                <div style={{ marginTop: '0.9rem', display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
+                                {campaign?.created_date && (
                                     <span style={chipStyle('var(--bg-overlay)', 'var(--border-subtle)', 'var(--text-dim)')}>
-                                        {campaignId ? 'existing record' : 'new record'}
+                                        {campaign.created_date}
                                     </span>
-                                    {campaign?.created_date && (
-                                        <span style={chipStyle('var(--bg-overlay)', 'var(--border-subtle)', 'var(--text-dim)')}>
-                                            {campaign.created_date}
-                                        </span>
-                                    )}
-                                </div>
-                            </SurfaceCard>
+                                )}
+                                <SafeButton
+                                    onClick={onClose}
+                                    className="hero-btn hero-btn-ghost"
+                                    style={{ padding: '0.45rem', borderRadius: '0.85rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
+                                >
+                                    <X size={18} />
+                                </SafeButton>
+                            </div>
                         </div>
 
                         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0.25rem 0.45rem 0.2rem 0.45rem' }}>

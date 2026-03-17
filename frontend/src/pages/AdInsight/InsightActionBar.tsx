@@ -9,13 +9,15 @@ interface InsightActionBarProps {
     onClear: () => void;
     onApply: (payload: { tier?: string; country?: string; is_active?: boolean }) => void;
     isUpdating: boolean;
+    allowTierUpdate?: boolean;
 }
 
 export const InsightActionBar: React.FC<InsightActionBarProps> = ({
     selectedCount,
     onClear,
     onApply,
-    isUpdating
+    isUpdating,
+    allowTierUpdate = true,
 }) => {
     const [selectedTier, setSelectedTier] = useState<string>('');
     const [setToUnknownCountry, setSetToUnknownCountry] = useState<boolean>(false);
@@ -27,7 +29,7 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
 
     const handleApply = () => {
         const payload: { tier?: string; country?: string; is_active?: boolean } = {};
-        if (selectedTier) payload.tier = selectedTier;
+        if (allowTierUpdate && selectedTier) payload.tier = selectedTier;
         if (setToUnknownCountry) payload.country = 'Unknown';
         if (selectedStatus !== null) payload.is_active = selectedStatus;
 
@@ -39,7 +41,7 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
         }
     };
 
-    const hasSelection = selectedTier || setToUnknownCountry || selectedStatus !== null;
+    const hasSelection = (allowTierUpdate && selectedTier) || setToUnknownCountry || selectedStatus !== null;
 
     return (
         <SurfaceCard style={{
@@ -73,15 +75,17 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <MultiSelectDropdown
-                        options={tierOptions}
-                        value={selectedTier}
-                        onChange={setSelectedTier}
-                        placeholder="Set Tier..."
-                        width="125px"
-                    />
-                </div>
+                {allowTierUpdate && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <MultiSelectDropdown
+                            options={tierOptions}
+                            value={selectedTier}
+                            onChange={setSelectedTier}
+                            placeholder="Set Tier..."
+                            width="125px"
+                        />
+                    </div>
+                )}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <SafeButton

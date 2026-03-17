@@ -8,12 +8,6 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
         titleKey: 'translated_title_vi',
         defaultSitemapTags: ['blog', 'activity', 'mobility'],
         columns: [
-            { header: 'ID', key: 'canonical_id', width: '80px' },
-            {
-                header: 'Slug',
-                key: 'slug',
-                width: '320px',
-            },
             { header: 'English Title', key: 'translated_title_vi' },
             { header: 'Funnel', key: 'funnel_stage', width: '120px' },
             { header: 'Tier', key: 'tier', width: '60px' },
@@ -68,7 +62,6 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
         defaultSitemapTags: ['activities'],
         columns: [
             { header: 'English Title', key: 'title_en', width: '22%' },
-            { header: 'Tier', key: 'tier', width: '8%' },
             { header: 'Score', key: 'score', width: '10%' },
             { header: 'Content Type', key: 'content_type', width: '12%' },
             { header: 'SubTag', key: 'sub_tag', width: '12%' },
@@ -79,15 +72,6 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
         filters: [
             { id: 'searchTerm', label: 'Search Title', type: 'text', placeholder: 'Include keywords...' },
             { id: 'excludeTerm', label: 'Exclude Title', type: 'text', placeholder: 'Exclude keywords...' },
-            {
-                id: 'tier', label: 'Tier', type: 'select', multiple: true, options: [
-                    { label: 'All', value: '' },
-                    { label: '1', value: '1' },
-                    { label: '2', value: '2' },
-                    { label: '3', value: '3' },
-                    { label: '4', value: '4' }
-                ]
-            },
             {
                 id: 'intent_type', label: 'Intent', type: 'select', multiple: true, options: [
                     { label: 'All', value: '' },

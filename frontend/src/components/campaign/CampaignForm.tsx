@@ -7,6 +7,7 @@ import { Campaign, CampaignPlatform } from '../../types/campaign';
 import LazyRichTextEditor from '../common/LazyRichTextEditor';
 import { normalizeHtmlForCompare } from '../../lib/noteHtml';
 import MetadataModal from './MetadataModal';
+import { SurfaceCard } from '../common/ui';
 
 interface CampaignFormProps {
     campaignId?: string;
@@ -234,8 +235,83 @@ export default function CampaignForm({
     };
 
     return (
-        <form id={formId} onSubmit={handleSubmit} className="animate-fade">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: isModalLayout ? '0.85rem' : '1.5rem' }}>
+        <form id={formId} onSubmit={handleSubmit} className="animate-fade campaign-form-shell">
+            <style>{`
+                .campaign-form-shell .filter-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.45rem;
+                }
+                .campaign-form-shell label {
+                    font-size: 0.72rem;
+                    font-weight: 800;
+                    color: var(--text-dim);
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                }
+                .campaign-form-shell input,
+                .campaign-form-shell select,
+                .campaign-form-shell textarea {
+                    width: 100%;
+                    border-radius: 14px;
+                    border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.18) 22%);
+                    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%);
+                    color: var(--text-main);
+                    box-shadow: inset 0 1px 0 color-mix(in srgb, white 54%, transparent), 0 14px 28px -24px rgba(15, 23, 42, 0.42);
+                    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+                }
+                .campaign-form-shell input,
+                .campaign-form-shell select {
+                    min-height: 42px;
+                    padding: 0.72rem 0.9rem;
+                }
+                .campaign-form-shell textarea {
+                    min-height: 100px;
+                    padding: 0.85rem 0.95rem;
+                    resize: vertical;
+                    line-height: 1.55;
+                }
+                .campaign-form-shell input::placeholder,
+                .campaign-form-shell textarea::placeholder {
+                    color: var(--text-muted);
+                }
+                .campaign-form-shell input:focus,
+                .campaign-form-shell select:focus,
+                .campaign-form-shell textarea:focus {
+                    outline: none;
+                    border-color: rgba(59, 130, 246, 0.42);
+                    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08), inset 0 1px 0 color-mix(in srgb, white 58%, transparent);
+                }
+                .campaign-form-shell .form-section-title {
+                    font-size: 0.78rem;
+                    font-weight: 900;
+                    letter-spacing: 0.08em;
+                    text-transform: uppercase;
+                    color: var(--text-main);
+                }
+                .campaign-form-shell .form-section-copy {
+                    margin-top: 0.2rem;
+                    font-size: 0.8rem;
+                    color: var(--text-dim);
+                    line-height: 1.45;
+                }
+                .dark .campaign-form-shell input,
+                .dark .campaign-form-shell select,
+                .dark .campaign-form-shell textarea {
+                    background: linear-gradient(180deg, rgba(15,23,42,0.84) 0%, rgba(2,6,23,0.94) 100%);
+                    border-color: rgba(148, 163, 184, 0.18);
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 14px 28px -24px rgba(0, 0, 0, 0.5);
+                }
+                .dark .campaign-form-shell input::placeholder,
+                .dark .campaign-form-shell textarea::placeholder {
+                    color: rgba(248, 250, 252, 0.5);
+                }
+                .dark .campaign-form-shell select option {
+                    background: #020617;
+                    color: #f8fafc;
+                }
+            `}</style>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isModalLayout ? '0.75rem' : '1.2rem' }}>
 
                 {error && (
                     <div className="hero-badge" style={{
@@ -252,92 +328,136 @@ export default function CampaignForm({
                     </div>
                 )}
 
-                {/* Grid 1: Basic Info & Status & Priority */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 2fr) minmax(140px, 1fr) 100px 90px', gap: isModalLayout ? '0.75rem' : '1rem' }}>
-                    <div className="filter-group">
-                        <label>Campaign Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name || ''}
-                            onChange={handleChange}
-                            placeholder="e.g. Summer Sales"
-                            required
-                        />
+                <SurfaceCard
+                    padding={isModalLayout ? '0.9rem' : '1.1rem'}
+                    radius="1.35rem"
+                    style={{
+                        background: 'linear-gradient(180deg, rgba(59, 130, 246, 0.06) 0%, var(--bg-content) 100%)',
+                        border: '1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.18) 20%)',
+                    }}
+                >
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 2fr) minmax(140px, 1fr) 100px 90px', gap: isModalLayout ? '0.75rem' : '1rem' }}>
+                        <div className="filter-group">
+                            <label>Campaign Name</label>
+                            <input
+                                type="text"
+                                name="name"
+                                value={formData.name || ''}
+                                onChange={handleChange}
+                                placeholder="e.g. Summer Sales"
+                                required
+                            />
+                        </div>
+                        <div className="filter-group">
+                            <label>Platform</label>
+                            <select
+                                name="platform"
+                                value={formData.platform || ''}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">Select...</option>
+                                {platforms.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.display_name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="filter-group">
+                            <label>Status</label>
+                            <select
+                                name="status"
+                                value={formData.status || 'active'}
+                                onChange={handleChange}
+                            >
+                                <option value="active">Active</option>
+                                <option value="paused">Paused</option>
+                                <option value="testing">Test</option>
+                                <option value="archived">Arch</option>
+                            </select>
+                        </div>
+                        <div className="filter-group">
+                            <label>Pri</label>
+                            <select
+                                name="priority"
+                                value={formData.priority || 'normal'}
+                                onChange={handleChange}
+                                style={{
+                                    color: formData.priority === 'critical' ? '#d946ef' : (formData.priority === 'high' ? '#ef4444' : (formData.priority === 'medium' ? '#f59e0b' : 'inherit')),
+                                    fontWeight: formData.priority !== 'normal' ? 800 : 500
+                                }}
+                            >
+                                <option value="normal">Normal</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
                     </div>
-                    <div className="filter-group">
-                        <label>Platform</label>
-                        <select
-                            name="platform"
-                            value={formData.platform || ''}
-                            onChange={handleChange}
-                            required
-                        >
-                            <option value="">Select...</option>
-                            {platforms.map((p) => (
-                                <option key={p.id} value={p.id}>{p.display_name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="filter-group">
-                        <label>Status</label>
-                        <select
-                            name="status"
-                            value={formData.status || 'active'}
-                            onChange={handleChange}
-                        >
-                            <option value="active">Active</option>
-                            <option value="paused">Paused</option>
-                            <option value="testing">Test</option>
-                            <option value="archived">Arch</option>
-                        </select>
-                    </div>
-                    <div className="filter-group">
-                        <label>Pri</label>
-                        <select
-                            name="priority"
-                            value={formData.priority || 'normal'}
-                            onChange={handleChange}
-                            style={{
-                                color: formData.priority === 'critical' ? '#d946ef' : (formData.priority === 'high' ? '#ef4444' : (formData.priority === 'medium' ? '#f59e0b' : 'inherit')),
-                                fontWeight: formData.priority !== 'normal' ? 800 : 500
-                            }}
-                        >
-                            <option value="normal">Normal</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                            <option value="critical">Critical</option>
-                        </select>
-                    </div>
-                </div>
+                </SurfaceCard>
 
-                {/* Grid 2: Metrics & Config */}
-                <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: isModalLayout ? '0.75rem' : '1rem' }}>
-                    <div className="filter-group">
-                        <label>CPC ($)</label>
-                        <input
-                            type="number"
-                            name="cpc"
-                            step="0.01"
-                            value={formData.cpc ?? 0}
-                            onChange={handleChange}
-                            min="0"
-                        />
-                    </div>
-                    <div className="filter-group">
-                        <label>Daily Budget ($)</label>
-                        <input
-                            type="number"
-                            name="max_daily_budget"
-                            step="1"
-                            value={formData.max_daily_budget ?? 0}
-                            onChange={handleChange}
-                            min="0"
-                        />
-                    </div>
+                <SurfaceCard
+                    padding={isModalLayout ? '0.9rem' : '1.1rem'}
+                    radius="1.35rem"
+                    style={{
+                        background: 'linear-gradient(180deg, rgba(20, 184, 166, 0.06) 0%, var(--bg-content) 100%)',
+                        border: '1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(20, 184, 166, 0.18) 18%)',
+                    }}
+                >
+                    <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: isModalLayout ? '0.75rem' : '1rem' }}>
+                        <div className="filter-group">
+                            <label>CPC ($)</label>
+                            <input
+                                type="number"
+                                name="cpc"
+                                step="0.01"
+                                value={formData.cpc ?? 0}
+                                onChange={handleChange}
+                                min="0"
+                            />
+                        </div>
+                        <div className="filter-group">
+                            <label>Daily Budget ($)</label>
+                            <input
+                                type="number"
+                                name="max_daily_budget"
+                                step="1"
+                                value={formData.max_daily_budget ?? 0}
+                                onChange={handleChange}
+                                min="0"
+                            />
+                        </div>
 
-                    {isModalLayout ? (
-                        <>
+                        {isModalLayout ? (
+                            <>
+                                <div className="filter-group">
+                                    <label>DSA Support</label>
+                                    <button
+                                        type="button"
+                                        className={`hero-btn ${formData.is_dsa ? 'hero-btn-primary' : 'hero-btn-secondary'}`}
+                                        onClick={() => setFormData(f => ({ ...f, is_dsa: !f.is_dsa }))}
+                                        style={{
+                                            justifyContent: 'center',
+                                            minHeight: '42px',
+                                            padding: '0.4rem 0.5rem',
+                                            fontSize: 'var(--text-xs)',
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        {formData.is_dsa ? <ShieldCheck size={14} /> : <Lock size={14} />}
+                                        {formData.is_dsa ? 'DSA On' : 'Manual'}
+                                    </button>
+                                </div>
+                                <div className="filter-group">
+                                    <label>Start Date</label>
+                                    <input
+                                        type="date"
+                                        name="created_date"
+                                        value={formData.created_date || ''}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </>
+                        ) : (
                             <div className="filter-group">
                                 <label>DSA Support</label>
                                 <button
@@ -346,7 +466,7 @@ export default function CampaignForm({
                                     onClick={() => setFormData(f => ({ ...f, is_dsa: !f.is_dsa }))}
                                     style={{
                                         justifyContent: 'center',
-                                        minHeight: '40px',
+                                        minHeight: '42px',
                                         padding: '0.4rem 0.5rem',
                                         fontSize: 'var(--text-xs)',
                                         fontWeight: 700,
@@ -356,107 +476,89 @@ export default function CampaignForm({
                                     {formData.is_dsa ? 'DSA On' : 'Manual'}
                                 </button>
                             </div>
-                            <div className="filter-group">
-                                <label>Start Date</label>
-                                <input
-                                    type="date"
-                                    name="created_date"
-                                    value={formData.created_date || ''}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                        </>
-                    ) : (
-                        <div className="filter-group">
-                            <label>DSA Support</label>
-                            <button
-                                type="button"
-                                className={`hero-btn ${formData.is_dsa ? 'hero-btn-primary' : 'hero-btn-secondary'}`}
-                                onClick={() => setFormData(f => ({ ...f, is_dsa: !f.is_dsa }))}
-                                style={{
-                                    justifyContent: 'center',
-                                    minHeight: '40px',
-                                    padding: '0.4rem 0.5rem',
-                                    fontSize: 'var(--text-xs)',
-                                    fontWeight: 700,
-                                }}
-                            >
-                                {formData.is_dsa ? <ShieldCheck size={14} /> : <Lock size={14} />}
-                                {formData.is_dsa ? 'DSA On' : 'Manual'}
-                            </button>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                </SurfaceCard>
 
                 {!isModalLayout && (
-                    <div className="filter-group">
-                        <label>Start Date</label>
-                        <input
-                            type="date"
-                            name="created_date"
-                            value={formData.created_date || ''}
-                            onChange={handleChange}
-                            style={{ width: 'fit-content' }}
-                        />
-                    </div>
+                    <SurfaceCard padding="1rem" radius="1.2rem" variant="inset">
+                        <div className="filter-group">
+                            <label>Start Date</label>
+                            <input
+                                type="date"
+                                name="created_date"
+                                value={formData.created_date || ''}
+                                onChange={handleChange}
+                                style={{ width: 'fit-content' }}
+                            />
+                        </div>
+                    </SurfaceCard>
                 )}
 
                 {!formData.is_dsa && (
-                    <div className="filter-group">
-                        <label>Active Keywords (Running)</label>
-                        <textarea
-                            name="keywords"
-                            value={formData.keywords || ''}
-                            onChange={handleChange}
-                            placeholder="Enter list of running keywords..."
-                            style={{ minHeight: '100px' }}
-                        />
-                    </div>
+                    <SurfaceCard padding="0.9rem" radius="1.35rem" variant="soft">
+                        <div className="filter-group">
+                            <label>Active Keywords (Running)</label>
+                            <textarea
+                                name="keywords"
+                                value={formData.keywords || ''}
+                                onChange={handleChange}
+                                placeholder="Enter list of running keywords..."
+                                style={{ minHeight: '100px' }}
+                            />
+                        </div>
+                    </SurfaceCard>
                 )}
 
-                <div className="filter-group">
-                    <label>Strategy & Objective</label>
-                    <textarea
-                        name="description"
-                        value={formData.description || ''}
-                        onChange={handleChange}
-                        placeholder="Objective, target audience..."
-                        style={{ minHeight: isModalLayout ? '60px' : '80px' }}
-                    />
-                </div>
-
-                <div className="filter-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                        <label style={{ marginBottom: 0 }}>Metadata / Configs</label>
-                        <button
-                            type="button"
-                            onClick={() => setIsMetadataModalOpen(true)}
-                            className="hero-btn hero-btn-ghost"
-                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', gap: '0.3rem' }}
-                        >
-                            <Maximize2 size={13} />
-                            Full Editor
-                        </button>
+                <SurfaceCard padding="0.9rem" radius="1.35rem" variant="soft">
+                    <div className="filter-group">
+                        <label>Strategy & Objective</label>
+                        <textarea
+                            name="description"
+                            value={formData.description || ''}
+                            onChange={handleChange}
+                            placeholder="Objective, target audience..."
+                            style={{ minHeight: isModalLayout ? '88px' : '96px' }}
+                        />
                     </div>
-                    <LazyRichTextEditor
-                        value={(formData.metadata || '').toString()}
-                        onChange={(nextHtml) => setFormData((prev) => ({ ...prev, metadata: nextHtml }))}
-                        placeholder="Detailed metadata configuration..."
-                        minHeight={isModalLayout ? 60 : 80}
-                        maxHeight={isModalLayout ? 200 : 220}
-                    />
-                </div>
+                </SurfaceCard>
 
-                <div className="filter-group">
-                    <label>Internal Notes</label>
-                    <LazyRichTextEditor
-                        value={(formData.general_notes || '').toString()}
-                        onChange={(nextHtml) => setFormData((prev) => ({ ...prev, general_notes: nextHtml }))}
-                        placeholder="Implementation details, checkpoints, governance..."
-                        minHeight={isModalLayout ? 60 : 80}
-                        maxHeight={isModalLayout ? 200 : 220}
-                    />
-                </div>
+                <SurfaceCard padding="0.9rem" radius="1.35rem" variant="soft">
+                    <div className="filter-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                            <label style={{ marginBottom: 0 }}>Metadata / Configs</label>
+                            <button
+                                type="button"
+                                onClick={() => setIsMetadataModalOpen(true)}
+                                className="hero-btn hero-btn-ghost"
+                                style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', gap: '0.3rem' }}
+                            >
+                                <Maximize2 size={13} />
+                                Full Editor
+                            </button>
+                        </div>
+                        <LazyRichTextEditor
+                            value={(formData.metadata || '').toString()}
+                            onChange={(nextHtml) => setFormData((prev) => ({ ...prev, metadata: nextHtml }))}
+                            placeholder="Detailed metadata configuration..."
+                            minHeight={isModalLayout ? 88 : 100}
+                            maxHeight={isModalLayout ? 220 : 240}
+                        />
+                    </div>
+                </SurfaceCard>
+
+                <SurfaceCard padding="0.9rem" radius="1.35rem" variant="soft">
+                    <div className="filter-group">
+                        <label>Internal Notes</label>
+                        <LazyRichTextEditor
+                            value={(formData.general_notes || '').toString()}
+                            onChange={(nextHtml) => setFormData((prev) => ({ ...prev, general_notes: nextHtml }))}
+                            placeholder="Implementation details, checkpoints, governance..."
+                            minHeight={isModalLayout ? 88 : 100}
+                            maxHeight={isModalLayout ? 220 : 240}
+                        />
+                    </div>
+                </SurfaceCard>
 
                 <MetadataModal
                     isOpen={isMetadataModalOpen}
