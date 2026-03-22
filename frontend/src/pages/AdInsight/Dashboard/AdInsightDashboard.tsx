@@ -3,7 +3,7 @@ import { useDashboardData } from './useDashboardData';
 import { DashboardCharts } from './DashboardCharts';
 import { MultiSelectDropdown } from '../../../components/common/MultiSelectDropdown';
 import { PlatformConfig } from '../../../types/adinsight';
-import { SurfaceCard } from '../../../components/common/ui';
+import { SurfaceCard, createAmbientSurface, createPremiumBadgeStyle } from '../../../components/common/ui';
 
 const DASHBOARD_PAGE_STYLE = {
     display: 'flex',
@@ -15,14 +15,20 @@ const FILTER_BAR_STYLE = {
     position: 'relative',
     zIndex: 60,
     display: 'flex',
-    alignItems: 'center',
-    gap: '1.25rem',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '1rem',
     overflow: 'visible',
 } as const;
 
+const FILTER_ROW_STYLE = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1.25rem',
+    flexWrap: 'wrap',
+} as const;
+
 const LIVE_COUNT_STYLE = {
-    marginLeft: 'auto',
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
@@ -89,55 +95,96 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
 
     return (
         <div style={DASHBOARD_PAGE_STYLE}>
+            <SurfaceCard
+                padding="1.25rem"
+                style={{
+                    borderRadius: '1.65rem',
+                    ...createAmbientSurface('#3b82f6', 0.85),
+                    boxShadow: '0 24px 46px -34px rgba(15, 23, 42, 0.7)',
+                }}
+            >
+                <div className="hero-badge" style={{ marginBottom: '0.75rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                    Dashboard Intelligence
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div>
+                        <h2 style={{ fontSize: '1.45rem', fontWeight: 850, letterSpacing: '-0.04em', color: 'var(--text-main)', margin: 0 }}>
+                            {platformInfo.name} Performance Board
+                        </h2>
+                        <p style={{ marginTop: '0.45rem', fontSize: '0.86rem', color: 'var(--text-dim)', fontWeight: 500 }}>
+                            Executive scan of geo coverage, score quality, and content mix across the current filtered dataset.
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
+                        <span className="hero-badge" style={createPremiumBadgeStyle('#14b8a6', { textColor: '#5eead4' })}>
+                            {province || 'All Provinces'}
+                        </span>
+                    </div>
+                </div>
+            </SurfaceCard>
 
             {/* ── Filter bar — matches InsightFilterBar design exactly ── */}
-            <SurfaceCard className="filter-container" variant="soft" style={FILTER_BAR_STYLE}>
-                {/* Pattern Selector */}
-                <div className="filter-group">
-                    <label>Pattern <span style={{ color: '#ef4444' }}>*</span></label>
-                    <select
-                        value={pattern}
-                        onChange={e => setPattern(e.target.value)}
-                        style={{ width: '140px' }}
-                    >
-                        {sitemapTagOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Province Filter — same MultiSelectDropdown as InsightFilterBar */}
-                <div className="filter-group">
-                    <label>Province</label>
-                    <MultiSelectDropdown
-                        options={provinceOptions}
-                        value={province}
-                        onChange={val => setProvince(val)}
-                        placeholder="All"
-                        width="180px"
-                    />
-                </div>
-
-                {/* Live count badge — right-aligned */}
-                {!isLoading && records && (
-                    <div style={LIVE_COUNT_STYLE}>
-                        <span style={{
-                            display: 'inline-block',
-                            width: '7px', height: '7px',
-                            borderRadius: '50%',
-                            backgroundColor: '#10b981',
-                            animation: 'pulse 2s infinite'
-                        }} />
-                        {urlCount.toLocaleString()} URL{urlCount !== 1 ? 's' : ''}{province ? ` · ${province}` : ' · All Provinces'}
+            <SurfaceCard
+                className="filter-container"
+                variant="soft"
+                style={{
+                    ...FILTER_BAR_STYLE,
+                    borderRadius: '1.6rem',
+                    padding: '1.2rem 1.3rem',
+                    background: [
+                        'radial-gradient(circle at top right, rgba(59, 130, 246, 0.12) 0%, transparent 24%)',
+                        'radial-gradient(circle at left bottom, rgba(16, 185, 129, 0.08) 0%, transparent 26%)',
+                        'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 98%, white 2%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
+                    ].join(', '),
+                    boxShadow: '0 26px 46px -34px rgba(15, 23, 42, 0.72)',
+                    border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.2) 22%)',
+                }}
+            >
+                <div style={FILTER_ROW_STYLE}>
+                    <div className="filter-group">
+                        <label>Province</label>
+                        <MultiSelectDropdown
+                            options={provinceOptions}
+                            value={province}
+                            onChange={val => setProvince(val)}
+                            placeholder="All"
+                            width="180px"
+                        />
                     </div>
-                )}
+
+                    <div className="filter-group">
+                        <label>Pattern <span style={{ color: '#ef4444' }}>*</span></label>
+                        <select
+                            value={pattern}
+                            onChange={e => setPattern(e.target.value)}
+                            style={{ width: '140px' }}
+                        >
+                            {sitemapTagOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {!isLoading && records && (
+                        <div style={{ ...LIVE_COUNT_STYLE, marginLeft: 'auto' }}>
+                            <span style={{
+                                display: 'inline-block',
+                                width: '7px', height: '7px',
+                                borderRadius: '50%',
+                                backgroundColor: '#10b981',
+                                animation: 'pulse 2s infinite'
+                            }} />
+                            {urlCount.toLocaleString()} URL{urlCount !== 1 ? 's' : ''}{province ? ` · ${province}` : ' · All Provinces'}
+                        </div>
+                    )}
+                </div>
 
                 {/* CSS for filter labels, same as InsightFilterBar internal style */}
                 <style>{`
                     .filter-container .filter-group {
                         display: flex;
                         flex-direction: column;
-                        gap: 0.4rem;
+                        gap: 0.48rem;
                     }
                     .filter-container label {
                         font-size: 0.72rem;
@@ -147,9 +194,42 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
                         letter-spacing: 0.05em;
                         opacity: 0.9;
                     }
+                    .filter-container input,
+                    .filter-container select {
+                        height: 42px;
+                        border-radius: 12px;
+                        border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(59, 130, 246, 0.18) 18%);
+                        background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.88) 100%);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.66), 0 10px 24px -20px rgba(15, 23, 42, 0.42);
+                        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+                        color: var(--text-main);
+                    }
+                    .filter-container input::placeholder {
+                        color: var(--text-muted);
+                    }
+                    .filter-container input:focus,
+                    .filter-container select:focus {
+                        outline: none;
+                        border-color: rgba(59, 130, 246, 0.42);
+                        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08), inset 0 1px 0 rgba(255,255,255,0.75);
+                    }
                     @keyframes pulse {
                         0%, 100% { opacity: 1; }
                         50% { opacity: 0.4; }
+                    }
+                    .dark .filter-container input,
+                    .dark .filter-container select {
+                        background: linear-gradient(180deg, rgba(15,23,42,0.82) 0%, rgba(2,6,23,0.92) 100%);
+                        border-color: rgba(148, 163, 184, 0.18);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 24px -20px rgba(0,0,0,0.5);
+                        color: #f8fafc;
+                    }
+                    .dark .filter-container input::placeholder {
+                        color: rgba(248, 250, 252, 0.56);
+                    }
+                    .dark .filter-container select option {
+                        background-color: #020617;
+                        color: #f8fafc;
                     }
                 `}</style>
             </SurfaceCard>

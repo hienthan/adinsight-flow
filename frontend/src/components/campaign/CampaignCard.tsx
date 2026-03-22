@@ -12,6 +12,27 @@ type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type ViewMode = 'comfortable' | 'compact' | 'alert';
 type FreshnessState = 'fresh' | 'watch' | 'stale';
 
+const hexToRgba = (input: string | undefined, alpha: number) => {
+    if (!input) return `rgba(59, 130, 246, ${alpha})`;
+    const normalized = input.trim();
+
+    if (normalized.startsWith('#')) {
+        const hex = normalized.slice(1);
+        const safeHex = hex.length === 3
+            ? hex.split('').map((char) => char + char).join('')
+            : hex;
+        if (safeHex.length === 6) {
+            const int = Number.parseInt(safeHex, 16);
+            const r = (int >> 16) & 255;
+            const g = (int >> 8) & 255;
+            const b = int & 255;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+    }
+
+    return normalized;
+};
+
 const getLocalDateInputValue = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -143,6 +164,14 @@ export default function CampaignCard({
     };
 
     const isPaused = campaign.status === 'paused';
+    const platformAccent = platform?.color || 'hsl(var(--primary))';
+    const cardSurface = [
+        `radial-gradient(circle at top right, ${hexToRgba(platform?.color, reminderState === 'none' ? 0.08 : 0.16)} 0%, transparent 38%)`,
+        `radial-gradient(circle at bottom left, ${hexToRgba(platform?.color, 0.06)} 0%, transparent 46%)`,
+        reminderState === 'none'
+            ? 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 88%, var(--bg-main) 12%) 100%)'
+            : `linear-gradient(180deg, ${reminderStyle.cardBackground} 0%, color-mix(in srgb, ${reminderStyle.cardBackground} 86%, var(--bg-content) 14%) 100%)`,
+    ].join(', ');
 
     return (
         <div
@@ -154,9 +183,9 @@ export default function CampaignCard({
                 display: 'flex',
                 flexDirection: 'column',
                 padding: compactView ? '0.75rem' : '1.25rem',
-                background: reminderStyle.cardBackground,
+                background: cardSurface,
                 border: `1px solid ${reminderStyle.cardBorder}`,
-                boxShadow: 'var(--shadow-subtle)',
+                boxShadow: `0 18px 36px -28px ${hexToRgba(platform?.color, 0.35)}`,
                 filter: isPaused ? 'grayscale(0.9) opacity(0.7)' : 'none',
                 ...(reminderState !== 'none' && { boxShadow: 'var(--shadow-glass)' })
             }}
@@ -194,7 +223,7 @@ export default function CampaignCard({
                             style={{
                                 fontSize: compactView ? '0.78rem' : '0.9rem',
                                 fontWeight: 800,
-                                color: platform?.color || 'var(--text-main)',
+                                color: platformAccent,
                                 margin: 0,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -217,7 +246,7 @@ export default function CampaignCard({
                             style={{
                                 fontSize: compactView ? '0.68rem' : '0.75rem',
                                 fontWeight: 800,
-                                color: platform?.color || 'hsl(var(--primary))',
+                                color: platformAccent,
                                 background: 'var(--bg-overlay)',
                                 padding: compactView ? '0.15rem 0.38rem' : '0.2rem 0.5rem',
                                 borderRadius: '5px',
@@ -404,9 +433,9 @@ export default function CampaignCard({
                     title={notesPreview || 'No notes available'}
                     style={{
                         padding: compactView ? '0.45rem 0.55rem' : '0.6rem 0.75rem',
-                        background: 'var(--bg-overlay)',
-                        borderRadius: '0.5rem',
-                        border: '1px solid var(--border-subtle)',
+                        background: `linear-gradient(180deg, ${hexToRgba(platform?.color, 0.06)} 0%, var(--bg-overlay) 100%)`,
+                        borderRadius: '0.8rem',
+                        border: `1px solid ${hexToRgba(platform?.color, 0.12)}`,
                         fontSize: compactView ? '0.68rem' : '0.75rem',
                         lineHeight: 1.4,
                         color: campaign.general_notes ? 'var(--text-main)' : 'var(--text-muted)',

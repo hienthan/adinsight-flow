@@ -13,7 +13,7 @@ interface InsightFilterBarProps {
     sitemapTags: string[];
 }
 
-const MAIN_FILTER_IDS = ['searchTerm', 'country', 'content_type', 'funnel_stage', 'tier', 'affiliate_tier', 'geo_category', 'province', 'dsa_campaign'];
+const MAIN_FILTER_IDS = ['searchTerm', 'country', 'sitemap_tag', 'content_type', 'funnel_stage', 'tier', 'affiliate_tier', 'geo_category', 'province', 'dsa_campaign'];
 const EXCLUDE_FILTER_IDS = ['searchTerm', 'country', 'tier', 'content_type'];
 
 const FILTER_BAR_SHELL_STYLE = {
@@ -43,6 +43,18 @@ const EXCLUSION_SECTION_STYLE = {
     animation: 'fadeIn 0.3s ease-out',
     marginTop: '0.75rem',
     position: 'relative',
+} as const;
+
+const FILTER_SHELL_STYLE = {
+    ...FILTER_BAR_SHELL_STYLE,
+    borderRadius: '1.6rem',
+    background: [
+        'radial-gradient(circle at top right, rgba(59, 130, 246, 0.14) 0%, transparent 26%)',
+        'radial-gradient(circle at left bottom, rgba(20, 184, 166, 0.08) 0%, transparent 28%)',
+        'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 98%, white 2%) 0%, color-mix(in srgb, var(--bg-content) 89%, var(--bg-main) 11%) 100%)',
+    ].join(', '),
+    boxShadow: '0 26px 48px -34px rgba(15, 23, 42, 0.72)',
+    border: '1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.2) 20%)',
 } as const;
 
 export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
@@ -224,7 +236,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
         <SurfaceCard
             className="filter-container"
             variant="soft"
-            style={FILTER_BAR_SHELL_STYLE}
+            style={FILTER_SHELL_STYLE}
         >
             <div style={FILTER_ROW_STYLE}>
                 {mainFilters.map(f => renderFilter(f))}
@@ -263,7 +275,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     .filter-container .filter-group {
                         display: flex;
                         flex-direction: column;
-                        gap: 0.4rem;
+                        gap: 0.48rem;
                     }
                     .filter-container label {
                         font-size: 0.72rem;
@@ -273,15 +285,35 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                         letter-spacing: 0.05em;
                         opacity: 0.9;
                     }
+                    .filter-container input,
+                    .filter-container select {
+                        height: 42px;
+                        border-radius: 12px;
+                        border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(59, 130, 246, 0.18) 18%);
+                        background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.86) 100%);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.66), 0 10px 24px -20px rgba(15, 23, 42, 0.4);
+                        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+                        color: var(--text-main);
+                    }
+                    .filter-container input::placeholder {
+                        color: var(--text-muted);
+                    }
+                    .filter-container input:focus,
+                    .filter-container select:focus {
+                        outline: none;
+                        border-color: rgba(59, 130, 246, 0.42);
+                        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08), inset 0 1px 0 rgba(255,255,255,0.75);
+                    }
 
                     /* Exclude Toggle Premium Styling */
                     .exclude-toggle {
-                        background: var(--bg-overlay);
-                        border-color: var(--border-subtle);
+                        background: linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(248,250,252,0.84) 100%);
+                        border-color: color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.18) 22%);
                         color: var(--text-dim);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.64), 0 12px 24px -20px rgba(15, 23, 42, 0.4);
                     }
                     .exclude-toggle:hover {
-                        background: var(--muted);
+                        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.94) 100%);
                         transform: translateY(-1px);
                     }
                     .exclude-toggle .exclude-icon {
@@ -304,9 +336,9 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
 
                     /* Exclude Section - Premium (Light Mode Default) */
                     .exclude-section {
-                        background: rgba(255, 252, 252, 0.8) !important;
+                        background: linear-gradient(180deg, rgba(255, 247, 247, 0.82) 0%, rgba(255, 252, 252, 0.94) 100%) !important;
                         border: 1px solid rgba(239, 68, 68, 0.15) !important;
-                        box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.02);
+                        box-shadow: 0 20px 30px -24px rgba(239, 68, 68, 0.35);
                     }
                     .exclude-section label {
                         color: #dc2626 !important;
@@ -321,47 +353,66 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     }
 
                     /* === DARK MODE OVERRIDES (High Specificity) === */
-                    :global(.dark) .filter-container .exclude-toggle {
-                        background: rgba(255, 255, 255, 0.03);
-                        border-color: rgba(255, 255, 255, 0.08);
+                    .dark .filter-container .exclude-toggle {
+                        background: linear-gradient(180deg, rgba(15,23,42,0.84) 0%, rgba(2,6,23,0.9) 100%);
+                        border-color: rgba(148, 163, 184, 0.18);
+                        color: var(--text-dim);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 24px -20px rgba(0,0,0,0.5);
                     }
 
-                    :global(.dark) .filter-container:has(.exclude-section) .exclude-toggle {
+                    .dark .filter-container:has(.exclude-section) .exclude-toggle {
                         background: rgba(239, 68, 68, 0.08) !important;
                         border-color: rgba(239, 68, 68, 0.4) !important;
                         color: #fca5a5 !important;
                         box-shadow: 0 0 20px rgba(239, 68, 68, 0.15) !important;
                     }
-                    :global(.dark) .filter-container:has(.exclude-section) .exclude-toggle .exclude-icon {
+                    .dark .filter-container:has(.exclude-section) .exclude-toggle .exclude-icon {
                         fill: rgba(239, 68, 68, 0.2) !important;
                     }
 
-                    :global(.dark) .exclude-section {
-                        background: rgba(15, 10, 10, 0.6) !important; /* Deep red-black tint */
+                    .dark .exclude-section {
+                        background: linear-gradient(180deg, rgba(20, 10, 10, 0.78) 0%, rgba(15, 10, 10, 0.68) 100%) !important;
                         border: 1px solid rgba(239, 68, 68, 0.25) !important;
                         box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.3) !important;
                     }
-                    :global(.dark) .exclude-section label {
+                    .dark .exclude-section label {
                         color: #fca5a5 !important;
                         opacity: 1 !important;
                         text-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
                     }
                     
                     /* CRITICAL: Fix input backgrounds in dark mode */
-                    :global(.dark) .exclude-section select,
-                    :global(.dark) .exclude-section input,
-                    :global(.dark) .exclude-section .search-input-wrapper input {
+                    .dark .exclude-section select,
+                    .dark .exclude-section input,
+                    .dark .exclude-section .search-input-wrapper input {
                         background-color: #020617 !important; /* Very deep blue-black */
                         background-image: none !important;
                         border-color: rgba(239, 68, 68, 0.2) !important;
                         color: #f8fafc !important;
                     }
-                    :global(.dark) .exclude-section select:focus,
-                    :global(.dark) .exclude-section input:focus {
+                    .dark .exclude-section input::placeholder {
+                        color: rgba(248, 250, 252, 0.56) !important;
+                    }
+                    .dark .exclude-section select:focus,
+                    .dark .exclude-section input:focus {
                         border-color: rgba(239, 68, 68, 0.5) !important;
                         background-color: #000000 !important;
                     }
-                    :global(.dark) .exclude-section select option {
+                    .dark .exclude-section select option {
+                        background-color: #020617;
+                        color: #f8fafc;
+                    }
+                    .dark .filter-container input,
+                    .dark .filter-container select {
+                        background: linear-gradient(180deg, rgba(15,23,42,0.82) 0%, rgba(2,6,23,0.92) 100%);
+                        border-color: rgba(148, 163, 184, 0.18);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 24px -20px rgba(0,0,0,0.5);
+                        color: #f8fafc;
+                    }
+                    .dark .filter-container input::placeholder {
+                        color: rgba(248, 250, 252, 0.56);
+                    }
+                    .dark .filter-container select option {
                         background-color: #020617;
                         color: #f8fafc;
                     }

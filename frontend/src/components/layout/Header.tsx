@@ -6,6 +6,7 @@ import {
     createSafeInteractionScopeCss,
 } from '../../lib/uiMotion';
 import { SafeButton } from '../common/ui/SafeButton';
+import { createAmbientSurface, createPremiumBadgeStyle } from '../common/ui';
 
 interface HeaderProps {
     darkMode: boolean;
@@ -21,22 +22,54 @@ export default function Header({
     onToggleStickySidebar
 }: HeaderProps) {
     const { active, preAlert, upcoming, loading } = useTrendCounts();
+    const signalCount = active + preAlert + upcoming;
 
     return (
         <div className="header-wrapper header-shell">
-            <header className="top-bar">
-                <div className="title-group">
-                    <h1>AdInsight Flow</h1>
-                    <p>Comprehensive URL analysis and campaign tracking performance</p>
+            <header
+                className="top-bar"
+                style={{
+                    padding: '1.2rem 1.3rem',
+                    borderRadius: '1.55rem',
+                    ...createAmbientSurface('#3b82f6', 0.9),
+                    boxShadow: '0 24px 46px -36px rgba(15, 23, 42, 0.7)',
+                }}
+            >
+                <div className="title-group" style={{ minWidth: 0 }}>
+                    <div className="hero-badge" style={{ marginBottom: '0.6rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                        Workspace Shell
+                    </div>
+                    <h1 style={{ color: 'var(--text-main)' }}>AdInsight Flow</h1>
+                    <p>Command center for URL analysis, campaign tracking, and outbound planning.</p>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     <style>{`
                         ${createSafeInteractionScopeCss('.header-shell', SAFE_THEME_TOGGLE_SELECTORS)}
                     `}</style>
                     <AnimatePresence>
-                        {!loading && (active > 0 || preAlert > 0 || upcoming > 0) && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginRight: '0.5rem', background: 'var(--bg-overlay)', padding: '0.35rem 0.75rem', borderRadius: '14px', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 0 12px rgba(0,0,0,0.02)' }}>
+                        {!loading && signalCount > 0 && (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    marginRight: '0.1rem',
+                                    background: 'linear-gradient(180deg, var(--bg-overlay) 0%, color-mix(in srgb, var(--bg-overlay) 82%, var(--bg-main) 18%) 100%)',
+                                    padding: '0.55rem 0.85rem',
+                                    borderRadius: '1rem',
+                                    border: '1px solid var(--border-subtle)',
+                                    boxShadow: '0 16px 32px -28px rgba(15, 23, 42, 0.55)',
+                                }}
+                            >
+                                <div style={{ paddingRight: '0.5rem', borderRight: '1px solid var(--border-subtle)' }}>
+                                    <div style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                                        Trend Pulse
+                                    </div>
+                                    <div style={{ marginTop: '0.25rem', fontSize: '1rem', fontWeight: 850, color: 'var(--text-main)', lineHeight: 1 }}>
+                                        {signalCount}
+                                    </div>
+                                </div>
                                 {active > 0 && (
                                     <motion.div
                                         initial={{ opacity: 0, x: -10 }}
@@ -95,18 +128,20 @@ export default function Header({
                         className="theme-toggle"
                         title={stickySidebarOpen ? 'Close Sticky Hub' : 'Open Sticky Hub'}
                         style={{
-                            padding: '0.5rem 0.8rem',
-                            borderRadius: '12px',
-                            background: stickySidebarOpen ? 'var(--accent-glow)' : 'var(--bg-content)',
-                            border: `1px solid ${stickySidebarOpen ? 'hsl(var(--primary))' : 'var(--border-subtle)'}`,
-                            color: stickySidebarOpen ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                            padding: '0.62rem 0.9rem',
+                            borderRadius: '14px',
+                            background: stickySidebarOpen
+                                ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.16) 0%, rgba(34, 211, 238, 0.12) 100%)'
+                                : 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 88%, var(--bg-main) 12%) 100%)',
+                            border: `1px solid ${stickySidebarOpen ? 'rgba(59, 130, 246, 0.22)' : 'var(--border-subtle)'}`,
+                            color: stickySidebarOpen ? '#93c5fd' : 'var(--text-dim)',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.5rem',
                             fontSize: '0.75rem',
                             fontWeight: 700,
-                            boxShadow: 'var(--shadow-soft)'
+                            boxShadow: '0 16px 28px -24px rgba(15, 23, 42, 0.48)'
                         }}
                     >
                         <Layout size={18} />
@@ -118,16 +153,16 @@ export default function Header({
                         className="theme-toggle"
                         title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                         style={{
-                            padding: '0.5rem',
-                            borderRadius: '12px',
-                            background: 'var(--bg-content)',
+                            padding: '0.62rem',
+                            borderRadius: '14px',
+                            background: 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 88%, var(--bg-main) 12%) 100%)',
                             border: '1px solid var(--border-subtle)',
                             color: darkMode ? '#fbbf24' : 'var(--text-dim)',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: 'var(--shadow-soft)'
+                            boxShadow: '0 16px 28px -24px rgba(15, 23, 42, 0.48)'
                         }}
                     >
                         {darkMode ? <Sun size={18} fill="currentColor" /> : <Moon size={18} fill="#64748b" />}

@@ -1,12 +1,12 @@
 import { Suspense, lazy, useMemo, useState, useEffect } from "react";
 import { pb } from "../../lib/pocketbase";
-import { Search, Sparkles, TrendingUp, Calendar, Info, Check } from "lucide-react";
+import { Search, Sparkles, TrendingUp, Calendar, Info, Check, Radar, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 // Import extracted components
 import { SignalRow } from "./components/SignalRow";
 import { SectionHeader, EmptyState, CompactEmptyState } from "./components/SectionUI";
-import { SafeButton, SurfaceCard, ToolbarGroup } from "../../components/common/ui";
+import { MetricCard, PageHero, SafeButton, SurfaceCard, ToolbarGroup, createAmbientSurface, createPremiumBadgeStyle } from "../../components/common/ui";
 import { AdInsightProviderBoundary } from "./AdInsightProviderBoundary";
 
 // Import shared types and utils
@@ -36,19 +36,13 @@ type PreparedSignal = {
     searchable: string;
 };
 
-const TREND_RADAR_HEADER_STYLE = {
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: '1.5rem',
-    borderRadius: '12px',
-    boxShadow: 'var(--shadow-soft)',
-} as const;
+type TrendSignalWithName = TrendSignal & { trend_type_name?: string };
 
 const FILTER_SECTION_STYLE = {
     marginBottom: '1.5rem',
     display: 'flex',
     flexWrap: 'wrap',
-    alignItems: 'flex-end',
+    alignItems: 'stretch',
     gap: '0.9rem',
 } as const;
 
@@ -165,7 +159,7 @@ export default function TrendRadarPage() {
                 if (!dates) return null;
 
                 const { state } = computeState(today, s, s.expand?.trend_type);
-                const name = (s as any).trend_type_name || s.trend_type;
+                const name = (s as TrendSignalWithName).trend_type_name || s.trend_type;
                 const destLabel = formatDestinations(s.destinations);
                 const searchable = `${name} ${destLabel} ${s.summary ?? ""} ${(s.keywords ?? []).join(" ")}`.toLowerCase();
 
@@ -201,11 +195,12 @@ export default function TrendRadarPage() {
         });
 
         return withinHorizon;
-    }, [signals, q, market, horizon, includeBaseline, defaultPreAlertDays, today]);
+    }, [signals, q, market, horizonDays, includeBaseline, defaultPreAlertDays, today]);
 
     const peak = prepared.filter((x) => x.state === "PEAK");
     const active = prepared.filter((x) => x.state === "ACTIVE");
     const upcoming = prepared.filter((x) => x.state === "IN_PREALERT" || x.state === "UPCOMING_PREALERT");
+    const highPriorityCount = prepared.filter((x) => x.s.priority === 'high').length;
     const statusViewItems = [
         { ...STATUS_VIEW_ITEMS[0], count: peak.length },
         { ...STATUS_VIEW_ITEMS[1], count: active.length },
@@ -252,51 +247,51 @@ export default function TrendRadarPage() {
 
     if (isLoading) {
         return (
-            <div className="page-container flex items-center justify-center min-h-[60vh]">
-                <div className="text-slate-400 font-bold animate-pulse flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-slate-100 animate-bounce" />
-                    Loading Trend Radar...
-                </div>
+            <div className="page-container flex items-center justify-center min-h-[60vh] px-8 py-8">
+                <PageHero
+                    eyebrow="Trend Signals"
+                    title="Loading Trend Radar"
+                    subtitle="Fetching current signal windows, priorities, destinations, and strategy notes."
+                    accent="#3b82f6"
+                    style={{ maxWidth: '42rem', width: '100%' }}
+                />
             </div>
         );
     }
 
     return (
             <div className="page-container w-full px-8 py-8 animate-fade">
-            {/* Zone 1: Header Summary Card - Compact Version */}
-            <SurfaceCard
-                variant="soft"
-                padding="0.75rem 1.5rem"
-                style={TREND_RADAR_HEADER_STYLE}
+            <PageHero
+                eyebrow="Ad Insight Radar"
+                title="Trend Signals"
+                subtitle="Scan peak windows, active trends, and pre-alert opportunities across source markets before coverage slips."
+                accent="#3b82f6"
+                actions={(
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
+                        <span className="hero-badge" style={createPremiumBadgeStyle('#ef4444', { textColor: '#ef4444' })}>
+                            {highPriorityCount} high priority
+                        </span>
+                        <span className="hero-badge" style={createPremiumBadgeStyle('#22c55e', { textColor: '#22c55e' })}>
+                            {active.length} active now
+                        </span>
+                    </div>
+                )}
+                style={{ marginBottom: '1.5rem' }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div
-                        className="rounded-xl flex items-center justify-center text-white"
-                        style={{
-                            width: '36px',
-                            height: '36px',
-                            background: "linear-gradient(135deg, hsl(var(--primary)) 0%, #4f46e5 100%)",
-                        }}
-                    >
-                        <TrendingUp size={18} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                        <h1 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-                            Trend Radar
-                        </h1>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', margin: 0 }}>
-                            Daily intelligence scan.
-                        </p>
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.8rem' }}>
+                    <MetricCard label="Tracked" value={prepared.length} helper="Visible in current filter" icon={Radar} accent="#3b82f6" />
+                    <MetricCard label="Peak" value={peak.length} helper="Action now" icon={Sparkles} accent="#ef4444" />
+                    <MetricCard label="Active" value={active.length} helper="Scale and optimize" icon={TrendingUp} accent="#22c55e" />
+                    <MetricCard label="Pre-alert" value={upcoming.length} helper="Prepare coverage" icon={Bell} accent="#f59e0b" />
                 </div>
-            </SurfaceCard>
+            </PageHero>
 
             {/* Zone 2: Filter Controls (grouped like CampOverview) */}
             <section style={FILTER_SECTION_STYLE}>
                 <SurfaceCard
                     variant="inset"
                     padding="0.65rem"
-                    style={FILTER_CARD_STYLE}
+                    style={{ ...FILTER_CARD_STYLE, ...createAmbientSurface('#3b82f6', 0.22), flex: 1, minWidth: '42rem' }}
                 >
                     <div className="filter-group">
                         <label>Search Trends</label>
@@ -390,7 +385,7 @@ export default function TrendRadarPage() {
                 <SurfaceCard
                     variant="inset"
                     padding="0.65rem"
-                    style={FILTER_CARD_STYLE}
+                    style={{ ...FILTER_CARD_STYLE, ...createAmbientSurface('#22c55e', 0.18) }}
                 >
                     <div className="filter-group">
                         <label>Status View</label>
@@ -501,11 +496,13 @@ export default function TrendRadarPage() {
                 </section>
 
                 {horizon !== 'ALL' && (
-                    <SurfaceCard className="mt-4 mx-2 flex items-start gap-3" padding="1rem" style={{ background: 'rgba(239, 246, 255, 0.7)', border: '1px solid rgba(191, 219, 254, 1)' }}>
-                        <Info size={16} className="text-blue-500 mt-0.5" />
+                    <SurfaceCard className="mt-4 mx-2 flex items-start gap-3" padding="1rem" style={{ ...createAmbientSurface('#3b82f6', 0.24) }}>
+                        <Info size={16} className="mt-0.5" style={{ color: '#3b82f6' }} />
                         <div className="flex-1">
-                            <p className="text-xs font-medium text-slate-600 mb-1">Some trends may be hidden because they fall outside the selected timeframe (<strong>{horizon === 'TODAY' ? 'Today' : `Next ${horizon} Days`}</strong>).</p>
-                            <SafeButton onClick={() => setHorizon('ALL')} className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-700 underline">View All Timeframes</SafeButton>
+                            <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-dim)' }}>
+                                Some trends are hidden because they fall outside the selected timeframe (<strong>{horizon === 'TODAY' ? 'Today' : `Next ${horizon} Days`}</strong>).
+                            </p>
+                            <SafeButton onClick={() => setHorizon('ALL')} className="text-[10px] font-black uppercase tracking-wider underline" style={{ color: '#3b82f6' }}>View All Timeframes</SafeButton>
                         </div>
                     </SurfaceCard>
                 )}

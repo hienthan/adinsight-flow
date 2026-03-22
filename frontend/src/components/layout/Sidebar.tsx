@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ElementType, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     ChevronLeft,
@@ -6,6 +6,7 @@ import {
     Layers,
     Globe,
     Target,
+    Route,
     Bell,
     History,
     Settings,
@@ -20,11 +21,33 @@ import {
     SAFE_NAV_SELECTORS,
     createSafeInteractionScopeCss,
 } from '../../lib/uiMotion';
+import { SafeButton } from '../common/ui/SafeButton';
 
 interface SidebarProps {
     collapsed: boolean;
     onToggle: () => void;
 }
+
+interface NavLinkProps {
+    to: string;
+    icon: ElementType;
+    children: ReactNode;
+    badgeCount?: number;
+    badgeText?: string;
+    activeCondition?: boolean;
+    color?: keyof typeof NAV_THEMES;
+}
+
+const NAV_THEMES = {
+    blue: { main: '#60a5fa', bg: 'rgba(96, 165, 250, 0.12)', glow: 'rgba(96, 165, 250, 0.34)' },
+    emerald: { main: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', glow: 'rgba(52, 211, 153, 0.34)' },
+    amber: { main: '#fbbf24', bg: 'rgba(251, 191, 36, 0.14)', glow: 'rgba(251, 191, 36, 0.34)' },
+    indigo: { main: '#818cf8', bg: 'rgba(129, 140, 248, 0.12)', glow: 'rgba(129, 140, 248, 0.34)' },
+    rose: { main: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', glow: 'rgba(251, 113, 133, 0.34)' },
+    purple: { main: '#c084fc', bg: 'rgba(192, 132, 252, 0.12)', glow: 'rgba(192, 132, 252, 0.34)' },
+    teal: { main: '#22d3ee', bg: 'rgba(34, 211, 238, 0.12)', glow: 'rgba(34, 211, 238, 0.34)' },
+    slate: { main: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', glow: 'rgba(148, 163, 184, 0.24)' }
+} as const;
 
 const KlookIcon = () => (
     <div style={{
@@ -106,28 +129,22 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
     const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
-    const NavLink = ({ to, icon: Icon, children, badgeCount, badgeText, activeCondition, color = 'blue' }: any) => {
+    const NavLink = ({ to, icon: Icon, children, badgeCount, badgeText, activeCondition, color = 'blue' }: NavLinkProps) => {
         const active = activeCondition !== undefined ? activeCondition : isActive(to);
-        const hasBadge = badgeCount > 0 || !!badgeText;
-
-        // Premium Color Palette
-        const colors: Record<string, { main: string, bg: string }> = {
-            blue: { main: 'hsl(217, 91%, 60%)', bg: 'hsla(217, 91%, 60%, 0.1)' },
-            emerald: { main: 'hsl(160, 84%, 39%)', bg: 'hsla(160, 84%, 39%, 0.1)' },
-            amber: { main: 'hsl(38, 92%, 50%)', bg: 'hsla(38, 92%, 50%, 0.12)' },
-            indigo: { main: 'hsl(239, 84%, 67%)', bg: 'hsla(239, 84%, 67%, 0.1)' },
-            rose: { main: 'hsl(350, 89%, 60%)', bg: 'hsla(350, 89%, 60%, 0.1)' },
-            purple: { main: 'hsl(265, 89%, 65%)', bg: 'hsla(265, 89%, 65%, 0.1)' },
-            teal: { main: 'hsl(187, 85%, 45%)', bg: 'hsla(187, 85%, 45%, 0.1)' },
-            slate: { main: 'hsl(215, 25%, 45%)', bg: 'hsla(215, 25%, 45%, 0.1)' }
-        };
-
-        const theme = colors[color] || colors.blue;
+        const hasBadge = (badgeCount ?? 0) > 0 || !!badgeText;
+        const theme = NAV_THEMES[color] || NAV_THEMES.blue;
 
         return (
             <Link
                 to={to}
                 className={cn("nav-item", active && "active")}
+                style={{
+                    background: active
+                        ? `linear-gradient(135deg, ${theme.bg} 0%, color-mix(in srgb, ${theme.bg} 72%, var(--bg-content) 28%) 100%)`
+                        : undefined,
+                    boxShadow: active ? `0 16px 28px -24px ${theme.glow}` : undefined,
+                    borderColor: active ? theme.glow : undefined,
+                }}
             >
                 <div style={{
                     display: 'flex',
@@ -136,21 +153,23 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     width: '32px',
                     height: '32px',
                     borderRadius: collapsed ? '50%' : '10px',
-                    background: active ? 'white' : theme.bg,
+                    background: active
+                        ? `linear-gradient(135deg, ${theme.bg} 0%, color-mix(in srgb, ${theme.bg} 62%, var(--bg-content) 38%) 100%)`
+                        : theme.bg,
                     color: theme.main,
-                    boxShadow: active ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
+                    boxShadow: active ? `0 10px 22px -16px ${theme.glow}` : 'none',
                     transition: SAFE_INTERACTIVE_TRANSITION,
                     flexShrink: 0,
-                    border: active ? '1px solid var(--border-subtle)' : '1px solid transparent'
+                    border: active ? `1px solid ${theme.glow}` : '1px solid transparent'
                 }}>
-                    {Icon && typeof Icon !== 'function' ? <Icon size={18} strokeWidth={active ? 2.5 : 2} /> : <Icon />}
+                    <Icon size={18} strokeWidth={active ? 2.5 : 2} />
                 </div>
 
                 {!collapsed && (
                     <span style={{
                         fontSize: '0.875rem',
                         fontWeight: active ? 700 : 600,
-                        color: active ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                        color: active ? 'var(--text-main)' : 'var(--text-dim)',
                         whiteSpace: 'nowrap',
                         letterSpacing: '-0.01em'
                     }}>
@@ -179,15 +198,33 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     };
 
     return (
-        <aside className={cn("sidebar", collapsed && "collapsed")}>
+        <aside
+            className={cn("sidebar", collapsed && "collapsed")}
+            style={{
+                background: [
+                    'radial-gradient(circle at top left, rgba(59, 130, 246, 0.16) 0%, transparent 26%)',
+                    'radial-gradient(circle at bottom left, rgba(20, 184, 166, 0.12) 0%, transparent 24%)',
+                    'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 0%, color-mix(in srgb, var(--bg-content) 84%, var(--bg-main) 16%) 100%)',
+                ].join(', '),
+                borderRight: '1px solid var(--border-subtle)',
+                boxShadow: '0 30px 60px -40px rgba(15, 23, 42, 0.7)',
+            }}
+        >
             <style>{`
                 ${createSafeInteractionScopeCss('.sidebar', SAFE_NAV_SELECTORS)}
             `}</style>
-            <button className="collapse-btn" onClick={onToggle}>
+            <SafeButton className="collapse-btn" onClick={onToggle}>
                 {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-            </button>
+            </SafeButton>
 
-            <div className="logo" style={{ marginBottom: '1.5rem', padding: '0 0.5rem' }}>
+            <div
+                className="logo"
+                style={{
+                    marginBottom: '1.25rem',
+                    padding: collapsed ? '0 0.2rem' : '0.35rem 0.5rem 0.6rem 0.5rem',
+                    borderBottom: collapsed ? 'none' : '1px solid var(--border-subtle)',
+                }}
+            >
                 <div style={{
                     padding: '8px',
                     background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, #3b82f6 100%)',
@@ -198,14 +235,27 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     <Layers size={20} strokeWidth={3} />
                 </div>
                 {!collapsed && (
-                    <span style={{
-                        marginLeft: '4px',
-                        fontWeight: 900,
-                        fontSize: '1.2rem',
-                        letterSpacing: '-0.04em'
-                    }}>
-                        AdInsight
-                    </span>
+                    <div style={{ marginLeft: '0.3rem', minWidth: 0 }}>
+                        <span style={{
+                            display: 'block',
+                            fontWeight: 900,
+                            fontSize: '1.2rem',
+                            letterSpacing: '-0.04em'
+                        }}>
+                            AdInsight
+                        </span>
+                        <span style={{
+                            display: 'block',
+                            fontSize: '0.68rem',
+                            fontWeight: 800,
+                            letterSpacing: '0.12em',
+                            textTransform: 'uppercase',
+                            color: 'var(--text-muted)',
+                            marginTop: '0.2rem',
+                        }}>
+                            Operator Console
+                        </span>
+                    </div>
                 )}
             </div>
 
@@ -219,12 +269,16 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {/* Section Header */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>Tracking Core</div>}
 
-                <NavLink to="/camp-tracking" icon={Target} color="indigo" activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes'].some(p => location.pathname.includes(p))}>
+                <NavLink to="/camp-tracking" icon={Target} color="indigo" activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes', 'outbound-map'].some(p => location.pathname.includes(p))}>
                     Overview
                 </NavLink>
 
                 <NavLink to="/camp-tracking/platforms" icon={Settings} color="teal">
                     Manage Platforms
+                </NavLink>
+
+                <NavLink to="/camp-tracking/outbound-map" icon={Route} color="emerald">
+                    Outbound Map
                 </NavLink>
 
                 <NavLink
@@ -260,7 +314,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         fontSize: '0.9rem',
                         cursor: 'pointer',
                         borderRadius: '0.85rem',
-                        transition: SAFE_INTERACTIVE_TRANSITION
+                        transition: SAFE_INTERACTIVE_TRANSITION,
+                        background: platformsExpanded ? 'var(--bg-overlay)' : 'transparent',
+                        border: platformsExpanded ? '1px solid var(--border-subtle)' : '1px solid transparent',
                     }}
                     className="nav-item-header"
                 >
@@ -305,6 +361,41 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 )}
 
             </nav>
+
+            {!collapsed && (
+                <div
+                    style={{
+                        marginTop: '1rem',
+                        padding: '0.95rem',
+                        borderRadius: '1.2rem',
+                        background: 'linear-gradient(180deg, var(--bg-overlay) 0%, color-mix(in srgb, var(--bg-overlay) 82%, var(--bg-main) 18%) 100%)',
+                        border: '1px solid var(--border-subtle)',
+                        boxShadow: '0 18px 34px -28px rgba(15, 23, 42, 0.6)',
+                    }}
+                >
+                    <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                        Reminder Pressure
+                    </div>
+                    <div style={{ marginTop: '0.55rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+                        <div>
+                            <div style={{ fontSize: '1.45rem', fontWeight: 850, letterSpacing: '-0.04em', color: 'var(--text-main)', lineHeight: 1 }}>
+                                {reminderCounts.overdue + reminderCounts.today}
+                            </div>
+                            <div style={{ marginTop: '0.3rem', fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 600 }}>
+                                urgent reminders
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <span className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#fca5a5', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                Overdue {reminderCounts.overdue}
+                            </span>
+                            <span className="hero-badge" style={{ background: 'rgba(251, 191, 36, 0.12)', color: '#fcd34d', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                                Today {reminderCounts.today}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
         </aside>
     );
 }

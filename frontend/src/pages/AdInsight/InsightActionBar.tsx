@@ -9,13 +9,15 @@ interface InsightActionBarProps {
     onClear: () => void;
     onApply: (payload: { tier?: string; country?: string; is_active?: boolean }) => void;
     isUpdating: boolean;
+    allowTierUpdate?: boolean;
 }
 
 export const InsightActionBar: React.FC<InsightActionBarProps> = ({
     selectedCount,
     onClear,
     onApply,
-    isUpdating
+    isUpdating,
+    allowTierUpdate = true,
 }) => {
     const [selectedTier, setSelectedTier] = useState<string>('');
     const [setToUnknownCountry, setSetToUnknownCountry] = useState<boolean>(false);
@@ -27,7 +29,7 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
 
     const handleApply = () => {
         const payload: { tier?: string; country?: string; is_active?: boolean } = {};
-        if (selectedTier) payload.tier = selectedTier;
+        if (allowTierUpdate && selectedTier) payload.tier = selectedTier;
         if (setToUnknownCountry) payload.country = 'Unknown';
         if (selectedStatus !== null) payload.is_active = selectedStatus;
 
@@ -39,7 +41,7 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
         }
     };
 
-    const hasSelection = selectedTier || setToUnknownCountry || selectedStatus !== null;
+    const hasSelection = (allowTierUpdate && selectedTier) || setToUnknownCountry || selectedStatus !== null;
 
     return (
         <SurfaceCard style={{
@@ -47,14 +49,16 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
             top: '2rem',
             left: '50%',
             transform: 'translateX(-50%)',
-            borderRadius: '16px',
-            boxShadow: 'var(--shadow-floating)',
+            borderRadius: '18px',
+            boxShadow: '0 24px 46px -28px rgba(15, 23, 42, 0.72)',
             padding: '0.75rem 1.25rem',
             display: 'flex',
             alignItems: 'center',
             gap: '1.25rem',
             zIndex: 1000,
-            animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 96%, var(--bg-main) 4%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
+            border: '1px solid var(--border-subtle)',
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderRight: '1px solid var(--border-subtle)', paddingRight: '1.25rem' }}>
                 <div style={{
@@ -71,15 +75,17 @@ export const InsightActionBar: React.FC<InsightActionBarProps> = ({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <MultiSelectDropdown
-                        options={tierOptions}
-                        value={selectedTier}
-                        onChange={setSelectedTier}
-                        placeholder="Set Tier..."
-                        width="125px"
-                    />
-                </div>
+                {allowTierUpdate && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <MultiSelectDropdown
+                            options={tierOptions}
+                            value={selectedTier}
+                            onChange={setSelectedTier}
+                            placeholder="Set Tier..."
+                            width="125px"
+                        />
+                    </div>
+                )}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <SafeButton

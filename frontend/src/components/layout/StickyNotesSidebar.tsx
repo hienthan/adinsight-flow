@@ -26,6 +26,7 @@ import {
 import { SafeButton } from '../common/ui/SafeButton';
 import { SurfaceCard } from '../common/ui/SurfaceCard';
 import { SectionHeader } from '../common/ui/SectionHeader';
+import { MetricCard, PageHero, createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from '../common/ui';
 
 // --- UI HELPERS ---
 
@@ -43,14 +44,6 @@ const hexToRgba = (hex: string = '#000000', opacity: number = 1) => {
     const g = parseInt(hex.slice(3, 5), 16) || 0;
     const b = parseInt(hex.slice(5, 7), 16) || 0;
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-};
-
-const hexToRgbValues = (hex: string = '#000000') => {
-    if (!hex?.startsWith('#')) return '0, 0, 0';
-    const r = parseInt(hex.slice(1, 3), 16) || 0;
-    const g = parseInt(hex.slice(3, 5), 16) || 0;
-    const b = parseInt(hex.slice(5, 7), 16) || 0;
-    return `${r}, ${g}, ${b}`;
 };
 
 interface StickyNotesSidebarProps {
@@ -200,13 +193,13 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                 top: 0,
                 height: '100vh',
                 width: open ? '420px' : '48px',
-                background: 'var(--bg-card)',
+                background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%) 0%, var(--bg-content) 100%)',
                 borderLeft: '1px solid var(--border-subtle)',
                 zIndex: 1000,
                 display: 'flex',
                 flexDirection: 'column',
                 transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: open ? '-10px 0 30px rgba(0,0,0,0.1)' : 'none'
+                boxShadow: open ? '-20px 0 42px -34px rgba(15, 23, 42, 0.4)' : 'none'
             }}
         >
             <style>{`
@@ -273,10 +266,8 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
                                     justifyContent: 'center',
                                     fontSize: '0.68rem',
                                     fontWeight: 900,
-                                    border: `1px solid ${hexToRgba(p.color, 0.2)}`,
-                                    // @ts-ignore
-                                    '--pulse-color': hexToRgbValues(p.color)
-                                } as any}
+                                    border: `1px solid ${hexToRgba(p.color, 0.2)}`
+                                }}
                             >
                                 {initials}
                                 {count > 0 && (
@@ -308,38 +299,46 @@ export default function StickyNotesSidebar({ open, pinned, onToggle, onPinToggle
 
             {open && (
                 <>
-                    <div style={{
-                        padding: '1.25rem 1.5rem',
-                        borderBottom: '1px solid var(--border-subtle)',
-                    }}>
-                        <SectionHeader
+                    <div style={{ padding: '1rem 1.15rem', borderBottom: '1px solid var(--border-subtle)' }}>
+                        <PageHero
+                            eyebrow="Sticky Workspace"
                             title="Sticky Hub"
+                            subtitle="Keep quick strategy notes and platform reminders visible without leaving the page."
+                            accent="#3b82f6"
                             actions={<>
-                            <SafeButton
-                                onClick={onPinToggle}
-                                className="hero-btn-ghost"
-                                style={{
-                                    padding: '0.4rem',
-                                    color: pinned ? 'hsl(var(--primary))' : 'var(--text-dim)',
-                                    background: pinned ? 'hsla(var(--primary) / 0.1)' : 'transparent',
-                                    borderRadius: '8px'
-                                }}
-                                title={pinned ? "Unpin Sidebar" : "Pin Sidebar"}
-                            >
-                                <Pin size={18} style={{ fill: pinned ? 'currentColor' : 'none' }} />
-                            </SafeButton>
-                            <SafeButton
-                                onClick={() => setShowEmpty(!showEmpty)}
-                                className={`hero-btn-ghost ${showEmpty ? 'text-primary' : ''}`}
-                                style={{ padding: '0.4rem' }}
-                            >
-                                {showEmpty ? <Eye size={16} /> : <EyeOff size={16} />}
-                            </SafeButton>
-                            <SafeButton onClick={onToggle} className="hero-btn-ghost" style={{ padding: '0.4rem' }}>
-                                <ChevronRight size={18} />
-                            </SafeButton>
+                                <SafeButton
+                                    onClick={onPinToggle}
+                                    className="hero-btn-ghost"
+                                    style={{
+                                        padding: '0.4rem',
+                                        color: pinned ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                                        background: pinned ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                                        borderRadius: '8px'
+                                    }}
+                                    title={pinned ? "Unpin Sidebar" : "Pin Sidebar"}
+                                >
+                                    <Pin size={18} style={{ fill: pinned ? 'currentColor' : 'none' }} />
+                                </SafeButton>
+                                <SafeButton
+                                    onClick={() => setShowEmpty(!showEmpty)}
+                                    className={`hero-btn-ghost ${showEmpty ? 'text-primary' : ''}`}
+                                    style={{ padding: '0.4rem' }}
+                                    title={showEmpty ? 'Hide empty platforms' : 'Show empty platforms'}
+                                >
+                                    {showEmpty ? <Eye size={16} /> : <EyeOff size={16} />}
+                                </SafeButton>
+                                <SafeButton onClick={onToggle} className="hero-btn-ghost" style={{ padding: '0.4rem' }}>
+                                    <ChevronRight size={18} />
+                                </SafeButton>
                             </>}
-                        />
+                            style={{ padding: '1rem', borderRadius: '1.5rem' }}
+                        >
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.55rem' }}>
+                                <MetricCard label="Pinned" value={pinnedPlatforms.length} accent="#f59e0b" icon={Pin} style={{ padding: '0.8rem 0.85rem' }} />
+                                <MetricCard label="Live" value={otherPlatforms.length + pinnedPlatforms.length} accent="#22c55e" icon={StickyNote} style={{ padding: '0.8rem 0.85rem' }} />
+                                <MetricCard label="Reminders" value={allNotes.length} accent="#ef4444" icon={Bell} style={{ padding: '0.8rem 0.85rem' }} />
+                            </div>
+                        </PageHero>
                     </div>
 
                     <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem' }}>
@@ -459,7 +458,10 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
             radius="12px"
             style={{
                 overflow: 'hidden',
-                boxShadow: isExpanded ? 'inset 0 2px 4px rgba(0,0,0,0.02)' : 'var(--shadow-soft)'
+                ...createAmbientSurface(platform.color || '#3b82f6', isExpanded ? 0.48 : 0.24),
+                boxShadow: isExpanded
+                    ? `0 18px 38px -30px ${toAlphaColor(platform.color || '#3b82f6', 0.45)}`
+                    : `0 18px 34px -32px ${toAlphaColor(platform.color || '#3b82f6', 0.32)}`
             }}
         >
             <div
@@ -482,11 +484,9 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
                                 <div style={{
                                     padding: '1px 4px',
                                     borderRadius: '3px',
-                                    background: hexToRgba(platform.color, 0.1),
-                                    color: platform.color,
+                                    ...createPremiumBadgeStyle(platform.color || '#3b82f6', { textColor: platform.color || '#3b82f6' }),
                                     fontSize: '0.62rem',
                                     fontWeight: 900,
-                                    border: `1px solid ${hexToRgba(platform.color, 0.15)}`
                                 }}>
                                     {getInitials(platform.display_name)}
                                 </div>
@@ -517,6 +517,16 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
                             {previewText || 'No sticky note...'}
                         </div>
                     )}
+                    {!isExpanded && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.55rem', flexWrap: 'wrap' }}>
+                            <span className="hero-badge" style={createPremiumBadgeStyle(platform.color || '#3b82f6', { textColor: platform.color || '#3b82f6' })}>
+                                {getInitials(platform.display_name)}
+                            </span>
+                            <span className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>
+                                {allNotes.filter(n => n.platform === platform.id && n.status === 'pending').length} reminders
+                            </span>
+                        </div>
+                    )}
                 </div>
                 <div style={{ color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'none' }}>
                     <ChevronRight size={14} />
@@ -542,7 +552,7 @@ function PlatformStickyCard({ platform, isExpanded, onToggle, onPin, onSave, isS
                             onAdd={() => onAddReminder(platform.id)}
                         />
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '0.8rem', borderTop: `1px solid ${toAlphaColor(platform.color || '#3b82f6', 0.12)}` }}>
                             <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Auto-saves as you type</span>
                             {isSaving ? (
                                 <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -586,7 +596,14 @@ function PlatformRemindersSection({ platformNotes, platformColor, onAdd }: { pla
     });
 
     return (
-        <SurfaceCard variant="inset" padding="0.45rem" style={{ marginTop: '1.25rem' }}>
+        <SurfaceCard
+            variant="inset"
+            padding="0.55rem"
+            style={{
+                marginTop: '1.25rem',
+                ...createAmbientSurface(platformColor || '#3b82f6', 0.22),
+            }}
+        >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isCollapsed ? 0 : '0.25rem' }}>
                 <SafeButton
                     type="button"
@@ -602,7 +619,14 @@ function PlatformRemindersSection({ platformNotes, platformColor, onAdd }: { pla
                     type="button"
                     onClick={onAdd}
                     className="hero-btn hero-btn-ghost"
-                    style={{ padding: '0.15rem 0.35rem', fontSize: '0.7rem' }}
+                    style={{
+                        padding: '0.15rem 0.45rem',
+                        fontSize: '0.7rem',
+                        ...createPremiumBadgeStyle(platformColor || '#3b82f6', {
+                            textColor: platformColor || '#3b82f6',
+                            background: toAlphaColor(platformColor || '#3b82f6', 0.12),
+                        }),
+                    }}
                 >
                     <Plus size={12} />
                     Add
@@ -617,8 +641,9 @@ function PlatformRemindersSection({ platformNotes, platformColor, onAdd }: { pla
                             textAlign: 'center',
                             color: 'var(--text-dim)',
                             fontSize: '0.7rem',
-                            border: '1px dashed var(--border-subtle)',
-                            borderRadius: '8px'
+                            border: `1px dashed ${toAlphaColor(platformColor || '#3b82f6', 0.2)}`,
+                            borderRadius: '10px',
+                            background: 'color-mix(in srgb, var(--bg-content) 88%, var(--bg-main) 12%)'
                         }}>
                             No pending platform reminders.
                         </div>

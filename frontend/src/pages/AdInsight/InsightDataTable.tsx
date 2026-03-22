@@ -53,7 +53,16 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
     const allSelected = records.length > 0 && records.every(r => selectedIds.includes(r.id));
 
     return (
-        <SurfaceCard className="data-table-container" padding={0}>
+        <SurfaceCard
+            className="data-table-container"
+            padding={0}
+            style={{
+                borderRadius: '1.55rem',
+                overflow: 'hidden',
+                background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 96%, var(--bg-main) 4%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
+                boxShadow: '0 24px 42px -34px rgba(15, 23, 42, 0.7)',
+            }}
+        >
             <table className="data-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                     <tr>
@@ -96,8 +105,8 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                             <tr key={record.id} style={{
                                 opacity: isActive ? 1 : 0.45,
                                 background: isSelected
-                                    ? 'hsla(var(--primary)/0.05)'
-                                    : (is404 ? 'rgba(245, 158, 11, 0.05)' : (isActive ? 'inherit' : 'var(--bg-overlay)')),
+                                    ? 'linear-gradient(90deg, hsla(var(--primary)/0.1) 0%, transparent 100%)'
+                                    : (is404 ? 'rgba(245, 158, 11, 0.06)' : (isActive ? 'inherit' : 'var(--bg-overlay)')),
                                 borderLeft: isSelected
                                     ? '4px solid hsl(var(--primary))'
                                     : (is404 ? '4px solid rgba(245, 158, 11, 0.5)' : '4px solid transparent'),
@@ -291,10 +300,10 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                         )
                     })}
                     {loading && (
-                        <tr><td colSpan={columns.length} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>Loading next batch...</td></tr>
+                        <tr><td colSpan={columns.length + (onSelect ? 1 : 0)} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>Loading next batch...</td></tr>
                     )}
                     {records.length === 0 && !loading && (
-                        <tr><td colSpan={columns.length} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-dim)' }}>No records found for active filters.</td></tr>
+                        <tr><td colSpan={columns.length + (onSelect ? 1 : 0)} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-dim)' }}>No records found for active filters.</td></tr>
                     )}
                 </tbody>
             </table>

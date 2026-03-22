@@ -2,7 +2,7 @@ import React from "react";
 import { MapPin, Info, Tag, Edit3, TrendingUp, Sparkles, Zap, Calendar, ArrowRight, Bell } from "lucide-react";
 import { Destination } from "../types";
 import { SAFE_INTERACTIVE_TRANSITION } from "../../../lib/uiMotion";
-import { SafeButton } from "../../../components/common/ui";
+import { SafeButton, createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from "../../../components/common/ui";
 
 type SignalState = "PEAK" | "ACTIVE" | "IN_PREALERT" | "UPCOMING_PREALERT" | "ENDED";
 type ResolvedDates = {
@@ -201,7 +201,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
             className={`signal-row-card w-full group hero-card border border-(--border-subtle) ${expanded ? 'bg-(--bg-main) shadow-xl' : 'hover:border-primary/40 hover:shadow-lg'}`}
             style={{ 
                 padding: 0, 
-                background: "var(--bg-content)", 
+                ...createAmbientSurface(actionToneStyle.text, expanded ? 0.34 : 0.18),
                 borderRadius: "12px", 
                 overflow: "hidden",
                 marginBottom: "16px", // Balanced separation
@@ -331,11 +331,11 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                 <div
                     className="border-t border-(--border-subtle) animate-in fade-in slide-in-from-top-1 duration-200"
                     style={{ 
-                        background: "rgba(var(--bg-main), 0.05)",
                         padding: "10px 14px", // Balanced Gutter
                         display: "flex",
                         flexDirection: "column",
-                        gap: "16px"
+                        gap: "16px",
+                        background: `linear-gradient(180deg, ${toAlphaColor(actionToneStyle.text, 0.05)} 0%, color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%) 100%)`
                     }}
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -357,8 +357,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                                         justifyContent: "center",
                                         borderRadius: "12px",
                                         color: "hsl(var(--primary))",
-                                        background: "rgba(59, 130, 246, 0.06)",
-                                        border: "1px solid rgba(59, 130, 246, 0.12)",
+                                        ...createPremiumBadgeStyle('#3b82f6', { textColor: '#3b82f6', background: toAlphaColor('#3b82f6', 0.08) }),
                                     }}
                                 >
                                     <Edit3 size={18} />
@@ -380,7 +379,7 @@ export const SignalRow: React.FC<SignalRowProps> = ({
                                 <div 
                                     className="rounded-xl border border-(--border-subtle) shadow-sm relative overflow-hidden"
                                     style={{
-                                        background: "var(--bg-content)",
+                                        ...createAmbientSurface('#3b82f6', 0.12),
                                         padding: "16px 20px",
                                         minHeight: "80px"
                                     }}

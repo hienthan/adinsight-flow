@@ -26,16 +26,21 @@ const TIER_COLORS: Record<string, string> = {
     'Tier 4': C.slate,
 };
 
+type IntentContentDatum = {
+    name: string;
+    _total?: number;
+} & Record<string, string | number | undefined>;
+
 /* ── CSS-variable based styles — works in any mode (light/dark) ─────────
    The app uses CSS custom properties for theming, NOT Tailwind dark classes.
    All component backgrounds/text MUST use var(--bg-card), var(--text-main) etc.
 ───────────────────────────────────────────────────────────────────────── */
 const cardStyle: React.CSSProperties = {
-    background: 'var(--bg-card)',
+    background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 96%, var(--bg-main) 4%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
     border: '1px solid var(--border-subtle)',
-    borderRadius: '12px',
+    borderRadius: '16px',
     padding: '1.25rem',
-    boxShadow: 'var(--shadow-soft)',
+    boxShadow: '0 18px 34px -30px rgba(15, 23, 42, 0.62)',
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
@@ -108,7 +113,17 @@ function ChartCard({ title, subtitle, accent = C.blue, children }: {
     title: string; subtitle?: string; accent?: string; children: React.ReactNode;
 }) {
     return (
-        <div style={{ ...cardStyle, borderTopWidth: 2, borderTopColor: accent }}>
+        <div
+            style={{
+                ...cardStyle,
+                borderTopWidth: 2,
+                borderTopColor: accent,
+                background: [
+                    `radial-gradient(circle at top right, ${accent}20 0%, transparent 32%)`,
+                    cardStyle.background as string,
+                ].join(', '),
+            }}
+        >
             <div>
                 <p style={cardTitleStyle}>{title}</p>
                 {subtitle && <p style={cardSubtitleStyle}>{subtitle}</p>}
@@ -131,6 +146,10 @@ function KpiCard({ label, value, accent, icon }: { label: string; value: string;
             borderRightWidth: 0,
             borderLeftWidth: 3,
             borderLeftColor: accent,
+            background: [
+                `radial-gradient(circle at top right, ${accent}1f 0%, transparent 40%)`,
+                cardStyle.background as string,
+            ].join(', '),
         } as React.CSSProperties}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
                 <p style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
@@ -214,7 +233,7 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
             .sort((a, b) => b.value - a.value);
 
         // Intent × Content Type matrix
-        const intentContent: Record<string, any> = {};
+        const intentContent: Record<string, IntentContentDatum> = {};
         const allContentTypes = Array.from(new Set(records.map(r => r.content_type || 'none')));
         records.forEach(r => {
             const intent = r.intent_primary || r.intent_type || 'unknown';
@@ -223,15 +242,15 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
                 intentContent[intent] = { name: intent };
                 allContentTypes.forEach(t => intentContent[intent][t] = 0);
             }
-            intentContent[intent][ct]++;
+            intentContent[intent][ct] = Number(intentContent[intent][ct] || 0) + 1;
         });
         const intentContentData = Object.values(intentContent)
-            .map((d: any) => {
+            .map((d) => {
                 let total = 0;
-                allContentTypes.forEach(t => total += d[t]);
+                allContentTypes.forEach(t => total += Number(d[t] || 0));
                 return { ...d, _total: total };
             })
-            .sort((a, b) => b._total - a._total).slice(0, 8);
+            .sort((a, b) => Number(b._total || 0) - Number(a._total || 0)).slice(0, 8);
 
         // Score distribution
         const scoreDist: Record<string, number> = {};
