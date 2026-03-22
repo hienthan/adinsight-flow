@@ -21,6 +21,7 @@ const CampaignFormPage = lazy(() => import('./pages/CampTracking/CampaignFormPag
 const PlatformManagement = lazy(() => import('./pages/CampTracking/PlatformManagement'));
 const OutboundMapPage = lazy(() => import('./pages/OutboundMap/OutboundMapPage'));
 const GlobalNotesPage = lazy(() => import('./pages/GlobalNotes/GlobalNotesPage'));
+const UrlFilterPage = lazy(() => import('./pages/DSAFilter/UrlFilterPage'));
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -84,6 +85,7 @@ function App() {
             <Route path="/camp-tracking/reminders" element={<AllReminders />} />
             <Route path="/camp-tracking/changes" element={<AllChanges />} />
             <Route path="/global-notes" element={<GlobalNotesPage />} />
+            <Route path="/dsa-filter/url" element={<UrlFilterPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

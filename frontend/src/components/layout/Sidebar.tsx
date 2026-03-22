@@ -11,7 +11,8 @@ import {
     History,
     Settings,
     TrendingUp,
-    FileText
+    FileText,
+    WandSparkles
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
 import { CampaignReminder } from '../../types/campaign';
@@ -89,6 +90,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const location = useLocation();
     const [reminderCounts, setReminderCounts] = useState({ overdue: 0, today: 0 });
     const [platformsExpanded, setPlatformsExpanded] = useState(true);
+    const [dsaFilterExpanded, setDsaFilterExpanded] = useState(true);
 
     const getLocalDateString = () => {
         const now = new Date();
@@ -356,6 +358,61 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
                         <NavLink to="/adinsight/traveloka" icon={TravelokaIcon} activeCondition={isActive('/adinsight/traveloka')}>
                             Traveloka
+                        </NavLink>
+                    </div>
+                )}
+
+                <div
+                    onClick={() => setDsaFilterExpanded(!dsaFilterExpanded)}
+                    style={{
+                        padding: collapsed ? '0.7rem 0' : '0.6rem 1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: collapsed ? 'center' : 'flex-start',
+                        gap: '0.85rem',
+                        color: 'var(--text-dim)',
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        borderRadius: '0.85rem',
+                        transition: SAFE_INTERACTIVE_TRANSITION,
+                        background: dsaFilterExpanded ? 'var(--bg-overlay)' : 'transparent',
+                        border: dsaFilterExpanded ? '1px solid var(--border-subtle)' : '1px solid transparent',
+                    }}
+                    className="nav-item-header"
+                >
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '10px',
+                        background: 'rgba(20, 184, 166, 0.12)',
+                        color: '#14b8a6',
+                        flexShrink: 0
+                    }}>
+                        <WandSparkles size={18} strokeWidth={2} />
+                    </div>
+                    {!collapsed && (
+                        <>
+                            <span style={{ fontSize: '0.875rem', flex: 1 }}>DSA Filter</span>
+                            <ChevronRight
+                                size={14}
+                                style={{
+                                    transform: dsaFilterExpanded ? 'rotate(90deg)' : 'none',
+                                    transition: 'transform 0.3s ease',
+                                    opacity: 0.5
+                                }}
+                            />
+                        </>
+                    )}
+                </div>
+
+                {dsaFilterExpanded && (
+                    <div style={{ paddingLeft: collapsed ? '0' : '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                        <NavLink to="/dsa-filter/url" icon={FileText} activeCondition={isActive('/dsa-filter/url')} color="teal">
+                            URL
                         </NavLink>
                     </div>
                 )}

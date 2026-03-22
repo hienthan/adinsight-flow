@@ -16,6 +16,13 @@ interface MultiSelectDropdownProps {
     showSearch?: boolean;
 }
 
+const normalizeSearchText = (value: string) =>
+    value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd');
+
 export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ options, value, onChange, placeholder = 'Select...', width = '150px', showSearch = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -27,7 +34,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ option
     // Filter by empty value and search query
     const selectableOptions = options.filter(o => {
         if (o.value === '') return false;
-        if (showSearch && searchQuery) return o.label.toLowerCase().includes(searchQuery.toLowerCase());
+        if (showSearch && searchQuery) return normalizeSearchText(o.label).includes(normalizeSearchText(searchQuery));
         return true;
     });
 
@@ -59,14 +66,14 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ option
     const renderLabel = () => {
         if (selectedValues.length === 0) return <span style={{ color: 'var(--text-dim)' }}>{placeholder}</span>;
         if (selectedValues.length === 1) {
-            const opt = selectableOptions.find(o => o.value === selectedValues[0]);
+            const opt = options.find(o => o.value === selectedValues[0]);
             return opt ? opt.label : selectedValues[0];
         }
         return `${selectedValues.length} selected`;
     };
 
     return (
-        <div ref={containerRef} style={{ position: 'relative', width, minWidth: '120px' }}>
+        <div ref={containerRef} style={{ position: 'relative', width, minWidth: '160px' }}>
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
@@ -106,7 +113,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ option
                     position: 'absolute',
                     top: 'calc(100% + 4px)',
                     left: 0,
-                    minWidth: '100%',
+                    minWidth: 'max(100%, 260px)',
                     width: 'max-content',
                     background: 'var(--bg-content)',
                     border: '1px solid var(--border-subtle)',
@@ -155,7 +162,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({ option
                                     <div style={{ width: '16px', display: 'flex', justifyContent: 'center', marginRight: '6px' }}>
                                         {isSelected && <Check size={14} />}
                                     </div>
-                                    <span>{opt.label}</span>
+                                    <span style={{ flex: 1, whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.35 }}>{opt.label}</span>
                                 </div>
                             );
                         })
