@@ -96,6 +96,7 @@ export interface RichTextEditorProps {
     contentStyle?: React.CSSProperties;
     onUploadImage?: (file: File) => Promise<string>;
     variant?: 'default' | 'minimal';
+    showToolbar?: boolean;
 }
 
 export default function RichTextEditor({
@@ -109,6 +110,7 @@ export default function RichTextEditor({
     contentStyle,
     onUploadImage,
     variant = 'default',
+    showToolbar = true,
 }: RichTextEditorProps) {
     const initialHtml = useMemo(() => toEditorHtml(value || ''), [value]);
 
@@ -231,19 +233,20 @@ export default function RichTextEditor({
             <style>{`
                 ${createSafeInteractionScopeCss('.rich-text-editor-shell', SAFE_BUTTON_SELECTORS)}
             `}</style>
-            <div
-                style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.4rem',
-                    padding: isMinimal ? '0.35rem 0.55rem' : '0.55rem',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 2,
-                    background: 'var(--bg-main)',
-                }}
-            >
+            {showToolbar ? (
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '0.4rem',
+                        padding: isMinimal ? '0.35rem 0.55rem' : '0.55rem',
+                        borderBottom: '1px solid var(--border-subtle)',
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 2,
+                        background: 'var(--bg-main)',
+                    }}
+                >
                 {!isMinimal && (
                     <>
                         <button type="button" className="hero-btn hero-btn-ghost" style={{ padding: '0.25rem 0.45rem', transition: SAFE_INTERACTIVE_TRANSITION }} onClick={() => editor.chain().focus().toggleBold().run()}>
@@ -341,9 +344,8 @@ export default function RichTextEditor({
                         {!isMinimal && swatch.label}
                     </button>
                 ))}
-
-
-            </div>
+                </div>
+            ) : null}
 
             <div
                 style={{

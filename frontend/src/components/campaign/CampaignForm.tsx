@@ -311,7 +311,7 @@ export default function CampaignForm({
                     color: #f8fafc;
                 }
             `}</style>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: isModalLayout ? '0.75rem' : '1.2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isModalLayout ? '0.55rem' : '1.2rem' }}>
 
                 {error && (
                     <div className="hero-badge" style={{
@@ -329,14 +329,14 @@ export default function CampaignForm({
                 )}
 
                 <SurfaceCard
-                    padding={isModalLayout ? '0.9rem' : '1.1rem'}
-                    radius="1.35rem"
+                    padding={isModalLayout ? '0.72rem' : '1.1rem'}
+                    radius={isModalLayout ? '1.1rem' : '1.35rem'}
                     style={{
                         background: 'linear-gradient(180deg, rgba(59, 130, 246, 0.06) 0%, var(--bg-content) 100%)',
                         border: '1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.18) 20%)',
                     }}
                 >
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 2fr) minmax(140px, 1fr) 100px 90px', gap: isModalLayout ? '0.75rem' : '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'minmax(180px, 2fr) minmax(120px, 1fr) 92px 82px' : 'minmax(200px, 2fr) minmax(140px, 1fr) 100px 90px', gap: isModalLayout ? '0.6rem' : '1rem' }}>
                         <div className="filter-group">
                             <label>Campaign Name</label>
                             <input
@@ -396,14 +396,14 @@ export default function CampaignForm({
                 </SurfaceCard>
 
                 <SurfaceCard
-                    padding={isModalLayout ? '0.9rem' : '1.1rem'}
-                    radius="1.35rem"
+                    padding={isModalLayout ? '0.72rem' : '1.1rem'}
+                    radius={isModalLayout ? '1.1rem' : '1.35rem'}
                     style={{
                         background: 'linear-gradient(180deg, rgba(20, 184, 166, 0.06) 0%, var(--bg-content) 100%)',
                         border: '1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(20, 184, 166, 0.18) 18%)',
                     }}
                 >
-                    <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: isModalLayout ? '0.75rem' : '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: isModalLayout ? '0.6rem' : '1rem' }}>
                         <div className="filter-group">
                             <label>CPC ($)</label>
                             <input
@@ -496,7 +496,7 @@ export default function CampaignForm({
                 )}
 
                 {!formData.is_dsa && (
-                    <SurfaceCard padding="0.9rem" radius="1.35rem" variant="soft">
+                    <SurfaceCard padding={isModalLayout ? '0.72rem' : '0.9rem'} radius={isModalLayout ? '1.1rem' : '1.35rem'} variant="soft">
                         <div className="filter-group">
                             <label>Active Keywords (Running)</label>
                             <textarea
@@ -504,13 +504,13 @@ export default function CampaignForm({
                                 value={formData.keywords || ''}
                                 onChange={handleChange}
                                 placeholder="Enter list of running keywords..."
-                                style={{ minHeight: '100px' }}
+                                style={{ minHeight: isModalLayout ? '72px' : '100px' }}
                             />
                         </div>
                     </SurfaceCard>
                 )}
 
-                <SurfaceCard padding="0.9rem" radius="1.35rem" variant="soft">
+                <SurfaceCard padding={isModalLayout ? '0.72rem' : '0.9rem'} radius={isModalLayout ? '1.1rem' : '1.35rem'} variant="soft">
                     <div className="filter-group">
                         <label>Strategy & Objective</label>
                         <textarea
@@ -518,55 +518,63 @@ export default function CampaignForm({
                             value={formData.description || ''}
                             onChange={handleChange}
                             placeholder="Objective, target audience..."
-                            style={{ minHeight: isModalLayout ? '88px' : '96px' }}
+                            style={{ minHeight: isModalLayout ? '68px' : '96px' }}
                         />
                     </div>
                 </SurfaceCard>
 
-                <SurfaceCard padding="0.9rem" radius="1.35rem" variant="soft">
-                    <div className="filter-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                            <label style={{ marginBottom: 0 }}>Metadata / Configs</label>
-                            <button
-                                type="button"
-                                onClick={() => setIsMetadataModalOpen(true)}
-                                className="hero-btn hero-btn-ghost"
-                                style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', gap: '0.3rem' }}
-                            >
-                                <Maximize2 size={13} />
-                                Full Editor
-                            </button>
+                <>
+                    <SurfaceCard padding={isModalLayout ? '0.72rem' : '0.9rem'} radius={isModalLayout ? '1.1rem' : '1.35rem'} variant="soft">
+                        <div className="filter-group">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                <label style={{ marginBottom: 0 }}>Metadata / Configs</label>
+                                {!isModalLayout ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsMetadataModalOpen(true)}
+                                        className="hero-btn hero-btn-ghost"
+                                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', gap: '0.3rem' }}
+                                    >
+                                        <Maximize2 size={13} />
+                                        Full Editor
+                                    </button>
+                                ) : null}
+                            </div>
+                            <LazyRichTextEditor
+                                value={(formData.metadata || '').toString()}
+                                onChange={(nextHtml) => setFormData((prev) => ({ ...prev, metadata: nextHtml }))}
+                                placeholder="Detailed metadata configuration..."
+                                minHeight={isModalLayout ? 58 : 100}
+                                maxHeight={isModalLayout ? 96 : 240}
+                                showToolbar={!isModalLayout}
+                            />
                         </div>
-                        <LazyRichTextEditor
-                            value={(formData.metadata || '').toString()}
-                            onChange={(nextHtml) => setFormData((prev) => ({ ...prev, metadata: nextHtml }))}
-                            placeholder="Detailed metadata configuration..."
-                            minHeight={isModalLayout ? 88 : 100}
-                            maxHeight={isModalLayout ? 220 : 240}
-                        />
-                    </div>
-                </SurfaceCard>
+                    </SurfaceCard>
 
-                <SurfaceCard padding="0.9rem" radius="1.35rem" variant="soft">
-                    <div className="filter-group">
-                        <label>Internal Notes</label>
-                        <LazyRichTextEditor
-                            value={(formData.general_notes || '').toString()}
-                            onChange={(nextHtml) => setFormData((prev) => ({ ...prev, general_notes: nextHtml }))}
-                            placeholder="Implementation details, checkpoints, governance..."
-                            minHeight={isModalLayout ? 88 : 100}
-                            maxHeight={isModalLayout ? 220 : 240}
-                        />
-                    </div>
-                </SurfaceCard>
+                    <SurfaceCard padding={isModalLayout ? '0.72rem' : '0.9rem'} radius={isModalLayout ? '1.1rem' : '1.35rem'} variant="soft">
+                        <div className="filter-group">
+                            <label>Internal Notes</label>
+                            <LazyRichTextEditor
+                                value={(formData.general_notes || '').toString()}
+                                onChange={(nextHtml) => setFormData((prev) => ({ ...prev, general_notes: nextHtml }))}
+                                placeholder="Implementation details, checkpoints, governance..."
+                                minHeight={isModalLayout ? 58 : 100}
+                                maxHeight={isModalLayout ? 96 : 240}
+                                showToolbar={!isModalLayout}
+                            />
+                        </div>
+                    </SurfaceCard>
 
-                <MetadataModal
-                    isOpen={isMetadataModalOpen}
-                    onClose={() => setIsMetadataModalOpen(false)}
-                    campaignName={formData.name}
-                    initialContent={(formData.metadata || '').toString()}
-                    onSave={(newContent) => setFormData(prev => ({ ...prev, metadata: newContent }))}
-                />
+                    {!isModalLayout ? (
+                        <MetadataModal
+                            isOpen={isMetadataModalOpen}
+                            onClose={() => setIsMetadataModalOpen(false)}
+                            campaignName={formData.name}
+                            initialContent={(formData.metadata || '').toString()}
+                            onSave={(newContent) => setFormData(prev => ({ ...prev, metadata: newContent }))}
+                        />
+                    ) : null}
+                </>
 
                 {!hideActions && (
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '0.4rem', justifyContent: 'flex-end' }}>

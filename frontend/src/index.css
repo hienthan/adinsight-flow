@@ -232,32 +232,6 @@ body {
   flex-direction: column;
 }
 
-.priority-indicator {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 5px;
-  z-index: 10;
-}
-
-.priority-high {
-  background: #ef4444;
-  /* High Priority - Red */
-  box-shadow: 2px 0 10px rgba(239, 68, 68, 0.3);
-}
-
-.priority-medium {
-  background: #facc15;
-  /* Medium Priority - Yellow */
-}
-
-.priority-critical {
-  background: #d946ef;
-  /* Critical Priority - Fuchsia/Deep Purple */
-  box-shadow: 2px 0 12px rgba(217, 70, 239, 0.5);
-}
-
 .hero-card:hover {
   box-shadow: var(--shadow-medium);
   border-color: hsla(var(--primary) / 0.25);

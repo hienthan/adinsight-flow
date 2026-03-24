@@ -33,7 +33,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
         enabled: !!campaignId && isOpen
     });
 
-    const availableMetrics = ['TRAFFIC', 'CONVERSIONS', 'IS', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC KEYS'];
+    const availableMetrics = ['TRAFFIC', 'CONVERSIONS', 'IS', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC KEYS', 'RSA', 'rLink', '!URL'];
 
     const toggleMetric = (metric: string) => {
         setFormData(prev => {
@@ -118,7 +118,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1100,
-            padding: '1.5rem'
+            padding: '1rem'
         }}
             onMouseDown={(e) => {
                 shouldCloseOnBackdropClickRef.current = e.target === e.currentTarget;
@@ -137,26 +137,26 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                 onClick={e => e.stopPropagation()}
                 style={{
                     width: '100%',
-                    maxWidth: '520px',
+                    maxWidth: '500px',
                     pointerEvents: 'auto',
                     overflow: 'hidden',
                     boxShadow: 'var(--shadow-large)',
                 }}
             >
                 <div style={{
-                    padding: '2rem 2.5rem',
+                    padding: '1.2rem 1.4rem',
                     borderBottom: '1px solid var(--border-subtle)',
                     background: 'var(--bg-overlay)'
                 }}>
                     <SectionHeader
                         title={
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
-                                    <Bell size={24} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ padding: '0.45rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
+                                    <Bell size={20} />
                                 </div>
                                 <div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Add Reminder</h3>
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Add Reminder</h3>
+                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                                         Campaign: <span style={{ color: 'hsl(var(--primary))', fontWeight: 700 }}>{campaign?.name || 'Loading...'}</span>
                                     </p>
                                 </div>
@@ -166,18 +166,18 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                             <SafeButton
                                 onClick={onClose}
                                 className="hero-btn-ghost"
-                                style={{ padding: '0.5rem', borderRadius: '10px' }}
+                                style={{ padding: '0.35rem', borderRadius: '8px' }}
                             >
-                                <X size={20} />
+                                <X size={18} />
                             </SafeButton>
                         }
                     />
                 </div>
 
-                <form onSubmit={handleSubmit} style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+                <form onSubmit={handleSubmit} style={{ padding: '1.2rem 1.4rem 1.3rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {error && (
-                        <div className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '100%', textTransform: 'none', padding: '0.8rem 1rem', display: 'flex', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}>
-                            <AlertTriangle size={16} />
+                        <div className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '100%', textTransform: 'none', padding: '0.65rem 0.8rem', display: 'flex', gap: '0.5rem', fontSize: '0.78rem', fontWeight: 700 }}>
+                            <AlertTriangle size={14} />
                             {error}
                         </div>
                     )}
@@ -194,7 +194,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                         />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
                         <div className="filter-group">
                             <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Due Date</label>
                             <input
@@ -220,8 +220,8 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                     </div>
 
                     <div className="filter-group">
-                        <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '1rem', display: 'block' }}>Metrics to Monitor</label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '0.6rem', display: 'block' }}>Metrics to Monitor</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                             {availableMetrics.map(metric => (
                                 <FilterChip
                                     key={metric}
@@ -235,8 +235,8 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                                     inactiveColor="var(--text-dim)"
                                     activeShadow="0 4px 12px hsla(var(--primary) / 0.3)"
                                     style={{
-                                        padding: '0.6rem 1rem',
-                                        fontSize: '0.75rem',
+                                        padding: '0.45rem 0.8rem',
+                                        fontSize: '0.7rem',
                                         fontWeight: 700,
                                     }}
                                 >
@@ -247,12 +247,12 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                     </div>
 
                     {/* Modal Footer */}
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', gap: '0.7rem', marginTop: '0.4rem', justifyContent: 'flex-end' }}>
                         <SafeButton
                             type="button"
                             onClick={onClose}
                             className="hero-btn hero-btn-secondary"
-                            style={{ padding: '0.8rem 1.5rem' }}
+                            style={{ padding: '0.62rem 1rem' }}
                         >
                             Cancel
                         </SafeButton>
@@ -261,11 +261,11 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                             disabled={loading}
                             className="hero-btn hero-btn-primary"
                             style={{
-                                padding: '0.8rem 2rem',
+                                padding: '0.62rem 1.2rem',
                                 opacity: loading ? 0.7 : 1
                             }}
                         >
-                            <Save size={18} />
+                            <Save size={16} />
                             {loading ? 'Saving...' : 'Create Reminder'}
                         </SafeButton>
                     </div>

@@ -37,6 +37,7 @@ type EnrichedCampaign = Campaign & {
     reminderState: ReminderState;
     nearestDueInDays: number | null;
     hasPendingReminders: boolean;
+    specialReminderSignals: string[];
     highestPriority?: ReminderPriority;
     freshnessState: FreshnessState;
     hasReviewed: boolean;
@@ -343,8 +344,15 @@ export default function CampOverview() {
         let nearestDueInDays: number | null = null;
         let priority: ReminderPriority = 'low';
         let hasActionableReminder = false;
+        const specialReminderSignals = new Set<string>();
 
         for (const reminder of campaignReminders) {
+            const metricSignals = reminder.check_metrics || [];
+            const reminderText = `${reminder.message || ''} ${metricSignals.join(' ')}`.toLowerCase();
+            if (reminderText.includes('rlink')) specialReminderSignals.add('rLink');
+            if (reminderText.includes('rsa')) specialReminderSignals.add('RSA');
+            if (reminderText.includes('!url')) specialReminderSignals.add('!URL');
+
             const reminderDate = parseDateOnly(reminder.reminder_date);
             if (!reminderDate) continue;
             const dayDiff = getDayDiff(reminderDate, now);
@@ -395,6 +403,7 @@ export default function CampOverview() {
             reminderState,
             nearestDueInDays,
             hasPendingReminders: hasActionableReminder,
+            specialReminderSignals: Array.from(specialReminderSignals),
             highestPriority: hasActionableReminder ? priority : undefined,
             freshnessState,
             hasReviewed: reviewedAgeDays !== null,
@@ -1193,6 +1202,7 @@ export default function CampOverview() {
                                                     platform={campaign.platformData}
                                                     hasPendingReminders={campaign.hasPendingReminders}
                                                     highestPriority={campaign.highestPriority}
+                                                    specialReminderSignals={campaign.specialReminderSignals}
                                                     reminderState={campaign.reminderState}
                                                     freshnessState={campaign.freshnessState}
                                                     hasReviewed={campaign.hasReviewed}
