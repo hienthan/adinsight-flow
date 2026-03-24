@@ -9,10 +9,6 @@ import {
     LayoutGrid,
     RefreshCw,
     Search,
-    ShieldCheck,
-    AlertTriangle,
-    Clock3,
-    Layers3,
 } from 'lucide-react';
 import CampaignCard from '../../components/campaign/CampaignCard';
 import EditCampaignModal from '../../components/campaign/EditCampaignModal';
@@ -29,7 +25,7 @@ import { FilterChip } from '../../components/common/ui/FilterChip';
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
-import { createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from '../../components/common/ui';
+import { createAmbientSurface, toAlphaColor } from '../../components/common/ui';
 
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type OverviewMode = 'comfortable' | 'compact';
@@ -183,13 +179,6 @@ const STATUS_RANK: Record<string, number> = {
     archived: 2,
     paused: 3,
 };
-
-const METRIC_CARD_THEMES = {
-    active: { accent: '#14b8a6', icon: ShieldCheck, label: 'Live Coverage' },
-    review: { accent: '#3b82f6', icon: Layers3, label: 'Review Rate' },
-    overdue: { accent: '#f97316', icon: Clock3, label: 'Overdue Follow-ups' },
-    critical: { accent: '#ef4444', icon: AlertTriangle, label: 'Critical Priority' },
-} as const;
 
 export default function CampOverview() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -541,37 +530,6 @@ export default function CampOverview() {
         setIsEditModalOpen(true);
     };
 
-    const overviewMetrics = [
-        {
-            key: 'active',
-            value: filteredCampaigns.length,
-            helper: `${groupedCampaigns.length} platform groups`,
-            progress: Math.min(100, filteredCampaigns.length * 8),
-            ...METRIC_CARD_THEMES.active,
-        },
-        {
-            key: 'review',
-            value: `${pulseMetrics.reviewRate}%`,
-            helper: `${reviewedCount}/${baseFilteredCampaigns.length || 0} recently reviewed`,
-            progress: pulseMetrics.reviewRate,
-            ...METRIC_CARD_THEMES.review,
-        },
-        {
-            key: 'overdue',
-            value: pulseMetrics.overdueCount,
-            helper: pulseMetrics.overdueCount > 0 ? 'Needs operator action' : 'No overdue reminder',
-            progress: Math.min(100, pulseMetrics.overdueCount * 18),
-            ...METRIC_CARD_THEMES.overdue,
-        },
-        {
-            key: 'critical',
-            value: pulseMetrics.criticalCount,
-            helper: pulseMetrics.criticalCount > 0 ? 'High-pressure campaigns' : 'No critical campaign',
-            progress: Math.min(100, pulseMetrics.criticalCount * 22),
-            ...METRIC_CARD_THEMES.critical,
-        },
-    ] as const;
-
     const shellBackground = {
         background: [
             `radial-gradient(circle at top left, ${toAlphaColor('#3b82f6', 0.1)} 0%, transparent 26%)`,
@@ -584,195 +542,271 @@ export default function CampOverview() {
         <div className="page-container camp-overview-page" style={shellBackground}>
             <style>{`
                 ${createSafeInteractionScopeCss('.camp-overview-page', [...SAFE_BUTTON_SELECTORS, ...SAFE_CARD_SELECTORS])}
+
+                .camp-overview-page .filter-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.48rem;
+                }
+
+                .camp-overview-page .filter-group label {
+                    font-size: 0.68rem;
+                    font-weight: 800;
+                    color: var(--text-dim);
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    opacity: 0.92;
+                }
+
+                .camp-overview-page .camp-filter-control {
+                    height: 42px;
+                    border-radius: 12px;
+                    border: 1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.16) 20%);
+                    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%);
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.62), 0 10px 22px -22px rgba(15, 23, 42, 0.42);
+                    color: var(--text-main);
+                    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+                }
+
+                .camp-overview-page .camp-filter-control::placeholder {
+                    color: var(--text-muted);
+                }
+
+                .camp-overview-page .camp-filter-control:focus {
+                    outline: none;
+                    border-color: rgba(59, 130, 246, 0.42);
+                    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08), inset 0 1px 0 rgba(255,255,255,0.72);
+                }
+
+                .camp-overview-page .camp-filter-segment {
+                    display: inline-flex;
+                    align-items: center;
+                    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-overlay) 92%, white 8%) 0%, color-mix(in srgb, var(--bg-overlay) 84%, var(--bg-main) 16%) 100%);
+                    border: 1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.14) 20%);
+                    border-radius: 12px;
+                    padding: 0.24rem;
+                    gap: 0.24rem;
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.44);
+                }
+
+                .camp-overview-page .camp-filter-segment-btn {
+                    padding: 0.42rem 0.82rem;
+                    border-radius: 10px;
+                    font-size: 0.7rem;
+                    font-weight: 800;
+                    border: none;
+                    color: var(--text-dim);
+                    background: transparent;
+                }
+
+                .camp-overview-page .camp-filter-segment-btn.is-active {
+                    background: linear-gradient(135deg, hsl(var(--primary)) 0%, color-mix(in srgb, hsl(var(--primary)) 78%, #60a5fa 22%) 100%);
+                    color: var(--text-on-accent);
+                    box-shadow: 0 14px 24px -18px hsla(var(--primary) / 0.55);
+                }
+
+                .camp-overview-page .camp-filter-pill {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.45rem 0.78rem;
+                    border-radius: 12px;
+                    cursor: pointer;
+                    transition: ${SAFE_INTERACTIVE_TRANSITION};
+                    user-select: none;
+                    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-overlay) 94%, white 6%) 0%, color-mix(in srgb, var(--bg-overlay) 88%, var(--bg-main) 12%) 100%);
+                    border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(59, 130, 246, 0.08) 18%);
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.36);
+                }
+
+                .camp-overview-page .camp-filter-pill.is-active {
+                    background: linear-gradient(135deg, hsla(var(--primary) / 0.18) 0%, hsla(var(--primary) / 0.08) 100%);
+                    border-color: hsla(var(--primary) / 0.3);
+                    box-shadow: 0 14px 26px -20px hsla(var(--primary) / 0.38);
+                }
+
+                .camp-overview-page .camp-filter-pill-box {
+                    width: 14px;
+                    height: 14px;
+                    border-radius: 4px;
+                    border: 1px solid var(--border-subtle);
+                    background: var(--bg-overlay);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: ${SAFE_INTERACTIVE_TRANSITION};
+                }
+
+                .camp-overview-page .camp-filter-pill.is-active .camp-filter-pill-box {
+                    border-color: hsla(var(--primary) / 0.4);
+                    background: hsl(var(--primary));
+                    box-shadow: 0 0 0 3px hsla(var(--primary) / 0.1);
+                }
+
+                .camp-overview-page .camp-filter-pill-label {
+                    font-size: 0.75rem;
+                    font-weight: 800;
+                    color: var(--text-dim);
+                }
+
+                .camp-overview-page .camp-filter-pill.is-active .camp-filter-pill-label {
+                    color: hsl(var(--primary));
+                }
+
+                .dark .camp-overview-page .camp-filter-control {
+                    background: linear-gradient(180deg, rgba(15, 23, 42, 0.82) 0%, rgba(2, 6, 23, 0.92) 100%);
+                    border-color: rgba(148, 163, 184, 0.18);
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 24px -20px rgba(0,0,0,0.5);
+                    color: #f8fafc;
+                }
+
+                .dark .camp-overview-page .camp-filter-control::placeholder {
+                    color: rgba(248, 250, 252, 0.5);
+                }
+
+                .dark .camp-overview-page .camp-filter-control:focus {
+                    border-color: rgba(96, 165, 250, 0.4);
+                    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14), inset 0 1px 0 rgba(255,255,255,0.05);
+                }
+
+                .dark .camp-overview-page .camp-filter-segment {
+                    background: linear-gradient(180deg, rgba(15,23,42,0.88) 0%, rgba(2,6,23,0.96) 100%);
+                    border-color: rgba(148, 163, 184, 0.18);
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+                }
+
+                .dark .camp-overview-page .camp-filter-pill {
+                    background: linear-gradient(180deg, rgba(15,23,42,0.76) 0%, rgba(2,6,23,0.92) 100%);
+                    border-color: rgba(148, 163, 184, 0.18);
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+                }
+
+                .dark .camp-overview-page .camp-filter-pill.is-active {
+                    background: linear-gradient(135deg, hsla(var(--primary) / 0.26) 0%, hsla(var(--primary) / 0.14) 100%);
+                    border-color: hsla(var(--primary) / 0.38);
+                    box-shadow: 0 14px 26px -20px hsla(var(--primary) / 0.42);
+                }
+
+                .dark .camp-overview-page .camp-filter-pill-box {
+                    background: rgba(15,23,42,0.92);
+                    border-color: rgba(148, 163, 184, 0.22);
+                }
+
+                .dark .camp-overview-page .camp-filter-panel {
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 30px -28px rgba(0,0,0,0.5);
+                }
+
+                .dark .camp-overview-page .camp-filter-divider {
+                    background: linear-gradient(180deg, transparent 0%, rgba(148, 163, 184, 0.2) 20%, rgba(148, 163, 184, 0.2) 80%, transparent 100%);
+                }
+
+                .dark .camp-overview-page .camp-filter-control option {
+                    background-color: #020617;
+                    color: #f8fafc;
+                }
             `}</style>
             <SurfaceCard
-                padding="1.75rem"
-                radius="1.9rem"
+                padding="1.1rem 1.2rem"
+                radius="1.6rem"
                 style={{
                     ...createAmbientSurface('#3b82f6', 1),
-                    marginTop: '1rem',
-                    marginBottom: '1.35rem',
+                    marginTop: '0.8rem',
+                    marginBottom: '1rem',
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(0, 1.6fr) minmax(280px, 0.95fr)',
+                    gridTemplateColumns: 'minmax(0, 1fr) auto',
                     gap: '1rem',
-                    alignItems: 'stretch',
+                    alignItems: 'center',
                 }}
             >
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem', minWidth: 0 }}>
-                    <div>
-                        <div
-                            className="hero-badge"
-                            style={{
-                                marginBottom: '0.85rem',
-                                ...createPremiumBadgeStyle('#3b82f6', { textColor: '#7fb3ff' }),
-                            }}
-                        >
-                            Camp Tracking
-                        </div>
-                        <h1 style={{
-                            fontSize: 'clamp(2rem, 3vw, 2.8rem)',
-                            fontWeight: 850,
-                            color: 'var(--text-main)',
-                            letterSpacing: '-0.04em',
-                            margin: 0,
-                            lineHeight: 1.05,
-                        }}>
-                            Campaign Overview
-                        </h1>
-                        <p style={{
-                            color: 'var(--text-dim)',
-                            fontSize: '0.98rem',
-                            fontWeight: 500,
-                            marginTop: '0.7rem',
-                            maxWidth: '54rem',
-                            lineHeight: 1.6,
-                        }}>
-                            Scan live campaign pressure, review freshness, and reminder load across every channel without losing the operator-first workflow.
-                        </p>
-                    </div>
-
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem' }}>
-                        <div className="hero-badge" style={{ background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)', color: 'var(--text-main)' }}>
-                            {filteredCampaigns.length} visible campaigns
-                        </div>
-                        <div className="hero-badge" style={createPremiumBadgeStyle('#14b8a6', { textColor: '#5eead4' })}>
-                            {platforms.length} channels connected
-                        </div>
-                        <div className="hero-badge" style={createPremiumBadgeStyle('#f97316', { textColor: '#fdba74' })}>
-                            {summary.overdue + summary.today} urgent reminders
-                        </div>
-                    </div>
+                <div style={{ minWidth: 0 }}>
+                    <h1 style={{
+                        fontSize: 'clamp(1.65rem, 2.5vw, 2.2rem)',
+                        fontWeight: 850,
+                        color: 'var(--text-main)',
+                        letterSpacing: '-0.04em',
+                        margin: 0,
+                        lineHeight: 1.02,
+                    }}>
+                        Campaign Overview
+                    </h1>
                 </div>
 
                 <div
                     style={{
                         ...createAmbientSurface('#14b8a6', 0.8),
-                        borderRadius: '1.5rem',
-                        padding: '1.1rem',
+                        borderRadius: '1.25rem',
+                        padding: '0.75rem',
                         display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: '1rem',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        gap: '0.5rem',
+                        flexWrap: 'wrap',
                         minWidth: 0,
                     }}
                 >
-                    <div>
-                        <div style={{ fontSize: '0.76rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                            Operator Actions
-                        </div>
-                        <div style={{ marginTop: '0.45rem', fontSize: '1.05rem', fontWeight: 750, color: 'var(--text-main)', lineHeight: 1.35 }}>
-                            Keep filters stable, clear pressure fast, and jump into edits without leaving this surface.
-                        </div>
-                    </div>
+                    <SafeButton
+                        onClick={() => refetch()}
+                        className="hero-btn hero-btn-ghost"
+                        style={{ padding: '0.6rem 0.85rem', borderRadius: '0.9rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
+                    >
+                        <RefreshCw size={16} />
+                        Refresh
+                    </SafeButton>
+                    <SafeButton
+                        onClick={() => setSearchParams({})}
+                        className="hero-btn"
+                        style={{
+                            padding: '0.6rem 0.85rem',
+                            borderRadius: '0.9rem',
+                            background: hasActiveFilters ? toAlphaColor('#3b82f6', 0.14) : 'var(--bg-overlay)',
+                            border: `1px solid ${hasActiveFilters ? toAlphaColor('#3b82f6', 0.26) : 'var(--border-subtle)'}`,
+                            color: hasActiveFilters ? '#7fb3ff' : 'var(--text-dim)',
+                        }}
+                    >
+                        Reset
+                    </SafeButton>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                        <SafeButton
-                            onClick={() => refetch()}
-                            className="hero-btn hero-btn-ghost"
-                            style={{ padding: '0.75rem 1rem', borderRadius: '1rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
-                        >
-                            <RefreshCw size={16} />
-                            Refresh
-                        </SafeButton>
-                        <SafeButton
-                            onClick={() => setSearchParams({})}
-                            className="hero-btn"
-                            style={{
-                                padding: '0.75rem 1rem',
-                                borderRadius: '1rem',
-                                background: hasActiveFilters ? toAlphaColor('#3b82f6', 0.14) : 'var(--bg-overlay)',
-                                border: `1px solid ${hasActiveFilters ? toAlphaColor('#3b82f6', 0.26) : 'var(--border-subtle)'}`,
-                                color: hasActiveFilters ? '#7fb3ff' : 'var(--text-dim)',
-                            }}
-                        >
-                            Reset Filters
-                        </SafeButton>
-
-                        <SafeButton
-                            onClick={() => openEdit(null)}
-                            className="hero-btn hero-btn-primary"
-                            style={{ padding: '0.78rem 1.2rem', borderRadius: '1rem', fontSize: '0.92rem' }}
-                        >
-                            <Plus size={18} strokeWidth={2.5} />
-                            New Campaign
-                        </SafeButton>
-                    </div>
+                    <SafeButton
+                        onClick={() => openEdit(null)}
+                        className="hero-btn hero-btn-primary"
+                        style={{ padding: '0.65rem 1rem', borderRadius: '0.9rem', fontSize: '0.85rem' }}
+                    >
+                        <Plus size={18} strokeWidth={2.5} />
+                        New Campaign
+                    </SafeButton>
                 </div>
             </SurfaceCard>
-            <div
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '1rem',
-                    marginBottom: '1.35rem',
-                }}
-            >
-                {overviewMetrics.map((metric) => {
-                    const Icon = metric.icon;
-                    return (
-                        <SurfaceCard
-                            key={metric.key}
-                            padding="1.1rem 1.15rem"
-                            radius="1.35rem"
-                            style={{
-                                ...createAmbientSurface(metric.accent, 0.7),
-                                overflow: 'hidden',
-                                position: 'relative',
-                            }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
-                                <div>
-                                    <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)' }}>
-                                        {metric.label}
-                                    </div>
-                                    <div style={{ marginTop: '0.7rem', fontSize: '2rem', fontWeight: 850, letterSpacing: '-0.05em', color: 'var(--text-main)', lineHeight: 1 }}>
-                                        {metric.value}
-                                    </div>
-                                </div>
-                                <div
-                                    style={{
-                                        width: '2.5rem',
-                                        height: '2.5rem',
-                                        borderRadius: '0.95rem',
-                                        display: 'grid',
-                                        placeItems: 'center',
-                                        background: toAlphaColor(metric.accent, 0.14),
-                                        border: `1px solid ${toAlphaColor(metric.accent, 0.22)}`,
-                                        color: metric.accent,
-                                        flexShrink: 0,
-                                    }}
-                                >
-                                    <Icon size={18} />
-                                </div>
-                            </div>
-                            <div style={{ marginTop: '0.5rem', fontSize: '0.82rem', color: 'var(--text-dim)', fontWeight: 600 }}>
-                                {metric.helper}
-                            </div>
-                            <div style={{ marginTop: '0.85rem', height: '6px', borderRadius: '999px', background: 'var(--bg-overlay)', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
-                                <div style={{ width: `${Math.max(metric.progress, 6)}%`, height: '100%', borderRadius: 'inherit', background: `linear-gradient(90deg, ${metric.accent} 0%, ${toAlphaColor(metric.accent, 0.6)} 100%)` }} />
-                            </div>
-                        </SurfaceCard>
-                    );
-                })}
-            </div>
 
             {/* Filters Cluster */}
             <SurfaceCard
-                padding="1rem"
-                radius="1.6rem"
+                padding="1.05rem"
+                radius="1.55rem"
                 style={{
-                    ...createAmbientSurface('#2563eb', 0.45),
+                    ...createAmbientSurface('#2563eb', 0.62),
                     marginBottom: '1.25rem',
+                    background: [
+                        'radial-gradient(circle at top right, rgba(59, 130, 246, 0.14) 0%, transparent 22%)',
+                        'radial-gradient(circle at left bottom, rgba(20, 184, 166, 0.1) 0%, transparent 24%)',
+                        'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 96%, white 4%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
+                    ].join(', '),
+                    border: '1px solid color-mix(in srgb, var(--border-subtle) 74%, rgba(59, 130, 246, 0.24) 26%)',
+                    boxShadow: '0 28px 48px -36px rgba(15, 23, 42, 0.78)',
                 }}
             >
                 <div style={{ ...FILTER_CLUSTER_STYLE, marginBottom: 0, alignItems: 'stretch' }}>
                 <SurfaceCard
+                    className="camp-filter-panel"
                     variant="inset"
-                    padding="0.95rem"
+                    padding="0.95rem 1rem"
                     style={{
                         ...FILTER_CARD_STYLE,
                         flex: '1 1 42rem',
-                        background: 'linear-gradient(180deg, var(--bg-overlay) 0%, color-mix(in srgb, var(--bg-overlay) 86%, var(--bg-main) 14%) 100%)',
+                        background: [
+                            'radial-gradient(circle at top left, rgba(59, 130, 246, 0.08) 0%, transparent 22%)',
+                            'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 98%, white 2%) 0%, color-mix(in srgb, var(--bg-content) 91%, var(--bg-main) 9%) 100%)',
+                        ].join(', '),
+                        border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.18) 22%)',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.42), 0 18px 30px -28px rgba(15, 23, 42, 0.36)',
                     }}
                 >
                     <div className="filter-group">
@@ -780,11 +814,16 @@ export default function CampOverview() {
                         <div style={{ position: 'relative', minWidth: '320px' }}>
                             <Search size={16} style={{ position: 'absolute', left: '0.95rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                             <input
+                                className="camp-filter-control"
                                 type="text"
                                 value={filterName}
                                 onChange={(e) => setFilterName(e.target.value)}
                                 placeholder="Search by campaign name..."
-                                style={{ minWidth: '320px', borderRadius: '12px', paddingLeft: '2.7rem' }}
+                                style={{
+                                    minWidth: '320px',
+                                    borderRadius: '12px',
+                                    paddingLeft: '2.7rem',
+                                }}
                             />
                         </div>
                     </div>
@@ -792,9 +831,13 @@ export default function CampOverview() {
                     <div className="filter-group">
                         <label>Platform</label>
                         <select
+                            className="camp-filter-control"
                             value={filterPlatform}
                             onChange={(e) => setFilterPlatform(e.target.value)}
-                            style={{ minWidth: '160px', borderRadius: '12px' }}
+                            style={{
+                                minWidth: '160px',
+                                borderRadius: '12px',
+                            }}
                         >
                             <option value="all">All Channels</option>
                             {platforms.map((platform) => (
@@ -808,13 +851,14 @@ export default function CampOverview() {
                     <div className="filter-group">
                         <label>Priority</label>
                         <select
+                            className="camp-filter-control"
                             value={filterPriority}
                             onChange={(e) => setFilterPriority(e.target.value)}
                             style={{
                                 minWidth: '140px',
                                 borderRadius: '12px',
                                 color: filterPriority === 'critical' ? '#d946ef' : (filterPriority === 'high' ? '#ef4444' : (filterPriority === 'medium' ? '#f59e0b' : 'inherit')),
-                                fontWeight: filterPriority !== 'all' && filterPriority !== 'normal' ? 700 : 500
+                                fontWeight: filterPriority !== 'all' && filterPriority !== 'normal' ? 700 : 500,
                             }}
                         >
                             {PRIORITY_OPTIONS.map((option) => (
@@ -827,29 +871,29 @@ export default function CampOverview() {
                 </SurfaceCard>
 
                 <SurfaceCard
+                    className="camp-filter-panel"
                     variant="inset"
-                    padding="0.75rem 0.95rem"
+                    padding="0.8rem 0.95rem"
                     style={{
                         ...VIEW_CONTROL_CARD_STYLE,
                         flex: '0 1 auto',
                         justifyContent: 'space-between',
+                        background: [
+                            'radial-gradient(circle at top right, rgba(20, 184, 166, 0.1) 0%, transparent 26%)',
+                            'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 98%, white 2%) 0%, color-mix(in srgb, var(--bg-content) 91%, var(--bg-main) 9%) 100%)',
+                        ].join(', '),
+                        border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(20, 184, 166, 0.18) 22%)',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.42), 0 18px 30px -28px rgba(15, 23, 42, 0.36)',
                     }}
                 >
                     <div className="filter-group">
-                        <label style={{ fontSize: '0.65rem', marginBottom: '0.15rem' }}>View Mode</label>
+                        <label style={{ fontSize: '0.65rem', marginBottom: '0.2rem' }}>View Mode</label>
                         <ToolbarGroup
+                            className="camp-filter-segment"
                             compact
                             role="group"
                             aria-label="Toggle campaign overview view mode"
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                background: 'var(--bg-overlay)',
-                                border: '1px solid var(--border-subtle)',
-                                borderRadius: '10px',
-                                padding: '0.2rem',
-                                gap: '0.2rem',
-                            }}
+                            style={{}}
                         >
                             {VIEW_MODES.map((mode) => {
                                 const isActive = viewMode === mode.id;
@@ -858,18 +902,9 @@ export default function CampOverview() {
                                     <SafeButton
                                         key={mode.id}
                                         onClick={() => setViewMode(mode.id)}
-                                        className="hero-btn"
+                                        className={`hero-btn camp-filter-segment-btn ${isActive ? 'is-active' : ''}`}
                                         aria-pressed={isActive}
-                                        style={{
-                                            padding: '0.35rem 0.75rem',
-                                            borderRadius: '8px',
-                                            fontSize: '0.7rem',
-                                            fontWeight: 700,
-                                            background: isActive ? 'hsl(var(--primary))' : 'transparent',
-                                            color: isActive ? 'var(--text-on-accent)' : 'var(--text-dim)',
-                                            border: 'none',
-                                            boxShadow: isActive ? 'var(--shadow-medium)' : 'none'
-                                        }}
+                                        style={{}}
                                     >
                                         <Icon size={12} />
                                         {mode.label}
@@ -879,43 +914,28 @@ export default function CampOverview() {
                         </ToolbarGroup>
                     </div>
 
-                    <div style={{ width: '1px', height: '36px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
+                    <div style={{
+                        width: '1px',
+                        alignSelf: 'stretch',
+                        background: 'linear-gradient(180deg, transparent 0%, var(--border-subtle) 20%, var(--border-subtle) 80%, transparent 100%)',
+                        margin: '0 0.15rem'
+                    }} className="camp-filter-divider" />
 
                     <div className="filter-group">
-                        <label style={{ fontSize: '0.65rem', marginBottom: '0.15rem' }}>Quick Filters</label>
-                        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                        <label style={{ fontSize: '0.65rem', marginBottom: '0.2rem' }}>Quick Filters</label>
+                        <div style={{ display: 'flex', gap: '0.55rem', alignItems: 'center', flexWrap: 'wrap' }}>
                             {quickFilters.map((item) => (
                                 <SafeButton
                                     key={item.id}
                                     onClick={item.toggle}
                                     aria-pressed={item.active}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.4rem 0.75rem',
-                                        background: item.active ? 'var(--accent-glow-strong)' : 'transparent',
-                                        border: `1px solid ${item.active ? 'hsl(var(--primary))' : 'var(--border-subtle)'}`,
-                                        borderRadius: '10px',
-                                        cursor: 'pointer',
-                                        transition: SAFE_INTERACTIVE_TRANSITION,
-                                        userSelect: 'none',
-                                    }}
+                                    className={`camp-filter-pill ${item.active ? 'is-active' : ''}`}
+                                    style={{}}
                                 >
-                                    <div style={{
-                                        width: '14px',
-                                        height: '14px',
-                                        borderRadius: '4px',
-                                        border: '1px solid var(--border-subtle)',
-                                        background: item.active ? 'hsl(var(--primary))' : 'var(--bg-overlay)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        transition: SAFE_INTERACTIVE_TRANSITION
-                                    }}>
+                                    <div className="camp-filter-pill-box">
                                         {item.active && <Check size={10} strokeWidth={4} color="white" />}
                                     </div>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: item.active ? 'hsl(var(--primary))' : 'var(--text-dim)' }}>
+                                    <span className="camp-filter-pill-label">
                                         {item.label}
                                     </span>
                                 </SafeButton>

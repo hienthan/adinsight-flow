@@ -17,6 +17,9 @@ interface InsightExportModalProps {
     fields: ExportField[];
     totalCount: number;
     isExporting: boolean;
+    secondaryActionLabel?: string;
+    onSecondaryAction?: () => void;
+    isSecondaryActionLoading?: boolean;
 }
 
 export const InsightExportModal: React.FC<InsightExportModalProps> = ({
@@ -25,7 +28,10 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
     onExport,
     fields,
     totalCount,
-    isExporting
+    isExporting,
+    secondaryActionLabel,
+    onSecondaryAction,
+    isSecondaryActionLoading = false,
 }) => {
     const [selectedFields, setSelectedFields] = useState<string[]>([]);
     const [fileName, setFileName] = useState('');
@@ -242,11 +248,21 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                     >
                         Cancel
                     </SafeButton>
+                    {secondaryActionLabel && onSecondaryAction ? (
+                        <SafeButton
+                            onClick={onSecondaryAction}
+                            disabled={isSecondaryActionLoading || totalCount === 0}
+                            className="hero-btn hero-btn-secondary"
+                            style={{ flex: 1.2, padding: '0.85rem' }}
+                        >
+                            {isSecondaryActionLoading ? 'Copying...' : secondaryActionLabel}
+                        </SafeButton>
+                    ) : null}
                     <SafeButton
                         onClick={() => onExport(selectedFields, fileName, customLabel)}
                         disabled={isExporting || (selectedFields.length === 0 && !customLabel.trim())}
                         className="hero-btn hero-btn-primary"
-                        style={{ flex: 2, padding: '0.85rem', gap: '0.6rem' }}
+                        style={{ flex: secondaryActionLabel && onSecondaryAction ? 1.8 : 2, padding: '0.85rem', gap: '0.6rem' }}
                     >
                         {isExporting ? 'Exporting...' : (
                             <>

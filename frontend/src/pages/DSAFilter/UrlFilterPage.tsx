@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import type { ChangeEvent } from 'react';
-import { Download, FileUp, Globe, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown';
 import { InsightExportModal } from '../AdInsight/InsightExportModal';
-import { MetricCard, SafeButton, SurfaceCard } from '../../components/common/ui';
-import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
+import { UrlFilterHero } from './components/UrlFilterHero';
+import { UrlFilterResultsTable } from './components/UrlFilterResultsTable';
+import { UrlFilterSummaryStrip } from './components/UrlFilterSummaryStrip';
+import { UrlFilterToolbar } from './components/UrlFilterToolbar';
 import {
     buildSessionQuery,
     INITIAL_URL_FILTER_STATE,
@@ -15,6 +15,7 @@ import {
     type UrlFilterResponse,
     type UrlFilterState,
 } from './urlFilterUtils';
+import { URL_FILTER_PAGE_STYLE } from './urlFilterViewUtils';
 
 interface SaveFilePickerWindow extends Window {
     showSaveFilePicker?: (options?: {
@@ -32,6 +33,9 @@ interface SaveFilePickerWindow extends Window {
     }>;
 }
 
+type SortField = 'country' | 'clicks';
+type SortDirection = 'asc' | 'desc';
+
 async function readJsonSafely<T>(response: Response): Promise<T> {
     const responseText = await response.text();
     if (!responseText.trim()) {
@@ -43,62 +47,6 @@ async function readJsonSafely<T>(response: Response): Promise<T> {
     } catch {
         throw new Error(`Invalid JSON response from server (${response.status}).`);
     }
-}
-
-const PAGE_STYLE = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.85rem',
-} as const;
-
-const FILTER_ROW_STYLE = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    flexWrap: 'wrap',
-} as const;
-
-const FILTER_SHELL_STYLE = {
-    position: 'relative',
-    zIndex: 60,
-    overflow: 'visible',
-} as const;
-
-const TABLE_CELL_STYLE = {
-    padding: '0.75rem 0.7rem',
-    borderBottom: '1px solid var(--border-subtle)',
-    verticalAlign: 'top',
-} as const;
-
-type SortField = 'country' | 'clicks';
-type SortDirection = 'asc' | 'desc';
-
-const CLASSIFICATION_ACCENTS: Record<ParsedUploadRow['classification'], { bg: string; text: string; border: string }> = {
-    matched: {
-        bg: 'rgba(20, 184, 166, 0.12)',
-        text: '#0f766e',
-        border: 'rgba(15, 118, 110, 0.18)',
-    },
-    unknown: {
-        bg: 'rgba(245, 158, 11, 0.12)',
-        text: '#b45309',
-        border: 'rgba(180, 83, 9, 0.18)',
-    },
-};
-
-function formatNumber(value: number | null) {
-    if (value === null || Number.isNaN(value)) return '-';
-    return value.toLocaleString();
-}
-
-function formatCurrency(value: number | null) {
-    if (value === null || Number.isNaN(value)) return '-';
-    return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
-
-function formatPercent(value: number | null) {
-    if (value === null || Number.isNaN(value)) return '-';
-    return `${value.toFixed(2)}%`;
 }
 
 export default function UrlFilterPage() {
@@ -115,12 +63,14 @@ export default function UrlFilterPage() {
     const [processingError, setProcessingError] = useState('');
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [isCopyingUrls, setIsCopyingUrls] = useState(false);
     const [searchInput, setSearchInput] = useState('');
     const [excludeInput, setExcludeInput] = useState('');
     const [sortField, setSortField] = useState<SortField>('clicks');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
     const effectiveFilters = useMemo(() => filters, [filters]);
+    const includedCount = useMemo(() => rows.filter((row) => row.include).length, [rows]);
     const displayedRows = useMemo(() => {
         const nextRows = [...rows];
         nextRows.sort((left, right) => {
@@ -143,10 +93,22 @@ export default function UrlFilterPage() {
         return nextRows;
     }, [rows, sortDirection, sortField]);
 
-    const setFilterValue = (id: keyof UrlFilterState, value: string) => {
+    const setFilterValue = <K extends keyof UrlFilterState>(id: K, value: UrlFilterState[K]) => {
         startTransition(() => {
             setFilters((previous) => ({ ...previous, [id]: value }));
         });
+    };
+
+    const resetPageState = () => {
+        setSessionId('');
+        setFileName('');
+        setRows([]);
+        setSummary(null);
+        setCountryOptions([]);
+        setProcessingError('');
+        setFilters(INITIAL_URL_FILTER_STATE);
+        setSearchInput('');
+        setExcludeInput('');
     };
 
     useEffect(() => {
@@ -166,11 +128,6 @@ export default function UrlFilterPage() {
         }, 350);
         return () => clearTimeout(timer);
     }, [excludeInput, filters.excludeTerm]);
-
-    useEffect(() => {
-        setSearchInput(filters.searchTerm);
-        setExcludeInput(filters.excludeTerm);
-    }, [filters.excludeTerm, filters.searchTerm]);
 
     useEffect(() => {
         if (!sessionId) return;
@@ -240,6 +197,8 @@ export default function UrlFilterPage() {
                 setSummary(typedPayload.summary);
                 setCountryOptions(typedPayload.country_options.map((country) => ({ label: country, value: country })));
                 setFilters(INITIAL_URL_FILTER_STATE);
+                setSearchInput('');
+                setExcludeInput('');
             });
 
             toast.success(`Processed ${typedPayload.summary.total_rows.toLocaleString()} URLs from ${typedPayload.meta.file_name}`);
@@ -276,7 +235,6 @@ export default function UrlFilterPage() {
     };
 
     const handleExport = async (selectedFields: string[], customFileName: string, customLabel?: string) => {
-        const includedCount = rows.filter((row) => row.include).length;
         if (!sessionId || includedCount === 0) {
             toast.error('No included rows are available for export.');
             return;
@@ -344,89 +302,56 @@ export default function UrlFilterPage() {
         }
     };
 
+    const handleCopySelectedUrls = async () => {
+        const includedUrls = displayedRows
+            .filter((row) => row.include)
+            .map((row) => row.urlNormalized)
+            .filter(Boolean);
+
+        if (includedUrls.length === 0) {
+            toast.error('No included URLs are available to copy.');
+            return;
+        }
+
+        const text = includedUrls.join('\n');
+
+        try {
+            setIsCopyingUrls(true);
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.setAttribute('readonly', '');
+                textArea.style.position = 'absolute';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+
+            setIsExportModalOpen(false);
+            toast.success(`Copied ${includedUrls.length.toLocaleString()} URLs`);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to copy URLs.';
+            toast.error(message);
+        } finally {
+            setIsCopyingUrls(false);
+        }
+    };
+
     return (
-        <div className="page-container" style={PAGE_STYLE}>
-            <SurfaceCard
-                padding="0.8rem 0.95rem"
-                radius="1.3rem"
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '0.85rem',
-                    flexWrap: 'wrap',
-                    background: [
-                        'radial-gradient(circle at top right, rgba(20, 184, 166, 0.12) 0%, transparent 24%)',
-                        'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 98%, white 2%) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%)',
-                    ].join(', '),
-                }}
-            >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: '1.12rem', fontWeight: 850, letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
-                        URL Filter
-                    </div>
-                    <span className="hero-badge" style={{ background: 'rgba(15, 118, 110, 0.12)', color: '#0f766e', border: '1px solid rgba(15, 118, 110, 0.18)' }}>
-                        No PB Insert
-                    </span>
-                    <span className="hero-badge" style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#1d4ed8', border: '1px solid rgba(37, 99, 235, 0.18)' }}>
-                        /dsa-filter/url
-                    </span>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                    <div className="filter-group">
-                        <label>Platform</label>
-                        <select value={platform} onChange={(event) => setPlatform(event.target.value)} style={{ width: '136px' }}>
-                            <option value="Klook">Klook</option>
-                            <option value="Traveloka">Traveloka</option>
-                        </select>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                        <SafeButton
-                            onClick={() => fileInputRef.current?.click()}
-                            className="hero-btn hero-btn-primary"
-                            style={{ padding: '0.78rem 0.95rem', gap: '0.5rem' }}
-                            disabled={isProcessing}
-                        >
-                            <FileUp size={17} />
-                            <span>{isProcessing ? 'Processing...' : 'Upload CSV'}</span>
-                        </SafeButton>
-
-                        <SafeButton
-                            onClick={() => {
-                                setSessionId('');
-                                setFileName('');
-                                setRows([]);
-                                setSummary(null);
-                                setCountryOptions([]);
-                                setProcessingError('');
-                                setFilters(INITIAL_URL_FILTER_STATE);
-                            }}
-                            className="hero-btn hero-btn-secondary"
-                            style={{ padding: '0.78rem 0.95rem', gap: '0.5rem' }}
-                            disabled={!sessionId}
-                        >
-                            <Trash2 size={17} />
-                            <span>Reset</span>
-                        </SafeButton>
-                    </div>
-                </div>
-
-                {processingError ? (
-                    <div style={{
-                        padding: '0.75rem 0.9rem',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(239, 68, 68, 0.22)',
-                        background: 'rgba(239, 68, 68, 0.08)',
-                        color: '#dc2626',
-                        fontWeight: 700,
-                        fontSize: '0.84rem',
-                    }}>
-                        {processingError}
-                    </div>
-                ) : null}
-            </SurfaceCard>
+        <div className="page-container" style={URL_FILTER_PAGE_STYLE}>
+            <UrlFilterHero
+                platform={platform}
+                isProcessing={isProcessing}
+                sessionId={sessionId}
+                processingError={processingError}
+                onPlatformChange={setPlatform}
+                onUploadClick={() => fileInputRef.current?.click()}
+                onReset={resetPageState}
+            />
 
             <input
                 ref={fileInputRef}
@@ -436,283 +361,51 @@ export default function UrlFilterPage() {
                 style={{ display: 'none' }}
             />
 
-            <div style={{ display: 'grid', gap: '0.75rem', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-                <MetricCard label="Rows" value={(summary?.total_rows ?? 0).toLocaleString()} helper={fileName || 'No file yet'} icon={Globe} accent="#0f766e" style={{ padding: '0.8rem 0.9rem' }} />
-                <MetricCard label="Matched" value={(summary?.matched_rows ?? 0).toLocaleString()} helper={`${formatNumber(summary?.included_clicks ?? 0)} clicks`} accent="#2563eb" style={{ padding: '0.8rem 0.9rem' }} />
-                <MetricCard label="Unknown" value={(summary?.unknown_rows ?? 0).toLocaleString()} helper="Kept unless excluded" accent="#d97706" style={{ padding: '0.8rem 0.9rem' }} />
-                <MetricCard label="Included" value={(summary?.included_rows ?? 0).toLocaleString()} helper={`${formatCurrency(summary?.included_cost ?? 0)} cost`} icon={Download} accent="#14b8a6" style={{ padding: '0.8rem 0.9rem' }} />
-            </div>
+            <UrlFilterSummaryStrip summary={summary} fileName={fileName} />
 
-            <SurfaceCard
-                className="filter-container"
-                padding="0.95rem 1rem"
-                radius="1.3rem"
-                style={{
-                    ...FILTER_SHELL_STYLE,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.75rem',
-                    background: [
-                        'radial-gradient(circle at top right, rgba(59, 130, 246, 0.14) 0%, transparent 26%)',
-                        'radial-gradient(circle at left bottom, rgba(20, 184, 166, 0.08) 0%, transparent 28%)',
-                        'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 98%, white 2%) 0%, color-mix(in srgb, var(--bg-content) 89%, var(--bg-main) 11%) 100%)',
-                    ].join(', '),
-                    boxShadow: '0 26px 48px -34px rgba(15, 23, 42, 0.72)',
-                    border: '1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.2) 20%)',
+            <UrlFilterToolbar
+                countryOptions={countryOptions}
+                filters={filters}
+                searchInput={searchInput}
+                excludeInput={excludeInput}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                hasRows={!!sessionId && rows.length > 0}
+                onSearchInputChange={setSearchInput}
+                onExcludeInputChange={setExcludeInput}
+                onFilterValueChange={setFilterValue}
+                onSortChange={(field, direction) => {
+                    setSortField(field);
+                    setSortDirection(direction);
                 }}
-            >
-                <div style={{ ...FILTER_ROW_STYLE, alignItems: 'flex-end' }}>
-                    <div className="filter-group">
-                        <label>Search</label>
-                        <div style={{ position: 'relative' }}>
-                            <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-                            <input
-                                type="text"
-                                value={searchInput}
-                                onChange={(event) => setSearchInput(event.target.value)}
-                                placeholder="Search headline, country, city"
-                                style={{ width: '220px', paddingLeft: '2.45rem' }}
-                            />
-                        </div>
-                    </div>
+                onIncludeFiltered={() => patchRows(rows.map((row) => row.rowId), true)}
+                onExcludeFiltered={() => patchRows(rows.map((row) => row.rowId), false)}
+                onResetFilters={() => {
+                    setFilters(INITIAL_URL_FILTER_STATE);
+                    setSearchInput('');
+                    setExcludeInput('');
+                }}
+            />
 
-                    <div className="filter-group">
-                        <label>Country</label>
-                        <MultiSelectDropdown
-                            options={countryOptions}
-                            value={filters.includeCountries}
-                            onChange={(value) => setFilterValue('includeCountries', value)}
-                            placeholder="All"
-                            width="170px"
-                            showSearch
-                        />
-                    </div>
-
-                    <div className="filter-group">
-                        <label>Include</label>
-                        <select value={filters.includeStatus} onChange={(event) => setFilterValue('includeStatus', event.target.value)} style={{ width: '118px' }}>
-                            <option value="all">All</option>
-                            <option value="included">Included</option>
-                            <option value="excluded">Excluded</option>
-                        </select>
-                    </div>
-
-                    <div className="filter-group">
-                        <label>Matching</label>
-                        <select value={filters.classification} onChange={(event) => setFilterValue('classification', event.target.value)} style={{ width: '128px' }}>
-                            <option value="all">All</option>
-                            <option value="matched">Matched</option>
-                            <option value="unknown">Unknown</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style={FILTER_ROW_STYLE}>
-                    <div className="filter-group">
-                        <label>!Country</label>
-                        <MultiSelectDropdown
-                            options={countryOptions}
-                            value={filters.excludeCountries}
-                            onChange={(value) => setFilterValue('excludeCountries', value)}
-                            placeholder="None"
-                            width="170px"
-                            showSearch
-                        />
-                    </div>
-
-                    <div className="filter-group">
-                        <label>!Search</label>
-                        <input
-                            type="text"
-                            value={excludeInput}
-                            onChange={(event) => setExcludeInput(event.target.value)}
-                            placeholder="Hide matching text"
-                            style={{ width: '190px' }}
-                        />
-                    </div>
-
-                    <div className="filter-group">
-                        <label>Sort</label>
-                        <select
-                            value={`${sortField}:${sortDirection}`}
-                            onChange={(event) => {
-                                const [field, direction] = event.target.value.split(':') as [SortField, SortDirection];
-                                setSortField(field);
-                                setSortDirection(direction);
-                            }}
-                            style={{ width: '148px' }}
-                        >
-                            <option value="clicks:desc">Clicks ↓</option>
-                            <option value="clicks:asc">Clicks ↑</option>
-                            <option value="country:asc">Country A-Z</option>
-                            <option value="country:desc">Country Z-A</option>
-                        </select>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap', marginLeft: 'auto' }}>
-                        <SafeButton
-                            onClick={() => patchRows(rows.map((row) => row.rowId), true)}
-                            className="hero-btn hero-btn-secondary"
-                            style={{ padding: '0.72rem 0.88rem' }}
-                            disabled={!sessionId || rows.length === 0}
-                        >
-                            Include Filtered
-                        </SafeButton>
-                        <SafeButton
-                            onClick={() => patchRows(rows.map((row) => row.rowId), false)}
-                            className="hero-btn hero-btn-secondary"
-                            style={{ padding: '0.72rem 0.88rem' }}
-                            disabled={!sessionId || rows.length === 0}
-                        >
-                            Exclude Filtered
-                        </SafeButton>
-                        <SafeButton
-                            onClick={() => setFilters(INITIAL_URL_FILTER_STATE)}
-                            className="hero-btn hero-btn-secondary"
-                            style={{ padding: '0.72rem 0.88rem' }}
-                        >
-                            Reset
-                        </SafeButton>
-                    </div>
-                </div>
-            </SurfaceCard>
-
-            <SurfaceCard padding="0" radius="1.3rem" style={{ overflow: 'hidden' }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '1rem',
-                    padding: '0.9rem 1rem',
-                    borderBottom: '1px solid var(--border-subtle)',
-                }}>
-                    <div>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                            URLs
-                        </div>
-                        <div style={{ marginTop: '0.25rem', fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                            {displayedRows.length.toLocaleString()} rows{isFetchingRows ? ' · Refreshing...' : ''}
-                        </div>
-                    </div>
-
-                    <SafeButton
-                        onClick={() => setIsExportModalOpen(true)}
-                        className="hero-btn hero-btn-primary"
-                        style={{ padding: '0.75rem 0.9rem', gap: '0.5rem' }}
-                        disabled={rows.filter((row) => row.include).length === 0}
-                    >
-                        <Download size={17} />
-                        <span>Export Included</span>
-                    </SafeButton>
-                </div>
-
-                {!sessionId ? (
-                    <div style={{ padding: '1.6rem 1.1rem', color: 'var(--text-dim)', fontWeight: 600 }}>
-                        Upload a CSV to start filtering URLs by country.
-                    </div>
-                ) : displayedRows.length === 0 ? (
-                    <div style={{ padding: '1.6rem 1.1rem', color: 'var(--text-dim)', fontWeight: 600 }}>
-                        No rows match the current filters.
-                    </div>
-                ) : (
-                    <div style={{ overflowX: 'auto', maxHeight: '72vh', overflowY: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '930px' }}>
-                            <thead style={{ position: 'sticky', top: 0, zIndex: 2, background: 'var(--bg-content)' }}>
-                                <tr>
-                                    {['Include', 'Country', 'Headline', 'Clicks', 'Impr.', 'Cost', 'CTR'].map((header) => (
-                                        <th
-                                            key={header}
-                                            style={{
-                                                ...TABLE_CELL_STYLE,
-                                                textAlign: 'left',
-                                                fontSize: '0.7rem',
-                                                letterSpacing: '0.08em',
-                                                textTransform: 'uppercase',
-                                                color: 'var(--text-muted)',
-                                                background: 'var(--bg-content)',
-                                            }}
-                                        >
-                                            {header}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {displayedRows.map((row) => {
-                                    const accent = CLASSIFICATION_ACCENTS[row.classification];
-                                    return (
-                                        <tr
-                                            key={row.rowId}
-                                            style={{
-                                                background: row.include ? 'transparent' : 'rgba(148, 163, 184, 0.06)',
-                                                transition: SAFE_INTERACTIVE_TRANSITION,
-                                            }}
-                                        >
-                                            <td style={TABLE_CELL_STYLE}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={row.include}
-                                                    onChange={() => patchRows([row.rowId], !row.include)}
-                                                    style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#0f766e' }}
-                                                />
-                                            </td>
-                                            <td style={TABLE_CELL_STYLE}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                                                    <span style={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        width: 'fit-content',
-                                                        padding: '0.24rem 0.52rem',
-                                                        borderRadius: '999px',
-                                                        background: accent.bg,
-                                                        color: accent.text,
-                                                        border: `1px solid ${accent.border}`,
-                                                        fontSize: '0.72rem',
-                                                        fontWeight: 800,
-                                                    }}>
-                                                        {row.pageCountry}
-                                                    </span>
-                                                    {row.pageCity !== 'Unknown' ? (
-                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{row.pageCity}</span>
-                                                    ) : null}
-                                                </div>
-                                            </td>
-                                            <td style={{ ...TABLE_CELL_STYLE, maxWidth: '540px' }}>
-                                                <a
-                                                    href={row.urlNormalized}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    style={{
-                                                        color: 'var(--text-main)',
-                                                        fontWeight: 600,
-                                                        textDecoration: 'none',
-                                                        lineHeight: 1.45,
-                                                    }}
-                                                    title={row.urlNormalized}
-                                                >
-                                                    {row.headline || row.urlNormalized}
-                                                </a>
-                                            </td>
-                                            <td style={TABLE_CELL_STYLE}>{formatNumber(row.clicks)}</td>
-                                            <td style={TABLE_CELL_STYLE}>{formatNumber(row.impressions)}</td>
-                                            <td style={TABLE_CELL_STYLE}>{formatCurrency(row.cost)}</td>
-                                            <td style={TABLE_CELL_STYLE}>{formatPercent(row.ctr)}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </SurfaceCard>
+            <UrlFilterResultsTable
+                sessionId={sessionId}
+                displayedRows={displayedRows}
+                isFetchingRows={isFetchingRows}
+                includedCount={includedCount}
+                onOpenExport={() => setIsExportModalOpen(true)}
+                onToggleInclude={(rowId, include) => patchRows([rowId], include)}
+            />
 
             <InsightExportModal
                 isOpen={isExportModalOpen}
                 onClose={() => setIsExportModalOpen(false)}
                 onExport={handleExport}
                 fields={URL_FILTER_EXPORT_FIELDS.map((field) => ({ ...field }))}
-                totalCount={rows.filter((row) => row.include).length}
+                totalCount={includedCount}
                 isExporting={isExporting}
+                secondaryActionLabel="Copy URLs"
+                onSecondaryAction={handleCopySelectedUrls}
+                isSecondaryActionLoading={isCopyingUrls}
             />
 
             <style>{`

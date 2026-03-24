@@ -485,16 +485,16 @@ export default function PlatformManagement() {
                         <SurfaceCard className="no-lift" style={{
                             flex: '1 1 600px',
                             boxShadow: 'var(--shadow-glass)',
-                            borderRadius: '1.5rem',
+                            borderRadius: '1.25rem',
                             display: 'flex',
                             flexDirection: 'column'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
-                                        <Globe size={22} strokeWidth={2.5} />
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                    <div style={{ padding: '0.45rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
+                                        <Globe size={18} strokeWidth={2.5} />
                                     </div>
-                                    <h3 style={{ fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.03em' }}>Strategic Notes</h3>
+                                    <h3 style={{ fontSize: '1.08rem', fontWeight: 900, margin: 0, letterSpacing: '-0.03em', lineHeight: 1.1 }}>Strategic Notes</h3>
                                 </div>
                                 {viewMode && isEditing && (
                                     <SafeButton type="button" onClick={() => setViewMode(false)} className="hero-btn-ghost" style={{ fontSize: '0.8rem' }}>
@@ -508,7 +508,7 @@ export default function PlatformManagement() {
                                     onDoubleClick={() => setViewMode(false)}
                                     style={{
                                         flex: 1,
-                                        padding: '1.5rem', background: 'var(--bg-overlay)', borderRadius: '1rem', border: '1px solid var(--border-subtle)',
+                                        padding: '1rem 1.1rem', background: 'var(--bg-overlay)', borderRadius: '0.9rem', border: '1px solid var(--border-subtle)',
                                         minHeight: '260px', cursor: 'text', lineHeight: 1.6
                                     }}
                                     dangerouslySetInnerHTML={{ __html: formData.metadata || '<p style="font-style:italic; opacity:0.5">Double click to add strategic guidelines...</p>' }}

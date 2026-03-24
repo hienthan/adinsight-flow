@@ -96,22 +96,22 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
     return (
         <div style={DASHBOARD_PAGE_STYLE}>
             <SurfaceCard
-                padding="1.25rem"
+                padding="0.95rem 1rem"
                 style={{
-                    borderRadius: '1.65rem',
+                    borderRadius: '1.35rem',
                     ...createAmbientSurface('#3b82f6', 0.85),
                     boxShadow: '0 24px 46px -34px rgba(15, 23, 42, 0.7)',
                 }}
             >
-                <div className="hero-badge" style={{ marginBottom: '0.75rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                <div className="hero-badge" style={{ marginBottom: '0.45rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
                     Dashboard Intelligence
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <div>
-                        <h2 style={{ fontSize: '1.45rem', fontWeight: 850, letterSpacing: '-0.04em', color: 'var(--text-main)', margin: 0 }}>
+                        <h2 style={{ fontSize: '1.18rem', fontWeight: 850, letterSpacing: '-0.04em', color: 'var(--text-main)', margin: 0, lineHeight: 1.08 }}>
                             {platformInfo.name} Performance Board
                         </h2>
-                        <p style={{ marginTop: '0.45rem', fontSize: '0.86rem', color: 'var(--text-dim)', fontWeight: 500 }}>
+                        <p style={{ marginTop: '0.28rem', fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 500, lineHeight: 1.4 }}>
                             Executive scan of geo coverage, score quality, and content mix across the current filtered dataset.
                         </p>
                     </div>

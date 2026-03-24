@@ -39,11 +39,11 @@ type PreparedSignal = {
 type TrendSignalWithName = TrendSignal & { trend_type_name?: string };
 
 const FILTER_SECTION_STYLE = {
-    marginBottom: '1.5rem',
+    marginBottom: '1rem',
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'stretch',
-    gap: '0.9rem',
+    gap: '0.7rem',
 } as const;
 
 const FILTER_CARD_STYLE = {
@@ -276,9 +276,9 @@ export default function TrendRadarPage() {
                         </span>
                     </div>
                 )}
-                style={{ marginBottom: '1.5rem' }}
+                style={{ marginBottom: '1rem' }}
             >
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.8rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.65rem' }}>
                     <MetricCard label="Tracked" value={prepared.length} helper="Visible in current filter" icon={Radar} accent="#3b82f6" />
                     <MetricCard label="Peak" value={peak.length} helper="Action now" icon={Sparkles} accent="#ef4444" />
                     <MetricCard label="Active" value={active.length} helper="Scale and optimize" icon={TrendingUp} accent="#22c55e" />
@@ -290,7 +290,7 @@ export default function TrendRadarPage() {
             <section style={FILTER_SECTION_STYLE}>
                 <SurfaceCard
                     variant="inset"
-                    padding="0.65rem"
+                    padding="0.55rem"
                     style={{ ...FILTER_CARD_STYLE, ...createAmbientSurface('#3b82f6', 0.22), flex: 1, minWidth: '42rem' }}
                 >
                     <div className="filter-group">
@@ -384,7 +384,7 @@ export default function TrendRadarPage() {
 
                 <SurfaceCard
                     variant="inset"
-                    padding="0.65rem"
+                    padding="0.55rem"
                     style={{ ...FILTER_CARD_STYLE, ...createAmbientSurface('#22c55e', 0.18) }}
                 >
                     <div className="filter-group">
@@ -433,7 +433,7 @@ export default function TrendRadarPage() {
             </section>
 
             {/* Zone 3: Content Sections */}
-            <div className="flex flex-col gap-12 pb-32" style={{ marginTop: '1.5rem' }}>
+            <div className="flex flex-col gap-10 pb-32" style={{ marginTop: '1rem' }}>
                 <section>
                     <SectionHeader id="section-peak" icon={Sparkles} title="At Peak / Action Now" count={peak.length} bgClass="bg-rose-100" colorClass="text-rose-600" />
                     <div>

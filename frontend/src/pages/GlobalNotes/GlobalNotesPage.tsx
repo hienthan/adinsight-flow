@@ -18,10 +18,7 @@ import {
     Loader2,
     Copy,
     FileText,
-    Tags,
     Paperclip,
-    ListTree,
-    Clock3,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import RichTextEditor from '../../components/common/RichTextEditor';
@@ -37,7 +34,7 @@ import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
 import { SectionHeader } from '../../components/common/ui/SectionHeader';
-import { MetricCard, PageHero, createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from '../../components/common/ui';
+import { createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from '../../components/common/ui';
 
 interface Note {
     id: string;
@@ -367,19 +364,6 @@ export default function GlobalNotesPage() {
         return new Date(b.updated).getTime() - new Date(a.updated).getTime();
     });
 
-    const noteStats = useMemo(() => {
-        const pinned = notes.filter((note) => note.is_pinned).length;
-        const highPriority = notes.filter((note) => note.priority === 'high').length;
-        const attachments = notes.reduce((sum, note) => sum + (note.images?.length || 0), 0);
-
-        return {
-            total: notes.length,
-            pinned,
-            highPriority,
-            attachments,
-        };
-    }, [notes]);
-
     const renderedNote = useMemo(
         () => prepareNoteHtmlForRender(activeNote?.content || ''),
         [activeNote?.content]
@@ -421,31 +405,6 @@ export default function GlobalNotesPage() {
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, [isEditing]);
-
-    // Helpers
-    const scrollToSection = (headingId: string) => {
-        const container = document.querySelector('.note-scroll-container');
-        if (!container) return;
-        const target = container.querySelector(`[data-note-heading-id="${headingId}"]`) as HTMLElement | null;
-        if (!target) return;
-
-        // Scroll with offset for sticky header
-        const headerOffset = 100;
-        const elementPosition = target.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + container.scrollTop - headerOffset;
-
-        container.scrollTo({
-            top: offsetPosition,
-            behavior: 'smooth'
-        });
-
-        const originalBg = target.style.backgroundColor;
-        target.style.backgroundColor = 'var(--accent-glow)';
-        target.style.transition = 'background-color 0.5s';
-        setTimeout(() => {
-            target.style.backgroundColor = originalBg;
-        }, 1000);
-    };
 
     const startEditing = (note: Note) => {
         setEditTitle(note.title);
@@ -548,27 +507,31 @@ export default function GlobalNotesPage() {
             }}>
                 {/* Header */}
                 <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%)' }}>
-                    <PageHero
-                        eyebrow="Knowledge Base"
-                        title="General Notes"
-                        subtitle="Keep strategy, operating notes, and supporting files in a single workspace."
-                        accent="#4f46e5"
-                        actions={(
+                    <SurfaceCard
+                        padding="0.9rem"
+                        radius="1.1rem"
+                        style={{
+                            ...createAmbientSurface('#4f46e5', 0.45),
+                            boxShadow: 'none',
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.65rem', marginBottom: '0.7rem' }}>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                    Knowledge Base
+                                </div>
+                                <div style={{ marginTop: '0.15rem', fontSize: '1rem', fontWeight: 850, letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
+                                    General Notes
+                                </div>
+                            </div>
                             <SafeButton
                                 onClick={() => createMutation.mutate()}
                                 className="hero-btn hero-btn-primary"
-                                style={{ paddingInline: '0.9rem', minHeight: '2.5rem' }}
+                                style={{ padding: '0.5rem 0.75rem', minHeight: '2rem', fontSize: '0.75rem' }}
                             >
-                                <Plus size={16} />
-                                New
+                                <Plus size={14} />
+                                Create
                             </SafeButton>
-                        )}
-                        style={{ padding: '1.15rem', borderRadius: '1.45rem' }}
-                    >
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.65rem' }}>
-                            <MetricCard label="Notes" value={noteStats.total} icon={FileText} accent="#4f46e5" style={{ padding: '0.85rem 0.9rem' }} />
-                            <MetricCard label="Pinned" value={noteStats.pinned} icon={Pin} accent="#f59e0b" style={{ padding: '0.85rem 0.9rem' }} />
-                            <MetricCard label="Files" value={noteStats.attachments} icon={Paperclip} accent="#22c55e" style={{ padding: '0.85rem 0.9rem' }} />
                         </div>
                         <div style={{
                             display: 'flex',
@@ -599,7 +562,7 @@ export default function GlobalNotesPage() {
                                 }}
                             />
                         </div>
-                    </PageHero>
+                    </SurfaceCard>
                 </div>
 
                 {/* Note List */}
@@ -804,29 +767,11 @@ export default function GlobalNotesPage() {
                                     maxWidth: '980px',
                                     width: '100%',
                                     margin: '0 auto',
-                                    padding: '2.5rem 1.5rem',
+                                    padding: '1.25rem 1.5rem',
                                     flex: 1,
                                     display: 'flex',
                                     flexDirection: 'column'
                                 }}>
-                                    <PageHero
-                                        eyebrow={isEditing ? 'Editing Workspace' : 'Document View'}
-                                        title={isEditing ? (editTitle || 'Untitled note') : activeNote.title}
-                                        subtitle={isEditing ? 'Adjust metadata, edit content, and keep your operating notes clean.' : 'Double-click the document or use Edit Content to revise this note.'}
-                                        accent={getPlatformAccent(activeNote.platform)}
-                                        style={{ marginBottom: '1rem', padding: '1.1rem 1.25rem', borderRadius: '1.5rem' }}
-                                    >
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem' }}>
-                                            <span className="hero-badge" style={createPremiumBadgeStyle(getPlatformAccent(activeNote.platform), { textColor: getPlatformAccent(activeNote.platform) })}>{formatPlatformLabel(activeNote.platform)}</span>
-                                            <span className="hero-badge" style={createPremiumBadgeStyle(getPriorityAccent(activeNote.priority), { textColor: getPriorityAccent(activeNote.priority) })}>{activeNote.priority}</span>
-                                            {activeNote.tags?.slice(0, 3).map((tag) => (
-                                                <span key={tag} className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>
-                                                    #{tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </PageHero>
-                                    {/* Document "Page" */}
                                     <SurfaceCard
                                         variant="soft"
                                         radius="1.25rem"
@@ -841,7 +786,7 @@ export default function GlobalNotesPage() {
                                         }}
                                     >
                                         {isEditing ? (
-                                            <div style={{ padding: '3rem 3.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
+                                            <div style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                         <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
@@ -908,7 +853,7 @@ export default function GlobalNotesPage() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div style={{ flex: 1, padding: '3rem 3.5rem' }}>
+                                            <div style={{ flex: 1, padding: '1.5rem 1.75rem' }}>
                                                 <div
                                                     style={{
                                                         color: 'var(--text-main)',
@@ -1118,76 +1063,29 @@ export default function GlobalNotesPage() {
                                         </div>
                                     </SurfaceCard>
                                 )}
-
-                                {/* TOC Section */}
-                                {!isEditing && (
-                                    <SurfaceCard
-                                        variant="inset"
-                                        padding="0.9rem"
-                                        style={{ ...createAmbientSurface('#3b82f6', 0.24), boxShadow: 'none' }}
-                                    >
-                                        <SectionHeader
-                                            title={<h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', margin: 0 }}>Table of Contents</h4>}
-                                            actions={<ListTree size={14} style={{ color: '#3b82f6' }} />}
-                                            style={{ marginBottom: '1rem' }}
-                                        />
-                                        <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                            {renderedNote.headings.length === 0 ? (
-                                                <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.75rem' }}>No sections found</div>
-                                            ) : (
-                                                renderedNote.headings.map((item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        style={{
-                                                            paddingLeft: `calc(${(item.level - 1) * 0.75}rem + 0.5rem)`,
-                                                            cursor: 'pointer',
-                                                            fontSize: item.level === 1 ? '0.82rem' : '0.78rem',
-                                                            fontWeight: item.level === 1 ? 700 : 500,
-                                                            color: item.level === 1 ? 'var(--text-main)' : 'var(--text-dim)',
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap',
-                                                            paddingTop: '0.35rem',
-                                                            paddingBottom: '0.35rem',
-                                                            borderRadius: '0.7rem',
-                                                            transition: SAFE_INTERACTIVE_TRANSITION,
-                                                            background: 'color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%)'
-                                                        }}
-                                                        onClick={() => scrollToSection(item.id)}
-                                                        className="hover:bg-accent-glow hover:text-primary"
-                                                        title={item.text}
-                                                    >
-                                                        {item.text}
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                    </SurfaceCard>
-                                )}
                             </div>
                         </div>
                     </>
                 ) : (
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-                        <PageHero
-                            eyebrow="Workspace Empty"
-                            title="Select a note or create a new one"
-                            subtitle="Use the left rail to open an existing note, or create a new entry for strategy, process, or reference material."
-                            accent="#4f46e5"
-                            actions={(
+                        <SurfaceCard
+                            padding="1.1rem 1.2rem"
+                            radius="1.2rem"
+                            style={{ maxWidth: '28rem', width: '100%', ...createAmbientSurface('#4f46e5', 0.35) }}
+                        >
+                            <div style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                General Notes
+                            </div>
+                            <div style={{ marginTop: '0.25rem', fontSize: '1.15rem', fontWeight: 850, color: 'var(--text-main)', letterSpacing: '-0.03em' }}>
+                                Select or create a note
+                            </div>
+                            <div style={{ marginTop: '0.75rem' }}>
                                 <SafeButton onClick={() => createMutation.mutate()} className="hero-btn hero-btn-primary">
                                     <Plus size={16} />
-                                    New Note
+                                    Create
                                 </SafeButton>
-                            )}
-                            style={{ maxWidth: '40rem', width: '100%' }}
-                        >
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem' }}>
-                                <MetricCard label="Notes" value={noteStats.total} helper="Knowledge base records" icon={FileText} accent="#4f46e5" />
-                                <MetricCard label="Critical" value={noteStats.highPriority} helper="High-priority notes" icon={Clock3} accent="#ef4444" />
-                                <MetricCard label="Tagged" value={notes.filter((note) => note.tags?.length).length} helper="Notes with tags" icon={Tags} accent="#22c55e" />
                             </div>
-                        </PageHero>
+                        </SurfaceCard>
                     </div>
                 )}
             </div>

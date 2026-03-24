@@ -22,6 +22,7 @@ const PlatformManagement = lazy(() => import('./pages/CampTracking/PlatformManag
 const OutboundMapPage = lazy(() => import('./pages/OutboundMap/OutboundMapPage'));
 const GlobalNotesPage = lazy(() => import('./pages/GlobalNotes/GlobalNotesPage'));
 const UrlFilterPage = lazy(() => import('./pages/DSAFilter/UrlFilterPage'));
+const SearchTermsPage = lazy(() => import('./pages/DSAFilter/SearchTermsPage'));
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -86,6 +87,7 @@ function App() {
             <Route path="/camp-tracking/changes" element={<AllChanges />} />
             <Route path="/global-notes" element={<GlobalNotesPage />} />
             <Route path="/dsa-filter/url" element={<UrlFilterPage />} />
+            <Route path="/dsa-filter/search-terms" element={<SearchTermsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

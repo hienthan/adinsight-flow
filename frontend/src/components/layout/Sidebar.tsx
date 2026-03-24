@@ -414,6 +414,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         <NavLink to="/dsa-filter/url" icon={FileText} activeCondition={isActive('/dsa-filter/url')} color="teal">
                             URL
                         </NavLink>
+                        <NavLink to="/dsa-filter/search-terms" icon={Target} activeCondition={isActive('/dsa-filter/search-terms')} color="blue">
+                            Search Terms
+                        </NavLink>
                     </div>
                 )}
 

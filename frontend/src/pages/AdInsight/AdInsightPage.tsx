@@ -326,11 +326,11 @@ export default function AdInsightPage() {
             />
 
             <SurfaceCard
-                padding="1rem 1.1rem"
+                padding="0.8rem 0.95rem"
                 style={{
                     ...VIEW_TOOLBAR_STYLE,
-                    borderRadius: '1.35rem',
-                    paddingBlock: '1.05rem',
+                    borderRadius: '1.1rem',
+                    paddingBlock: '0.85rem',
                     ...createAmbientSurface('#3b82f6', 0.38),
                     background: [
                         'radial-gradient(circle at top left, rgba(59, 130, 246, 0.14) 0%, transparent 24%)',
@@ -341,12 +341,12 @@ export default function AdInsightPage() {
                     border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.28) 22%)',
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                         <div style={{
-                            width: '42px',
-                            height: '42px',
-                            borderRadius: '12px',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
                             background: 'linear-gradient(135deg, hsla(var(--primary) / 0.14) 0%, rgba(20, 184, 166, 0.12) 100%)',
                             display: 'flex',
                             alignItems: 'center',
@@ -354,13 +354,13 @@ export default function AdInsightPage() {
                             color: 'hsl(var(--primary))',
                             border: '1px solid hsla(var(--primary) / 0.18)',
                         }}>
-                            <Globe size={18} />
+                            <Globe size={16} />
                         </div>
                         <div>
-                            <span className="hero-badge" style={{ marginBottom: '0.38rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                            <span className="hero-badge" style={{ marginBottom: '0.2rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
                                 AdInsight Workspace
                             </span>
-                            <p style={{ fontSize: '0.82rem', color: 'var(--text-main)', margin: '0.12rem 0 0', fontWeight: 700 }}>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-main)', margin: '0.08rem 0 0', fontWeight: 700 }}>
                                 Collection: {config.collection}
                             </p>
                         </div>
@@ -384,12 +384,12 @@ export default function AdInsightPage() {
                             title="List View"
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                width: '34px', height: '34px', border: 'none', cursor: 'pointer',
+                                width: '30px', height: '30px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'list' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'list' ? 'white' : 'var(--text-dim)',
                             }}
                         >
-                            <List size={14} />
+                            <List size={13} />
                         </SafeButton>
                         <SafeButton
                             aria-label="Dashboard Intelligence View"
@@ -398,12 +398,12 @@ export default function AdInsightPage() {
                             title="Dashboard Intelligence"
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                width: '34px', height: '34px', border: 'none', cursor: 'pointer',
+                                width: '30px', height: '30px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'dashboard' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'dashboard' ? 'white' : 'var(--text-dim)',
                             }}
                         >
-                            <LayoutDashboard size={14} />
+                            <LayoutDashboard size={13} />
                         </SafeButton>
                     </ToolbarGroup>
                 </div>
@@ -414,10 +414,10 @@ export default function AdInsightPage() {
                                 onClick={() => fetchPages(currentPage)}
                                 className="hero-btn hero-btn-ghost"
                                 style={{
-                                    padding: '0.6rem 0.85rem',
+                                    padding: '0.48rem 0.72rem',
                                     gap: '0.45rem',
-                                    fontSize: '13px',
-                                    borderRadius: '10px',
+                                    fontSize: '12px',
+                                    borderRadius: '9px',
                                     background: 'var(--bg-overlay)',
                                     border: '1px solid var(--border-subtle)',
                                 }}
@@ -429,13 +429,13 @@ export default function AdInsightPage() {
                                 onClick={handleReset}
                                 className="hero-btn"
                                 style={{
-                                    padding: '0.6rem 1rem',
-                                    fontSize: '13px',
+                                    padding: '0.48rem 0.8rem',
+                                    fontSize: '12px',
                                     fontWeight: 700,
                                     visibility: isFiltered ? 'visible' : 'hidden',
                                     border: '1px solid var(--border-subtle)',
                                     background: 'var(--bg-overlay)',
-                                    borderRadius: '10px'
+                                    borderRadius: '9px'
                                 }}
                             >
                                 Reset
@@ -444,7 +444,7 @@ export default function AdInsightPage() {
                                 onClick={() => setIsExportModalOpen(true)}
                                 disabled={exporting}
                                 className="hero-btn hero-btn-primary"
-                                style={{ padding: '0.6rem 1.2rem', gap: '0.5rem', fontSize: '13px', borderRadius: '10px' }}
+                                style={{ padding: '0.5rem 0.95rem', gap: '0.45rem', fontSize: '12px', borderRadius: '9px' }}
                             >
                                 <Download size={16} />
                                 {exporting ? 'Exporting...' : 'CSV'}
@@ -457,10 +457,10 @@ export default function AdInsightPage() {
             {selectedView === 'list' ? (
                 <>
                     <SurfaceCard
-                        padding="1rem 1.2rem"
+                        padding="0.85rem 1rem"
                         style={{
-                            marginBottom: '1.5rem',
-                            borderRadius: '1.75rem',
+                            marginBottom: '1.1rem',
+                            borderRadius: '1.4rem',
                             ...createAmbientSurface('#3b82f6', 0.78),
                             background: [
                                 'radial-gradient(circle at top right, rgba(59, 130, 246, 0.14) 0%, transparent 24%)',
@@ -471,38 +471,38 @@ export default function AdInsightPage() {
                             border: '1px solid color-mix(in srgb, var(--border-subtle) 76%, rgba(59, 130, 246, 0.24) 24%)',
                         }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem', flexWrap: 'wrap' }}>
                             <div>
-                                <span className="hero-badge" style={{ marginBottom: '0.55rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                                <span className="hero-badge" style={{ marginBottom: '0.35rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
                                     AdInsight Workspace
                                 </span>
-                                <h1 style={{ margin: '0.2rem 0 0', fontSize: '1.75rem', lineHeight: 1.05, color: 'var(--text-main)', fontWeight: 850 }}>
+                                <h1 style={{ margin: '0.12rem 0 0', fontSize: '1.4rem', lineHeight: 1.04, color: 'var(--text-main)', fontWeight: 850 }}>
                                     {config.name} Analytics
                                 </h1>
-                                <p style={{ margin: '0.35rem 0 0', color: 'var(--text-dim)', fontWeight: 600 }}>
+                                <p style={{ margin: '0.22rem 0 0', color: 'var(--text-dim)', fontWeight: 600, fontSize: '0.82rem' }}>
                                     Operator-first SEO analytics surface for {config.collection}.
                                 </p>
-                                <p style={{ margin: '1rem 0 0', color: 'var(--text-main)', fontWeight: 700, maxWidth: '38rem' }}>
+                                <p style={{ margin: '0.6rem 0 0', color: 'var(--text-main)', fontWeight: 700, maxWidth: '38rem', fontSize: '0.82rem', lineHeight: 1.45 }}>
                                     Use list mode for record QA, bulk actions, and exports.
                                 </p>
                             </div>
                             <div style={{
-                                minWidth: '190px',
-                                padding: '1rem 1.15rem',
-                                borderRadius: '1.25rem',
+                                minWidth: '170px',
+                                padding: '0.8rem 0.95rem',
+                                borderRadius: '1rem',
                                 textAlign: 'center',
                                 background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 88%, white 12%) 0%, color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%) 100%)',
                                 border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.22) 22%)',
                                 boxShadow: 'inset 0 1px 0 color-mix(in srgb, white 42%, transparent), 0 18px 32px -28px rgba(59, 130, 246, 0.38)',
                                 backdropFilter: 'blur(10px)',
                             }}>
-                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>
+                                <div style={{ fontSize: '0.64rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>
                                     Live Universe
                                 </div>
-                                <div style={{ fontSize: '1.8rem', fontWeight: 850, color: 'hsl(var(--primary))', lineHeight: 1 }}>
+                                <div style={{ fontSize: '1.45rem', fontWeight: 850, color: 'hsl(var(--primary))', lineHeight: 1 }}>
                                     {totalCount.toLocaleString()}
                                 </div>
-                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', marginTop: '0.35rem', letterSpacing: '0.05em' }}>
+                                <div style={{ fontSize: '0.64rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', marginTop: '0.24rem', letterSpacing: '0.05em' }}>
                                     {isFiltered ? 'Matching Records' : 'Total Records'}
                                 </div>
                             </div>
