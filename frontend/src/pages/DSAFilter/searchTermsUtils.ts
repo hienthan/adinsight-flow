@@ -41,6 +41,7 @@ export interface SearchTermsFilters {
     minImpressions: string;
     copyMode: CopyMode;
     sortBy: GroupSort;
+    dedupeTerms: boolean;
 }
 
 export interface SearchTermItem {
@@ -283,6 +284,13 @@ function buildTermId(groupId: string, normalizedKey: string, sourceIndex: number
     return `${groupId}::${normalizedKey}::${sourceIndex}`;
 }
 
+function compareTermStrength(left: Pick<SearchTermItem, 'clicks' | 'impressions' | 'cost' | 'displayTerm'>, right: Pick<SearchTermItem, 'clicks' | 'impressions' | 'cost' | 'displayTerm'>) {
+    if (left.clicks !== right.clicks) return left.clicks - right.clicks;
+    if (left.impressions !== right.impressions) return left.impressions - right.impressions;
+    if (left.cost !== right.cost) return left.cost - right.cost;
+    return right.displayTerm.localeCompare(left.displayTerm);
+}
+
 export function buildSearchTermsGroups(rows: ImportedSearchTermRow[], filters: SearchTermsFilters) {
     const groupedRows = new Map<string, ImportedSearchTermRow[]>();
     const searchNeedle = normalizeTermKey(filters.search);
@@ -341,7 +349,26 @@ export function buildSearchTermsGroups(rows: ImportedSearchTermRow[], filters: S
             });
         });
 
-        const filteredTerms = terms
+        const visibleTerms = filters.dedupeTerms
+            ? Array.from(terms.reduce((accumulator, term) => {
+                const existing = accumulator.get(term.normalizedKey);
+                if (!existing) {
+                    accumulator.set(term.normalizedKey, term);
+                    return accumulator;
+                }
+
+                const preferred = compareTermStrength(term, existing) > 0 ? term : existing;
+                const merged: SearchTermItem = {
+                    ...preferred,
+                    sourceRowCount: existing.sourceRowCount + term.sourceRowCount,
+                    sourceRowIds: Array.from(new Set([...existing.sourceRowIds, ...term.sourceRowIds])),
+                };
+                accumulator.set(term.normalizedKey, merged);
+                return accumulator;
+            }, new Map<string, SearchTermItem>()).values())
+            : terms;
+
+        const filteredTerms = visibleTerms
             .filter((term) => {
                 if (!searchNeedle) return true;
 
@@ -367,10 +394,18 @@ export function buildSearchTermsGroups(rows: ImportedSearchTermRow[], filters: S
             urlNormalized: groupId,
             urlOriginal: groupRows[0]?.urlOriginal || groupId,
             headline,
-            totalClicks,
-            totalImpressions,
-            totalCost,
-            avgCtr,
+            totalClicks: filters.dedupeTerms ? visibleTerms.reduce((sum, term) => sum + term.clicks, 0) : totalClicks,
+            totalImpressions: filters.dedupeTerms ? visibleTerms.reduce((sum, term) => sum + term.impressions, 0) : totalImpressions,
+            totalCost: filters.dedupeTerms ? visibleTerms.reduce((sum, term) => sum + term.cost, 0) : totalCost,
+            avgCtr: filters.dedupeTerms
+                ? (() => {
+                    const impressions = visibleTerms.reduce((sum, term) => sum + term.impressions, 0);
+                    if (impressions > 0) {
+                        return visibleTerms.reduce((sum, term) => sum + (term.ctr * term.impressions), 0) / impressions;
+                    }
+                    return visibleTerms.reduce((sum, term) => sum + term.ctr, 0) / Math.max(visibleTerms.length, 1);
+                })()
+                : avgCtr,
             terms: filteredTerms,
         });
     });
@@ -410,4 +445,5 @@ export const INITIAL_SEARCH_TERMS_FILTERS: SearchTermsFilters = {
     minImpressions: '',
     copyMode: 'original-only',
     sortBy: 'clicks',
+    dedupeTerms: true,
 };

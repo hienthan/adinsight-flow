@@ -3,24 +3,50 @@ import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Bell, Save, AlertTriangle } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
-import { Campaign } from '../../types/campaign';
+import { Campaign, CampaignReminder } from '../../types/campaign';
 import { FilterChip, SafeButton, SurfaceCard, SectionHeader } from '../common/ui';
 
 interface AddReminderModalProps {
     campaignId: string;
     isOpen: boolean;
     onClose: () => void;
+    reminder?: CampaignReminder | null;
 }
 
-export default function AddReminderModal({ campaignId, isOpen, onClose }: AddReminderModalProps) {
+type ReminderFormData = {
+    reminder_date: string;
+    message: string;
+    priority: NonNullable<CampaignReminder['priority']>;
+    check_metrics: string[];
+};
+
+const REMINDER_METRICS = ['TF', 'Conv', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC', 'RSA', 'rLink', 'siteL', '!URL'] as const;
+
+const normalizeMetricLabel = (metric: string) => {
+    const normalized = metric.trim().toUpperCase();
+    if (normalized === 'TRAFFIC') return 'TF';
+    if (normalized === 'CONVERSIONS') return 'Conv';
+    if (normalized === 'MCPC KEYS') return 'mCPC';
+    if (normalized === 'MCPC') return 'mCPC';
+    if (normalized === 'IS') return null;
+
+    const matchedMetric = REMINDER_METRICS.find(option => option.toUpperCase() === normalized);
+    return matchedMetric ?? metric.trim();
+};
+
+const buildInitialFormData = (reminder?: CampaignReminder | null): ReminderFormData => ({
+    reminder_date: formatDateForInput(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()),
+    message: reminder?.message || '',
+    priority: reminder?.priority || 'medium',
+    check_metrics: (reminder?.check_metrics || [])
+        .map(normalizeMetricLabel)
+        .filter((metric): metric is string => Boolean(metric))
+});
+
+export default function AddReminderModal({ campaignId, isOpen, onClose, reminder }: AddReminderModalProps) {
     const queryClient = useQueryClient();
     const shouldCloseOnBackdropClickRef = useRef(false);
-    const [formData, setFormData] = useState({
-        reminder_date: formatDateForInput(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()), // Default 3 days from now
-        message: '',
-        priority: 'medium',
-        check_metrics: [] as string[]
-    });
+    const [formData, setFormData] = useState(buildInitialFormData(reminder));
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +59,11 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
         enabled: !!campaignId && isOpen
     });
 
-    const availableMetrics = ['TRAFFIC', 'CONVERSIONS', 'IS', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC KEYS', 'RSA', 'rLink', '!URL'];
+    useEffect(() => {
+        if (!isOpen) return;
+        setFormData(buildInitialFormData(reminder));
+        setError(null);
+    }, [isOpen, reminder]);
 
     const toggleMetric = (metric: string) => {
         setFormData(prev => {
@@ -74,20 +104,28 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
         setError(null);
 
         try {
-            await pb.collection('campaign_reminders').create({
+            const payload = {
                 campaign: campaignId,
                 reminder_date: formData.reminder_date,
                 message: formData.message,
                 priority: formData.priority,
                 check_metrics: formData.check_metrics,
-                status: 'pending'
-            });
+            };
+
+            if (reminder?.id) {
+                await pb.collection('campaign_reminders').update(reminder.id, payload);
+            } else {
+                await pb.collection('campaign_reminders').create({
+                    ...payload,
+                    status: 'pending'
+                });
+            }
 
             queryClient.invalidateQueries({ queryKey: ['campaign-reminders', campaignId] });
             queryClient.invalidateQueries({ queryKey: ['reminders'] });
             onClose();
         } catch (err: any) {
-            setError(err.message || 'Failed to create reminder');
+            setError(err.message || `Failed to ${reminder?.id ? 'update' : 'create'} reminder`);
         } finally {
             setLoading(false);
         }
@@ -155,7 +193,9 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                                     <Bell size={20} />
                                 </div>
                                 <div>
-                                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Add Reminder</h3>
+                                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em' }}>
+                                        {reminder?.id ? 'Edit Reminder' : 'Add Reminder'}
+                                    </h3>
                                     <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                                         Campaign: <span style={{ color: 'hsl(var(--primary))', fontWeight: 700 }}>{campaign?.name || 'Loading...'}</span>
                                     </p>
@@ -209,7 +249,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                             <select
                                 className="hero-select"
                                 value={formData.priority}
-                                onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                                onChange={e => setFormData({ ...formData, priority: e.target.value as ReminderFormData['priority'] })}
                             >
                                 <option value="low">Low</option>
                                 <option value="medium">Medium</option>
@@ -222,7 +262,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                     <div className="filter-group">
                         <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '0.6rem', display: 'block' }}>Metrics to Monitor</label>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            {availableMetrics.map(metric => (
+                            {REMINDER_METRICS.map(metric => (
                                 <FilterChip
                                     key={metric}
                                     onClick={() => toggleMetric(metric)}
@@ -266,7 +306,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                             }}
                         >
                             <Save size={16} />
-                            {loading ? 'Saving...' : 'Create Reminder'}
+                            {loading ? 'Saving...' : reminder?.id ? 'Update Reminder' : 'Create Reminder'}
                         </SafeButton>
                     </div>
                 </form>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Bell, Activity, ChevronDown, ChevronRight, History, X } from 'lucide-react';
 import CampaignForm from './CampaignForm';
 import AddReminderModal from './AddReminderModal';
@@ -8,6 +9,8 @@ import CampaignHistory from './CampaignHistory';
 import { SafeButton } from '../common/ui/SafeButton';
 import { SurfaceCard } from '../common/ui/SurfaceCard';
 import { SAFE_BUTTON_SELECTORS, SAFE_CARD_SELECTORS, createSafeInteractionScopeCss } from '../../lib/uiMotion';
+import { Campaign, CampaignReminder } from '../../types/campaign';
+import { pb } from '../../lib/pocketbase';
 
 interface EditCampaignModalProps {
     campaignId?: string;
@@ -18,6 +21,7 @@ interface EditCampaignModalProps {
 
 export default function EditCampaignModal({ campaignId, isOpen, onClose, onSuccess }: EditCampaignModalProps) {
     const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+    const [editingReminder, setEditingReminder] = useState<CampaignReminder | null>(null);
     const [isRemindersCollapsed, setIsRemindersCollapsed] = useState(false);
     const [isAutoLogCollapsed, setIsAutoLogCollapsed] = useState(false);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -26,12 +30,32 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
     const shouldCloseOnBackdropClickRef = useRef(false);
     const campaignFormId = 'campaign-edit-form';
 
+    const { data: campaign } = useQuery<Campaign>({
+        queryKey: ['campaign', campaignId],
+        queryFn: async () => await pb.collection('campaigns').getOne<Campaign>(campaignId!),
+        enabled: isOpen && !!campaignId,
+    });
+
+    const latestReviewedText = (() => {
+        if (!campaign?.last_reviewed_date) return null;
+        const parsed = new Date(campaign.last_reviewed_date);
+        if (Number.isNaN(parsed.getTime())) return campaign.last_reviewed_date;
+
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+        const day = String(parsed.getDate()).padStart(2, '0');
+        const hours = String(parsed.getHours()).padStart(2, '0');
+        const minutes = String(parsed.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+    })();
+
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isOpen) {
                 if (!isReminderModalOpen) {
                     onClose();
                 } else {
+                    setEditingReminder(null);
                     setIsReminderModalOpen(false);
                 }
             }
@@ -115,6 +139,12 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             <div style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                                 Campaign Edit
                             </div>
+                            <div style={{ flex: 1 }} />
+                            {latestReviewedText && (
+                                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
+                                    {latestReviewedText}
+                                </div>
+                            )}
                             <SafeButton
                                 onClick={onClose}
                                 className="hero-btn hero-btn-ghost"
@@ -169,7 +199,10 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                     </SafeButton>
                                     <SafeButton
                                         type="button"
-                                        onClick={() => setIsReminderModalOpen(true)}
+                                        onClick={() => {
+                                            setEditingReminder(null);
+                                            setIsReminderModalOpen(true);
+                                        }}
                                         className="hero-btn hero-btn-ghost"
                                         style={{ padding: '0.22rem 0.42rem', fontSize: '0.66rem', borderRadius: '0.65rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
                                     >
@@ -180,7 +213,14 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
 
                                 {!isRemindersCollapsed && (
                                     <div style={{ maxHeight: '132px', overflowY: 'auto', paddingRight: '0.05rem' }}>
-                                        <CampaignReminders campaignId={campaignId} compact={true} />
+                                        <CampaignReminders
+                                            campaignId={campaignId}
+                                            compact={true}
+                                            onEditReminder={(reminder) => {
+                                                setEditingReminder(reminder);
+                                                setIsReminderModalOpen(true);
+                                            }}
+                                        />
                                     </div>
                                 )}
                                     </SurfaceCard>
@@ -285,7 +325,11 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                 <AddReminderModal
                     campaignId={campaignId}
                     isOpen={isReminderModalOpen}
-                    onClose={() => setIsReminderModalOpen(false)}
+                    reminder={editingReminder}
+                    onClose={() => {
+                        setEditingReminder(null);
+                        setIsReminderModalOpen(false);
+                    }}
                 />
             )}
 

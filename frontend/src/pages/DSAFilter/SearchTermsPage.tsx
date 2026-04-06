@@ -460,6 +460,16 @@ export default function SearchTermsPage() {
                         <span>Copy URL terms with clicks</span>
                     </label>
 
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.82rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                        <input
+                            type="checkbox"
+                            checked={filters.dedupeTerms}
+                            onChange={(event) => setFilterValue('dedupeTerms', event.target.checked)}
+                            style={{ accentColor: '#0284c7' }}
+                        />
+                        <span>Deduplicate terms</span>
+                    </label>
+
                     <div style={{ display: 'flex', gap: '0.55rem', marginLeft: 'auto', flexWrap: 'wrap' }}>
                         <SafeButton
                             onClick={() => {

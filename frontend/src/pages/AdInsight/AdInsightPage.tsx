@@ -114,6 +114,7 @@ export default function AdInsightPage() {
     const { countries, sitemapTags } = usePlatformMeta(config.defaultSitemapTags);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [copyingUrls, setCopyingUrls] = useState(false);
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
@@ -166,32 +167,37 @@ export default function AdInsightPage() {
         });
     }, []);
 
+    const fetchAllFilteredRecords = useCallback(async () => {
+        const baseFilterString = buildFilterString(filters);
+        let filterString = baseFilterString;
+
+        if (config.activeFilterKey) {
+            const activeCondition = `${config.activeFilterKey} = true`;
+            filterString = baseFilterString ? `(${baseFilterString}) && ${activeCondition}` : activeCondition;
+        }
+
+        const allRecords: PageRecord[] = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+            const result = await pb.collection(config.collection).getList<PageRecord>(page, 500, {
+                sort: (sortDirection === 'desc' ? '-' : '') + sortField,
+                filter: filterString,
+            });
+
+            allRecords.push(...result.items);
+            hasMore = result.items.length === 500;
+            page++;
+        }
+
+        return allRecords;
+    }, [config.activeFilterKey, config.collection, filters, sortDirection, sortField]);
+
     const handleExport = async (selectedFields: string[], customFileName: string, customLabel?: string) => {
         try {
             setExporting(true);
-            const baseFilterString = buildFilterString(filters);
-            let filterString = baseFilterString;
-            
-            // For export, always enforce that the record is active
-            if (config.activeFilterKey) {
-                const activeCondition = `${config.activeFilterKey} = true`;
-                filterString = baseFilterString ? `(${baseFilterString}) && ${activeCondition}` : activeCondition;
-            }
-
-            const allRecords: PageRecord[] = [];
-            let page = 1;
-            let hasMore = true;
-
-            while (hasMore) {
-                const result = await pb.collection(config.collection).getList<PageRecord>(page, 500, {
-                    sort: (sortDirection === 'desc' ? '-' : '') + sortField,
-                    filter: filterString,
-                });
-
-                allRecords.push(...result.items);
-                hasMore = result.items.length === 500;
-                page++;
-            }
+            const allRecords = await fetchAllFilteredRecords();
 
             const csvHeader = 'Page URL,Custom Label\n';
             const csvRows = allRecords.map(record => {
@@ -297,6 +303,28 @@ export default function AdInsightPage() {
             setExporting(false);
         }
     };
+
+    const handleCopyFilteredUrls = useCallback(async () => {
+        try {
+            setCopyingUrls(true);
+            const allRecords = await fetchAllFilteredRecords();
+            const headlineKey = config.titleKey;
+            const clipboardText = allRecords
+                .map((record) => {
+                    const headline = String(record[headlineKey] || '').replace(/\s+/g, ' ').trim();
+                    return [record.url, headline].join('\t');
+                })
+                .join('\n');
+
+            await navigator.clipboard.writeText(clipboardText);
+            setIsExportModalOpen(false);
+        } catch (err) {
+            console.error('Copy filtered URLs failed:', err);
+            alert('Copy failed. Please try again.');
+        } finally {
+            setCopyingUrls(false);
+        }
+    }, [config.titleKey, fetchAllFilteredRecords]);
 
     const isFiltered = Object.keys(filters).some(k =>
         !['sitemap_tag', 'titleKey'].includes(k) && filters[k]
@@ -597,6 +625,9 @@ export default function AdInsightPage() {
                         fields={config.exportFields}
                         totalCount={totalCount}
                         isExporting={exporting}
+                        secondaryActionLabel="Copy URL + Headline"
+                        onSecondaryAction={handleCopyFilteredUrls}
+                        isSecondaryActionLoading={copyingUrls}
                     />
                 </>
             ) : (

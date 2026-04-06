@@ -32,6 +32,8 @@ type OverviewMode = 'comfortable' | 'compact';
 type ReminderQuickFilter = 'all' | 'overdue' | 'today' | 'upcoming';
 type FreshnessState = 'fresh' | 'watch' | 'stale';
 type ReminderPriority = 'low' | 'medium' | 'high' | 'critical';
+type CampaignSortMode = 'smart' | 'created_desc' | 'created_asc' | 'name_asc' | 'name_desc';
+type ReviewSource = 'review' | 'campaign' | 'reminder' | 'none';
 type EnrichedCampaign = Campaign & {
     platformData?: CampaignPlatform;
     reminderState: ReminderState;
@@ -90,6 +92,14 @@ const PRIORITY_OPTIONS = [
     { value: 'medium', label: 'Medium' },
     { value: 'high', label: 'High' },
     { value: 'critical', label: 'Critical' },
+] as const;
+
+const SORT_OPTIONS: Array<{ value: CampaignSortMode; label: string }> = [
+    { value: 'smart', label: 'Smart' },
+    { value: 'name_asc', label: 'A-Z' },
+    { value: 'name_desc', label: 'Z-A' },
+    { value: 'created_desc', label: 'New' },
+    { value: 'created_asc', label: 'Old' },
 ] as const;
 
 const REMINDER_CHIP_CONFIG = {
@@ -174,6 +184,24 @@ const getDayDiff = (targetDate: Date, baseDate: Date): number => {
     return Math.round((getStartOfDay(targetDate).getTime() - getStartOfDay(baseDate).getTime()) / msInDay);
 };
 
+const getCampaignCreatedDateTimestamp = (campaign: Campaign): number => {
+    const createdDate = parseDateOnly(campaign.created_date);
+    if (createdDate) return createdDate.getTime();
+
+    const pocketBaseCreated = campaign.created ? new Date(campaign.created).getTime() : Number.NaN;
+    return Number.isNaN(pocketBaseCreated) ? 0 : pocketBaseCreated;
+};
+
+const parseTimestamp = (input?: string | null): Date | null => {
+    if (!input || typeof input !== 'string') return null;
+    const normalized = input.trim();
+    if (!normalized) return null;
+
+    const normalizedTimestamp = normalized.includes(' ') ? normalized.replace(' ', 'T') : normalized;
+    const parsedTimestamp = new Date(normalizedTimestamp);
+    return Number.isNaN(parsedTimestamp.getTime()) ? null : parsedTimestamp;
+};
+
 const STATUS_RANK: Record<string, number> = {
     active: 0,
     testing: 1,
@@ -192,6 +220,7 @@ export default function CampOverview() {
     const filterMetadata = searchParams.get('has_meta') === 'true';
     const viewMode = (searchParams.get('view') as OverviewMode) || 'comfortable';
     const reminderQuickFilter = (searchParams.get('due') as ReminderQuickFilter) || 'all';
+    const sortMode = (searchParams.get('sort') as CampaignSortMode) || 'smart';
     const compactCards = viewMode === 'compact';
     const alertsOnlyEnabled = filterReminders;
     const deferredFilterName = useDeferredValue(filterName);
@@ -261,6 +290,14 @@ export default function CampOverview() {
         });
     };
 
+    const setSortMode = (val: CampaignSortMode) => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (val === 'smart') prev.delete('sort');
+            else prev.set('sort', val);
+            return prev;
+        });
+    };
+
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -304,12 +341,22 @@ export default function CampOverview() {
     });
 
     // Fetch reminders to check which campaigns have pending ones
-    const { data: reminders = [] } = useQuery<CampaignReminder[]>({
+    const { data: pendingReminders = [] } = useQuery<CampaignReminder[]>({
         queryKey: ['reminders', 'pending'],
         queryFn: async () => {
             return await pb.collection('campaign_reminders').getFullList<CampaignReminder>({
                 filter: 'status = "pending"',
                 sort: 'reminder_date',
+            });
+        },
+        staleTime: 1000 * 60 * 60 * 4, // 4 hours
+    });
+
+    const { data: reminderActivity = [] } = useQuery<CampaignReminder[]>({
+        queryKey: ['reminders', 'activity'],
+        queryFn: async () => {
+            return await pb.collection('campaign_reminders').getFullList<CampaignReminder>({
+                sort: '-updated,-created',
             });
         },
         staleTime: 1000 * 60 * 60 * 4, // 4 hours
@@ -322,9 +369,9 @@ export default function CampOverview() {
         return map;
     }, [platforms]);
 
-    const reminderByCampaign = useMemo(() => {
+    const pendingReminderByCampaign = useMemo(() => {
         const bucket = new Map<string, CampaignReminder[]>();
-        reminders.forEach((reminder) => {
+        pendingReminders.forEach((reminder) => {
             if (reminder.campaign) {
                 if (!bucket.has(reminder.campaign)) {
                     bucket.set(reminder.campaign, []);
@@ -333,12 +380,26 @@ export default function CampOverview() {
             }
         });
         return bucket;
-    }, [reminders]);
+    }, [pendingReminders]);
+
+    const reminderActivityByCampaign = useMemo(() => {
+        const bucket = new Map<string, CampaignReminder[]>();
+        reminderActivity.forEach((reminder) => {
+            if (reminder.campaign) {
+                if (!bucket.has(reminder.campaign)) {
+                    bucket.set(reminder.campaign, []);
+                }
+                bucket.get(reminder.campaign)!.push(reminder);
+            }
+        });
+        return bucket;
+    }, [reminderActivity]);
 
     // Get enriched campaigns with platform data and reminder state
     const enrichedCampaigns: EnrichedCampaign[] = useMemo(() => campaigns.map((campaign) => {
         const platform = platformMap.get(campaign.platform);
-        const campaignReminders = reminderByCampaign.get(campaign.id) || [];
+        const pendingCampaignReminders = pendingReminderByCampaign.get(campaign.id) || [];
+        const activityReminders = reminderActivityByCampaign.get(campaign.id) || [];
 
         let reminderState: ReminderState = 'none';
         let nearestDueInDays: number | null = null;
@@ -346,7 +407,7 @@ export default function CampOverview() {
         let hasActionableReminder = false;
         const specialReminderSignals = new Set<string>();
 
-        for (const reminder of campaignReminders) {
+        for (const reminder of pendingCampaignReminders) {
             const metricSignals = reminder.check_metrics || [];
             const reminderText = `${reminder.message || ''} ${metricSignals.join(' ')}`.toLowerCase();
             if (reminderText.includes('rlink')) specialReminderSignals.add('rLink');
@@ -376,26 +437,62 @@ export default function CampOverview() {
             }
         }
 
-        const reviewedAt = campaign.last_reviewed_date ? parseDateOnly(campaign.last_reviewed_date) : null;
-        const reviewedAgeDays = reviewedAt ? Math.max(0, -getDayDiff(reviewedAt, now)) : null;
+        const manualReviewAt = campaign.last_reviewed_date ? parseDateOnly(campaign.last_reviewed_date) : null;
+        const campaignCreatedAt = parseTimestamp(campaign.created);
+        const campaignUpdatedAt = parseTimestamp(campaign.updated);
+        const latestReminderUpdateAt = activityReminders.reduce<Date | null>((latest, reminder) => {
+            const reminderUpdatedAt = parseTimestamp(reminder.updated) ?? parseTimestamp(reminder.created);
+            if (!reminderUpdatedAt) return latest;
+            if (!latest || reminderUpdatedAt.getTime() > latest.getTime()) return reminderUpdatedAt;
+            return latest;
+        }, null);
+
+        let latestActivityAt: Date | null = manualReviewAt;
+        let reviewSource: ReviewSource = manualReviewAt ? 'review' : 'none';
+
+        if (
+            campaignUpdatedAt
+            && campaignCreatedAt
+            && campaignUpdatedAt.getTime() - campaignCreatedAt.getTime() > 1000
+            && (!latestActivityAt || campaignUpdatedAt.getTime() > latestActivityAt.getTime())
+        ) {
+            latestActivityAt = campaignUpdatedAt;
+            reviewSource = 'campaign';
+        }
+
+        if (latestReminderUpdateAt && (!latestActivityAt || latestReminderUpdateAt.getTime() > latestActivityAt.getTime())) {
+            latestActivityAt = latestReminderUpdateAt;
+            reviewSource = 'reminder';
+        }
+
+        const reviewedAgeDays = manualReviewAt ? Math.max(0, -getDayDiff(manualReviewAt, now)) : null;
         const freshnessState: FreshnessState = reviewedAgeDays === null
             ? 'stale'
             : (reviewedAgeDays <= 3 ? 'fresh' : reviewedAgeDays <= 7 ? 'watch' : 'stale');
-        const reviewOutcomeLabel = campaign.last_review_outcome === 'cpc_increase'
-            ? 'CPC ↑'
-            : campaign.last_review_outcome === 'cpc_reduce'
-                ? 'CPC ↓'
-                : campaign.last_review_outcome === 'updated'
-                    ? 'Updated'
-                    : campaign.last_review_outcome === 'no_change'
-                        ? 'No change'
-                        : undefined;
-        const reviewedText = reviewedAgeDays === 0 ? 'Reviewed today' : `Reviewed ${reviewedAgeDays}d ago`;
-        const reviewStatusLabel = reviewedAgeDays === null
+        const reviewOutcomeLabel = reviewSource === 'review'
+            ? (
+                campaign.last_review_outcome === 'cpc_increase'
+                    ? 'CPC ↑'
+                    : campaign.last_review_outcome === 'cpc_reduce'
+                        ? 'CPC ↓'
+                        : campaign.last_review_outcome === 'updated'
+                            ? 'Updated'
+                            : campaign.last_review_outcome === 'no_change'
+                                ? 'No change'
+                                : 'Reviewed'
+            )
+            : reviewSource === 'campaign'
+                ? 'Campaign updated'
+                : reviewSource === 'reminder'
+                    ? 'Reminder updated'
+                    : undefined;
+        const latestActivityAgeDays = latestActivityAt ? Math.max(0, -getDayDiff(latestActivityAt, now)) : null;
+        const latestActivityText = latestActivityAgeDays === 0 ? 'Reviewed today' : `Reviewed ${latestActivityAgeDays}d ago`;
+        const reviewStatusLabel = latestActivityAgeDays === null
             ? 'Never reviewed'
             : reviewOutcomeLabel
-                ? `${reviewedText} • ${reviewOutcomeLabel}`
-                : reviewedText;
+                ? `${latestActivityText} • ${reviewOutcomeLabel}`
+                : latestActivityText;
 
         return {
             ...campaign,
@@ -406,10 +503,10 @@ export default function CampOverview() {
             specialReminderSignals: Array.from(specialReminderSignals),
             highestPriority: hasActionableReminder ? priority : undefined,
             freshnessState,
-            hasReviewed: reviewedAgeDays !== null,
+            hasReviewed: manualReviewAt !== null,
             reviewStatusLabel,
         };
-    }), [campaigns, now, platformMap, reminderByCampaign]);
+    }), [campaigns, now, pendingReminderByCampaign, platformMap, reminderActivityByCampaign]);
 
     // 1. Base list for filtering (Scoped by Search Name and Status)
     const nameKeyword = deferredFilterName.trim().toLowerCase();
@@ -451,7 +548,8 @@ export default function CampOverview() {
         || alertsOnlyEnabled
         || filterShowAll
         || reminderQuickFilter !== 'all'
-        || filterMetadata;
+        || filterMetadata
+        || sortMode !== 'smart';
 
     // Pulse Metrics (Calculated from base list)
     const reviewedCount = baseFilteredCampaigns.filter(c => c.hasReviewed).length;
@@ -473,8 +571,25 @@ export default function CampOverview() {
         upcoming: REMINDER_CHIP_CONFIG.upcoming,
     };
 
-    const sortCampaignsByReminder = (items: EnrichedCampaign[]) =>
+    const sortCampaigns = (items: EnrichedCampaign[]) =>
         [...items].sort((a, b) => {
+            if (sortMode === 'name_asc' || sortMode === 'name_desc') {
+                const nameDiff = a.name.localeCompare(b.name);
+                if (nameDiff !== 0) {
+                    return sortMode === 'name_asc' ? nameDiff : -nameDiff;
+                }
+                return getCampaignCreatedDateTimestamp(b) - getCampaignCreatedDateTimestamp(a);
+            }
+
+            if (sortMode === 'created_desc' || sortMode === 'created_asc') {
+                const createdA = getCampaignCreatedDateTimestamp(a);
+                const createdB = getCampaignCreatedDateTimestamp(b);
+                if (createdA !== createdB) {
+                    return sortMode === 'created_desc' ? createdB - createdA : createdA - createdB;
+                }
+                return a.name.localeCompare(b.name);
+            }
+
             // 1. Status (Active/Testing -> Archived -> Paused)
             const statusRankA = STATUS_RANK[a.status] ?? 0;
             const statusRankB = STATUS_RANK[b.status] ?? 0;
@@ -506,7 +621,7 @@ export default function CampOverview() {
     // Group by platform
     const groupedCampaigns = useMemo(() => {
         const groups = platforms.reduce((acc, platform) => {
-            const platformCampaigns = sortCampaignsByReminder(filteredCampaigns.filter(c => c.platform === platform.id));
+            const platformCampaigns = sortCampaigns(filteredCampaigns.filter(c => c.platform === platform.id));
             if (platformCampaigns.length > 0) {
                 acc.push({
                     platform,
@@ -516,7 +631,7 @@ export default function CampOverview() {
             return acc;
         }, [] as { platform: CampaignPlatform, campaigns: EnrichedCampaign[] }[]);
 
-        const orphans = sortCampaignsByReminder(filteredCampaigns.filter(c => !platformMap.has(c.platform)));
+        const orphans = sortCampaigns(filteredCampaigns.filter(c => !platformMap.has(c.platform)));
         if (orphans.length > 0) {
             groups.push({
                 platform: {
@@ -532,7 +647,7 @@ export default function CampOverview() {
         }
 
         return groups;
-    }, [filteredCampaigns, platformMap, platforms]);
+    }, [filteredCampaigns, platformMap, platforms, sortMode]);
 
     const openEdit = (id: string | null) => {
         setEditingId(id);
@@ -871,6 +986,25 @@ export default function CampOverview() {
                             }}
                         >
                             {PRIORITY_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label>Sort</label>
+                        <select
+                            className="camp-filter-control"
+                            value={sortMode}
+                            onChange={(e) => setSortMode(e.target.value as CampaignSortMode)}
+                            style={{
+                                minWidth: '110px',
+                                borderRadius: '12px',
+                            }}
+                        >
+                            {SORT_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>
                                     {option.label}
                                 </option>

@@ -5,13 +5,15 @@ import {
     ChevronRight,
     Layers,
     Globe,
-    Target,
+    ClipboardList,
     Route,
     Bell,
     History,
     Settings,
     TrendingUp,
-    FileText,
+    Link2,
+    NotebookPen,
+    TextSearch,
     WandSparkles
 } from 'lucide-react';
 import { pb } from '../../lib/pocketbase';
@@ -264,14 +266,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', overflowY: 'auto', flex: 1, padding: '0 0.5rem' }}>
                 {/* Knowledge Base Section - Moved to Top */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>Knowledge</div>}
-                <NavLink to="/global-notes" icon={FileText} color="purple">
+                <NavLink to="/global-notes" icon={NotebookPen} color="purple">
                     General Notes
                 </NavLink>
 
                 {/* Section Header */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>Tracking Core</div>}
 
-                <NavLink to="/camp-tracking" icon={Target} color="indigo" activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes', 'outbound-map'].some(p => location.pathname.includes(p))}>
+                <NavLink to="/camp-tracking" icon={ClipboardList} color="indigo" activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes', 'outbound-map'].some(p => location.pathname.includes(p))}>
                     Overview
                 </NavLink>
 
@@ -411,10 +413,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
                 {dsaFilterExpanded && (
                     <div style={{ paddingLeft: collapsed ? '0' : '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                        <NavLink to="/dsa-filter/url" icon={FileText} activeCondition={isActive('/dsa-filter/url')} color="teal">
+                        <NavLink to="/dsa-filter/url" icon={Link2} activeCondition={isActive('/dsa-filter/url')} color="teal">
                             URL
                         </NavLink>
-                        <NavLink to="/dsa-filter/search-terms" icon={Target} activeCondition={isActive('/dsa-filter/search-terms')} color="blue">
+                        <NavLink to="/dsa-filter/search-terms" icon={TextSearch} activeCondition={isActive('/dsa-filter/search-terms')} color="blue">
                             Search Terms
                         </NavLink>
                     </div>

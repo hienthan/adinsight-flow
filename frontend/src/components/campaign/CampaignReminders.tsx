@@ -7,9 +7,10 @@ interface CampaignRemindersProps {
     campaignId: string;
     compact?: boolean;
     platformColor?: string;
+    onEditReminder?: (reminder: CampaignReminder) => void;
 }
 
-export default function CampaignReminders({ campaignId, compact = false, platformColor }: CampaignRemindersProps) {
+export default function CampaignReminders({ campaignId, compact = false, platformColor, onEditReminder }: CampaignRemindersProps) {
     const queryClient = useQueryClient();
 
     // Fetch reminders
@@ -87,6 +88,7 @@ export default function CampaignReminders({ campaignId, compact = false, platfor
                         reminder={r}
                         onToggle={(id, status, note) => updateStatusMutation.mutate({ id, status, completion_notes: note })}
                         onDelete={(id) => deleteMutation.mutate(id)}
+                        onEdit={onEditReminder}
                         platformColor={platformColor}
                     />
                 ))}
@@ -106,6 +108,7 @@ export default function CampaignReminders({ campaignId, compact = false, platfor
                                 reminder={r}
                                 onToggle={(id, status, note) => updateStatusMutation.mutate({ id, status, completion_notes: note })}
                                 onDelete={(id) => deleteMutation.mutate(id)}
+                                onEdit={onEditReminder}
                                 platformColor={platformColor}
                             />
                         ))}

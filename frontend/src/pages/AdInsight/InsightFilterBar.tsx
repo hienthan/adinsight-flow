@@ -21,40 +21,40 @@ const FILTER_BAR_SHELL_STYLE = {
     zIndex: 60,
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem',
-    marginBottom: '1.5rem',
+    gap: '0.75rem',
+    marginBottom: '1rem',
     overflow: 'visible',
 } as const;
 
 const FILTER_ROW_STYLE = {
     display: 'flex',
-    alignItems: 'center',
-    gap: '1.25rem',
+    alignItems: 'stretch',
+    gap: '0.65rem',
     flexWrap: 'wrap',
 } as const;
 
 const EXCLUSION_SECTION_STYLE = {
     display: 'flex',
-    alignItems: 'center',
-    gap: '1.25rem',
+    alignItems: 'stretch',
+    gap: '0.65rem',
     flexWrap: 'wrap',
-    padding: '1.25rem',
+    padding: '0.75rem',
     borderRadius: '16px',
     animation: 'fadeIn 0.3s ease-out',
-    marginTop: '0.75rem',
+    marginTop: '0.25rem',
     position: 'relative',
 } as const;
 
 const FILTER_SHELL_STYLE = {
     ...FILTER_BAR_SHELL_STYLE,
-    borderRadius: '1.6rem',
+    borderRadius: '1.35rem',
     background: [
-        'radial-gradient(circle at top right, rgba(59, 130, 246, 0.14) 0%, transparent 26%)',
-        'radial-gradient(circle at left bottom, rgba(20, 184, 166, 0.08) 0%, transparent 28%)',
-        'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 98%, white 2%) 0%, color-mix(in srgb, var(--bg-content) 89%, var(--bg-main) 11%) 100%)',
+        'radial-gradient(circle at top right, rgba(59, 130, 246, 0.16) 0%, transparent 24%)',
+        'radial-gradient(circle at left bottom, rgba(20, 184, 166, 0.1) 0%, transparent 28%)',
+        'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%)',
     ].join(', '),
-    boxShadow: '0 26px 48px -34px rgba(15, 23, 42, 0.72)',
-    border: '1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.2) 20%)',
+    boxShadow: '0 30px 54px -38px rgba(15, 23, 42, 0.76)',
+    border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.22) 22%)',
 } as const;
 
 export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
@@ -126,7 +126,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                             placeholder={filter.placeholder}
                             value={value}
                             onChange={(e) => setter(e.target.value)}
-                            style={{ width: isExclusion ? '180px' : '220px', paddingLeft: isExclusion ? '2rem' : '2.5rem' }}
+                            style={{ width: isExclusion ? '156px' : '190px', paddingLeft: isExclusion ? '1.85rem' : '2.25rem' }}
                         />
                     </div>
                 </div>
@@ -140,7 +140,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     <select
                         value={currentValues[filter.id] || sitemapTags[0]}
                         onChange={(e) => onFilterChange(filter.id, e.target.value)}
-                        style={{ width: '120px' }}
+                        style={{ width: '108px' }}
                     >
                         {sitemapTags.map((tag) => (
                             <option key={tag} value={tag}>
@@ -171,8 +171,9 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                         value={currentValue}
                         onChange={(val) => onFilterChange(fieldId, val)}
                         placeholder="Global / All"
-                        width="160px"
+                        width="142px"
                         showSearch
+                        variant="premium"
                     />
                 </div>
             );
@@ -189,9 +190,10 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                             onChange={(val) => onFilterChange(fieldId, val)}
                             placeholder="All"
                             width={
-                                filter.id === 'content_type' || filter.id === 'dsa_campaign' ? '180px' :
-                                    (filter.id === 'tier' || filter.id === 'affiliate_tier' ? '100px' : '150px')
+                                filter.id === 'content_type' || filter.id === 'dsa_campaign' ? '154px' :
+                                    (filter.id === 'tier' || filter.id === 'affiliate_tier' ? '84px' : '132px')
                             }
+                            variant="premium"
                         />
                     </div>
                 );
@@ -203,7 +205,7 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     <select
                         value={currentValue}
                         onChange={(e) => onFilterChange(fieldId, e.target.value)}
-                        style={{ width: filter.id === 'tier' || filter.id === 'affiliate_tier' ? '65px' : '140px' }}
+                        style={{ width: filter.id === 'tier' || filter.id === 'affiliate_tier' ? '60px' : '124px' }}
                     >
                         {filter.options?.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -250,17 +252,17 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        padding: '0.6rem',
-                        borderRadius: '10px',
+                        padding: '0.55rem',
+                        borderRadius: '12px',
                         border: '1px solid',
                         transition: SAFE_INTERACTIVE_TRANSITION,
-                        alignSelf: 'flex-end',
-                        width: '40px',
-                        height: '40px',
+                        alignSelf: 'stretch',
+                        width: '42px',
+                        minHeight: '70px',
                     }}
                     title="Toggle Exclusions"
                 >
-                    <AlertCircle size={20} className="exclude-icon" />
+                    <AlertCircle size={17} className="exclude-icon" />
                 </SafeButton>
             </div>
 
@@ -275,25 +277,36 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     .filter-container .filter-group {
                         display: flex;
                         flex-direction: column;
-                        gap: 0.48rem;
+                        gap: 0.38rem;
+                        padding: 0.62rem 0.68rem 0.68rem;
+                        border-radius: 0.88rem;
+                        min-width: fit-content;
+                        background:
+                            linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 94%, white 6%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%);
+                        border: 1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.16) 20%);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 18px 34px -30px rgba(15, 23, 42, 0.4);
+                        backdrop-filter: blur(14px);
                     }
                     .filter-container label {
-                        font-size: 0.72rem;
+                        font-size: 0.64rem;
                         font-weight: 800;
-                        color: var(--text-dim);
+                        color: color-mix(in srgb, var(--text-dim) 88%, var(--text-main) 12%);
                         text-transform: uppercase;
-                        letter-spacing: 0.05em;
-                        opacity: 0.9;
+                        letter-spacing: 0.08em;
+                        opacity: 0.94;
                     }
                     .filter-container input,
                     .filter-container select {
-                        height: 42px;
-                        border-radius: 12px;
-                        border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(59, 130, 246, 0.18) 18%);
-                        background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.86) 100%);
-                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.66), 0 10px 24px -20px rgba(15, 23, 42, 0.4);
+                        height: 38px;
+                        border-radius: 11px;
+                        border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.22) 22%);
+                        background:
+                            linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.66), 0 16px 28px -24px rgba(15, 23, 42, 0.44);
                         transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
                         color: var(--text-main);
+                        padding-right: 0.8rem;
+                        font-size: 0.82rem;
                     }
                     .filter-container input::placeholder {
                         color: var(--text-muted);
@@ -302,15 +315,16 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                     .filter-container select:focus {
                         outline: none;
                         border-color: rgba(59, 130, 246, 0.42);
-                        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08), inset 0 1px 0 rgba(255,255,255,0.75);
+                        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08), 0 18px 30px -24px rgba(59, 130, 246, 0.26), inset 0 1px 0 rgba(255,255,255,0.75);
                     }
 
                     /* Exclude Toggle Premium Styling */
                     .exclude-toggle {
-                        background: linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(248,250,252,0.84) 100%);
-                        border-color: color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.18) 22%);
+                        background:
+                            linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 94%, white 6%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%);
+                        border-color: color-mix(in srgb, var(--border-subtle) 76%, rgba(59, 130, 246, 0.18) 24%);
                         color: var(--text-dim);
-                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.64), 0 12px 24px -20px rgba(15, 23, 42, 0.4);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.64), 0 18px 30px -24px rgba(15, 23, 42, 0.42);
                     }
                     .exclude-toggle:hover {
                         background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(241,245,249,0.94) 100%);
@@ -340,6 +354,11 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                         border: 1px solid rgba(239, 68, 68, 0.15) !important;
                         box-shadow: 0 20px 30px -24px rgba(239, 68, 68, 0.35);
                     }
+                    .exclude-section .filter-group {
+                        background: linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(255,250,250,0.94) 100%) !important;
+                        border-color: rgba(239, 68, 68, 0.14) !important;
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.68), 0 18px 34px -30px rgba(239, 68, 68, 0.16) !important;
+                    }
                     .exclude-section label {
                         color: #dc2626 !important;
                         font-weight: 900 !important;
@@ -358,6 +377,11 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                         border-color: rgba(148, 163, 184, 0.18);
                         color: var(--text-dim);
                         box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 24px -20px rgba(0,0,0,0.5);
+                    }
+                    .dark .filter-container .filter-group {
+                        background: linear-gradient(180deg, rgba(15,23,42,0.84) 0%, rgba(2,6,23,0.9) 100%);
+                        border-color: rgba(148, 163, 184, 0.18);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 32px -28px rgba(0,0,0,0.54);
                     }
 
                     .dark .filter-container:has(.exclude-section) .exclude-toggle {
@@ -379,6 +403,11 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                         color: #fca5a5 !important;
                         opacity: 1 !important;
                         text-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+                    }
+                    .dark .exclude-section .filter-group {
+                        background: linear-gradient(180deg, rgba(24, 12, 12, 0.76) 0%, rgba(10, 7, 7, 0.86) 100%) !important;
+                        border-color: rgba(239, 68, 68, 0.18) !important;
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 18px 32px -26px rgba(0,0,0,0.45) !important;
                     }
                     
                     /* CRITICAL: Fix input backgrounds in dark mode */

@@ -19,6 +19,7 @@ import {
     Copy,
     FileText,
     Paperclip,
+    WandSparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import RichTextEditor from '../../components/common/RichTextEditor';
@@ -43,13 +44,14 @@ interface Note {
     tags: string[];
     is_pinned: boolean;
     priority: 'high' | 'medium' | 'normal';
-    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System' | 'RSA' | 'DSA';
+    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System' | 'RSA' | 'DSA' | 'Prompt';
     images: string[];
     created: string;
     updated: string;
 }
 
 type PocketBaseFileRecord = Parameters<typeof pb.files.getUrl>[0];
+const DRAFT_NOTE_ID = '__draft_note__';
 
 const NOTE_SHELL_STYLE = {
     height: 'calc(100vh - 2rem)',
@@ -60,7 +62,7 @@ const NOTE_SHELL_STYLE = {
 } as const;
 
 const NOTE_TOOLBAR_GROUP_STYLE = {
-    marginRight: '0.5rem',
+    marginRight: '0.2rem',
     background: 'transparent',
     border: 'none',
     boxShadow: 'none',
@@ -70,6 +72,7 @@ const NOTE_TOOLBAR_GROUP_STYLE = {
 const NOTE_META_OPTIONS = {
     platforms: [
         { value: 'General', label: 'General' },
+        { value: 'Prompt', label: 'Prompt' },
         { value: 'RSA', label: 'RSA' },
         { value: 'DSA', label: 'DSA' },
         { value: 'System', label: 'System' },
@@ -84,13 +87,14 @@ const NOTE_META_OPTIONS = {
     ],
 } as const;
 
-const GENERAL_PLATFORM_KEYS = ['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa', 'dsa'] as const;
+const GENERAL_PLATFORM_KEYS = ['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa', 'dsa', 'prompt'] as const;
 
 const getPlatformAccent = (platform?: string) => {
     const normalized = String(platform || '').toLowerCase();
     if (normalized === 'klook') return '#ff5b00';
     if (normalized === 'traveloka' || normalized === 'tvlk') return '#1ba0e2';
     if (normalized === 'trip') return '#0e2b5c';
+    if (normalized === 'prompt') return '#7c3aed';
     if (normalized === 'rsa') return '#3b82f6';
     if (normalized === 'dsa') return '#8b5cf6';
     if (normalized === 'system') return '#64748b';
@@ -109,6 +113,7 @@ const formatPlatformLabel = (platform?: string) => {
     if (normalized === 'system') return 'System';
     if (normalized === 'rsa') return 'RSA';
     if (normalized === 'dsa') return 'DSA';
+    if (normalized === 'prompt') return 'Prompt';
     return platform || 'General';
 };
 
@@ -132,6 +137,12 @@ const getPlatformBadge = (platform?: string) => {
         return {
             label: 'TK',
             style: { ...baseStyle, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(27, 160, 226, 0.1)', color: '#1ba0e2', fontSize: '0.45rem', padding: '0 3px' },
+        };
+    }
+    if (normalized === 'prompt') {
+        return {
+            icon: <WandSparkles size={8} strokeWidth={2.6} />,
+            style: { ...baseStyle, minWidth: 14, height: 14, borderRadius: 3, background: 'hsla(262, 83%, 58%, 0.12)', color: '#7c3aed', fontSize: '0.5rem', padding: '0 3px' },
         };
     }
     if (normalized === 'rsa') {
@@ -170,6 +181,7 @@ const getPlatformBadge = (platform?: string) => {
 export default function GlobalNotesPage() {
     const queryClient = useQueryClient();
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+    const [draftNote, setDraftNote] = useState<Note | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
@@ -214,27 +226,12 @@ export default function GlobalNotesPage() {
         }
     }, [notes, selectedNoteId, isEditing]);
 
-    const activeNote = notes.find(n => n.id === selectedNoteId);
-
-    // Mutations
-    const createMutation = useMutation({
-        mutationFn: async () => {
-            const newNote = {
-                title: 'New Note',
-                content: '<h1>New Note</h1><p>Start writing...</p>',
-                platform: 'General',
-                priority: 'normal',
-                is_pinned: false,
-                tags: []
-            };
-            return await pb.collection('general_notes').create(newNote);
-        },
-        onSuccess: (newNote) => {
-            queryClient.invalidateQueries({ queryKey: ['global-notes'] });
-            setSelectedNoteId(newNote.id);
-            startEditing(newNote as unknown as Note);
-        }
-    });
+    const allNotes = useMemo(
+        () => (draftNote ? [draftNote, ...notes] : notes),
+        [draftNote, notes]
+    );
+    const activeNote = allNotes.find(n => n.id === selectedNoteId);
+    const isDraftNote = activeNote?.id === DRAFT_NOTE_ID;
 
     const updateMutation = useMutation({
         mutationFn: async (id: string) => {
@@ -274,6 +271,10 @@ export default function GlobalNotesPage() {
     };
 
     const handleImageUpload = async (file: File): Promise<string> => {
+        if (isDraftNote) {
+            toast.error('Save the note before uploading images');
+            throw new Error('Cannot upload images for unsaved draft note');
+        }
         if (!selectedNoteId) throw new Error('No note selected');
 
         const formData = new FormData();
@@ -331,7 +332,7 @@ export default function GlobalNotesPage() {
     });
 
     // Filtering
-    const filteredNotes = notes.filter(note =>
+    const filteredNotes = allNotes.filter(note =>
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         htmlToPlainText(note.content).toLowerCase().includes(searchTerm.toLowerCase()) ||
         note.tags?.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -350,9 +351,10 @@ export default function GlobalNotesPage() {
             const p = String(platform || '').toLowerCase();
             if (p === 'rsa') return 8;
             if (p === 'dsa') return 7;
-            if (p === 'traveloka' || p === 'tvlk') return 6;
-            if (p === 'klook') return 5;
-            if (p === 'trip') return 4;
+            if (p === 'prompt') return 6;
+            if (p === 'traveloka' || p === 'tvlk') return 5;
+            if (p === 'klook') return 4;
+            if (p === 'trip') return 3;
             if (p === 'system') return 2;
             return 1;
         };
@@ -372,6 +374,7 @@ export default function GlobalNotesPage() {
     // Compute changes for Save button
     const hasChanges = useMemo(() => {
         if (!activeNote) return false;
+        if (isDraftNote) return true;
 
         // Title comparison
         const titleChanged = (activeNote.title || '') !== (editTitle || '');
@@ -393,7 +396,7 @@ export default function GlobalNotesPage() {
         const priorityChanged = currentPriority !== editPriority;
 
         return titleChanged || contentChanged || tagsChanged || platformChanged || priorityChanged;
-    }, [activeNote, editTitle, editContent, editTags, editPlatform, editPriority]);
+    }, [activeNote, editTitle, editContent, editTags, editPlatform, editPriority, isDraftNote]);
 
     // ESC support for editing
     useEffect(() => {
@@ -414,6 +417,62 @@ export default function GlobalNotesPage() {
         setEditPriority(note.priority || 'normal');
         setIsEditing(true);
         setSelectedNoteId(note.id);
+    };
+
+    const handleCreateDraft = () => {
+        const newDraft: Note = {
+            id: DRAFT_NOTE_ID,
+            title: 'New Note',
+            content: '<h1>New Note</h1><p>Start writing...</p>',
+            platform: 'General',
+            priority: 'normal',
+            is_pinned: false,
+            tags: [],
+            images: [],
+            created: new Date().toISOString(),
+            updated: new Date().toISOString(),
+        };
+
+        setDraftNote(newDraft);
+        startEditing(newDraft);
+    };
+
+    const handleSaveNote = async () => {
+        if (!activeNote) return;
+
+        if (isDraftNote) {
+            try {
+                const createdNote = await pb.collection('general_notes').create({
+                    title: editTitle,
+                    content: editContent,
+                    tags: editTags.split(',').map(t => t.trim()).filter(t => t),
+                    platform: editPlatform,
+                    priority: editPriority,
+                    is_pinned: false,
+                });
+                setDraftNote(null);
+                setSelectedNoteId(createdNote.id);
+                setIsEditing(false);
+                queryClient.invalidateQueries({ queryKey: ['global-notes'] });
+            } catch (error) {
+                console.error('Failed to create note:', error);
+                toast.error('Failed to create note');
+            }
+            return;
+        }
+
+        updateMutation.mutate(activeNote.id);
+    };
+
+    const handleCancelEditing = () => {
+        if (isDraftNote) {
+            setDraftNote(null);
+            setSelectedNoteId(notes[0]?.id ?? null);
+            setIsEditing(false);
+            return;
+        }
+
+        setIsEditing(false);
     };
 
     const handleCopyToClipboard = () => {
@@ -453,24 +512,24 @@ export default function GlobalNotesPage() {
             key: 'copy',
             title: 'Copy to Clipboard',
             onClick: handleCopyToClipboard,
-            content: <Copy size={18} />,
+            content: <Copy size={16} />,
         },
         {
             key: 'pin',
             title: activeNote.is_pinned ? 'Unpin' : 'Pin',
             onClick: () => togglePinMutation.mutate(activeNote),
-            content: <Pin size={18} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />,
+            content: <Pin size={16} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />,
         },
         {
             key: 'delete',
             title: confirmingDeleteNote ? 'Confirm Delete' : 'Delete',
             onClick: () => handleDeleteNote(activeNote.id),
             className: `hero-btn-ghost ${confirmingDeleteNote ? 'bg-destructive text-white' : 'text-destructive'}`,
-            style: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
+            style: { display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.28rem 0.38rem', borderRadius: '8px' },
             content: (
                 <>
-                    <Trash2 size={18} />
-                    {confirmingDeleteNote && <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Confirm?</span>}
+                    <Trash2 size={16} />
+                    {confirmingDeleteNote && <span style={{ fontSize: '0.68rem', fontWeight: 800 }}>Confirm?</span>}
                 </>
             ),
         },
@@ -525,7 +584,7 @@ export default function GlobalNotesPage() {
                                 </div>
                             </div>
                             <SafeButton
-                                onClick={() => createMutation.mutate()}
+                                onClick={handleCreateDraft}
                                 className="hero-btn hero-btn-primary"
                                 style={{ padding: '0.5rem 0.75rem', minHeight: '2rem', fontSize: '0.75rem' }}
                             >
@@ -663,25 +722,26 @@ export default function GlobalNotesPage() {
                     <>
                         {/* Note Toolbar */}
                         <div style={{
-                            padding: '1rem 1.5rem',
+                            padding: '0.55rem 0.9rem',
                             borderBottom: '1px solid var(--border-subtle)',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
+                            gap: '0.75rem',
                             background: createAmbientSurface(getPlatformAccent(activeNote.platform), 0.4).background,
                             position: 'sticky',
                             top: 0,
                             zIndex: 10
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flex: 1 }}>
                                 <ToolbarGroup compact style={NOTE_TOOLBAR_GROUP_STYLE}>
                                     <SafeButton
                                         onClick={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
                                         className={`hero-btn-ghost ${isLeftSidebarCollapsed ? 'text-primary' : ''}`}
-                                        style={{ padding: '0.4rem', borderRadius: '8px' }}
+                                        style={{ padding: '0.28rem', borderRadius: '7px' }}
                                         title={isLeftSidebarCollapsed ? "Show Notes List" : "Hide Notes List"}
                                     >
-                                        {isLeftSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                                        {isLeftSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
                                     </SafeButton>
                                 </ToolbarGroup>
 
@@ -690,8 +750,8 @@ export default function GlobalNotesPage() {
                                         value={editTitle}
                                         onChange={e => setEditTitle(e.target.value)}
                                         style={{
-                                            fontSize: '1.25rem',
-                                            fontWeight: 700,
+                                            fontSize: '1rem',
+                                            fontWeight: 750,
                                             background: 'transparent',
                                             border: 'none',
                                             borderBottom: '1px solid var(--primary)',
@@ -705,33 +765,51 @@ export default function GlobalNotesPage() {
                                         autoFocus
                                     />
                                 ) : (
-                                    <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>{activeNote.title}</h1>
+                                    <h1
+                                        title={activeNote.title}
+                                        style={{
+                                            fontSize: '0.98rem',
+                                            fontWeight: 760,
+                                            margin: 0,
+                                            color: 'var(--text-main)',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            minWidth: 0,
+                                            flexShrink: 1,
+                                            maxWidth: '100%',
+                                            lineHeight: 1.15,
+                                        }}
+                                    >
+                                        {activeNote.title}
+                                    </h1>
                                 )}
 
                                 {!isEditing && (
-                                    <>
-                                        <span className="hero-badge" style={createPremiumBadgeStyle(getPlatformAccent(activeNote.platform), { textColor: getPlatformAccent(activeNote.platform) })}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0, minWidth: 0 }}>
+                                        <span className="hero-badge" style={{ ...createPremiumBadgeStyle(getPlatformAccent(activeNote.platform), { textColor: getPlatformAccent(activeNote.platform) }), padding: '0.16rem 0.42rem', fontSize: '0.7rem' }}>
                                             {formatPlatformLabel(activeNote.platform)}
                                         </span>
-                                        <span className="hero-badge" style={createPremiumBadgeStyle(getPriorityAccent(activeNote.priority), { textColor: getPriorityAccent(activeNote.priority) })}>
-                                            {activeNote.priority === 'high' ? 'High Priority' : activeNote.priority === 'medium' ? 'Medium Priority' : 'Normal Priority'}
+                                        <span className="hero-badge" style={{ ...createPremiumBadgeStyle(getPriorityAccent(activeNote.priority), { textColor: getPriorityAccent(activeNote.priority) }), padding: '0.16rem 0.42rem', fontSize: '0.7rem' }}>
+                                            {activeNote.priority === 'high' ? 'High' : activeNote.priority === 'medium' ? 'Med' : 'Norm'}
                                         </span>
-                                        {activeNote.is_pinned && <span className="hero-badge" style={createPremiumBadgeStyle('#f59e0b', { textColor: '#f59e0b' })}>Pinned</span>}
-                                    </>
+                                        {activeNote.is_pinned && <span className="hero-badge" style={{ ...createPremiumBadgeStyle('#f59e0b', { textColor: '#f59e0b' }), padding: '0.16rem 0.42rem', fontSize: '0.7rem' }}>Pin</span>}
+                                    </div>
                                 )}
                             </div>
 
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignItems: 'center' }}>
                                 {isEditing ? (
                                     <>
                                         <SafeButton
-                                            onClick={() => updateMutation.mutate(activeNote.id)}
+                                            onClick={handleSaveNote}
                                             disabled={!hasChanges}
                                             className="hero-btn hero-btn-primary"
+                                            style={{ padding: '0.38rem 0.7rem', fontSize: '0.76rem' }}
                                         >
                                             Save
                                         </SafeButton>
-                                        <SafeButton onClick={() => setIsEditing(false)} className="hero-btn hero-btn-ghost">Cancel</SafeButton>
+                                        <SafeButton onClick={handleCancelEditing} className="hero-btn hero-btn-ghost" style={{ padding: '0.38rem 0.65rem', fontSize: '0.76rem' }}>Cancel</SafeButton>
                                     </>
                                 ) : (
                                     <>
@@ -741,19 +819,19 @@ export default function GlobalNotesPage() {
                                                 onClick={action.onClick}
                                                 className={action.className || 'hero-btn-ghost'}
                                                 title={action.title}
-                                                style={action.style}
+                                                style={action.style || { padding: '0.28rem', borderRadius: '8px' }}
                                             >
                                                 {action.content}
                                             </SafeButton>
                                         ))}
-                                        <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
+                                        <div style={{ width: '1px', height: '16px', background: 'var(--border-subtle)', margin: '0 0.12rem' }} />
                                         <SafeButton
                                             onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
                                             className={`hero-btn-ghost ${isRightSidebarCollapsed ? 'text-primary' : ''}`}
-                                            style={{ padding: '0.4rem', borderRadius: '8px' }}
+                                            style={{ padding: '0.28rem', borderRadius: '7px' }}
                                             title={isRightSidebarCollapsed ? "Show Information" : "Hide Information"}
                                         >
-                                            {isRightSidebarCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
+                                            {isRightSidebarCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
                                         </SafeButton>
                                     </>
                                 )}
@@ -1080,7 +1158,7 @@ export default function GlobalNotesPage() {
                                 Select or create a note
                             </div>
                             <div style={{ marginTop: '0.75rem' }}>
-                                <SafeButton onClick={() => createMutation.mutate()} className="hero-btn hero-btn-primary">
+                                <SafeButton onClick={handleCreateDraft} className="hero-btn hero-btn-primary">
                                     <Plus size={16} />
                                     Create
                                 </SafeButton>
