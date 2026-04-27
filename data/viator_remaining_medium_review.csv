@@ -1,0 +1,8 @@
+source_file,city,title,url,current_country,proposed_country,action,reason
+viator_europe_things_to_do_classified.csv,castle_road,Things to do in Castle Road,https://www.viator.com/Castle-Road/d60440,unknown,,keep_unknown,Too generic; could span multiple locations/routes.
+viator_europe_things_to_do_classified.csv,moselle_valley,Things to do in Moselle Valley,https://www.viator.com/Moselle-Valley/d25743,unknown,,keep_unknown,Cross-border region; avoid wrong-positive.
+viator_europe_things_to_do_classified.csv,rhine_river,Things to do in Rhine River,https://www.viator.com/Rhine-River/d767,unknown,,keep_unknown,Multi-country river region.
+viator_europe_things_to_do_classified.csv,adriatic_coast,Things to do in Adriatic Coast,https://www.viator.com/Adriatic-Coast/d23077,unknown,,keep_unknown,Multi-country coastal region.
+viator_europe_things_to_do_classified.csv,tatra_national_park,Things to do in Tatra National Park,https://www.viator.com/Tatra-National-Park/d51208,unknown,,keep_unknown,Poland/Slovakia ambiguity.
+viator_europe_things_to_do_classified.csv,the_alps,Things to do in The Alps,https://www.viator.com/The-Alps/d60434,unknown,,keep_unknown,Multi-country alpine region.
+viator_europe_things_to_do_classified.csv,new_town,Things to do in New Town,https://www.viator.com/New-Town/d51479,unknown,,keep_unknown,Too generic without stronger context.

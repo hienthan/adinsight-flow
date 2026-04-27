@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown, X, Search } from 'lucide-react';
 import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
 
@@ -35,8 +36,14 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
 
     const [searchQuery, setSearchQuery] = useState('');
+    const [panelPosition, setPanelPosition] = useState<{ top: number; left: number; width: number }>({
+        top: 0,
+        left: 0,
+        width: 260,
+    });
 
     const selectedValues = value ? value.split('|').filter(Boolean) : [];
 
@@ -49,13 +56,38 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            const clickedTrigger = containerRef.current?.contains(target);
+            const clickedPanel = panelRef.current?.contains(target);
+            if (!clickedTrigger && !clickedPanel) {
                 setIsOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const updatePanelPosition = () => {
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            setPanelPosition({
+                top: rect.bottom + 8,
+                left: rect.left,
+                width: Math.max(rect.width, 260),
+            });
+        };
+
+        updatePanelPosition();
+        window.addEventListener('resize', updatePanelPosition);
+        window.addEventListener('scroll', updatePanelPosition, true);
+        return () => {
+            window.removeEventListener('resize', updatePanelPosition);
+            window.removeEventListener('scroll', updatePanelPosition, true);
+        };
+    }, [isOpen]);
 
     const toggleOption = (optValue: string) => {
         let newValues: string[];
@@ -125,7 +157,15 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     };
 
     return (
-        <div ref={containerRef} style={{ position: 'relative', width, minWidth: '160px' }}>
+        <div
+            ref={containerRef}
+            style={{
+                position: 'relative',
+                width,
+                minWidth: '160px',
+                zIndex: isOpen ? 240 : 1,
+            }}
+        >
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
@@ -157,16 +197,17 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                 </div>
             </div>
 
-            {isOpen && (
+            {isOpen && typeof document !== 'undefined' && createPortal(
                 <div style={{
-                    position: 'absolute',
-                    left: 0,
-                    minWidth: 'max(100%, 260px)',
-                    width: 'max-content',
-                    zIndex: 120,
-                    overflowY: 'auto',
+                    position: 'fixed',
                     ...panelStyle,
-                }}>
+                    top: panelPosition.top,
+                    left: panelPosition.left,
+                    width: panelPosition.width,
+                    maxWidth: 'min(420px, calc(100vw - 24px))',
+                    zIndex: 1000,
+                    overflowY: 'auto',
+                }} ref={panelRef}>
                     {showSearch && (
                         <div style={{
                             padding: isPremium ? '0.45rem 0.45rem 0.55rem' : '0.4rem',
@@ -232,7 +273,8 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                             );
                         })
                     )}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

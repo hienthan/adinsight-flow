@@ -216,6 +216,7 @@ export default function CampOverview() {
     const filterPriority = searchParams.get('priority') || 'all';
     const filterName = searchParams.get('q') || '';
     const filterReminders = searchParams.get('reminders') === 'true';
+    const filterRLink = searchParams.get('rlink') === 'true';
     const filterShowAll = searchParams.get('all') === 'true';
     const filterMetadata = searchParams.get('has_meta') === 'true';
     const viewMode = (searchParams.get('view') as OverviewMode) || 'comfortable';
@@ -254,6 +255,14 @@ export default function CampOverview() {
         setSearchParams((prev: URLSearchParams) => {
             if (filterReminders) prev.delete('reminders');
             else prev.set('reminders', 'true');
+            return prev;
+        });
+    };
+
+    const setToggleRLink = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterRLink) prev.delete('rlink');
+            else prev.set('rlink', 'true');
             return prev;
         });
     };
@@ -523,6 +532,7 @@ export default function CampOverview() {
             if (campaign.reminderState === 'overdue') acc.overdue += 1;
             if (campaign.reminderState === 'today') acc.today += 1;
             if (campaign.reminderState === 'upcoming') acc.upcoming += 1;
+            if (campaign.specialReminderSignals.includes('rLink')) acc.rLink += 1;
 
             // Priorities
             if (campaign.priority === 'critical') acc.critical += 1;
@@ -530,22 +540,24 @@ export default function CampOverview() {
 
             return acc;
         },
-        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0 },
+        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0, rLink: 0 },
     ), [baseFilteredCampaigns]);
 
     // 3. Final display list (Applies all interactive filters)
     const filteredCampaigns = useMemo(() => baseFilteredCampaigns.filter((campaign) => {
         if (alertsOnlyEnabled && !campaign.hasPendingReminders) return false;
+        if (filterRLink && !campaign.specialReminderSignals.includes('rLink')) return false;
         if (reminderQuickFilter !== 'all' && campaign.reminderState !== reminderQuickFilter) return false;
         if (filterPriority !== 'all' && campaign.priority !== filterPriority) return false;
         if (filterMetadata && htmlToPlainText(campaign.metadata || '').trim().length === 0) return false;
         return true;
-    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterMetadata, filterPriority, reminderQuickFilter]);
+    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterMetadata, filterPriority, filterRLink, reminderQuickFilter]);
 
     const hasActiveFilters = filterPlatform !== 'all'
         || filterPriority !== 'all'
         || filterName !== ''
         || alertsOnlyEnabled
+        || filterRLink
         || filterShowAll
         || reminderQuickFilter !== 'all'
         || filterMetadata
@@ -562,6 +574,7 @@ export default function CampOverview() {
 
     const quickFilters = [
         { id: 'alerts', label: 'Alerts', active: alertsOnlyEnabled, toggle: setToggleReminders },
+        { id: 'rlink', label: 'rLink', active: filterRLink, toggle: setToggleRLink },
         { id: 'all', label: 'All', active: filterShowAll, toggle: setToggleShowAll },
         { id: 'meta', label: 'Metadata', active: filterMetadata, toggle: setToggleMetadata }
     ] as const;
@@ -1151,6 +1164,22 @@ export default function CampOverview() {
                         indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterPriority === 'high' ? '#fff' : '#ef4444', boxShadow: filterPriority === 'high' ? '0 0 8px #fff' : '0 0 8px #ef4444' }} />}
                     >
                         High: {summary.high}
+                    </FilterChip>
+
+                    <FilterChip
+                        active={filterRLink}
+                        onClick={setToggleRLink}
+                        activeBackground="#0f766e"
+                        inactiveBackground="rgba(15, 118, 110, 0.05)"
+                        activeBorder="#0f766e"
+                        inactiveBorder="rgba(15, 118, 110, 0.12)"
+                        activeColor="#fff"
+                        inactiveColor="#0f766e"
+                        activeShadow="0 0 15px rgba(15, 118, 110, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterRLink : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterRLink ? '#fff' : '#0f766e', boxShadow: filterRLink ? '0 0 8px #fff' : '0 0 8px rgba(15, 118, 110, 0.65)' }} />}
+                    >
+                        rLink: {summary.rLink}
                     </FilterChip>
 
                     <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)', margin: '0 0.25rem', opacity: (filterPriority !== 'all' || reminderQuickFilter !== 'all') ? 0.3 : 1 }} />

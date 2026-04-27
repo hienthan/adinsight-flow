@@ -49,6 +49,9 @@ export function usePlatformAnalytics({
     }, [collection, perPage]);
 
     useEffect(() => {
+        setRecords([]);
+        setTotalCount(0);
+        setTotalPages(0);
         setFilters(initialFilters);
         setSortField(initialSortField);
         setSortDirection(initialSortDirection);

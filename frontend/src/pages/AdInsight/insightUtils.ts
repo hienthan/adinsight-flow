@@ -13,12 +13,18 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         }
     }
 
-    // 2. Language (Special logic for Klook)
+    // 2. Language logic
     if (currentFilters.language && currentFilters.language !== 'all') {
+        const isKlook = currentFilters.titleKey === 'translated_title_vi';
+        const langField = isKlook ? 'languages' : 'language';
+
         if (currentFilters.language === 'both') {
-            parts.push('languages ~ "zh-HK" && languages ~ "zh-TW"');
+            parts.push(`${langField} ~ "zh-HK" && ${langField} ~ "zh-TW"`);
         } else {
-            parts.push(`languages ~ "${currentFilters.language}"`);
+            // For list fields like 'languages' in PocketBase, we use ~ (contains)
+            // For single string fields like 'language', we use = (exact match)
+            const operator = isKlook ? '~' : '=';
+            parts.push(`${langField} ${operator} "${currentFilters.language}"`);
         }
     }
 
@@ -27,6 +33,13 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         const terms = currentFilters.searchTerm.split(/[,|\s]+/).filter(t => t.trim().length > 0);
         terms.forEach(term => {
             parts.push(`${currentFilters.titleKey} ~ "${term.trim()}"`);
+        });
+    }
+
+    if (currentFilters.searchUrl) {
+        const terms = currentFilters.searchUrl.split(/[,|\s]+/).filter(t => t.trim().length > 0);
+        terms.forEach(term => {
+            parts.push(`url ~ "${term.trim()}"`);
         });
     }
 
@@ -40,7 +53,8 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
     const basicFields = [
         'tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type',
         'affiliate_tier', 'affiliate_score', 'dsa_campaign', 'geo_category', 'province',
-        'intent_type'
+        'intent_type', 'intent_primary', 'page_type', 'classification_confidence', 'is_private', 'is_active',
+        'pattern', 'geo_entity', 'topic_type', 'readiness_hint', 'market_fit', 'language'
     ];
 
     Object.keys(currentFilters).forEach(key => {
@@ -48,7 +62,7 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         if (!value) return;
 
         // Skip internal/special keys
-        if (['sitemap_tag', 'language', 'searchTerm', 'excludeTerm', 'titleKey'].includes(key)) return;
+        if (['sitemap_tag', 'language', 'searchTerm', 'searchUrl', 'excludeTerm', 'titleKey', 'show_url'].includes(key)) return;
 
         const isExclusion = key.startsWith('!');
         const baseKey = isExclusion ? key.slice(1) : key;
@@ -61,6 +75,11 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
 
                 const subQueries = values.map(v => {
                     const cleanVal = v.trim();
+                    if (baseKey === 'classification_confidence') {
+                        if (cleanVal === 'high') return `${baseKey} >= 0.85`;
+                        if (cleanVal === 'medium') return `(${baseKey} >= 0.70 && ${baseKey} < 0.85)`;
+                        if (cleanVal === 'low') return `${baseKey} < 0.70`;
+                    }
                     if (baseKey === 'country') {
                         if (cleanVal === 'Vietnam') {
                             return isExclusion
@@ -83,6 +102,12 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
                     if (baseKey === 'dsa_campaign') {
                         const campOperator = isExclusion ? '!~' : '~';
                         return `${baseKey} ${campOperator} "${cleanVal}"`;
+                    }
+                    if (baseKey === 'is_private') {
+                        return `${baseKey} = ${cleanVal === 'true' ? 'true' : 'false'}`;
+                    }
+                    if (baseKey === 'is_active') {
+                        return `${baseKey} = ${cleanVal === 'true' ? 'true' : 'false'}`;
                     }
                     return `${baseKey} ${operator} "${cleanVal}"`;
                 });

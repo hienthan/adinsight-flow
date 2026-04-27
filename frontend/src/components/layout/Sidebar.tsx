@@ -86,6 +86,40 @@ const TravelokaIcon = () => (
     }}>TK</div>
 );
 
+const ViatorIcon = () => (
+    <div style={{
+        flexShrink: 0,
+        width: 18,
+        height: 18,
+        borderRadius: 5,
+        background: '#0f766e',
+        boxShadow: '0 2px 8px rgba(15, 118, 110, 0.28)',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '0.6rem',
+        fontWeight: 900
+    }}>V</div>
+);
+
+const TripIcon = () => (
+    <div style={{
+        flexShrink: 0,
+        width: 18,
+        height: 18,
+        borderRadius: 5,
+        background: '#2563eb',
+        boxShadow: '0 2px 8px rgba(37, 99, 235, 0.28)',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '0.56rem',
+        fontWeight: 900
+    }}>TR</div>
+);
+
 
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
@@ -360,6 +394,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
                         <NavLink to="/adinsight/traveloka" icon={TravelokaIcon} activeCondition={isActive('/adinsight/traveloka')}>
                             Traveloka
+                        </NavLink>
+
+                        <NavLink to="/adinsight/viator" icon={ViatorIcon} activeCondition={isActive('/adinsight/viator')}>
+                            Viator
+                        </NavLink>
+
+                        <NavLink to="/adinsight/trip" icon={TripIcon} activeCondition={isActive('/adinsight/trip')}>
+                            Trip.com
                         </NavLink>
                     </div>
                 )}

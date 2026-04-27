@@ -51,12 +51,24 @@ const ERROR_STATE_STYLE = {
 interface AdInsightDashboardProps {
     platformInfo: PlatformConfig;
     sitemapTags: string[];
+    countries: string[];
 }
 
-export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashboardProps) {
-    const [pattern, setPattern] = useState(platformInfo.defaultSitemapTags[0] || 'activities');
-    // '' = All provinces (same convention as InsightFilterBar)
+export function AdInsightDashboard({ platformInfo, sitemapTags, countries }: AdInsightDashboardProps) {
+    const patternFilter = useMemo(
+        () => platformInfo.filters.find((filter) => filter.id === 'pattern' || filter.id === 'sitemap_tag'),
+        [platformInfo.filters]
+    );
+    const readinessFilter = useMemo(
+        () => platformInfo.filters.find((filter) => filter.id === 'readiness_hint'),
+        [platformInfo.filters]
+    );
+    const patternFallback = patternFilter?.options?.find((option) => option.value)?.value || platformInfo.defaultSitemapTags[0] || '';
+    const [pattern, setPattern] = useState(patternFallback);
     const [province, setProvince] = useState<string>('');
+    const [country, setCountry] = useState<string>('');
+    const [readinessHint, setReadinessHint] = useState<string>('');
+    const isTripDashboard = platformInfo.id === 'trip';
 
     const filters = useMemo(() => ({
         platformInfo: { 
@@ -64,10 +76,12 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
             id: platformInfo.id,
             titleKey: platformInfo.titleKey
         },
-        sitemap_tag: pattern,
+        pattern,
         province,
+        country,
+        readiness_hint: readinessHint,
         activeFilterKey: platformInfo.activeFilterKey
-    }), [platformInfo, pattern, province]);
+    }), [platformInfo, pattern, province, country, readinessHint]);
 
     const { data: records, isLoading, isError } = useDashboardData(filters);
 
@@ -83,11 +97,25 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
         return all;
     }, [platformInfo.filters]);
 
-    // Build sitemap_tag options for the select
-    const sitemapTagOptions = useMemo(() =>
-        sitemapTags.map(tag => ({ label: tag, value: tag })),
-        [sitemapTags]
-    );
+    const patternOptions = useMemo(() => {
+        if (patternFilter?.options?.length) {
+            return patternFilter.options.filter((option) => option.value);
+        }
+        return sitemapTags.map(tag => ({ label: tag, value: tag }));
+    }, [patternFilter?.options, sitemapTags]);
+
+    const countryOptions = useMemo(() => {
+        const all = [{ label: 'All', value: '' }];
+        const dynamicCountries = countries
+            .filter(Boolean)
+            .map((countryName) => ({ label: countryName, value: countryName }));
+        return [...all, ...dynamicCountries];
+    }, [countries]);
+
+    const readinessOptions = useMemo(() => {
+        if (!readinessFilter?.options?.length) return [];
+        return readinessFilter.options;
+    }, [readinessFilter?.options]);
 
     // Filtering is now handled SERVER-SIDE in useDashboardData via buildFilterString
     const filteredRecords = records || [];
@@ -117,8 +145,22 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
                     </div>
                     <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
                         <span className="hero-badge" style={createPremiumBadgeStyle('#14b8a6', { textColor: '#5eead4' })}>
-                            {province || 'All Provinces'}
+                            {pattern || 'All Patterns'}
                         </span>
+                        {isTripDashboard ? (
+                            <span className="hero-badge" style={createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' })}>
+                                {country || 'All Countries'}
+                            </span>
+                        ) : (
+                            <span className="hero-badge" style={createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' })}>
+                                {province || 'All Provinces'}
+                            </span>
+                        )}
+                        {isTripDashboard && readinessHint ? (
+                            <span className="hero-badge" style={createPremiumBadgeStyle('#f59e0b', { textColor: '#fde68a' })}>
+                                {readinessHint}
+                            </span>
+                        ) : null}
                     </div>
                 </div>
             </SurfaceCard>
@@ -142,28 +184,54 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
             >
                 <div style={FILTER_ROW_STYLE}>
                     <div className="filter-group">
-                        <label>Province</label>
-                        <MultiSelectDropdown
-                            options={provinceOptions}
-                            value={province}
-                            onChange={val => setProvince(val)}
-                            placeholder="All"
-                            width="180px"
-                        />
-                    </div>
-
-                    <div className="filter-group">
                         <label>Pattern <span style={{ color: '#ef4444' }}>*</span></label>
                         <select
                             value={pattern}
                             onChange={e => setPattern(e.target.value)}
-                            style={{ width: '140px' }}
+                            style={{ width: isTripDashboard ? '190px' : '140px' }}
                         >
-                            {sitemapTagOptions.map(opt => (
+                            {patternOptions.map(opt => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
                         </select>
                     </div>
+
+                    {isTripDashboard ? (
+                        <>
+                            <div className="filter-group">
+                                <label>Country</label>
+                                <MultiSelectDropdown
+                                    options={countryOptions}
+                                    value={country}
+                                    onChange={val => setCountry(val)}
+                                    placeholder="All"
+                                    width="180px"
+                                    showSearch
+                                />
+                            </div>
+                            <div className="filter-group">
+                                <label>Readiness</label>
+                                <MultiSelectDropdown
+                                    options={readinessOptions}
+                                    value={readinessHint}
+                                    onChange={val => setReadinessHint(val)}
+                                    placeholder="All"
+                                    width="150px"
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div className="filter-group">
+                            <label>Province</label>
+                            <MultiSelectDropdown
+                                options={provinceOptions}
+                                value={province}
+                                onChange={val => setProvince(val)}
+                                placeholder="All"
+                                width="180px"
+                            />
+                        </div>
+                    )}
 
                     {!isLoading && records && (
                         <div style={{ ...LIVE_COUNT_STYLE, marginLeft: 'auto' }}>
@@ -174,7 +242,10 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
                                 backgroundColor: '#10b981',
                                 animation: 'pulse 2s infinite'
                             }} />
-                            {urlCount.toLocaleString()} URL{urlCount !== 1 ? 's' : ''}{province ? ` · ${province}` : ' · All Provinces'}
+                            {urlCount.toLocaleString()} URL{urlCount !== 1 ? 's' : ''}
+                            {isTripDashboard
+                                ? `${country ? ` · ${country}` : ' · All Countries'}${readinessHint ? ` · ${readinessHint}` : ''}`
+                                : province ? ` · ${province}` : ' · All Provinces'}
                         </div>
                     )}
                 </div>
@@ -240,7 +311,7 @@ export function AdInsightDashboard({ platformInfo, sitemapTags }: AdInsightDashb
                     Failed to load dashboard data. Check PocketBase connection.
                 </div>
             ) : (
-                <DashboardCharts records={filteredRecords} isLoading={isLoading} />
+                <DashboardCharts records={filteredRecords} isLoading={isLoading} platformId={platformInfo.id} />
             )}
         </div>
     );

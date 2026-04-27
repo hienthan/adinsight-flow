@@ -11,6 +11,7 @@ import { InsightExportModal } from './InsightExportModal';
 import { InsightActionBar } from './InsightActionBar';
 import { buildFilterString } from './insightUtils';
 import { PageRecord } from '../../types/adinsight';
+import type { ColumnDef } from '../../types/adinsight';
 import {
     SAFE_BUTTON_SELECTORS,
     SAFE_CARD_SELECTORS,
@@ -53,6 +54,29 @@ const VIEW_TOOLBAR_STYLE = {
 } as const;
 
 const PAGE_SIZE_OPTIONS = [50, 100, 200, 500] as const;
+const TRIP_REVIEW_EXPORT_FIELDS = [
+    'url',
+    'title',
+    'language',
+    'pattern',
+    'traffic',
+    'traffic_pct',
+    'keyword_count',
+    'traffic_change',
+    'country',
+    'city',
+    'geo_entity',
+    'geo_category',
+    'topic_type',
+    'intent_primary',
+    'content_type',
+    'sub_tag',
+    'readiness_hint',
+    'market_fit',
+    'is_active',
+    'semrush_metrics',
+    'metadata',
+] as const;
 
 interface SaveFilePickerWindow extends Window {
     showSaveFilePicker?: (options?: {
@@ -72,16 +96,25 @@ interface SaveFilePickerWindow extends Window {
 
 export default function AdInsightPage() {
     const { platform } = useParams();
-    const platformId = (platform === 'traveloka' ? 'traveloka' : 'klook');
+    const platformId = platform && platform in PLATFORMS ? platform : 'klook';
+    return <AdInsightPageContent key={platformId} platformId={platformId} />;
+}
+
+function AdInsightPageContent({ platformId }: { platformId: string }) {
     const config = PLATFORMS[platformId];
 
     const [selectedView, setSelectedView] = useState("list");
     const [perPage, setPerPage] = useState(100);
     const initialFilters = useMemo(() => {
         const filters: Record<string, string> = {
-            sitemap_tag: config.defaultSitemapTags[0],
             titleKey: config.titleKey as string,
         };
+        if (config.defaultSitemapTags.length > 0) {
+            filters.sitemap_tag = config.defaultSitemapTags[0];
+        }
+        if (platformId !== 'viator') {
+            filters.language = 'all';
+        }
         if (config.activeFilterKey) {
             filters.activeFilterKey = config.activeFilterKey as string;
         }
@@ -90,6 +123,18 @@ export default function AdInsightPage() {
         }
         return filters;
     }, [config, platformId]);
+
+    const initialSortField = useMemo(() => {
+        if (platformId === 'traveloka') return 'province';
+        if (platformId === 'viator') return 'country';
+        if (platformId === 'trip') return 'traffic';
+        return 'id';
+    }, [platformId]);
+
+    const initialSortDirection = useMemo<'asc' | 'desc'>(() => {
+        if (platformId === 'traveloka' || platformId === 'viator') return 'asc';
+        return 'desc';
+    }, [platformId]);
 
     const {
         records,
@@ -107,14 +152,31 @@ export default function AdInsightPage() {
         collection: config.collection,
         perPage: perPage,
         initialFilters,
-        initialSortField: platformId === 'traveloka' ? 'province' : 'id',
-        initialSortDirection: platformId === 'traveloka' ? 'asc' : 'desc'
+        initialSortField,
+        initialSortDirection
     });
 
-    const { countries, sitemapTags } = usePlatformMeta(config.defaultSitemapTags);
+    const visibleColumns = useMemo<ColumnDef[]>(() => {
+        if (platformId !== 'viator' || filters.show_url !== 'true') {
+            return config.columns;
+        }
+
+        return [
+            { header: 'Title', key: 'title', width: '24%' },
+            { header: 'URL', key: 'url', width: '24%' },
+            { header: 'Country', key: 'country', width: '10%' },
+            { header: 'City', key: 'city', width: '10%' },
+            { header: 'Page Type', key: 'page_type', width: '10%' },
+            { header: 'Intent', key: 'intent_primary', width: '10%' },
+            { header: 'Campaign', key: 'dsa_campaign', width: '12%' },
+        ];
+    }, [config.columns, filters.show_url, platformId]);
+
+    const { countries, sitemapTags } = usePlatformMeta(config.defaultSitemapTags, config.collection, config.metadataMode);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [copyingUrls, setCopyingUrls] = useState(false);
+    const [exportingReviewCsv, setExportingReviewCsv] = useState(false);
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
@@ -160,6 +222,13 @@ export default function AdInsightPage() {
         setFilters(initialFilters);
     };
 
+    const handleApplyPreset = useCallback((presetFilters: Record<string, string>) => {
+        setFilters({
+            ...initialFilters,
+            ...presetFilters,
+        });
+    }, [initialFilters, setFilters]);
+
     const handleViewChange = useCallback((view: 'list' | 'dashboard') => {
         startTransition(() => {
             setSelectedView(view);
@@ -201,7 +270,15 @@ export default function AdInsightPage() {
 
             const csvHeader = 'Page URL,Custom Label\n';
             const csvRows = allRecords.map(record => {
-                const url = record.url;
+                let url = record.url;
+
+                // Transform URL if a specific language is selected (logic cũ)
+                if (filters.language && filters.language !== 'all' && filters.language !== 'both') {
+                    const langPattern = /\/([a-z]{2}-[A-Z]{2}|[a-z]{2}-[a-z]{2})\//;
+                    if (langPattern.test(url)) {
+                        url = url.replace(langPattern, `/${filters.language}/`);
+                    }
+                }
 
                 const labelParts: string[] = [];
 
@@ -311,8 +388,18 @@ export default function AdInsightPage() {
             const headlineKey = config.titleKey;
             const clipboardText = allRecords
                 .map((record) => {
+                    let url = record.url;
+
+                    // Transform URL if a specific language is selected (logic cũ)
+                    if (filters.language && filters.language !== 'all' && filters.language !== 'both') {
+                        const langPattern = /\/([a-z]{2}-[A-Z]{2}|[a-z]{2}-[a-z]{2})\//;
+                        if (langPattern.test(url)) {
+                            url = url.replace(langPattern, `/${filters.language}/`);
+                        }
+                    }
+
                     const headline = String(record[headlineKey] || '').replace(/\s+/g, ' ').trim();
-                    return [record.url, headline].join('\t');
+                    return [url, headline].join('\t');
                 })
                 .join('\n');
 
@@ -325,6 +412,68 @@ export default function AdInsightPage() {
             setCopyingUrls(false);
         }
     }, [config.titleKey, fetchAllFilteredRecords]);
+
+    const handleExportReviewCsv = useCallback(async () => {
+        try {
+            setExportingReviewCsv(true);
+            const allRecords = await fetchAllFilteredRecords();
+            const headers = [...TRIP_REVIEW_EXPORT_FIELDS];
+
+            const escapeCsv = (value: unknown) => {
+                const raw = value === null || value === undefined
+                    ? ''
+                    : typeof value === 'object'
+                        ? JSON.stringify(value)
+                        : String(value);
+                return /[",\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+            };
+
+            const csvRows = allRecords.map((record) =>
+                headers.map((field) => escapeCsv(record[field as keyof PageRecord])).join(',')
+            );
+            const csv = `${headers.join(',')}\n${csvRows.join('\n')}`;
+            const fileNameToUse = `trip-review-${allRecords.length}.csv`;
+
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const picker = (window as SaveFilePickerWindow).showSaveFilePicker;
+                    if (!picker) {
+                        throw new Error('File picker is unavailable');
+                    }
+                    const handle = await picker({
+                        suggestedName: fileNameToUse,
+                        id: 'trip-review-export',
+                        types: [{
+                            description: 'CSV File',
+                            accept: { 'text/csv': ['.csv'] },
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(csv);
+                    await writable.close();
+                    setIsExportModalOpen(false);
+                    return;
+                } catch (err: unknown) {
+                    if (err instanceof DOMException && err.name === 'AbortError') return;
+                    console.error('Trip review export picker error, falling back:', err);
+                }
+            }
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const urlObj = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.download = fileNameToUse;
+            anchor.href = urlObj;
+            anchor.click();
+            URL.revokeObjectURL(urlObj);
+            setIsExportModalOpen(false);
+        } catch (err) {
+            console.error('Trip review CSV export failed:', err);
+            alert('Trip review export failed. Please try again.');
+        } finally {
+            setExportingReviewCsv(false);
+        }
+    }, [fetchAllFilteredRecords]);
 
     const isFiltered = Object.keys(filters).some(k =>
         !['sitemap_tag', 'titleKey'].includes(k) && filters[k]
@@ -342,7 +491,12 @@ export default function AdInsightPage() {
                 onApply={(payload) => {
                     const finalPayload: Partial<PageRecord> & { include_for_dsa?: boolean } = { ...payload };
                     if (payload.is_active !== undefined) {
-                        finalPayload.include_for_dsa = payload.is_active;
+                        if (config.activeFilterKey === 'include_for_dsa') {
+                            finalPayload.include_for_dsa = payload.is_active;
+                            delete finalPayload.is_active;
+                        } else {
+                            finalPayload.is_active = payload.is_active;
+                        }
                     }
                     if (payload.country) {
                         finalPayload.country = payload.country;
@@ -350,7 +504,7 @@ export default function AdInsightPage() {
                     handleBulkUpdate(finalPayload);
                 }}
                 isUpdating={isBulkUpdating}
-                allowTierUpdate={platformId !== 'traveloka'}
+                allowTierUpdate={platformId !== 'traveloka' && platformId !== 'trip'}
             />
 
             <SurfaceCard
@@ -477,6 +631,24 @@ export default function AdInsightPage() {
                                 <Download size={16} />
                                 {exporting ? 'Exporting...' : 'CSV'}
                             </SafeButton>
+                            {platformId === 'trip' ? (
+                                <SafeButton
+                                    onClick={handleExportReviewCsv}
+                                    disabled={exportingReviewCsv}
+                                    className="hero-btn hero-btn-ghost"
+                                    style={{
+                                        padding: '0.5rem 0.95rem',
+                                        gap: '0.45rem',
+                                        fontSize: '12px',
+                                        borderRadius: '9px',
+                                        background: 'var(--bg-overlay)',
+                                        border: '1px solid var(--border-subtle)',
+                                    }}
+                                >
+                                    <Download size={16} />
+                                    {exportingReviewCsv ? 'Preparing Review CSV...' : 'Review CSV'}
+                                </SafeButton>
+                            ) : null}
                         </>
                     )}
                 </div>
@@ -545,10 +717,51 @@ export default function AdInsightPage() {
                         sitemapTags={sitemapTags}
                     />
 
+                    {config.filterPresets?.length ? (
+                        <SurfaceCard
+                            padding="0.95rem 1rem"
+                            style={{
+                                marginBottom: '1rem',
+                                borderRadius: '1.2rem',
+                                background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%)',
+                                boxShadow: '0 18px 34px -30px rgba(15, 23, 42, 0.62)',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem', flexWrap: 'wrap' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                        Review Presets
+                                    </div>
+                                    <div style={{ marginTop: '0.24rem', fontSize: '0.82rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                                        Fast QA slices for classifier cleanup and LP prioritization
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
+                                    {config.filterPresets.map((preset) => (
+                                        <SafeButton
+                                            key={preset.id}
+                                            onClick={() => handleApplyPreset(preset.filters)}
+                                            className="hero-btn hero-btn-secondary"
+                                            style={{
+                                                padding: '0.48rem 0.78rem',
+                                                borderRadius: '999px',
+                                                fontSize: '0.76rem',
+                                                fontWeight: 800,
+                                            }}
+                                            title={preset.description}
+                                        >
+                                            {preset.label}
+                                        </SafeButton>
+                                    ))}
+                                </div>
+                            </div>
+                        </SurfaceCard>
+                    ) : null}
+
                     <div className="animate-fade">
                         <InsightDataTable
                             records={records}
-                            columns={config.columns}
+                            columns={visibleColumns}
                             loading={loading || isBulkUpdating}
                             sortField={sortField}
                             sortDirection={sortDirection}
@@ -625,14 +838,14 @@ export default function AdInsightPage() {
                         fields={config.exportFields}
                         totalCount={totalCount}
                         isExporting={exporting}
-                        secondaryActionLabel="Copy URL + Headline"
-                        onSecondaryAction={handleCopyFilteredUrls}
-                        isSecondaryActionLoading={copyingUrls}
+                        secondaryActionLabel={platformId === 'trip' ? 'Review CSV' : 'Copy URL + Headline'}
+                        onSecondaryAction={platformId === 'trip' ? handleExportReviewCsv : handleCopyFilteredUrls}
+                        isSecondaryActionLoading={platformId === 'trip' ? exportingReviewCsv : copyingUrls}
                     />
                 </>
             ) : (
                 <Suspense fallback={<div style={{ padding: '2rem', color: 'var(--text-dim)', fontWeight: 700 }}>Loading dashboard...</div>}>
-                    <AdInsightDashboard platformInfo={config} sitemapTags={sitemapTags} />
+                    <AdInsightDashboard platformInfo={config} sitemapTags={sitemapTags} countries={countries} />
                 </Suspense>
             )}
 
