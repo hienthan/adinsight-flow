@@ -41,6 +41,12 @@ Current logic:
 4. generate human title theo topic + geo neu co
 5. fallback sang translated text hoac pretty text
 
+Rule bo sung:
+
+- `fallback_pretty` con chua CJK khong duoc coi la final EN title hop le
+- neu translation output van la zh/CJK thi phai tiep tuc coi do la unresolved title, khong cache nhu success
+- title final tren GUI phai la EN title, khong de zh slug ro nguyen tren list view
+
 Vi du:
 
 - `泰國入境卡` -> `Thailand Arrival Card`
@@ -139,13 +145,18 @@ Can exclude hoac downrank manh:
 - promo / coupon
 - campaign / news
 - customer service
-- local HK leisure
-- Macau / Shenzhen / Zhuhai short-haul cases
 - non-content transactional URLs
 
 Rule nay khong phai vi page xau.
 
 No phuc vu dung use case Google Ads cua Trip.
+
+Cap nhat 2026-04-27:
+
+- local HK / Macau / Shenzhen / Zhuhai khong con nen bi hard-exclude som chi vi gan
+- vi da co geo detect + Semrush signals, nen de cac URL nay active de review/export
+- viec uu tien se dua vao `market_fit`, `trip_mode_risk`, `readiness_hint`, `traffic`, `keyword_count`
+- mindset giong Klook: xu ly zh truoc, sau do de scorer/GUI uu tien outbound markets manh cua HK
 
 ## 8. Local Short-Haul Risk
 
@@ -163,7 +174,8 @@ Neu page roi vao nhom nay:
 
 - `trip_mode_risk = high`
 - `market_fit = low`
-- thuong `is_active = false`
+- khong co nghia la phai `is_active = false`
+- uu tien coi day la soft downrank / review bucket, khong phai hard drop
 
 ## 9. zh-HK Specific Observations
 
@@ -189,7 +201,7 @@ Khi xu ly zh-TW, nen reuse:
 - shared geo engine
 - topic rules
 - Semrush interpretation logic
-- local short-haul exclusion logic
+- local short-haul risk logic
 
 Nhung can luu y:
 

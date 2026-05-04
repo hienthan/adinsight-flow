@@ -16,10 +16,20 @@ interface InsightExportModalProps {
     onExport: (selectedFields: string[], fileName: string, customLabel?: string) => void;
     fields: ExportField[];
     totalCount: number;
+    displayCount?: number;
     isExporting: boolean;
     secondaryActionLabel?: string;
     onSecondaryAction?: () => void;
     isSecondaryActionLoading?: boolean;
+    extraCheckboxLabel?: string;
+    extraCheckboxDescription?: string;
+    extraCheckboxChecked?: boolean;
+    onExtraCheckboxChange?: (checked: boolean) => void;
+    secondaryCheckboxLabel?: string;
+    secondaryCheckboxDescription?: string;
+    secondaryCheckboxChecked?: boolean;
+    onSecondaryCheckboxChange?: (checked: boolean) => void;
+    secondaryCheckboxDisabled?: boolean;
 }
 
 export const InsightExportModal: React.FC<InsightExportModalProps> = ({
@@ -28,15 +38,26 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
     onExport,
     fields,
     totalCount,
+    displayCount,
     isExporting,
     secondaryActionLabel,
     onSecondaryAction,
     isSecondaryActionLoading = false,
+    extraCheckboxLabel,
+    extraCheckboxDescription,
+    extraCheckboxChecked = false,
+    onExtraCheckboxChange,
+    secondaryCheckboxLabel,
+    secondaryCheckboxDescription,
+    secondaryCheckboxChecked = false,
+    onSecondaryCheckboxChange,
+    secondaryCheckboxDisabled = false,
 }) => {
     const [selectedFields, setSelectedFields] = useState<string[]>([]);
     const [fileName, setFileName] = useState('');
     const [customLabel, setCustomLabel] = useState('');
     const [hasInitialized, setHasInitialized] = useState(false);
+    const [savedSelectedFields, setSavedSelectedFields] = useState<string[]>([]);
 
     const toggleField = (id: string) => {
         setSelectedFields(prev =>
@@ -57,6 +78,20 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, [fields, hasInitialized, isOpen, onClose]);
+
+    useEffect(() => {
+        if (!extraCheckboxLabel) return;
+        if (extraCheckboxChecked) {
+            if (selectedFields.length > 0) {
+                setSavedSelectedFields(selectedFields);
+                setSelectedFields([]);
+            }
+            return;
+        }
+        if (!extraCheckboxChecked && selectedFields.length === 0 && savedSelectedFields.length > 0) {
+            setSelectedFields(savedSelectedFields);
+        }
+    }, [extraCheckboxChecked, extraCheckboxLabel, savedSelectedFields, selectedFields]);
 
     if (!isOpen) return null;
 
@@ -110,7 +145,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                                     Export Configuration
                                 </h4>
                                 <p style={{ fontSize: '0.88rem', color: 'var(--text-dim)', margin: '0.35rem 0 0 0', lineHeight: 1.55 }}>
-                                    Build a clean CSV label recipe for {totalCount.toLocaleString()} matching records.
+                                    Build a clean CSV label recipe for {(displayCount ?? totalCount).toLocaleString()} records.
                                 </p>
                             </div>
                         }
@@ -199,7 +234,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                         <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
                             Dynamic Fields
                         </label>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', opacity: extraCheckboxChecked ? 0.45 : 1 }}>
                             {fields.map(field => (
                                 <label
                                     key={field.id}
@@ -207,7 +242,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '1rem',
-                                        cursor: 'pointer',
+                                        cursor: extraCheckboxChecked ? 'not-allowed' : 'pointer',
                                         padding: '0.75rem 1rem',
                                         borderRadius: '14px',
                                         border: '1px solid var(--border-subtle)',
@@ -220,8 +255,9 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                                     <input
                                         type="checkbox"
                                         checked={selectedFields.includes(field.id)}
+                                        disabled={extraCheckboxChecked}
                                         onChange={() => toggleField(field.id)}
-                                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'hsl(var(--primary))' }}
+                                        style={{ width: '18px', height: '18px', cursor: extraCheckboxChecked ? 'not-allowed' : 'pointer', accentColor: 'hsl(var(--primary))' }}
                                     />
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                                         <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{field.label}</span>
@@ -231,6 +267,80 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                             ))}
                         </div>
                     </div>
+
+                    {extraCheckboxLabel && onExtraCheckboxChange ? (
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
+                                Review Export Options
+                            </label>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '1rem',
+                                    cursor: 'pointer',
+                                    padding: '0.9rem 1rem',
+                                    borderRadius: '14px',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: extraCheckboxChecked
+                                        ? 'linear-gradient(180deg, rgba(20, 184, 166, 0.08) 0%, var(--bg-content) 100%)'
+                                        : 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%)',
+                                    transition: SAFE_INTERACTIVE_TRANSITION
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={extraCheckboxChecked}
+                                    onChange={(e) => onExtraCheckboxChange(e.target.checked)}
+                                    style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'hsl(var(--primary))', marginTop: '0.15rem' }}
+                                />
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{extraCheckboxLabel}</span>
+                                    {extraCheckboxDescription ? (
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{extraCheckboxDescription}</span>
+                                    ) : null}
+                                </div>
+                            </label>
+                        </div>
+                    ) : null}
+
+                    {secondaryCheckboxLabel && onSecondaryCheckboxChange ? (
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
+                                Export Scope
+                            </label>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '1rem',
+                                    cursor: secondaryCheckboxDisabled ? 'not-allowed' : 'pointer',
+                                    padding: '0.9rem 1rem',
+                                    borderRadius: '14px',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: secondaryCheckboxChecked
+                                        ? 'linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, var(--bg-content) 100%)'
+                                        : 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%)',
+                                    transition: SAFE_INTERACTIVE_TRANSITION,
+                                    opacity: secondaryCheckboxDisabled ? 0.55 : 1
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={secondaryCheckboxChecked}
+                                    disabled={secondaryCheckboxDisabled}
+                                    onChange={(e) => onSecondaryCheckboxChange(e.target.checked)}
+                                    style={{ width: '18px', height: '18px', cursor: secondaryCheckboxDisabled ? 'not-allowed' : 'pointer', accentColor: 'hsl(var(--primary))', marginTop: '0.15rem' }}
+                                />
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{secondaryCheckboxLabel}</span>
+                                    {secondaryCheckboxDescription ? (
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{secondaryCheckboxDescription}</span>
+                                    ) : null}
+                                </div>
+                            </label>
+                        </div>
+                    ) : null}
                 </div>
 
                 {/* Modal Footer */}
@@ -267,7 +377,7 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                         {isExporting ? 'Exporting...' : (
                             <>
                                 <Download size={18} />
-                                <span>Export {totalCount.toLocaleString()} Records</span>
+                                <span>Export {(displayCount ?? totalCount).toLocaleString()} Records</span>
                             </>
                         )}
                     </SafeButton>

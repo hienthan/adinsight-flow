@@ -40,6 +40,7 @@ type EnrichedCampaign = Campaign & {
     nearestDueInDays: number | null;
     hasPendingReminders: boolean;
     specialReminderSignals: string[];
+    hasCriticalRLinkAlert: boolean;
     highestPriority?: ReminderPriority;
     freshnessState: FreshnessState;
     hasReviewed: boolean;
@@ -217,6 +218,7 @@ export default function CampOverview() {
     const filterName = searchParams.get('q') || '';
     const filterReminders = searchParams.get('reminders') === 'true';
     const filterRLink = searchParams.get('rlink') === 'true';
+    const filterCriticalRLink = searchParams.get('rlink_critical') === 'true';
     const filterShowAll = searchParams.get('all') === 'true';
     const filterMetadata = searchParams.get('has_meta') === 'true';
     const viewMode = (searchParams.get('view') as OverviewMode) || 'comfortable';
@@ -263,6 +265,14 @@ export default function CampOverview() {
         setSearchParams((prev: URLSearchParams) => {
             if (filterRLink) prev.delete('rlink');
             else prev.set('rlink', 'true');
+            return prev;
+        });
+    };
+
+    const setToggleCriticalRLink = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterCriticalRLink) prev.delete('rlink_critical');
+            else prev.set('rlink_critical', 'true');
             return prev;
         });
     };
@@ -415,6 +425,7 @@ export default function CampOverview() {
         let priority: ReminderPriority = 'low';
         let hasActionableReminder = false;
         const specialReminderSignals = new Set<string>();
+        const campaignCreatedAt = parseDateOnly(campaign.created_date) ?? parseTimestamp(campaign.created);
 
         for (const reminder of pendingCampaignReminders) {
             const metricSignals = reminder.check_metrics || [];
@@ -446,8 +457,11 @@ export default function CampOverview() {
             }
         }
 
+        const campaignAgeDays = campaignCreatedAt ? Math.max(0, -getDayDiff(campaignCreatedAt, now)) : 0;
+        const hasCriticalRLinkAlert = specialReminderSignals.has('rLink') && campaignAgeDays >= 7;
+
         const manualReviewAt = campaign.last_reviewed_date ? parseDateOnly(campaign.last_reviewed_date) : null;
-        const campaignCreatedAt = parseTimestamp(campaign.created);
+        const campaignCreatedTimestamp = parseTimestamp(campaign.created);
         const campaignUpdatedAt = parseTimestamp(campaign.updated);
         const latestReminderUpdateAt = activityReminders.reduce<Date | null>((latest, reminder) => {
             const reminderUpdatedAt = parseTimestamp(reminder.updated) ?? parseTimestamp(reminder.created);
@@ -461,8 +475,8 @@ export default function CampOverview() {
 
         if (
             campaignUpdatedAt
-            && campaignCreatedAt
-            && campaignUpdatedAt.getTime() - campaignCreatedAt.getTime() > 1000
+            && campaignCreatedTimestamp
+            && campaignUpdatedAt.getTime() - campaignCreatedTimestamp.getTime() > 1000
             && (!latestActivityAt || campaignUpdatedAt.getTime() > latestActivityAt.getTime())
         ) {
             latestActivityAt = campaignUpdatedAt;
@@ -510,6 +524,7 @@ export default function CampOverview() {
             nearestDueInDays,
             hasPendingReminders: hasActionableReminder,
             specialReminderSignals: Array.from(specialReminderSignals),
+            hasCriticalRLinkAlert,
             highestPriority: hasActionableReminder ? priority : undefined,
             freshnessState,
             hasReviewed: manualReviewAt !== null,
@@ -533,6 +548,7 @@ export default function CampOverview() {
             if (campaign.reminderState === 'today') acc.today += 1;
             if (campaign.reminderState === 'upcoming') acc.upcoming += 1;
             if (campaign.specialReminderSignals.includes('rLink')) acc.rLink += 1;
+            if (campaign.hasCriticalRLinkAlert) acc.criticalRLink += 1;
 
             // Priorities
             if (campaign.priority === 'critical') acc.critical += 1;
@@ -540,24 +556,26 @@ export default function CampOverview() {
 
             return acc;
         },
-        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0, rLink: 0 },
+        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0, rLink: 0, criticalRLink: 0 },
     ), [baseFilteredCampaigns]);
 
     // 3. Final display list (Applies all interactive filters)
     const filteredCampaigns = useMemo(() => baseFilteredCampaigns.filter((campaign) => {
         if (alertsOnlyEnabled && !campaign.hasPendingReminders) return false;
         if (filterRLink && !campaign.specialReminderSignals.includes('rLink')) return false;
+        if (filterCriticalRLink && !campaign.hasCriticalRLinkAlert) return false;
         if (reminderQuickFilter !== 'all' && campaign.reminderState !== reminderQuickFilter) return false;
         if (filterPriority !== 'all' && campaign.priority !== filterPriority) return false;
         if (filterMetadata && htmlToPlainText(campaign.metadata || '').trim().length === 0) return false;
         return true;
-    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterMetadata, filterPriority, filterRLink, reminderQuickFilter]);
+    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterCriticalRLink, filterMetadata, filterPriority, filterRLink, reminderQuickFilter]);
 
     const hasActiveFilters = filterPlatform !== 'all'
         || filterPriority !== 'all'
         || filterName !== ''
         || alertsOnlyEnabled
         || filterRLink
+        || filterCriticalRLink
         || filterShowAll
         || reminderQuickFilter !== 'all'
         || filterMetadata
@@ -1182,6 +1200,34 @@ export default function CampOverview() {
                         rLink: {summary.rLink}
                     </FilterChip>
 
+                    <FilterChip
+                        active={filterCriticalRLink}
+                        onClick={setToggleCriticalRLink}
+                        activeBackground="#b91c1c"
+                        inactiveBackground="rgba(185, 28, 28, 0.08)"
+                        activeBorder="#ef4444"
+                        inactiveBorder="rgba(239, 68, 68, 0.22)"
+                        activeColor="#fff"
+                        inactiveColor="#b91c1c"
+                        activeShadow="0 0 18px rgba(239, 68, 68, 0.45)"
+                        inactiveShadow={summary.criticalRLink > 0 ? '0 0 18px rgba(239, 68, 68, 0.18)' : 'none'}
+                        dimmed={(filterPriority !== 'all' || reminderQuickFilter !== 'all' || filterRLink) ? !filterCriticalRLink : false}
+                        indicator={<span style={{
+                            width: '7px',
+                            height: '7px',
+                            borderRadius: '50%',
+                            background: filterCriticalRLink ? '#fff' : '#ef4444',
+                            boxShadow: filterCriticalRLink ? '0 0 8px #fff' : '0 0 10px #ef4444',
+                            animation: summary.criticalRLink > 0 ? 'campOverviewCriticalPulse 1.35s ease-in-out infinite' : 'none',
+                        }} />}
+                        style={summary.criticalRLink > 0 ? {
+                            animation: filterCriticalRLink ? 'none' : 'campOverviewCriticalPulse 1.35s ease-in-out infinite',
+                        } : undefined}
+                        title="Campaigns with rLink reminders that are already 7+ days old"
+                    >
+                        rLink 7d+: {summary.criticalRLink}
+                    </FilterChip>
+
                     <div style={{ width: '1px', height: '24px', background: 'var(--border-subtle)', margin: '0 0.25rem', opacity: (filterPriority !== 'all' || reminderQuickFilter !== 'all') ? 0.3 : 1 }} />
 
                     <FilterChip
@@ -1389,6 +1435,20 @@ export default function CampOverview() {
                 onClose={() => setIsEditModalOpen(false)}
                 onSuccess={() => refetch()}
             />
+            <style>
+                {`
+                    @keyframes campOverviewCriticalPulse {
+                        0%, 100% {
+                            transform: translateY(0);
+                            box-shadow: 0 0 0 rgba(239, 68, 68, 0);
+                        }
+                        50% {
+                            transform: translateY(-1px);
+                            box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.08);
+                        }
+                    }
+                `}
+            </style>
         </div >
     );
 }

@@ -362,6 +362,15 @@ class TripClassifier:
             "notes": "",
         }
 
+    def flush(self) -> None:
+        if self.translator and hasattr(self.translator, "flush"):
+            self.translator.flush()
+
+    def translation_stats(self) -> Dict[str, int]:
+        if self.translator and hasattr(self.translator, "stats"):
+            return dict(self.translator.stats)
+        return {}
+
     def extract_pattern(self, url: str) -> str:
         path = urlparse(url).path
         for candidate in ["/travel-guide/destination/", "/guide/destination/", "/guide/info/", "/blog/"]:
@@ -720,8 +729,6 @@ class TripClassifier:
 
         if host not in LANGUAGE_BY_HOST:
             return {"is_active": False, "reason": "unsupported_market_domain"}
-        if topic["topic_type"] == "local_daytrip":
-            return {"is_active": False, "reason": "local_daytrip"}
         for reason, phrases in EXCLUSION_PHRASES.items():
             for phrase in phrases:
                 if self.phrase_in_text(phrase, raw, normalized):
@@ -730,8 +737,6 @@ class TripClassifier:
                     return {"is_active": False, "reason": reason}
         if any(token in url for token in ["/hotels/", "/flights/", "/searchresult"]):
             return {"is_active": False, "reason": "non_content_transactional_url"}
-        if geo["geo_entity"] in LOCAL_DAYTRIP_ENTITIES:
-            return {"is_active": False, "reason": "local_short_haul"}
         return {"is_active": True, "reason": ""}
 
     def generate_title(self, source_text: str, translated_text: str, geo: Dict[str, str], topic: Dict[str, str]) -> str:

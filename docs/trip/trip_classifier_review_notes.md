@@ -28,9 +28,10 @@ The goal is to document what works, what still needs refinement, and what risks 
 - obvious junk pages are being excluded:
   - promo / coupon
   - campaign / news
-  - local HK leisure and short-haul pages
+  - customer-service / utility junk
+  - non-content transactional URLs
 
-- local short-haul exclusions improved significantly for:
+- local short-haul geo detection improved significantly for:
   - Hong Kong local districts
   - Macau
   - Zhuhai
@@ -50,7 +51,7 @@ From the latest 20-row review per pattern:
 - `guide/destination`
   - `active_rows = 13/20`
   - `active_unknown_geo = 1`
-  - local HK / Macau / Shenzhen / Zhuhai leakage is much better controlled now
+  - local HK / Macau / Shenzhen / Zhuhai detection is much better controlled now
 
 - `blog`
   - `active_rows = 8/20`
@@ -113,6 +114,11 @@ Interpretation:
 - `guide/destination` and `guide/info` still need more alias coverage for zh destination and weather pages
 - `blog` contains a lot of active generic content, so GUI filters will matter
 
+Important:
+
+- the full-batch snapshot above was produced before the 2026-04-27 relaxation of `local_daytrip` / `local_short_haul` activity rules
+- do not treat `excluded_rows = 592` as the future baseline after the new rule lands
+
 ## Current Weak Spots
 
 ### 1. EN title generation is not true translation yet
@@ -133,6 +139,13 @@ Implication:
 - decoding slug is necessary
 - translation to EN is useful and now supported through a cache-backed Trip translator
 - but translation alone is not enough for accurate geo classification
+
+Update on 2026-04-27:
+
+- a real bug was confirmed in the translation cache flow
+- CJK fallback output was previously being cached and reused as if it were valid EN translation
+- `scripts/trip/lib/translation.py` was patched so unusable CJK fallback is no longer treated as success
+- full live reclassification is still required before trusting GUI titles
 
 ### 2. Geo alias coverage for zh pages is still incomplete
 
@@ -197,11 +210,12 @@ This matches the spec, but it means:
 - China provinces/cities relevant to HK outbound
 - common HK-local districts and attractions for exclusion
 
-2. Add a real EN translation layer for zh source text.
+2. Keep the zh -> EN translation layer strict for GUI titles.
 - This should follow the Klook pattern:
 - decode slug
 - translate to EN
 - use translated text as one geo/topic input
+- do not accept untranslated CJK fallback as a final GUI title
 
 3. Add a second-pass review script that outputs:
 - active unknown-geo rows
@@ -220,3 +234,13 @@ This matches the spec, but it means:
 The classifier is now good enough to power a first Trip GUI inventory.
 
 It is not final-quality taxonomy yet. The biggest remaining improvement area is geo coverage, especially for destination-heavy patterns and long-tail region/city slugs.
+
+Latest decision update:
+
+- local/daytrip/short-haul URLs should no longer be hard-excluded just because they are nearby
+- since Trip has Semrush value signals and geo detection, these rows should stay active and be prioritized later by:
+  - `market_fit`
+  - `trip_mode_risk`
+  - `readiness_hint`
+  - `traffic`
+  - `keyword_count`

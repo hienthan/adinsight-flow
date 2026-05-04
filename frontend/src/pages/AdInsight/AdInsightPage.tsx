@@ -59,10 +59,6 @@ const TRIP_REVIEW_EXPORT_FIELDS = [
     'title',
     'language',
     'pattern',
-    'traffic',
-    'traffic_pct',
-    'keyword_count',
-    'traffic_change',
     'country',
     'city',
     'geo_entity',
@@ -74,8 +70,24 @@ const TRIP_REVIEW_EXPORT_FIELDS = [
     'readiness_hint',
     'market_fit',
     'is_active',
-    'semrush_metrics',
-    'metadata',
+    'trip_mode_risk',
+    'post_booking_risk',
+    'semrush_signal_hint',
+    'translation_source',
+    'exclusion_reason',
+] as const;
+
+const TRIP_REVIEW_SEMRUSH_EXPORT_FIELDS = [
+    'traffic',
+    'keyword_count',
+    'traffic_pct',
+    'traffic_change',
+    'traffic_info_top20',
+    'traffic_commercial_top20',
+    'traffic_navigational_top20',
+    'traffic_transactional_top20',
+    'positions_info_top20',
+    'positions_commercial_top20',
 ] as const;
 
 interface SaveFilePickerWindow extends Window {
@@ -177,6 +189,8 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
     const [exporting, setExporting] = useState(false);
     const [copyingUrls, setCopyingUrls] = useState(false);
     const [exportingReviewCsv, setExportingReviewCsv] = useState(false);
+    const [includeTripSemrushFields, setIncludeTripSemrushFields] = useState(false);
+    const [exportSelectedOnly, setExportSelectedOnly] = useState(false);
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
@@ -263,10 +277,25 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
         return allRecords;
     }, [config.activeFilterKey, config.collection, filters, sortDirection, sortField]);
 
-    const handleExport = async (selectedFields: string[], customFileName: string, customLabel?: string) => {
+    const fetchSelectedRecords = useCallback(async () => {
+        if (selectedIds.length === 0) return [];
+        const records = await Promise.all(
+            selectedIds.map((id) => pb.collection(config.collection).getOne<PageRecord>(id))
+        );
+        return records;
+    }, [config.collection, selectedIds]);
+
+    const fetchRecordsForExport = useCallback(async () => {
+        if (exportSelectedOnly && selectedIds.length > 0) {
+            return fetchSelectedRecords();
+        }
+        return fetchAllFilteredRecords();
+    }, [exportSelectedOnly, selectedIds.length, fetchSelectedRecords, fetchAllFilteredRecords]);
+
+    const handleExport = useCallback(async (selectedFields: string[], customFileName: string, customLabel?: string) => {
         try {
             setExporting(true);
-            const allRecords = await fetchAllFilteredRecords();
+            const allRecords = await fetchRecordsForExport();
 
             const csvHeader = 'Page URL,Custom Label\n';
             const csvRows = allRecords.map(record => {
@@ -379,12 +408,12 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
         } finally {
             setExporting(false);
         }
-    };
+    }, [config.titleKey, fetchRecordsForExport, filters.language, filters.sitemap_tag, platformId]);
 
     const handleCopyFilteredUrls = useCallback(async () => {
         try {
             setCopyingUrls(true);
-            const allRecords = await fetchAllFilteredRecords();
+            const allRecords = await fetchRecordsForExport();
             const headlineKey = config.titleKey;
             const clipboardText = allRecords
                 .map((record) => {
@@ -411,13 +440,15 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
         } finally {
             setCopyingUrls(false);
         }
-    }, [config.titleKey, fetchAllFilteredRecords]);
+    }, [config.titleKey, fetchRecordsForExport, filters.language]);
 
     const handleExportReviewCsv = useCallback(async () => {
         try {
             setExportingReviewCsv(true);
-            const allRecords = await fetchAllFilteredRecords();
-            const headers = [...TRIP_REVIEW_EXPORT_FIELDS];
+            const allRecords = await fetchRecordsForExport();
+            const headers = includeTripSemrushFields
+                ? [...TRIP_REVIEW_EXPORT_FIELDS, ...TRIP_REVIEW_SEMRUSH_EXPORT_FIELDS]
+                : [...TRIP_REVIEW_EXPORT_FIELDS];
 
             const escapeCsv = (value: unknown) => {
                 const raw = value === null || value === undefined
@@ -429,7 +460,17 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
             };
 
             const csvRows = allRecords.map((record) =>
-                headers.map((field) => escapeCsv(record[field as keyof PageRecord])).join(',')
+                headers.map((field) => {
+                    if ((TRIP_REVIEW_SEMRUSH_EXPORT_FIELDS as readonly string[]).includes(field)) {
+                        const semrushMetrics = record.semrush_metrics || {};
+                        return escapeCsv(semrushMetrics[field as keyof typeof semrushMetrics]);
+                    }
+                    if (field === 'semrush_signal_hint' || field === 'translation_source' || field === 'exclusion_reason') {
+                        const metadata = record.metadata || {};
+                        return escapeCsv(metadata[field as keyof typeof metadata]);
+                    }
+                    return escapeCsv(record[field as keyof PageRecord]);
+                }).join(',')
             );
             const csv = `${headers.join(',')}\n${csvRows.join('\n')}`;
             const fileNameToUse = `trip-review-${allRecords.length}.csv`;
@@ -473,7 +514,7 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
         } finally {
             setExportingReviewCsv(false);
         }
-    }, [fetchAllFilteredRecords]);
+    }, [fetchRecordsForExport, includeTripSemrushFields]);
 
     const isFiltered = Object.keys(filters).some(k =>
         !['sitemap_tag', 'titleKey'].includes(k) && filters[k]
@@ -837,10 +878,20 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
                         onExport={handleExport}
                         fields={config.exportFields}
                         totalCount={totalCount}
+                        displayCount={exportSelectedOnly && selectedIds.length > 0 ? selectedIds.length : totalCount}
                         isExporting={exporting}
                         secondaryActionLabel={platformId === 'trip' ? 'Review CSV' : 'Copy URL + Headline'}
                         onSecondaryAction={platformId === 'trip' ? handleExportReviewCsv : handleCopyFilteredUrls}
                         isSecondaryActionLoading={platformId === 'trip' ? exportingReviewCsv : copyingUrls}
+                        extraCheckboxLabel={platformId === 'trip' ? 'Include Semrush Review Fields' : undefined}
+                        extraCheckboxDescription={platformId === 'trip' ? 'Adds traffic, keyword, change, and intent-breakdown fields to the Trip Review CSV for ChatGPT analysis.' : undefined}
+                        extraCheckboxChecked={platformId === 'trip' ? includeTripSemrushFields : undefined}
+                        onExtraCheckboxChange={platformId === 'trip' ? setIncludeTripSemrushFields : undefined}
+                        secondaryCheckboxLabel="Export selected rows only"
+                        secondaryCheckboxDescription={selectedIds.length > 0 ? `Use only the ${selectedIds.length.toLocaleString()} selected rows instead of the full filtered result set.` : 'Select rows in the table first to enable scoped export.'}
+                        secondaryCheckboxChecked={exportSelectedOnly}
+                        onSecondaryCheckboxChange={setExportSelectedOnly}
+                        secondaryCheckboxDisabled={selectedIds.length === 0}
                     />
                 </>
             ) : (

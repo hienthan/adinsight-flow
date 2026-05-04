@@ -234,6 +234,14 @@ export default function SearchTermsPage() {
         setSelectionByGroup((previous) => ({ ...previous, [groupId]: [] }));
     };
 
+    const selectTermsByMinClicksInGroup = (group: SearchTermsGroup, minClicks: number) => {
+        const normalizedMinClicks = Number.isFinite(minClicks) ? Math.max(0, minClicks) : 0;
+        setSelectionByGroup((previous) => ({
+            ...previous,
+            [group.groupId]: group.terms.filter((term) => term.clicks >= normalizedMinClicks).map((term) => term.termId),
+        }));
+    };
+
     const toggleTermSelection = (groupId: string, termId: string) => {
         setSelectionByGroup((previous) => {
             const existing = previous[groupId] ?? [];
@@ -524,6 +532,7 @@ export default function SearchTermsPage() {
                                 onToggleExpanded={toggleGroupExpanded}
                                 onSelectAll={selectAllInGroup}
                                 onClearSelection={clearSelectionInGroup}
+                                onSelectByMinClicks={selectTermsByMinClicksInGroup}
                                 onToggleTermSelection={toggleTermSelection}
                             />
                         ))}

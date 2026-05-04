@@ -1,3 +1,25 @@
+const tokenizeSearchInput = (value: string) =>
+    value
+        .split(/[\s,]+/)
+        .map((token) => token.trim())
+        .filter(Boolean);
+
+const buildContainsSearchClauses = (field: string, rawValue: string, isExclusion = false) => {
+    const tokens = tokenizeSearchInput(rawValue);
+    return tokens.map((token) => {
+        const variants = token.split('|').map((part) => part.trim()).filter(Boolean);
+        if (variants.length === 0) return '';
+
+        if (isExclusion) {
+            const clauses = variants.map((variant) => `${field} !~ "${variant}"`);
+            return clauses.length > 1 ? `(${clauses.join(' && ')})` : clauses[0];
+        }
+
+        const clauses = variants.map((variant) => `${field} ~ "${variant}"`);
+        return clauses.length > 1 ? `(${clauses.join(' || ')})` : clauses[0];
+    }).filter(Boolean);
+};
+
 export const buildFilterString = (currentFilters: Record<string, string>) => {
     const parts: string[] = [];
 
@@ -30,24 +52,15 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
 
     // 3. Search Term & Exclude Term (Generic for Title)
     if (currentFilters.searchTerm && currentFilters.titleKey) {
-        const terms = currentFilters.searchTerm.split(/[,|\s]+/).filter(t => t.trim().length > 0);
-        terms.forEach(term => {
-            parts.push(`${currentFilters.titleKey} ~ "${term.trim()}"`);
-        });
+        parts.push(...buildContainsSearchClauses(currentFilters.titleKey, currentFilters.searchTerm));
     }
 
     if (currentFilters.searchUrl) {
-        const terms = currentFilters.searchUrl.split(/[,|\s]+/).filter(t => t.trim().length > 0);
-        terms.forEach(term => {
-            parts.push(`url ~ "${term.trim()}"`);
-        });
+        parts.push(...buildContainsSearchClauses('url', currentFilters.searchUrl));
     }
 
     if (currentFilters.excludeTerm && currentFilters.titleKey) {
-        const terms = currentFilters.excludeTerm.split(/[,|\s]+/).filter(t => t.trim().length > 0);
-        terms.forEach(term => {
-            parts.push(`${currentFilters.titleKey} !~ "${term.trim()}"`);
-        });
+        parts.push(...buildContainsSearchClauses(currentFilters.titleKey, currentFilters.excludeTerm, true));
     }
 
     const basicFields = [

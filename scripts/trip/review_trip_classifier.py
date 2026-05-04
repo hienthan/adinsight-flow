@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Dict, List
@@ -85,7 +86,11 @@ def main() -> int:
     parser.add_argument("--input", required=True, help="Input Trip CSV path")
     parser.add_argument("--limit", type=int, default=100, help="Max rows to review")
     parser.add_argument("--output-dir", default="tmp/trip-review", help="Output directory")
+    parser.add_argument("--translate-live", action="store_true", help="Enable live zh->EN translation during review")
     args = parser.parse_args()
+
+    if args.translate_live:
+        os.environ["TRIP_TRANSLATE_LIVE"] = "1"
 
     input_path = Path(args.input)
     output_dir = Path(args.output_dir)

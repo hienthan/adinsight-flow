@@ -500,7 +500,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "zhuhai",
@@ -515,7 +515,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -1020,7 +1020,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "macau",
@@ -1035,7 +1035,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -8560,7 +8560,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "shenzhen north railway station",
@@ -8575,7 +8575,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -11108,7 +11108,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "hong kong",
@@ -11123,7 +11123,7 @@
         "transactional_ratio": 0.053
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -12720,7 +12720,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "shenzhen",
@@ -12735,7 +12735,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -28684,7 +28684,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "macau peninsula",
@@ -28699,7 +28699,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -43712,7 +43712,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "zhuhai",
@@ -43727,7 +43727,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -47976,7 +47976,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "buji subdistrict and shenzhen east railway station",
@@ -47991,7 +47991,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -65188,7 +65188,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "shenzhen",
@@ -65203,7 +65203,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -100132,7 +100132,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "guangdong hong kong macao greater bay area",
@@ -100147,7 +100147,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -106684,7 +106684,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "hong kong",
@@ -106699,7 +106699,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -107048,7 +107048,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "zhuhai north railway station",
@@ -107063,7 +107063,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -136116,7 +136116,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "hong kong",
@@ -136131,7 +136131,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -149792,7 +149792,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "zhuhai",
@@ -149807,7 +149807,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -172828,7 +172828,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "macau",
@@ -172843,7 +172843,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -200492,7 +200492,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "zhuhai chimelong international ocean resort",
@@ -200507,7 +200507,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -206940,7 +206940,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "macau",
@@ -206955,7 +206955,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -211724,7 +211724,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "zhuhai",
@@ -211739,7 +211739,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -242352,7 +242352,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "macau",
@@ -242367,7 +242367,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -248176,7 +248176,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "shenzhen",
@@ -248191,7 +248191,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -274956,7 +274956,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "macau",
@@ -274971,7 +274971,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -299188,7 +299188,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "zhuhai chime long tourist resort",
@@ -299203,7 +299203,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -303296,7 +303296,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "macau",
@@ -303311,7 +303311,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -313800,7 +313800,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "macau",
@@ -313815,7 +313815,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -338188,7 +338188,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "shenzhen coastal city hou hai",
@@ -338203,7 +338203,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -339644,7 +339644,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "the mixc shenzhen and kk100",
@@ -339659,7 +339659,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -391332,7 +391332,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "hong kong",
@@ -391347,7 +391347,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -432308,7 +432308,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "window of the world shenzhen happy valley",
@@ -432323,7 +432323,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -439536,7 +439536,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "shenzhen",
@@ -439551,7 +439551,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },
@@ -449468,7 +449468,7 @@
     "post_booking_risk": "low",
     "trip_mode_risk": "low",
     "market_fit": "low",
-    "is_active": false,
+    "is_active": true,
     "metadata": {
       "classifier_version": "trip_v2",
       "source_text": "hong kong island",
@@ -449483,7 +449483,7 @@
         "transactional_ratio": 0.0
       },
       "inferred_language": "zh-HK",
-      "exclusion_reason": "local_short_haul"
+      "exclusion_reason": ""
     },
     "notes": ""
   },

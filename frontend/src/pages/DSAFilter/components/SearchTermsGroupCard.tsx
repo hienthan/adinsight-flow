@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp, Copy, Link2 } from 'lucide-react';
 import { SafeButton, SurfaceCard } from '../../../components/common/ui';
 import type { SearchTermsGroup } from '../searchTermsUtils';
@@ -19,6 +19,7 @@ interface SearchTermsGroupCardProps {
     onToggleExpanded: (groupId: string) => void;
     onSelectAll: (group: SearchTermsGroup) => void;
     onClearSelection: (groupId: string) => void;
+    onSelectByMinClicks: (group: SearchTermsGroup, minClicks: number) => void;
     onToggleTermSelection: (groupId: string, termId: string) => void;
 }
 
@@ -31,10 +32,18 @@ export const SearchTermsGroupCard = memo(function SearchTermsGroupCard({
     onToggleExpanded,
     onSelectAll,
     onClearSelection,
+    onSelectByMinClicks,
     onToggleTermSelection,
 }: SearchTermsGroupCardProps) {
     const selectedSet = new Set(selectedIds);
     const selectedCount = selectedSet.size;
+    const [selectionMinClicks, setSelectionMinClicks] = useState('');
+
+    useEffect(() => {
+        if (!isExpanded) {
+            setSelectionMinClicks('');
+        }
+    }, [isExpanded]);
 
     return (
         <SurfaceCard
@@ -150,8 +159,41 @@ export const SearchTermsGroupCard = memo(function SearchTermsGroupCard({
             {isExpanded ? (
                 <div style={{ borderTop: '1px solid var(--border-subtle)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.8rem', padding: '0.8rem 1rem', background: 'var(--bg-overlay)', flexWrap: 'wrap' }}>
-                        <div style={{ fontSize: '0.82rem', color: 'var(--text-dim)', fontWeight: 700 }}>
-                            {selectedCount.toLocaleString()} of {group.terms.length.toLocaleString()} terms selected
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                            <div style={{ fontSize: '0.82rem', color: 'var(--text-dim)', fontWeight: 700 }}>
+                                {selectedCount.toLocaleString()} of {group.terms.length.toLocaleString()} terms selected
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.55rem', flexWrap: 'wrap' }}>
+                                <label style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                    <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                        Select Clicks &gt;=
+                                    </span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        inputMode="numeric"
+                                        value={selectionMinClicks}
+                                        onChange={(event) => setSelectionMinClicks(event.target.value)}
+                                        placeholder="e.g. 10"
+                                        style={{
+                                            width: '116px',
+                                            height: '36px',
+                                            borderRadius: '10px',
+                                            border: '1px solid var(--border-subtle)',
+                                            background: 'var(--bg-content)',
+                                            padding: '0.55rem 0.7rem',
+                                            color: 'var(--text-main)',
+                                        }}
+                                    />
+                                </label>
+                                <SafeButton
+                                    onClick={() => onSelectByMinClicks(group, Number.parseFloat(selectionMinClicks || '0') || 0)}
+                                    className="hero-btn hero-btn-secondary"
+                                    style={{ padding: '0.6rem 0.78rem' }}
+                                >
+                                    Apply
+                                </SafeButton>
+                            </div>
                         </div>
                         <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
                             <SafeButton onClick={() => onSelectAll(group)} className="hero-btn hero-btn-secondary" style={{ padding: '0.6rem 0.78rem' }}>

@@ -14,6 +14,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run Trip classifier review across multiple CSV files.")
     parser.add_argument("--input-dir", default="data/trip", help="Directory containing Trip CSV files")
     parser.add_argument("--output-dir", default="tmp/trip-review-full", help="Review output directory")
+    parser.add_argument("--translate-live", action="store_true", help="Enable live zh->EN translation during review")
     args = parser.parse_args()
 
     input_dir = Path(args.input_dir)
@@ -38,6 +39,8 @@ def main() -> int:
             "--output-dir",
             str(review_dir),
         ]
+        if args.translate_live:
+            cmd.append("--translate-live")
         proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
         if proc.returncode != 0:
             print(proc.stdout)

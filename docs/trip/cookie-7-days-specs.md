@@ -11,7 +11,7 @@ Primary objective:
 Secondary objective:
 - avoid broad low-value traffic
 - avoid strong post-booking topics
-- avoid local/day-trip traffic with weak hotel/flight upside
+- do not over-prune nearby/local traffic too early
 - keep classifier output stable even if campaign structure changes later
 
 This spec is intentionally split into 2 layers:
@@ -542,6 +542,7 @@ Expected interpretation:
 
 Reasoning:
 - usually weak fit for hotel/flight-led Trip monetization
+- but should usually be downranked later, not hard-excluded inside the classifier
 
 ## How Semrush Signals Should Be Used
 
@@ -609,7 +610,6 @@ Only a few exclusions should be hard.
   - `/searchresult`
 - homepage or generic root page
 - topic clearly classified as:
-  - `local_daytrip`
   - `customer_service`
   - `login`
   - `refund`
@@ -620,11 +620,16 @@ Only a few exclusions should be hard.
 
 These should usually be scorer decisions, not classifier exclusions:
 
+- `local_daytrip`
+- local HK leisure
+- Macau / Shenzhen / Zhuhai short-haul travel
 - weather
 - generic broad destination pages
 - airline ops
 - high navigational traffic
 - high post-booking risk topics
+- low `market_fit` destinations for the current market
+- high `trip_mode_risk` pages with weak Semrush value
 
 ## What the Classifier Should Not Do
 

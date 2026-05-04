@@ -162,7 +162,11 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                         {icon}
                         <input
                             type="text"
-                            placeholder={filter.placeholder}
+                            placeholder={
+                                filter.id === 'searchTerm' || filter.id === 'searchUrl' || filter.id === 'excludeTerm'
+                                    ? `${filter.placeholder || 'Search...'} Use | for OR`
+                                    : filter.placeholder
+                            }
                             value={value}
                             onChange={(e) => setter(e.target.value)}
                             style={{

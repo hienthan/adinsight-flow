@@ -39,7 +39,9 @@ def is_usable_translation(source: str, translated: str) -> bool:
     if not contains_latin(translated):
         return False
     cjk_chars = sum(1 for ch in translated if "\u3400" <= ch <= "\u9fff")
-    return cjk_chars <= max(2, len(translated) // 3)
+    if cjk_chars > 0:
+        return False
+    return True
 
 
 class TripTranslator:
@@ -47,6 +49,15 @@ class TripTranslator:
         self.cache_path = cache_path
         self.cache = self._load_cache()
         self.enable_network = os.environ.get("TRIP_TRANSLATE_LIVE", "").strip() == "1"
+        self._dirty_writes = 0
+        self.save_every = 100
+        self.stats = {
+            "empty": 0,
+            "cache": 0,
+            "ascii_pretty": 0,
+            "google_translate": 0,
+            "fallback_pretty": 0,
+        }
 
     def _load_cache(self) -> Dict[str, str]:
         if not self.cache_path.exists():
@@ -62,35 +73,50 @@ class TripTranslator:
             json.dumps(self.cache, ensure_ascii=False, indent=2, sort_keys=True),
             encoding="utf-8",
         )
+        self._dirty_writes = 0
+
+    def _mark_dirty(self) -> None:
+        self._dirty_writes += 1
+        if self._dirty_writes >= self.save_every:
+            self._save_cache()
+
+    def flush(self) -> None:
+        if self._dirty_writes > 0:
+            self._save_cache()
 
     def translate(self, text: str) -> Tuple[str, str]:
         source = (text or "").strip()
         if not source:
+            self.stats["empty"] += 1
             return "", "empty"
 
         cache_key = source
         if cache_key in self.cache:
             cached = self.cache[cache_key]
             if is_usable_translation(source, cached):
+                self.stats["cache"] += 1
                 return cached, "cache"
 
         if not contains_cjk(source):
             translated = pretty_ascii(source)
             self.cache[cache_key] = translated
-            self._save_cache()
+            self._mark_dirty()
+            self.stats["ascii_pretty"] += 1
             return translated, "ascii_pretty"
 
         if self.enable_network:
             translated = self._translate_google(source)
             if is_usable_translation(source, translated):
                 self.cache[cache_key] = translated
-                self._save_cache()
+                self._mark_dirty()
+                self.stats["google_translate"] += 1
                 return translated, "google_translate"
 
         fallback = pretty_ascii(source)
         if not contains_cjk(source):
             self.cache[cache_key] = fallback
-            self._save_cache()
+            self._mark_dirty()
+        self.stats["fallback_pretty"] += 1
         return fallback, "fallback_pretty"
 
     def _translate_google(self, text: str, max_retries: int = 3) -> str:
