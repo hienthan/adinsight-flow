@@ -50,6 +50,11 @@ export interface PageRecord {
     post_booking_risk?: string;
     trip_mode_risk?: string;
     market_fit?: string;
+    transport_scope?: string;
+    transport_trip_stage?: string;
+    transport_affiliate_fit?: string;
+    transport_geo_scope?: string;
+    transport_risk_flags?: string[] | string;
     rule_hits?: string[] | string;
     semrush_metrics?: Record<string, number | null>;
     metadata?: {

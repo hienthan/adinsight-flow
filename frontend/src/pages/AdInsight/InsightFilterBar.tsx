@@ -13,7 +13,7 @@ interface InsightFilterBarProps {
     sitemapTags: string[];
 }
 
-const MAIN_FILTER_IDS = ['searchTerm', 'searchUrl', 'country', 'sitemap_tag', 'content_type', 'funnel_stage', 'tier', 'affiliate_tier', 'geo_category', 'province', 'dsa_campaign', 'language', 'page_type', 'intent_primary', 'classification_confidence', 'city', 'is_private', 'is_active', 'show_url', 'pattern', 'geo_entity', 'topic_type', 'readiness_hint', 'market_fit'];
+const MAIN_FILTER_IDS = ['searchTerm', 'searchUrl', 'country', 'sitemap_tag', 'content_type', 'funnel_stage', 'tier', 'affiliate_tier', 'geo_category', 'province', 'dsa_campaign', 'language', 'page_type', 'intent_primary', 'classification_confidence', 'city', 'is_private', 'is_active', 'show_url', 'pattern', 'geo_entity', 'topic_type', 'readiness_hint', 'market_fit', 'transport_scope', 'transport_affiliate_fit', 'transport_geo_scope', 'transport_trip_stage'];
 const EXCLUDE_FILTER_IDS = ['searchTerm', 'country', 'city', 'tier', 'content_type', 'pattern', 'topic_type'];
 
 const FILTER_BAR_SHELL_STYLE = {
@@ -235,15 +235,21 @@ export const InsightFilterBar: React.FC<InsightFilterBarProps> = ({
                             value={currentValue}
                             onChange={(val) => onFilterChange(fieldId, val)}
                             placeholder="All"
-                            width={
+                                width={
                                 filter.id === 'content_type' || filter.id === 'dsa_campaign'
                                     ? '154px'
                                     : filter.id === 'page_type'
                                         ? '136px'
                                         : filter.id === 'intent_primary'
                                             ? '148px'
-                                            : filter.id === 'readiness_hint' || filter.id === 'market_fit'
+                                            : filter.id === 'readiness_hint' || filter.id === 'market_fit' || filter.id === 'transport_affiliate_fit'
                                                 ? '136px'
+                                                : filter.id === 'transport_scope'
+                                                    ? '166px'
+                                                    : filter.id === 'transport_geo_scope'
+                                                        ? '162px'
+                                                        : filter.id === 'transport_trip_stage'
+                                                            ? '158px'
                                                 : filter.id === 'pattern'
                                                     ? '178px'
                                                     : filter.id === 'topic_type'

@@ -52,6 +52,11 @@ Those belong to later scoring/export steps.
 | `post_booking_risk` | `text` | no | risk that the user has likely already booked |
 | `trip_mode_risk` | `text` | no | risk that the traffic behaves like local/day-trip demand rather than hotel/flight-led travel |
 | `market_fit` | `text` | no | heuristic fit for target market such as HK or TW |
+| `transport_scope` | `text` | no | transport-specific page scope such as `airport_transfer`, `intercity_route`, `metro_map`, `timetable` |
+| `transport_trip_stage` | `text` | no | stage signal such as `pre_trip`, `arrival_immediate`, `in_trip`, `local_utility` |
+| `transport_affiliate_fit` | `text` | no | transport-specific affiliate fit such as `high`, `medium`, `low` |
+| `transport_geo_scope` | `text` | no | transport geo bucket such as `top_outbound_geo`, `destination_city`, `domestic_tw`, `local_city` |
+| `transport_risk_flags` | `json` | no | transport review risk flags such as `map_only`, `timetable_only`, `domestic_tw`, `local_commute` |
 | `is_active` | `bool` | no | operational flag for whether the URL should stay active in inventory |
 | `metadata` | `json` | no | flexible space for scorer/debug/export-side data |
 | `notes` | `text` | no | manual notes |
@@ -117,6 +122,27 @@ The core classifier outputs are:
 
 These fields are semantic and reviewable.
 They are intentionally separate from any future Google Ads export labels.
+
+### Transport Review Fields
+
+The transport-specific review outputs are:
+- `transport_scope`
+- `transport_trip_stage`
+- `transport_affiliate_fit`
+- `transport_geo_scope`
+- `transport_risk_flags`
+
+These fields are intentionally optional because they only become relevant for:
+- `guide/transport`
+- future transport-like URL patterns
+
+They should be treated as a scorer/review layer on top of the core classifier, not as replacements for core geo/topic fields.
+
+Recommended boundary:
+
+- current implementation should only populate them for `pattern = guide/transport`
+- all other current Trip patterns should leave them empty / unknown
+- if a future pattern wants to reuse them, that should be an explicit product decision, not accidental carry-over
 
 ## Recommended Value Conventions
 
@@ -211,6 +237,49 @@ Recommended values:
 - `medium`
 - `low`
 
+### `transport_scope`
+
+Recommended values:
+- `airport_transfer`
+- `airport_general`
+- `airport_to_city`
+- `intercity_route`
+- `cross_border_route`
+- `city_transit`
+- `metro_map`
+- `timetable`
+- `station_guide`
+- `parking`
+- `ferry_route`
+- `rail_pass`
+- `unknown`
+
+### `transport_trip_stage`
+
+Recommended values:
+- `pre_trip`
+- `arrival_immediate`
+- `in_trip`
+- `local_utility`
+- `unknown`
+
+### `transport_affiliate_fit`
+
+Recommended values:
+- `high`
+- `medium`
+- `low`
+
+### `transport_geo_scope`
+
+Recommended values:
+- `top_outbound_geo`
+- `destination_city`
+- `domestic_tw`
+- `local_city`
+- `cross_border_short_haul`
+- `unknown`
+
 ## Indexes
 
 Recommended indexes for `trip_pages`:
@@ -220,6 +289,8 @@ Recommended indexes for `trip_pages`:
 - index on `country`, `city`, `geo_category`
 - index on `intent_primary`, `content_type`, `sub_tag`
 - index on `topic_type`, `readiness_hint`, `is_active`
+- index on `transport_scope`, `transport_affiliate_fit`, `transport_trip_stage`
+- index on `transport_geo_scope`, `is_active`
 
 These indexes match the most likely GUI and review workflows without over-indexing.
 
@@ -233,6 +304,7 @@ To reduce PocketBase import failures:
 - send `traffic`, `traffic_pct`, and `traffic_change` as numbers
 - send `is_active` as boolean
 - send `semrush_metrics` and `metadata` as valid JSON objects
+- send `transport_risk_flags` as a valid JSON array or JSON object, not a stringified pseudo-array
 - for unknown geo values, prefer string `Unknown` instead of empty strings when the classifier explicitly failed to detect
 
 ## Non-Goals

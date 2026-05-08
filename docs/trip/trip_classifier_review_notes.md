@@ -244,3 +244,55 @@ Latest decision update:
   - `readiness_hint`
   - `traffic`
   - `keyword_count`
+
+## Transport Pattern Review Update
+
+Transport-specific review was tested on:
+
+- `semRush/trip-tw-transport.csv`
+
+Current validated sample:
+
+- top `120` rows with live translation enabled
+
+Before targeted geo KB updates:
+
+- `active_unknown_geo = 20`
+- `active_transport_unknown_geo = 19`
+
+After targeted geo KB updates:
+
+- `active_unknown_geo = 11`
+- `active_transport_unknown_geo = 10`
+
+This confirms the current best-practice path for transport rows:
+
+1. decode slug
+2. translate zh -> EN
+3. detect geo from:
+- raw zh
+- translated EN
+- normalized slug/path
+4. add focused Trip geo KB aliases only for real places
+5. keep generic utility/non-geo rows in `unknown` instead of forcing bad guesses
+
+Remaining `unknown` transport rows are mostly acceptable review candidates, not classifier failures:
+
+- utility generic:
+  - `Airport Bus`
+  - `Airport Parking`
+  - `Terminal 1 Parking Lot`
+  - `Express Timetable`
+- non-geo / ambiguous:
+  - `International Driver's License`
+  - `Small Tee` (`小三通`)
+  - `Long Term Car Rental`
+  - `Air Ticket In English`
+- transport brands/products without stable destination truth:
+  - `Nankai Electric Railway`
+
+Implication:
+
+- for transport, not every `unknown` should be “fixed”
+- some rows are correctly non-geo and should go to review/export buckets
+- ChatGPT/manual review is the right second-pass for these rows

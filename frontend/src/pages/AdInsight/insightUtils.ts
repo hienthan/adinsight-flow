@@ -67,7 +67,9 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         'tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type',
         'affiliate_tier', 'affiliate_score', 'dsa_campaign', 'geo_category', 'province',
         'intent_type', 'intent_primary', 'page_type', 'classification_confidence', 'is_private', 'is_active',
-        'pattern', 'geo_entity', 'topic_type', 'readiness_hint', 'market_fit', 'language'
+        'pattern', 'geo_entity', 'topic_type', 'readiness_hint', 'market_fit', 'language',
+        'transport_scope', 'transport_affiliate_fit', 'transport_geo_scope', 'transport_trip_stage',
+        'metadata.non_core_transport_bucket'
     ];
 
     Object.keys(currentFilters).forEach(key => {

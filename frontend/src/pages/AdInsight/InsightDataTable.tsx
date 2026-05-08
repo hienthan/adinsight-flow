@@ -77,8 +77,80 @@ const getTripMarketFitStyle = (value: string) => {
     }
 };
 
+const getTransportScopeStyle = (value: string) => {
+    switch (value) {
+        case 'airport_transfer':
+        case 'airport_to_city':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'intercity_route':
+        case 'cross_border_route':
+            return { background: 'rgba(59, 130, 246, 0.14)', color: '#1d4ed8' };
+        case 'airport_general':
+        case 'station_guide':
+        case 'rail_pass':
+        case 'ferry_route':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        case 'city_transit':
+        case 'metro_map':
+        case 'timetable':
+        case 'parking':
+        case 'unknown':
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
+const getTransportFitStyle = (value: string) => {
+    switch (value) {
+        case 'high':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'medium':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        case 'low':
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
+const getTransportGeoScopeStyle = (value: string) => {
+    switch (value) {
+        case 'top_outbound_geo':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'destination_city':
+            return { background: 'rgba(59, 130, 246, 0.14)', color: '#1d4ed8' };
+        case 'domestic_tw':
+        case 'cross_border_short_haul':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        case 'local_city':
+        case 'unknown':
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
+const getTransportTripStageStyle = (value: string) => {
+    switch (value) {
+        case 'pre_trip':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'arrival_immediate':
+            return { background: 'rgba(59, 130, 246, 0.14)', color: '#1d4ed8' };
+        case 'in_trip':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        case 'local_utility':
+        case 'unknown':
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
 const getPatternBadgeStyle = (value: string) => {
     switch (value) {
+        case 'guide/transport':
+            return { background: 'rgba(5, 150, 105, 0.14)', color: '#047857' };
         case 'travel-guide/destination':
             return { background: 'rgba(37, 99, 235, 0.14)', color: '#1d4ed8' };
         case 'guide/destination':
@@ -360,6 +432,31 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                                     : col.key === 'topic_type'
                                                         ? { background: 'rgba(6, 182, 212, 0.12)', color: '#0f766e' }
                                                     : { background: 'rgba(148, 163, 184, 0.14)', color: 'var(--text-muted)' };
+                                        return (
+                                            <td key={idx} style={{ width: col.width, overflow: 'hidden' }}>
+                                                <span className="hero-badge" style={{
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'none',
+                                                    justifyContent: 'center',
+                                                    ...badgeStyles
+                                                }} title={displayValue}>
+                                                    {displayValue}
+                                                </span>
+                                            </td>
+                                        );
+                                    }
+                                    if (col.key === 'transport_scope' || col.key === 'transport_affiliate_fit' || col.key === 'transport_geo_scope' || col.key === 'transport_trip_stage') {
+                                        const rawValue = String(record[col.key as keyof PageRecord] || '-');
+                                        const displayValue = formatCompactLabel(rawValue);
+                                        const badgeStyles =
+                                            col.key === 'transport_scope'
+                                                ? getTransportScopeStyle(rawValue)
+                                                : col.key === 'transport_affiliate_fit'
+                                                    ? getTransportFitStyle(rawValue)
+                                                    : col.key === 'transport_geo_scope'
+                                                        ? getTransportGeoScopeStyle(rawValue)
+                                                        : getTransportTripStageStyle(rawValue);
                                         return (
                                             <td key={idx} style={{ width: col.width, overflow: 'hidden' }}>
                                                 <span className="hero-badge" style={{

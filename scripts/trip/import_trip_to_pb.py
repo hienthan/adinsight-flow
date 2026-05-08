@@ -48,6 +48,11 @@ def normalize_payload(row: Dict[str, object]) -> Dict[str, object]:
         "post_booking_risk": str(row.get("post_booking_risk") or "").strip(),
         "trip_mode_risk": str(row.get("trip_mode_risk") or "").strip(),
         "market_fit": str(row.get("market_fit") or "").strip(),
+        "transport_scope": str(row.get("transport_scope") or "").strip(),
+        "transport_trip_stage": str(row.get("transport_trip_stage") or "").strip(),
+        "transport_affiliate_fit": str(row.get("transport_affiliate_fit") or "").strip(),
+        "transport_geo_scope": str(row.get("transport_geo_scope") or "").strip(),
+        "transport_risk_flags": row.get("transport_risk_flags") or [],
         "is_active": bool(row.get("is_active")),
         "metadata": row.get("metadata") or {},
         "notes": str(row.get("notes") or "").strip(),
@@ -61,7 +66,8 @@ def fetch_existing(session, pb_url: str) -> Dict[str, Dict[str, object]]:
         "id","url","title","language","pattern","traffic","traffic_pct","keyword_count","traffic_change",
         "semrush_metrics","country","city","geo_entity","geo_category","topic_type","intent_primary",
         "content_type","sub_tag","readiness_hint","remaining_commission_potential","post_booking_risk",
-        "trip_mode_risk","market_fit","is_active","metadata","notes"
+        "trip_mode_risk","market_fit","transport_scope","transport_trip_stage","transport_affiliate_fit",
+        "transport_geo_scope","transport_risk_flags","is_active","metadata","notes"
     ])
     while True:
         resp = session.get(

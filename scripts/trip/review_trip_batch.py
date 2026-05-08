@@ -59,6 +59,11 @@ def main() -> int:
         "active_local_risk": sum(item["active_local_risk"] for item in summaries),
         "active_high_transactional": sum(item["active_high_transactional"] for item in summaries),
         "excluded_rows": sum(item["excluded_rows"] for item in summaries),
+        "transport_rows": sum(item.get("transport_rows", 0) for item in summaries),
+        "active_transport_high_fit": sum(item.get("active_transport_high_fit", 0) for item in summaries),
+        "active_transport_domestic_tw": sum(item.get("active_transport_domestic_tw", 0) for item in summaries),
+        "active_transport_utility": sum(item.get("active_transport_utility", 0) for item in summaries),
+        "active_transport_unknown_geo": sum(item.get("active_transport_unknown_geo", 0) for item in summaries),
     }
     (output_dir / "aggregate_summary.json").write_text(json.dumps(aggregate, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({"aggregate": aggregate}, ensure_ascii=False))

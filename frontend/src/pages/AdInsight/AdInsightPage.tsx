@@ -117,6 +117,7 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
 
     const [selectedView, setSelectedView] = useState("list");
     const [perPage, setPerPage] = useState(100);
+    const [activePresetId, setActivePresetId] = useState<string | null>(null);
     const initialFilters = useMemo(() => {
         const filters: Record<string, string> = {
             titleKey: config.titleKey as string,
@@ -229,19 +230,28 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
     };
 
     const handleFilterChange = useCallback((id: string, value: string) => {
+        setActivePresetId(null);
         setFilters(prev => ({ ...prev, [id]: value }));
     }, [setFilters]);
 
     const handleReset = () => {
+        setActivePresetId(null);
         setFilters(initialFilters);
     };
 
-    const handleApplyPreset = useCallback((presetFilters: Record<string, string>) => {
+    const handleApplyPreset = useCallback((presetId: string, presetFilters: Record<string, string>) => {
+        if (activePresetId === presetId) {
+            setActivePresetId(null);
+            setFilters(initialFilters);
+            return;
+        }
+
+        setActivePresetId(presetId);
         setFilters({
             ...initialFilters,
             ...presetFilters,
         });
-    }, [initialFilters, setFilters]);
+    }, [activePresetId, initialFilters, setFilters]);
 
     const handleViewChange = useCallback((view: 'list' | 'dashboard') => {
         startTransition(() => {
@@ -781,15 +791,28 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
                                     {config.filterPresets.map((preset) => (
                                         <SafeButton
                                             key={preset.id}
-                                            onClick={() => handleApplyPreset(preset.filters)}
-                                            className="hero-btn hero-btn-secondary"
+                                            onClick={() => handleApplyPreset(preset.id, preset.filters)}
+                                            className={activePresetId === preset.id ? 'hero-btn hero-btn-primary' : 'hero-btn hero-btn-secondary'}
                                             style={{
                                                 padding: '0.48rem 0.78rem',
                                                 borderRadius: '999px',
                                                 fontSize: '0.76rem',
                                                 fontWeight: 800,
+                                                border: activePresetId === preset.id
+                                                    ? '1px solid color-mix(in srgb, hsl(var(--primary)) 32%, transparent)'
+                                                    : '1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.14) 20%)',
+                                                background: activePresetId === preset.id
+                                                    ? 'linear-gradient(135deg, hsla(var(--primary)/0.16) 0%, hsla(var(--primary)/0.08) 100%)'
+                                                    : 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%)',
+                                                color: activePresetId === preset.id
+                                                    ? 'hsl(var(--primary))'
+                                                    : 'var(--text-main)',
+                                                boxShadow: activePresetId === preset.id
+                                                    ? '0 16px 28px -24px hsla(var(--primary)/0.42), inset 0 1px 0 rgba(255,255,255,0.5)'
+                                                    : '0 14px 24px -22px rgba(15, 23, 42, 0.34)',
                                             }}
                                             title={preset.description}
+                                            aria-pressed={activePresetId === preset.id}
                                         >
                                             {preset.label}
                                         </SafeButton>

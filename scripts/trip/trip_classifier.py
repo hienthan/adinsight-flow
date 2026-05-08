@@ -26,6 +26,7 @@ except Exception:
 
 CLASSIFIER_VERSION = "trip_v2"
 TRIP_GEO_KB_PATH = REPO_ROOT / "scripts" / "trip" / "lib" / "trip_geo_kb.json"
+TRANSPORT_PATTERN = "guide/transport"
 
 
 TOPIC_RULES: List[Dict[str, str]] = [
@@ -212,6 +213,7 @@ def normalize_text(value: str) -> str:
     lowered = (value or "").strip().lower()
     lowered = unquote(lowered)
     lowered = lowered.replace("%20", " ")
+    lowered = lowered.replace("+", " ")
     lowered = re.sub(r"[-_/]+", " ", lowered)
     lowered = re.sub(r"\s+", " ", lowered).strip()
     return lowered
@@ -286,6 +288,18 @@ def strip_geo_noise(value: str) -> str:
     return cleaned
 
 
+def contains_cjk(value: str) -> bool:
+    return bool(re.search(r"[\u3400-\u9fff]", value or ""))
+
+
+def clamp_level(value: str, ordered: List[str], delta: int) -> str:
+    if value not in ordered:
+        return value
+    idx = ordered.index(value)
+    next_idx = max(0, min(len(ordered) - 1, idx + delta))
+    return ordered[next_idx]
+
+
 class TripClassifier:
     def __init__(self) -> None:
         self.geo_candidates = sorted(self.load_geo_candidates(), key=lambda item: len(item["alias"]), reverse=True)
@@ -319,8 +333,19 @@ class TripClassifier:
         topic = self.detect_topic(source_text, translated_text, pattern, geo)
         interpretation = self.interpret(topic, geo, language)
         semrush_hint = self.interpret_semrush_signals(topic, semrush_metrics)
+        transport = self.evaluate_transport(
+            pattern=pattern,
+            url=url,
+            source_text=source_text,
+            translated_text=translated_text,
+            language=language,
+            geo=geo,
+            topic=topic,
+            interpretation=interpretation,
+            semrush_hint=semrush_hint,
+        )
         activity = self.determine_activity(url, source_text, pattern, geo, topic)
-        title = self.generate_title(source_text, translated_text, geo, topic)
+        title = self.generate_title(source_text, translated_text, geo, topic, transport)
 
         metadata = {
             "classifier_version": CLASSIFIER_VERSION,
@@ -357,6 +382,11 @@ class TripClassifier:
             "post_booking_risk": interpretation["post_booking_risk"],
             "trip_mode_risk": interpretation["trip_mode_risk"],
             "market_fit": interpretation["market_fit"],
+            "transport_scope": transport["transport_scope"],
+            "transport_trip_stage": transport["transport_trip_stage"],
+            "transport_affiliate_fit": transport["transport_affiliate_fit"],
+            "transport_geo_scope": transport["transport_geo_scope"],
+            "transport_risk_flags": transport["transport_risk_flags"],
             "is_active": activity["is_active"],
             "metadata": metadata,
             "notes": "",
@@ -373,7 +403,7 @@ class TripClassifier:
 
     def extract_pattern(self, url: str) -> str:
         path = urlparse(url).path
-        for candidate in ["/travel-guide/destination/", "/guide/destination/", "/guide/info/", "/blog/"]:
+        for candidate in ["/travel-guide/destination/", "/guide/destination/", "/guide/info/", "/guide/transport/", "/blog/"]:
             if candidate in path:
                 return candidate.strip("/")
         segments = [segment for segment in path.split("/") if segment]
@@ -390,7 +420,7 @@ class TripClassifier:
             tail = tail[:-5]
         if pattern == "travel-guide/destination":
             tail = re.sub(r"-\d+$", "", tail)
-        return tail.replace("-", " ").strip()
+        return tail.replace("-", " ").replace("+", " ").strip()
 
     def geo_text_candidates(self, url: str, source_text: str, translated_text: str) -> List[str]:
         path = unquote(urlparse(url).path or "")
@@ -398,6 +428,7 @@ class TripClassifier:
         if tail.endswith(".html"):
             tail = tail[:-5]
         raw_tail = re.sub(r"-\d+$", "", tail)
+        raw_tail = raw_tail.replace("+", " ")
 
         candidates = [
             source_text,
@@ -428,6 +459,213 @@ class TripClassifier:
             return raw
         host = urlparse(url).netloc.lower()
         return LANGUAGE_BY_HOST.get(host, "zh-HK")
+
+    def transport_defaults(self) -> Dict[str, Any]:
+        return {
+            "transport_scope": "",
+            "transport_trip_stage": "",
+            "transport_affiliate_fit": "",
+            "transport_geo_scope": "",
+            "transport_risk_flags": [],
+        }
+
+    def evaluate_transport(
+        self,
+        *,
+        pattern: str,
+        url: str,
+        source_text: str,
+        translated_text: str,
+        language: str,
+        geo: Dict[str, str],
+        topic: Dict[str, str],
+        interpretation: Dict[str, str],
+        semrush_hint: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        if pattern != TRANSPORT_PATTERN:
+            return self.transport_defaults()
+
+        raw = source_text or ""
+        normalized = normalize_text(source_text)
+        translated_normalized = normalize_text(translated_text)
+        combined = compact_spaces(" ".join([raw, normalized, translated_normalized]))
+        raw_url = unquote(url)
+
+        scope = self.detect_transport_scope(raw, normalized, translated_normalized, raw_url, topic)
+        trip_stage = self.detect_transport_trip_stage(scope)
+        geo_scope = self.detect_transport_geo_scope(language, geo, scope, topic)
+        affiliate_fit = self.score_transport_affiliate_fit(scope, geo_scope, semrush_hint["ratios"])
+        risk_flags = self.collect_transport_risk_flags(
+            scope=scope,
+            trip_stage=trip_stage,
+            geo_scope=geo_scope,
+            geo=geo,
+            semrush_ratios=semrush_hint["ratios"],
+            combined_text=combined,
+        )
+
+        # Transport review layer should not rewrite generic interpretation fields,
+        # but high-risk flags should be visible through market fit/trip mode semantics.
+        if geo_scope in {"domestic_tw", "local_city", "cross_border_short_haul"} and interpretation["market_fit"] == "high":
+            interpretation["market_fit"] = "medium"
+        if scope in {"metro_map", "timetable", "parking", "city_transit"} and interpretation["trip_mode_risk"] == "low":
+            interpretation["trip_mode_risk"] = "medium"
+
+        return {
+            "transport_scope": scope,
+            "transport_trip_stage": trip_stage,
+            "transport_affiliate_fit": affiliate_fit,
+            "transport_geo_scope": geo_scope,
+            "transport_risk_flags": risk_flags,
+        }
+
+    def detect_transport_scope(
+        self,
+        raw: str,
+        normalized: str,
+        translated_normalized: str,
+        raw_url: str,
+        topic: Dict[str, str],
+    ) -> str:
+        def has_any(phrases: Iterable[str]) -> bool:
+            for phrase in phrases:
+                if self.phrase_in_text(phrase, raw, normalized):
+                    return True
+                if phrase.lower() in translated_normalized:
+                    return True
+            return False
+
+        if has_any(["停車場", "停车场", "parking"]):
+            return "parking"
+        if has_any(["時刻表", "时刻表", "timetable", "schedule"]):
+            return "timetable"
+        if has_any(["捷運圖", "捷运图", "地鐵圖", "地铁图", "metro map", "mrt map", "subway map", "route map"]):
+            return "metro_map"
+        if has_any(["駕照", "驾照", "driver's license", "drivers license", "asia miles", "小三通"]):
+            return "unknown"
+        if has_any(["機場接送", "机场接送", "airport transfer"]):
+            return "airport_transfer"
+        if has_any(["機場去市區", "机场去市区", "機場到市區", "机场到市区", "airport to city", "from airport to"]):
+            return "airport_to_city"
+        if has_any(["rail pass", "jr pass", "周遊券", "周游券", "pass"]):
+            return "rail_pass"
+        if has_any(["渡輪", "渡轮", "ferry"]):
+            return "ferry_route"
+        if has_any(["口岸", "border crossing", "港珠澳", "shenzhen bay", "港澳", "cross border"]):
+            return "cross_border_route"
+        if has_any(["車站", "车站", "station", "terminal"]) and "airport" not in translated_normalized:
+            return "station_guide"
+        if (
+            re.search(r"\bfrom\b.*\bto\b", translated_normalized)
+            or re.search(r"\bto\b", translated_normalized)
+            or any(token in raw for token in ["去", "到"])
+        ):
+            return "intercity_route"
+        if topic["topic_type"] == "airport_transport" or ("airport" in translated_normalized or "機場" in raw or "机场" in raw):
+            return "airport_general"
+        if topic["topic_type"] == "city_transport":
+            return "city_transit"
+        if TRANSPORT_PATTERN in raw_url:
+            return "unknown"
+        return ""
+
+    def detect_transport_trip_stage(self, scope: str) -> str:
+        if scope in {"airport_transfer", "airport_to_city", "airport_general", "station_guide"}:
+            return "arrival_immediate"
+        if scope in {"intercity_route", "cross_border_route", "rail_pass", "ferry_route"}:
+            return "pre_trip"
+        if scope in {"metro_map", "city_transit"}:
+            return "in_trip"
+        if scope in {"timetable", "parking"}:
+            return "local_utility"
+        return "unknown" if scope else ""
+
+    def detect_transport_geo_scope(self, language: str, geo: Dict[str, str], scope: str, topic: Dict[str, str]) -> str:
+        country = geo["country"]
+        entity = geo["geo_entity"]
+        city = geo["city"]
+
+        if not scope:
+            return ""
+        if scope == "unknown":
+            return "unknown"
+        if country == "Unknown" or entity == "unknown":
+            return "unknown"
+        if country == "taiwan":
+            return "domestic_tw"
+        if entity in LOCAL_DAYTRIP_ENTITIES or country in {"hong_kong", "macau"}:
+            return "cross_border_short_haul"
+        high_markets = HK_HIGH_MARKETS if language == "zh-HK" else TW_HIGH_MARKETS
+        if country in high_markets:
+            return "top_outbound_geo"
+        if city != "Unknown" or geo["geo_category"] in {"city", "airport", "station", "district", "region", "landmark"}:
+            return "destination_city"
+        if topic["topic_type"] == "city_transport":
+            return "local_city"
+        return "unknown"
+
+    def score_transport_affiliate_fit(self, scope: str, geo_scope: str, ratios: Dict[str, float]) -> str:
+        if not scope:
+            return ""
+
+        utility_scopes = {"metro_map", "timetable", "parking", "city_transit", "unknown"}
+        if scope in utility_scopes:
+            return "low"
+
+        if scope in {"airport_transfer", "airport_to_city", "intercity_route", "cross_border_route"}:
+            fit = "high"
+        elif scope in {"airport_general", "station_guide", "rail_pass", "ferry_route"}:
+            fit = "medium"
+        else:
+            fit = "low"
+
+        if geo_scope in {"domestic_tw", "local_city", "cross_border_short_haul"}:
+            fit = clamp_level(fit, ["high", "medium", "low"], 1)
+        if ratios["navigational_ratio"] >= 0.50 and fit != "low":
+            fit = clamp_level(fit, ["high", "medium", "low"], 1)
+        if (
+            scope in {"airport_transfer", "airport_to_city", "intercity_route", "cross_border_route"}
+            and geo_scope not in {"domestic_tw", "local_city", "cross_border_short_haul"}
+            and (ratios["commercial_ratio"] >= 0.08 or ratios["transactional_ratio"] >= 0.08)
+        ):
+            fit = clamp_level(fit, ["low", "medium", "high"], 1)
+        return fit
+
+    def collect_transport_risk_flags(
+        self,
+        *,
+        scope: str,
+        trip_stage: str,
+        geo_scope: str,
+        geo: Dict[str, str],
+        semrush_ratios: Dict[str, float],
+        combined_text: str,
+    ) -> List[str]:
+        flags: List[str] = []
+        if geo["geo_entity"] == "unknown" or geo["country"] == "Unknown":
+            flags.append("unknown_geo")
+        if geo_scope == "domestic_tw":
+            flags.append("domestic_tw")
+        if scope == "metro_map":
+            flags.extend(["map_only", "local_commute"])
+        if scope == "timetable":
+            flags.append("timetable_only")
+        if scope == "parking":
+            flags.append("parking_only")
+        if trip_stage in {"in_trip", "local_utility"}:
+            flags.append("in_trip_utility")
+        if semrush_ratios["navigational_ratio"] >= 0.50:
+            flags.append("high_navigation_bias")
+        if semrush_ratios["commercial_ratio"] < 0.02 and semrush_ratios["transactional_ratio"] < 0.02:
+            flags.append("weak_commercial_signal")
+        if "terminal" in combined_text and scope == "airport_general":
+            flags.append("airport_ops_only")
+        # Keep order stable for export/review.
+        deduped: List[str] = []
+        for flag in flags:
+            if flag not in deduped:
+                deduped.append(flag)
+        return deduped
 
     def extract_semrush_metrics(self, row: Dict[str, Any]) -> Dict[str, Any]:
         def to_number(value: Any, *, integer: bool = False) -> Optional[float]:
@@ -550,6 +788,13 @@ class TripClassifier:
             if pattern in {"guide/destination", "travel-guide/destination"}:
                 topic_type = "destination_guide"
                 sub_tag = "destination"
+            elif pattern == TRANSPORT_PATTERN:
+                if any(token in raw for token in ["機場", "机场"]) or "airport" in translated_normalized:
+                    topic_type = "airport_transport"
+                    sub_tag = "transport"
+                else:
+                    topic_type = "city_transport"
+                    sub_tag = "transport"
             elif pattern == "guide/info":
                 topic_type = "generic_info"
                 sub_tag = "info"
@@ -739,10 +984,23 @@ class TripClassifier:
             return {"is_active": False, "reason": "non_content_transactional_url"}
         return {"is_active": True, "reason": ""}
 
-    def generate_title(self, source_text: str, translated_text: str, geo: Dict[str, str], topic: Dict[str, str]) -> str:
+    def generate_title(
+        self,
+        source_text: str,
+        translated_text: str,
+        geo: Dict[str, str],
+        topic: Dict[str, str],
+        transport: Dict[str, Any],
+    ) -> str:
         geo_title = geo.get("title_en") or pretty_title_from_text(translated_text or source_text)
         topic_type = topic["topic_type"]
         sub_tag = topic["sub_tag"]
+        transport_scope = transport.get("transport_scope", "")
+
+        if transport_scope:
+            pretty_transport = pretty_title_from_text(translated_text or source_text)
+            if pretty_transport and not contains_cjk(pretty_transport):
+                return pretty_transport
 
         if topic_type == "entry_document" and sub_tag == "arrival_card":
             return f"{geo_title} Arrival Card"

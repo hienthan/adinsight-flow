@@ -105,6 +105,11 @@ def build_fields() -> List[Dict[str, Any]]:
         text_field("post_booking_risk"),
         text_field("trip_mode_risk"),
         text_field("market_fit"),
+        text_field("transport_scope"),
+        text_field("transport_trip_stage"),
+        text_field("transport_affiliate_fit"),
+        text_field("transport_geo_scope"),
+        json_field("transport_risk_flags"),
         bool_field("is_active"),
         json_field("metadata"),
         text_field("notes"),
@@ -118,6 +123,8 @@ def build_indexes() -> List[str]:
         "CREATE INDEX `idx_trip_pages_geo` ON `trip_pages` (`country`, `city`, `geo_category`)",
         "CREATE INDEX `idx_trip_pages_taxonomy` ON `trip_pages` (`intent_primary`, `content_type`, `sub_tag`)",
         "CREATE INDEX `idx_trip_pages_review` ON `trip_pages` (`topic_type`, `readiness_hint`, `is_active`)",
+        "CREATE INDEX `idx_trip_pages_transport` ON `trip_pages` (`transport_scope`, `transport_affiliate_fit`, `transport_trip_stage`)",
+        "CREATE INDEX `idx_trip_pages_transport_geo` ON `trip_pages` (`transport_geo_scope`, `is_active`)",
     ]
 
 

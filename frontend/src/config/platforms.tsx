@@ -241,13 +241,15 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
         metadataMode: 'collection_distinct',
         columns: [
             { header: 'Title', key: 'title', width: '24%' },
-            { header: 'Pattern', key: 'pattern', width: '14%' },
+            { header: 'Pattern', key: 'pattern', width: '12%' },
+            { header: 'Scope', key: 'transport_scope', width: '11%' },
+            { header: 'Fit', key: 'transport_affiliate_fit', width: '9%' },
             { header: 'Traffic', key: 'traffic', width: '8%' },
             { header: 'Keywords', key: 'keyword_count', width: '8%' },
             { header: 'Trend', key: 'traffic_change', width: '8%' },
             { header: 'Geo Entity', key: 'geo_entity', width: '12%' },
+            { header: 'Geo Scope', key: 'transport_geo_scope', width: '11%' },
             { header: 'Location', key: 'location', width: '12%' },
-            { header: 'Content', key: 'content_type', width: '12%' },
             { header: 'Readiness', key: 'readiness_hint', width: '10%' },
             { header: 'Market Fit', key: 'market_fit', width: '10%' }
         ],
@@ -261,6 +263,7 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                     { label: 'Blog', value: 'blog' },
                     { label: 'Guide Destination', value: 'guide/destination' },
                     { label: 'Guide Info', value: 'guide/info' },
+                    { label: 'Guide Transport', value: 'guide/transport' },
                     { label: 'Travel Guide Destination', value: 'travel-guide/destination' }
                 ]
             },
@@ -331,6 +334,53 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                     { label: 'Local Daytrip', value: 'local_daytrip' }
                 ]
             },
+            {
+                id: 'transport_scope', label: 'Transport Scope', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Airport Transfer', value: 'airport_transfer' },
+                    { label: 'Airport To City', value: 'airport_to_city' },
+                    { label: 'Airport General', value: 'airport_general' },
+                    { label: 'Intercity Route', value: 'intercity_route' },
+                    { label: 'Cross Border Route', value: 'cross_border_route' },
+                    { label: 'Station Guide', value: 'station_guide' },
+                    { label: 'Rail Pass', value: 'rail_pass' },
+                    { label: 'Ferry Route', value: 'ferry_route' },
+                    { label: 'City Transit', value: 'city_transit' },
+                    { label: 'Metro Map', value: 'metro_map' },
+                    { label: 'Timetable', value: 'timetable' },
+                    { label: 'Parking', value: 'parking' },
+                    { label: 'Unknown', value: 'unknown' }
+                ]
+            },
+            {
+                id: 'transport_affiliate_fit', label: 'Transport Fit', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'High', value: 'high' },
+                    { label: 'Medium', value: 'medium' },
+                    { label: 'Low', value: 'low' }
+                ]
+            },
+            {
+                id: 'transport_geo_scope', label: 'Transport Geo', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Top Outbound', value: 'top_outbound_geo' },
+                    { label: 'Destination City', value: 'destination_city' },
+                    { label: 'Domestic TW', value: 'domestic_tw' },
+                    { label: 'Cross Border Short Haul', value: 'cross_border_short_haul' },
+                    { label: 'Local City', value: 'local_city' },
+                    { label: 'Unknown', value: 'unknown' }
+                ]
+            },
+            {
+                id: 'transport_trip_stage', label: 'Transport Stage', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Pre Trip', value: 'pre_trip' },
+                    { label: 'Arrival Immediate', value: 'arrival_immediate' },
+                    { label: 'In Trip', value: 'in_trip' },
+                    { label: 'Local Utility', value: 'local_utility' },
+                    { label: 'Unknown', value: 'unknown' }
+                ]
+            },
             { id: 'geo_entity', label: 'Geo Entity', type: 'text', placeholder: 'e.g. thailand' },
             {
                 id: 'language', label: 'Lang', type: 'select', options: [
@@ -395,6 +445,65 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                 filters: {
                     is_active: 'true',
                     pattern: 'blog'
+                }
+            },
+            {
+                id: 'trip_transport_high_fit',
+                label: 'Transport High Fit',
+                description: 'Best transport candidates first',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_affiliate_fit: 'high'
+                }
+            },
+            {
+                id: 'trip_transport_unknown_geo',
+                label: 'Transport Unknown Geo',
+                description: 'Transport rows with unresolved geo',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_geo_scope: 'unknown'
+                }
+            },
+            {
+                id: 'trip_transport_utility',
+                label: 'Transport Utility',
+                description: 'Map, transit, parking, timetable rows',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_scope: 'city_transit|metro_map|timetable|parking'
+                }
+            },
+            {
+                id: 'trip_transport_domestic_tw',
+                label: 'Transport Domestic TW',
+                description: 'Domestic Taiwan transport rows',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_geo_scope: 'domestic_tw'
+                }
+            },
+            {
+                id: 'trip_transport_airport_station',
+                label: 'Transport Airport',
+                description: 'Airport and station-related transport rows',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_scope: 'airport_transfer|airport_to_city|airport_general|station_guide'
+                }
+            },
+            {
+                id: 'trip_transport_non_core',
+                label: 'Transport Non-Core',
+                description: 'Shortlisted non-core transport URLs kept outside guide/transport',
+                filters: {
+                    is_active: 'true',
+                    'metadata.non_core_transport_bucket': 'keep_strong|keep_review'
                 }
             }
         ]

@@ -34,6 +34,11 @@ REVIEW_FIELDS = [
     "post_booking_risk",
     "trip_mode_risk",
     "market_fit",
+    "transport_scope",
+    "transport_trip_stage",
+    "transport_affiliate_fit",
+    "transport_geo_scope",
+    "transport_risk_flags",
     "is_active",
     "traffic",
     "keyword_count",
@@ -63,6 +68,11 @@ def row_for_review(result: Dict[str, object]) -> Dict[str, object]:
         "post_booking_risk": result.get("post_booking_risk", ""),
         "trip_mode_risk": result.get("trip_mode_risk", ""),
         "market_fit": result.get("market_fit", ""),
+        "transport_scope": result.get("transport_scope", ""),
+        "transport_trip_stage": result.get("transport_trip_stage", ""),
+        "transport_affiliate_fit": result.get("transport_affiliate_fit", ""),
+        "transport_geo_scope": result.get("transport_geo_scope", ""),
+        "transport_risk_flags": "|".join(result.get("transport_risk_flags", []) or []),
         "is_active": result.get("is_active", ""),
         "traffic": result.get("traffic", ""),
         "keyword_count": result.get("keyword_count", ""),
@@ -108,6 +118,17 @@ def main() -> int:
     active_unknown_geo = [row for row in review_rows if row["is_active"] and row["geo_entity"] == "unknown"]
     active_weather = [row for row in review_rows if row["is_active"] and row["topic_type"] == "weather"]
     active_local_risk = [row for row in review_rows if row["is_active"] and row["trip_mode_risk"] == "high"]
+    transport_rows = [row for row in review_rows if row["pattern"] == "guide/transport"]
+    active_transport_high_fit = [row for row in review_rows if row["is_active"] and row["transport_affiliate_fit"] == "high"]
+    active_transport_domestic_tw = [row for row in review_rows if row["is_active"] and row["transport_geo_scope"] == "domestic_tw"]
+    active_transport_utility = [
+        row for row in review_rows
+        if row["is_active"] and row["transport_scope"] in {"metro_map", "timetable", "parking", "city_transit"}
+    ]
+    active_transport_unknown_geo = [
+        row for row in review_rows
+        if row["is_active"] and row["pattern"] == "guide/transport" and row["geo_entity"] == "unknown"
+    ]
     excluded_rows = [row for row in review_rows if not row["is_active"]]
     active_high_transactional = []
     for result, review_row in zip(results, review_rows):
@@ -125,6 +146,11 @@ def main() -> int:
         "active_local_risk": len(active_local_risk),
         "active_high_transactional": len(active_high_transactional),
         "excluded_rows": len(excluded_rows),
+        "transport_rows": len(transport_rows),
+        "active_transport_high_fit": len(active_transport_high_fit),
+        "active_transport_domestic_tw": len(active_transport_domestic_tw),
+        "active_transport_utility": len(active_transport_utility),
+        "active_transport_unknown_geo": len(active_transport_unknown_geo),
     }
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -135,6 +161,10 @@ def main() -> int:
     write_csv(output_dir / "active_weather.csv", active_weather)
     write_csv(output_dir / "active_local_risk.csv", active_local_risk)
     write_csv(output_dir / "active_high_transactional.csv", active_high_transactional)
+    write_csv(output_dir / "active_transport_high_fit.csv", active_transport_high_fit)
+    write_csv(output_dir / "active_transport_domestic_tw.csv", active_transport_domestic_tw)
+    write_csv(output_dir / "active_transport_utility.csv", active_transport_utility)
+    write_csv(output_dir / "active_transport_unknown_geo.csv", active_transport_unknown_geo)
     write_csv(output_dir / "excluded_rows.csv", excluded_rows)
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
