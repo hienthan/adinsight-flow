@@ -26,6 +26,7 @@ import { SafeButton } from '../../components/common/ui/SafeButton';
 import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
 import { createAmbientSurface, toAlphaColor } from '../../components/common/ui';
+import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown';
 
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type OverviewMode = 'comfortable' | 'compact';
@@ -213,15 +214,25 @@ const STATUS_RANK: Record<string, number> = {
 export default function CampOverview() {
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const filterPlatform = searchParams.get('platform') || 'all';
+    const filterPlatformParam = searchParams.get('platform') || '';
+    const selectedPlatformIds = useMemo(
+        () => filterPlatformParam.split('|').map((value) => value.trim()).filter((value) => value && value !== 'all'),
+        [filterPlatformParam],
+    );
+    const hasPlatformFilter = selectedPlatformIds.length > 0;
     const filterPriority = searchParams.get('priority') || 'all';
     const filterName = searchParams.get('q') || '';
+    const filterIsTesting = searchParams.get('is_testing') === 'true';
     const filterReminders = searchParams.get('reminders') === 'true';
     const filterRLink = searchParams.get('rlink') === 'true';
+    const filterTerms = searchParams.get('terms') === 'true';
+    const filterBroads = searchParams.get('broads') === 'true';
+    const filterNoTraffic = searchParams.get('no_traffic') === 'true';
+    const filterStop = searchParams.get('stop') === 'true';
     const filterCriticalRLink = searchParams.get('rlink_critical') === 'true';
     const filterShowAll = searchParams.get('all') === 'true';
     const filterMetadata = searchParams.get('has_meta') === 'true';
-    const viewMode = (searchParams.get('view') as OverviewMode) || 'comfortable';
+    const viewMode = (searchParams.get('view') as OverviewMode) || 'compact';
     const reminderQuickFilter = (searchParams.get('due') as ReminderQuickFilter) || 'all';
     const sortMode = (searchParams.get('sort') as CampaignSortMode) || 'smart';
     const compactCards = viewMode === 'compact';
@@ -230,8 +241,13 @@ export default function CampOverview() {
 
     const setFilterPlatform = (val: string) => {
         setSearchParams((prev: URLSearchParams) => {
-            if (val === 'all') prev.delete('platform');
-            else prev.set('platform', val);
+            const normalized = val
+                .split('|')
+                .map((value) => value.trim())
+                .filter((value, index, values) => value && value !== 'all' && values.indexOf(value) === index)
+                .join('|');
+            if (!normalized) prev.delete('platform');
+            else prev.set('platform', normalized);
             return prev;
         });
     };
@@ -253,6 +269,14 @@ export default function CampOverview() {
         });
     };
 
+    const setToggleIsTesting = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterIsTesting) prev.delete('is_testing');
+            else prev.set('is_testing', 'true');
+            return prev;
+        });
+    };
+
     const setToggleReminders = () => {
         setSearchParams((prev: URLSearchParams) => {
             if (filterReminders) prev.delete('reminders');
@@ -265,6 +289,38 @@ export default function CampOverview() {
         setSearchParams((prev: URLSearchParams) => {
             if (filterRLink) prev.delete('rlink');
             else prev.set('rlink', 'true');
+            return prev;
+        });
+    };
+
+    const setToggleTerms = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterTerms) prev.delete('terms');
+            else prev.set('terms', 'true');
+            return prev;
+        });
+    };
+
+    const setToggleBroads = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterBroads) prev.delete('broads');
+            else prev.set('broads', 'true');
+            return prev;
+        });
+    };
+
+    const setToggleNoTraffic = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterNoTraffic) prev.delete('no_traffic');
+            else prev.set('no_traffic', 'true');
+            return prev;
+        });
+    };
+
+    const setToggleStop = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterStop) prev.delete('stop');
+            else prev.set('stop', 'true');
             return prev;
         });
     };
@@ -340,13 +396,15 @@ export default function CampOverview() {
 
     // Fetch campaigns with platform expand
     const { data: campaigns = [], isLoading, refetch } = useQuery<Campaign[]>({
-        queryKey: ['campaigns', filterPlatform],
+        queryKey: ['campaigns', selectedPlatformIds.join('|')],
         queryFn: async () => {
             let filter = '';
             const filters: string[] = [];
 
-            if (filterPlatform !== 'all') {
-                filters.push(`platform = "${filterPlatform}"`);
+            if (selectedPlatformIds.length === 1) {
+                filters.push(`platform = "${selectedPlatformIds[0]}"`);
+            } else if (selectedPlatformIds.length > 1) {
+                filters.push(`(${selectedPlatformIds.map((platformId) => `platform = "${platformId}"`).join(' || ')})`);
             }
 
             filter = filters.join(' && ');
@@ -432,6 +490,10 @@ export default function CampOverview() {
             const reminderText = `${reminder.message || ''} ${metricSignals.join(' ')}`.toLowerCase();
             if (reminderText.includes('rlink')) specialReminderSignals.add('rLink');
             if (reminderText.includes('rsa')) specialReminderSignals.add('RSA');
+            if (reminderText.includes('terms') || reminderText.includes('search terms')) specialReminderSignals.add('Terms');
+            if (reminderText.includes('broads') || reminderText.includes(' broad ')) specialReminderSignals.add('Broads');
+            if (reminderText.includes('notraffic') || reminderText.includes('no traffic')) specialReminderSignals.add('noTraffic');
+            if (reminderText.includes('stop') || reminderText.includes(' pause ')) specialReminderSignals.add('Stop');
             if (reminderText.includes('!url')) specialReminderSignals.add('!URL');
 
             const reminderDate = parseDateOnly(reminder.reminder_date);
@@ -548,7 +610,12 @@ export default function CampOverview() {
             if (campaign.reminderState === 'today') acc.today += 1;
             if (campaign.reminderState === 'upcoming') acc.upcoming += 1;
             if (campaign.specialReminderSignals.includes('rLink')) acc.rLink += 1;
+            if (campaign.specialReminderSignals.includes('Terms')) acc.terms += 1;
+            if (campaign.specialReminderSignals.includes('Broads')) acc.broads += 1;
+            if (campaign.specialReminderSignals.includes('noTraffic')) acc.noTraffic += 1;
+            if (campaign.specialReminderSignals.includes('Stop')) acc.stop += 1;
             if (campaign.hasCriticalRLinkAlert) acc.criticalRLink += 1;
+            if (campaign.is_testing) acc.testing += 1;
 
             // Priorities
             if (campaign.priority === 'critical') acc.critical += 1;
@@ -556,25 +623,35 @@ export default function CampOverview() {
 
             return acc;
         },
-        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0, rLink: 0, criticalRLink: 0 },
+        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0, rLink: 0, terms: 0, broads: 0, noTraffic: 0, stop: 0, criticalRLink: 0, testing: 0 },
     ), [baseFilteredCampaigns]);
 
     // 3. Final display list (Applies all interactive filters)
     const filteredCampaigns = useMemo(() => baseFilteredCampaigns.filter((campaign) => {
         if (alertsOnlyEnabled && !campaign.hasPendingReminders) return false;
+        if (filterIsTesting && !campaign.is_testing) return false;
         if (filterRLink && !campaign.specialReminderSignals.includes('rLink')) return false;
+        if (filterTerms && !campaign.specialReminderSignals.includes('Terms')) return false;
+        if (filterBroads && !campaign.specialReminderSignals.includes('Broads')) return false;
+        if (filterNoTraffic && !campaign.specialReminderSignals.includes('noTraffic')) return false;
+        if (filterStop && !campaign.specialReminderSignals.includes('Stop')) return false;
         if (filterCriticalRLink && !campaign.hasCriticalRLinkAlert) return false;
         if (reminderQuickFilter !== 'all' && campaign.reminderState !== reminderQuickFilter) return false;
         if (filterPriority !== 'all' && campaign.priority !== filterPriority) return false;
         if (filterMetadata && htmlToPlainText(campaign.metadata || '').trim().length === 0) return false;
         return true;
-    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterCriticalRLink, filterMetadata, filterPriority, filterRLink, reminderQuickFilter]);
+    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterBroads, filterCriticalRLink, filterIsTesting, filterMetadata, filterNoTraffic, filterPriority, filterRLink, filterStop, filterTerms, reminderQuickFilter]);
 
-    const hasActiveFilters = filterPlatform !== 'all'
+    const hasActiveFilters = hasPlatformFilter
         || filterPriority !== 'all'
         || filterName !== ''
+        || filterIsTesting
         || alertsOnlyEnabled
         || filterRLink
+        || filterTerms
+        || filterBroads
+        || filterNoTraffic
+        || filterStop
         || filterCriticalRLink
         || filterShowAll
         || reminderQuickFilter !== 'all'
@@ -592,7 +669,6 @@ export default function CampOverview() {
 
     const quickFilters = [
         { id: 'alerts', label: 'Alerts', active: alertsOnlyEnabled, toggle: setToggleReminders },
-        { id: 'rlink', label: 'rLink', active: filterRLink, toggle: setToggleRLink },
         { id: 'all', label: 'All', active: filterShowAll, toggle: setToggleShowAll },
         { id: 'meta', label: 'Metadata', active: filterMetadata, toggle: setToggleMetadata }
     ] as const;
@@ -985,22 +1061,17 @@ export default function CampOverview() {
 
                     <div className="filter-group">
                         <label>Platform</label>
-                        <select
-                            className="camp-filter-control"
-                            value={filterPlatform}
-                            onChange={(e) => setFilterPlatform(e.target.value)}
-                            style={{
-                                minWidth: '160px',
-                                borderRadius: '12px',
-                            }}
-                        >
-                            <option value="all">All Channels</option>
-                            {platforms.map((platform) => (
-                                <option key={platform.id} value={platform.id}>
-                                    {platform.display_name}
-                                </option>
-                            ))}
-                        </select>
+                        <div style={{ minWidth: '220px' }}>
+                            <MultiSelectDropdown
+                                options={platforms.map((platform) => ({ label: platform.display_name, value: platform.id }))}
+                                value={selectedPlatformIds.join('|')}
+                                onChange={setFilterPlatform}
+                                placeholder="All Channels"
+                                width="220px"
+                                showSearch
+                                variant="premium"
+                            />
+                        </div>
                     </div>
 
                     <div className="filter-group">
@@ -1185,6 +1256,23 @@ export default function CampOverview() {
                     </FilterChip>
 
                     <FilterChip
+                        active={filterIsTesting}
+                        onClick={setToggleIsTesting}
+                        activeBackground="#0891b2"
+                        inactiveBackground="rgba(8, 145, 178, 0.06)"
+                        activeBorder="#0891b2"
+                        inactiveBorder="rgba(8, 145, 178, 0.14)"
+                        activeColor="#fff"
+                        inactiveColor="#0891b2"
+                        activeShadow="0 0 15px rgba(8, 145, 178, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterIsTesting : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterIsTesting ? '#fff' : '#0891b2', boxShadow: filterIsTesting ? '0 0 8px #fff' : '0 0 8px rgba(8, 145, 178, 0.65)' }} />}
+                        title="Campaigns marked as new-market tests"
+                    >
+                        Testing: {summary.testing}
+                    </FilterChip>
+
+                    <FilterChip
                         active={filterRLink}
                         onClick={setToggleRLink}
                         activeBackground="#0f766e"
@@ -1198,6 +1286,74 @@ export default function CampOverview() {
                         indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterRLink ? '#fff' : '#0f766e', boxShadow: filterRLink ? '0 0 8px #fff' : '0 0 8px rgba(15, 118, 110, 0.65)' }} />}
                     >
                         rLink: {summary.rLink}
+                    </FilterChip>
+
+                    <FilterChip
+                        active={filterTerms}
+                        onClick={setToggleTerms}
+                        activeBackground="#2563eb"
+                        inactiveBackground="rgba(37, 99, 235, 0.05)"
+                        activeBorder="#2563eb"
+                        inactiveBorder="rgba(37, 99, 235, 0.12)"
+                        activeColor="#fff"
+                        inactiveColor="#2563eb"
+                        activeShadow="0 0 15px rgba(37, 99, 235, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterTerms : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterTerms ? '#fff' : '#2563eb', boxShadow: filterTerms ? '0 0 8px #fff' : '0 0 8px rgba(37, 99, 235, 0.65)' }} />}
+                        title="Campaigns with reminders to review search terms"
+                    >
+                        Terms: {summary.terms}
+                    </FilterChip>
+
+                    <FilterChip
+                        active={filterBroads}
+                        onClick={setToggleBroads}
+                        activeBackground="#7c3aed"
+                        inactiveBackground="rgba(124, 58, 237, 0.06)"
+                        activeBorder="#7c3aed"
+                        inactiveBorder="rgba(124, 58, 237, 0.14)"
+                        activeColor="#fff"
+                        inactiveColor="#7c3aed"
+                        activeShadow="0 0 15px rgba(124, 58, 237, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterBroads : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterBroads ? '#fff' : '#7c3aed', boxShadow: filterBroads ? '0 0 8px #fff' : '0 0 8px rgba(124, 58, 237, 0.65)' }} />}
+                        title="Campaigns with reminders tied to broad-keyword monitoring"
+                    >
+                        Broads: {summary.broads}
+                    </FilterChip>
+
+                    <FilterChip
+                        active={filterNoTraffic}
+                        onClick={setToggleNoTraffic}
+                        activeBackground="#ea580c"
+                        inactiveBackground="rgba(234, 88, 12, 0.06)"
+                        activeBorder="#ea580c"
+                        inactiveBorder="rgba(234, 88, 12, 0.14)"
+                        activeColor="#fff"
+                        inactiveColor="#ea580c"
+                        activeShadow="0 0 15px rgba(234, 88, 12, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterNoTraffic : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterNoTraffic ? '#fff' : '#ea580c', boxShadow: filterNoTraffic ? '0 0 8px #fff' : '0 0 8px rgba(234, 88, 12, 0.65)' }} />}
+                        title="Campaigns with reminders for no-traffic situations"
+                    >
+                        noTraffic: {summary.noTraffic}
+                    </FilterChip>
+
+                    <FilterChip
+                        active={filterStop}
+                        onClick={setToggleStop}
+                        activeBackground="#334155"
+                        inactiveBackground="rgba(51, 65, 85, 0.06)"
+                        activeBorder="#334155"
+                        inactiveBorder="rgba(51, 65, 85, 0.14)"
+                        activeColor="#fff"
+                        inactiveColor="#334155"
+                        activeShadow="0 0 15px rgba(51, 65, 85, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterStop : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterStop ? '#fff' : '#334155', boxShadow: filterStop ? '0 0 8px #fff' : '0 0 8px rgba(51, 65, 85, 0.65)' }} />}
+                        title="Campaigns with stop reminders"
+                    >
+                        Stop: {summary.stop}
                     </FilterChip>
 
                     <FilterChip

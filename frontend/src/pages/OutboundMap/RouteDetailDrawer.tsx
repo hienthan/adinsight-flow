@@ -10,9 +10,10 @@ interface RouteDetailDrawerProps {
     onClose: () => void;
     onEdit: (route: CampaignRouteRecord) => void;
     onSelectRoute?: (route: CampaignRouteRecord) => void;
+    onOpenCoverage?: (route: CampaignRouteRecord) => void;
 }
 
-export default function RouteDetailDrawer({ route, routes = [], onClose, onEdit, onSelectRoute }: RouteDetailDrawerProps) {
+export default function RouteDetailDrawer({ route, routes = [], onClose, onEdit, onSelectRoute, onOpenCoverage }: RouteDetailDrawerProps) {
     if (!route) return null;
 
     const statusMeta = ROUTE_STATUS_META[route.status];
@@ -231,6 +232,20 @@ export default function RouteDetailDrawer({ route, routes = [], onClose, onEdit,
                 </section>
 
                 <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem' }}>
+                    <SafeButton
+                        onClick={() => onOpenCoverage?.(route)}
+                        style={{
+                            flex: 1,
+                            borderRadius: '14px',
+                            border: '1px solid var(--border-subtle)',
+                            background: 'var(--bg-overlay)',
+                            color: 'var(--text-main)',
+                            fontWeight: 800,
+                            padding: '0.95rem 1rem',
+                        }}
+                    >
+                        Open Coverage
+                    </SafeButton>
                     <SafeButton
                         onClick={() => onEdit(route)}
                         style={{

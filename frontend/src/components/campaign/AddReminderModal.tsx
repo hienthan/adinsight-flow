@@ -20,14 +20,18 @@ type ReminderFormData = {
     check_metrics: string[];
 };
 
-const REMINDER_METRICS = ['TF', 'Conv', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC', 'RSA', 'rLink', 'siteL', '!URL'] as const;
+const REMINDER_METRICS = ['TF', 'Conv', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC', 'RSA', 'rLink', 'Terms', 'Broads', 'noTraffic', 'Stop', 'siteL', '!URL'] as const;
 
 const normalizeMetricLabel = (metric: string) => {
     const normalized = metric.trim().toUpperCase();
     if (normalized === 'TRAFFIC') return 'TF';
+    if (normalized === 'NO TRAFFIC' || normalized === 'NOTRAFFIC' || normalized === 'NO_TRAFFIC') return 'noTraffic';
+    if (normalized === 'STOP' || normalized === 'PAUSE') return 'Stop';
     if (normalized === 'CONVERSIONS') return 'Conv';
     if (normalized === 'MCPC KEYS') return 'mCPC';
     if (normalized === 'MCPC') return 'mCPC';
+    if (normalized === 'TERM' || normalized === 'SEARCH TERMS') return 'Terms';
+    if (normalized === 'BROAD' || normalized === 'BROADS') return 'Broads';
     if (normalized === 'IS') return null;
 
     const matchedMetric = REMINDER_METRICS.find(option => option.toUpperCase() === normalized);

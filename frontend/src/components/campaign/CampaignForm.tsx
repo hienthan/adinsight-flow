@@ -31,6 +31,7 @@ const getLocalDateInputValue = () => {
 const normalizeForComparison = (field: keyof Campaign, value: any) => {
     if (field === 'created_date') return formatDateForInput(value || '');
     if (field === 'is_dsa') return Boolean(value);
+    if (field === 'is_testing') return Boolean(value);
     if (field === 'priority') return value || 'normal';
     if (field === 'cpc' || field === 'max_daily_budget') {
         const val = toComparableNumber(value);
@@ -77,6 +78,7 @@ export default function CampaignForm({
         description: '',
         general_notes: '',
         is_dsa: true,
+        is_testing: false,
         priority: 'normal',
         created_date: getLocalDateInputValue(),
     });
@@ -108,6 +110,7 @@ export default function CampaignForm({
             setFormData({
                 ...existingCampaign,
                 created_date: formatDateForInput(existingCampaign.created_date),
+                is_testing: Boolean(existingCampaign.is_testing),
                 priority: existingCampaign.priority || 'normal'
             });
         } else if (platformIdFromUrl) {
@@ -130,6 +133,7 @@ export default function CampaignForm({
             'metadata',
             'general_notes',
             'is_dsa',
+            'is_testing',
             'priority',
             'created_date',
         ];
@@ -295,6 +299,29 @@ export default function CampaignForm({
                     color: var(--text-dim);
                     line-height: 1.45;
                 }
+                .campaign-form-shell .compact-check {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.55rem;
+                    min-height: 42px;
+                    padding: 0.72rem 0.9rem;
+                    border-radius: 14px;
+                    border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.18) 22%);
+                    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%);
+                    box-shadow: inset 0 1px 0 color-mix(in srgb, white 54%, transparent), 0 14px 28px -24px rgba(15, 23, 42, 0.42);
+                    cursor: pointer;
+                    user-select: none;
+                }
+                .campaign-form-shell .compact-check input {
+                    width: 16px;
+                    min-width: 16px;
+                    height: 16px;
+                    min-height: 16px;
+                    padding: 0;
+                    margin: 0;
+                    accent-color: #2563eb;
+                    box-shadow: none;
+                }
                 .dark .campaign-form-shell input,
                 .dark .campaign-form-shell select,
                 .dark .campaign-form-shell textarea {
@@ -309,6 +336,11 @@ export default function CampaignForm({
                 .dark .campaign-form-shell select option {
                     background: #020617;
                     color: #f8fafc;
+                }
+                .dark .campaign-form-shell .compact-check {
+                    background: linear-gradient(180deg, rgba(15,23,42,0.84) 0%, rgba(2,6,23,0.94) 100%);
+                    border-color: rgba(148, 163, 184, 0.18);
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 14px 28px -24px rgba(0, 0, 0, 0.5);
                 }
             `}</style>
             <div style={{ display: 'flex', flexDirection: 'column', gap: isModalLayout ? '0.55rem' : '1.2rem' }}>
@@ -477,6 +509,23 @@ export default function CampaignForm({
                                 </button>
                             </div>
                         )}
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: isModalLayout ? '0.6rem' : '0.8rem', marginTop: isModalLayout ? '0.6rem' : '0.8rem' }}>
+                        <div className="filter-group" style={{ minWidth: isModalLayout ? '180px' : '220px' }}>
+                            <label>New Market Test</label>
+                            <label className="compact-check">
+                                <input
+                                    type="checkbox"
+                                    name="is_testing"
+                                    checked={Boolean(formData.is_testing)}
+                                    onChange={handleChange}
+                                />
+                                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                                    Mark this campaign as testing a new market
+                                </span>
+                            </label>
+                        </div>
                     </div>
                 </SurfaceCard>
 

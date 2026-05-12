@@ -2,6 +2,7 @@ import { useDeferredValue, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Network, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { pb } from '../../lib/pocketbase';
 import { useCountryOptions, resolveCountryOption } from '../../hooks/useCountryOptions';
 import { SafeButton, SurfaceCard } from '../../components/common/ui';
@@ -46,6 +47,7 @@ type ModalState =
     | { mode: 'edit'; route: CampaignRouteRecord };
 
 export default function OutboundMapPage() {
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const countryOptions = useCountryOptions();
     const [filters, setFilters] = useState(INITIAL_FILTERS);
@@ -78,6 +80,15 @@ export default function OutboundMapPage() {
         if (routes.length === 0) return;
         setSelectedRouteStack(routes);
         setSelectedRouteId(routes[0].id);
+    };
+
+    const openCoverageOverview = (seed?: { platformId?: string; sourceMarket?: string; destinationCountry?: string }) => {
+        const params = new URLSearchParams();
+        if (seed?.platformId) params.set('platform', seed.platformId);
+        if (seed?.sourceMarket) params.set('sourceMarket', seed.sourceMarket);
+        if (seed?.destinationCountry) params.set('destinationCountry', seed.destinationCountry);
+        const query = params.toString();
+        navigate(query ? `/camp-tracking/coverage?${query}` : '/camp-tracking/coverage');
     };
 
     const createRouteMutation = useMutation({
@@ -330,6 +341,7 @@ export default function OutboundMapPage() {
                         ...(routesQuery.data || []).map((route) => route.source_market),
                     ])).sort()}
                     onOpenCreate={() => openCreateModal()}
+                    onOpenCoverage={() => openCoverageOverview()}
                 />
 
                 {loading ? (
@@ -388,6 +400,11 @@ export default function OutboundMapPage() {
                 }}
                 onEdit={(route) => setModalState({ mode: 'edit', route })}
                 onSelectRoute={(route) => setSelectedRouteId(route.id)}
+                onOpenCoverage={(route) => openCoverageOverview({
+                    platformId: route.platform,
+                    sourceMarket: route.source_market,
+                    destinationCountry: route.destination_country,
+                })}
             />
 
             <RouteFormModal

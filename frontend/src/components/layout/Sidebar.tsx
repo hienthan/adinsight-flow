@@ -11,6 +11,7 @@ import {
     History,
     Settings,
     TrendingUp,
+    BarChart3,
     Link2,
     NotebookPen,
     TextSearch,
@@ -307,12 +308,20 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {/* Section Header */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>Tracking Core</div>}
 
-                <NavLink to="/camp-tracking" icon={ClipboardList} color="indigo" activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes', 'outbound-map'].some(p => location.pathname.includes(p))}>
+                <NavLink to="/camp-tracking" icon={ClipboardList} color="indigo" activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes', 'outbound-map', 'testing', 'coverage'].some(p => location.pathname.includes(p))}>
                     Overview
                 </NavLink>
 
                 <NavLink to="/camp-tracking/platforms" icon={Settings} color="teal">
                     Manage Platforms
+                </NavLink>
+
+                <NavLink to="/camp-tracking/testing" icon={WandSparkles} color="rose">
+                    Test Tracking
+                </NavLink>
+
+                <NavLink to="/camp-tracking/coverage" icon={BarChart3} color="teal">
+                    Coverage Overview
                 </NavLink>
 
                 <NavLink to="/camp-tracking/outbound-map" icon={Route} color="emerald">
