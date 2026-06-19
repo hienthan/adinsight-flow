@@ -44,6 +44,30 @@ export const formatPlatform = (track: CampaignTestTrack) =>
 export const formatPlatformLabel = (platform?: Pick<CampaignPlatform, 'display_name' | 'platform_name'> | null) =>
     platform?.display_name || platform?.platform_name || 'Unknown Platform';
 
+const extractPlatformFamilyName = (rawValue?: string | null) => {
+    const raw = (rawValue || '').trim();
+    if (!raw) return 'Unknown Platform';
+
+    const separatorSplit = raw.split(/[\s\-_]+/).filter(Boolean);
+    const base = separatorSplit[0] || raw;
+
+    const withoutMarketplaceSuffix = base.replace(/(?:eco|mo)$/i, '');
+    if (withoutMarketplaceSuffix && withoutMarketplaceSuffix !== base) {
+        return withoutMarketplaceSuffix;
+    }
+
+    return base;
+};
+
+export const getPlatformFamilyKey = (track: CampaignTestTrack) =>
+    extractPlatformFamilyName(track.expand?.platform?.platform_name || track.expand?.platform?.display_name || 'unknown_platform')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+export const formatPlatformFamily = (track: CampaignTestTrack) =>
+    formatSlug(getPlatformFamilyKey(track));
+
 export const formatDestination = (track: Pick<CampaignTestTrack, 'lane_scope' | 'destination_country' | 'destination_city'>) => {
     if (track.lane_scope === 'market_only') return 'Market Only';
     const country = formatSlug(track.destination_country);

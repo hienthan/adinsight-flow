@@ -1,6 +1,6 @@
 import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Key, History, CheckCircle2, FileText } from 'lucide-react';
+import { Key, History, CheckCircle2, FileText, FlaskConical } from 'lucide-react';
 import { Campaign, CampaignPlatform, CampaignChange } from '../../types/campaign';
 import { pb } from '../../lib/pocketbase';
 import { formatDate } from '../../lib/utils';
@@ -138,16 +138,66 @@ export default function CampaignCard({
     const [showCPCTooltip, setShowCPCTooltip] = React.useState(false);
     const [isMetadataModalOpen, setIsMetadataModalOpen] = React.useState(false);
 
-    const { data: cpcChanges = [] } = useQuery<CampaignChange[]>({
-        queryKey: ['campaign-cpc-changes', campaign.id],
+    const activeTargetField = React.useMemo(() => {
+        const strategy = campaign.bidding_strategy;
+        if (strategy === 'target_cpa') return 'target_cpa';
+        if (strategy === 'target_roas') return 'target_roas';
+        return 'cpc';
+    }, [campaign.bidding_strategy]);
+
+    const { data: targetChanges = [] } = useQuery<CampaignChange[]>({
+        queryKey: ['campaign-target-changes', campaign.id, activeTargetField],
         queryFn: async () => {
+            if (!campaign.id) return [];
             return await pb.collection('campaign_changes').getFullList<CampaignChange>({
-                filter: `campaign = "${campaign.id}" && field_changed = "cpc"`,
+                filter: `campaign = "${campaign.id}" && field_changed = "${activeTargetField}"`,
                 sort: '-change_date',
                 limit: 3
             });
         },
     });
+
+    const targetInfo = React.useMemo(() => {
+        const strategy = campaign.bidding_strategy;
+        if (strategy === 'target_roas') {
+            return {
+                label: 'ROAS',
+                value: `${campaign.target_roas || 0}%`,
+                tooltipTitle: 'ROAS Evolution',
+                formatValue: (val: any) => `${val || 0}%`
+            };
+        }
+        if (strategy === 'target_cpa') {
+            return {
+                label: 'tCPA',
+                value: `$${campaign.target_cpa || 0}`,
+                tooltipTitle: 'tCPA Evolution',
+                formatValue: (val: any) => `$${val || 0}`
+            };
+        }
+        if (strategy === 'max_conversions') {
+            return {
+                label: 'Max Conv',
+                value: 'Max Conv',
+                tooltipTitle: 'Strategy: Max Conversions',
+                formatValue: (val: any) => val || 'Max Conv'
+            };
+        }
+        if (strategy === 'max_conversion_value') {
+            return {
+                label: 'Max Value',
+                value: 'Max Value',
+                tooltipTitle: 'Strategy: Max Conv Value',
+                formatValue: (val: any) => val || 'Max Value'
+            };
+        }
+        return {
+            label: 'CPC',
+            value: campaign.cpc ? `$${campaign.cpc.toFixed(0)}` : '0',
+            tooltipTitle: 'CPC Evolution',
+            formatValue: (val: any) => val ? `$${Number(val).toFixed(0)}` : '0'
+        };
+    }, [campaign.bidding_strategy, campaign.target_roas, campaign.target_cpa, campaign.cpc]);
 
     const markReviewedMutation = useMutation({
         mutationFn: async () => {
@@ -161,10 +211,6 @@ export default function CampaignCard({
             queryClient.invalidateQueries({ queryKey: ['campaign', campaign.id] });
         },
     });
-
-
-
-
 
     const compactView = viewMode === 'compact' || viewMode === 'alert';
     const notesPreview = htmlToPlainText(campaign.general_notes || '');
@@ -192,18 +238,72 @@ export default function CampaignCard({
 
     const isPaused = campaign.status === 'paused';
     const platformAccent = platform?.color || 'hsl(var(--primary))';
+    const isTesting = campaign.is_testing === true;
+
+    const biddingGroupStyles = React.useMemo(() => {
+        const strategy = campaign.bidding_strategy;
+        if (strategy === 'target_cpa' || strategy === 'max_conversions') {
+            return {
+                group: 'volume',
+                ambientColor: '#14b8a6', // Teal
+                borderColor: 'rgba(20, 184, 166, 0.22)',
+                borderColorHover: 'rgba(20, 184, 166, 0.45)',
+                glowShadow: '0 12px 30px -15px rgba(20, 184, 166, 0.25)',
+                badgeStyle: {
+                    background: 'linear-gradient(135deg, #0d9488 0%, #10b981 100%)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(20, 184, 166, 0.3)',
+                    boxShadow: '0 2px 8px -2px rgba(20, 184, 166, 0.3)'
+                }
+            };
+        }
+        if (strategy === 'target_roas' || strategy === 'max_conversion_value') {
+            return {
+                group: 'value',
+                ambientColor: '#a855f7', // Purple/Violet
+                borderColor: 'rgba(168, 85, 247, 0.22)',
+                borderColorHover: 'rgba(168, 85, 247, 0.45)',
+                glowShadow: '0 12px 30px -15px rgba(168, 85, 247, 0.25)',
+                badgeStyle: {
+                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    boxShadow: '0 2px 8px -2px rgba(168, 85, 247, 0.3)'
+                }
+            };
+        }
+        return {
+            group: 'traffic',
+            ambientColor: platform?.color || 'hsl(var(--primary))',
+            borderColor: reminderStyle.cardBorder,
+            borderColorHover: 'hsla(var(--primary) / 0.25)',
+            glowShadow: `0 18px 36px -28px ${hexToRgba(platform?.color, 0.35)}`,
+            badgeStyle: {
+                background: 'var(--bg-overlay)',
+                color: platformAccent,
+                border: '1px solid var(--border-subtle)',
+                boxShadow: 'none'
+            }
+        };
+    }, [campaign.bidding_strategy, platform?.color, platformAccent, reminderStyle.cardBorder]);
+
     const hasSpecialTrackingReminder = specialReminderSignals.length > 0;
     const specialReminderTitle = `Tracking reminder: ${specialReminderSignals.join(', ')}`;
     const priorityAccent = campaign.priority && campaign.priority !== 'normal'
         ? PRIORITY_ACCENTS[campaign.priority as CampaignPriority] || PRIORITY_ACCENTS.medium
         : null;
+    const testBorderColor = 'rgba(245, 158, 11, 0.4)';
+    const testBorderColorHover = '#d97706';
     const cardSurface = [
-        `radial-gradient(circle at top right, ${hexToRgba(platform?.color, reminderState === 'none' ? 0.08 : 0.16)} 0%, transparent 38%)`,
-        `radial-gradient(circle at bottom left, ${hexToRgba(platform?.color, 0.06)} 0%, transparent 46%)`,
+        isTesting ? 'repeating-linear-gradient(135deg, rgba(245, 158, 11, 0.07) 0px, rgba(245, 158, 11, 0.07) 8px, transparent 8px, transparent 16px)' : '',
+        `radial-gradient(circle at top right, ${hexToRgba(biddingGroupStyles.ambientColor, reminderState === 'none' ? 0.12 : 0.2)} 0%, transparent 40%)`,
+        `radial-gradient(circle at bottom left, ${hexToRgba(platform?.color, 0.05)} 0%, transparent 46%)`,
         reminderState === 'none'
-            ? 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 88%, var(--bg-main) 12%) 100%)'
+            ? (isTesting
+                ? 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 95%, #f59e0b 5%) 0%, var(--bg-content) 100%)'
+                : 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 88%, var(--bg-main) 12%) 100%)')
             : `linear-gradient(180deg, ${reminderStyle.cardBackground} 0%, color-mix(in srgb, ${reminderStyle.cardBackground} 86%, var(--bg-content) 14%) 100%)`,
-    ].join(', ');
+    ].filter(Boolean).join(', ');
 
     return (
         <div
@@ -216,20 +316,32 @@ export default function CampaignCard({
                 flexDirection: 'column',
                 padding: compactView ? '0.75rem' : '1.25rem',
                 background: cardSurface,
-                border: `1px solid ${reminderStyle.cardBorder}`,
-                boxShadow: `0 18px 36px -28px ${hexToRgba(platform?.color, 0.35)}`,
+                border: isTesting 
+                    ? `1px dashed ${testBorderColor}` 
+                    : `1px solid ${biddingGroupStyles.borderColor}`,
+                boxShadow: isTesting
+                    ? '0 12px 30px -15px rgba(245, 158, 11, 0.15)'
+                    : biddingGroupStyles.glowShadow,
                 filter: isPaused ? 'grayscale(0.9) opacity(0.7)' : 'none',
                 ...(reminderState !== 'none' && { boxShadow: 'var(--shadow-glass)' })
             }}
             onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-3px)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
-                e.currentTarget.style.borderColor = 'hsla(var(--primary) / 0.25)';
+                e.currentTarget.style.boxShadow = isTesting
+                    ? '0 15px 30px -10px rgba(245, 158, 11, 0.3)'
+                    : (biddingGroupStyles.group !== 'traffic' 
+                        ? `0 15px 30px -10px ${hexToRgba(biddingGroupStyles.ambientColor, 0.35)}`
+                        : 'var(--shadow-medium)');
+                e.currentTarget.style.borderColor = isTesting ? testBorderColorHover : biddingGroupStyles.borderColorHover;
             }}
             onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = reminderState !== 'none' ? 'var(--shadow-glass)' : 'var(--shadow-subtle)';
-                e.currentTarget.style.borderColor = reminderStyle.cardBorder;
+                e.currentTarget.style.boxShadow = reminderState !== 'none' 
+                    ? 'var(--shadow-glass)' 
+                    : (isTesting 
+                        ? '0 12px 30px -15px rgba(245, 158, 11, 0.15)' 
+                        : (biddingGroupStyles.group !== 'traffic' ? biddingGroupStyles.glowShadow : 'var(--shadow-subtle)'));
+                e.currentTarget.style.borderColor = isTesting ? testBorderColor : biddingGroupStyles.borderColor;
             }}
         >
             {priorityAccent && (
@@ -339,26 +451,34 @@ export default function CampaignCard({
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: compactView ? '0.4rem' : '0.6rem', flexShrink: 0, position: 'relative' }}>
-                        {/* Compact Metric: CPC only */}
+                        {/* Compact Metric: Strategy Target */}
                         <div
                             onMouseEnter={() => setShowCPCTooltip(true)}
                             onMouseLeave={() => setShowCPCTooltip(false)}
                             style={{
                                 fontSize: compactView ? '0.68rem' : '0.75rem',
                                 fontWeight: 800,
-                                color: platformAccent,
-                                background: 'var(--bg-overlay)',
+                                background: biddingGroupStyles.badgeStyle.background,
+                                color: biddingGroupStyles.badgeStyle.color,
+                                border: biddingGroupStyles.badgeStyle.border,
+                                boxShadow: biddingGroupStyles.badgeStyle.boxShadow,
                                 padding: compactView ? '0.12rem 0.32rem' : '0.16rem 0.42rem',
                                 borderRadius: '5px',
-                                border: '1px solid var(--border-subtle)',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
                             }}
+                            title={`Bidding Strategy: ${campaign.bidding_strategy || 'max_clicks'}`}
                         >
-                            <span>{campaign.cpc?.toFixed(0) || '0'}</span>
+                            {biddingGroupStyles.group !== 'traffic' && (
+                                <span style={{ display: 'inline-flex', fontSize: '0.65rem' }}>✨</span>
+                            )}
+                            <span>{targetInfo.value}</span>
                         </div>
 
-                        {/* Tooltip for CPC Changes (Moved to Metrics) */}
-                        {showCPCTooltip && cpcChanges.length > 0 && (
+                        {/* Tooltip for Strategy Target Changes */}
+                        {showCPCTooltip && targetChanges.length > 0 && (
                             <div style={{
                                 position: 'absolute',
                                 top: '100%',
@@ -374,14 +494,14 @@ export default function CampaignCard({
                                 pointerEvents: 'none'
                             }}>
                                 <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <History size={10} /> CPC Evolution
+                                    <History size={10} /> {targetInfo.tooltipTitle}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                    {cpcChanges.map(change => (
+                                    {targetChanges.map(change => (
                                         <div key={change.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
                                             <span style={{ color: 'var(--text-dim)', fontWeight: 500 }}>{formatDate(change.change_date)}</span>
                                             <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>
-                                                ${change.old_value || '0'} → <span style={{ color: 'hsl(var(--primary))' }}>${change.new_value}</span>
+                                                {targetInfo.formatValue(change.old_value)} → <span style={{ color: 'hsl(var(--primary))' }}>{targetInfo.formatValue(change.new_value)}</span>
                                             </span>
                                         </div>
                                     ))}
@@ -494,6 +614,28 @@ export default function CampaignCard({
                                 }}
                             >
                                 Paused
+                            </span>
+                        )}
+                        {isTesting && (
+                            <span
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.22rem',
+                                    padding: compactView ? '0.06rem 0.32rem' : '0.12rem 0.45rem',
+                                    borderRadius: '5px',
+                                    fontSize: compactView ? '0.54rem' : '0.62rem',
+                                    fontWeight: 900,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.04em',
+                                    color: '#b45309',
+                                    background: 'rgba(245, 158, 11, 0.22)',
+                                    border: '1px solid rgba(245, 158, 11, 0.45)',
+                                    boxShadow: '0 2px 6px -3px rgba(245, 158, 11, 0.3)',
+                                }}
+                            >
+                                <FlaskConical size={compactView ? 10 : 12} style={{ color: '#b45309', strokeWidth: 2.5 }} />
+                                Testing
                             </span>
                         )}
                         <span

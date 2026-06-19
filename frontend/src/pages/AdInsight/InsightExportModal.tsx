@@ -30,6 +30,11 @@ interface InsightExportModalProps {
     secondaryCheckboxChecked?: boolean;
     onSecondaryCheckboxChange?: (checked: boolean) => void;
     secondaryCheckboxDisabled?: boolean;
+    tertiaryCheckboxLabel?: string;
+    tertiaryCheckboxDescription?: string;
+    tertiaryCheckboxChecked?: boolean;
+    onTertiaryCheckboxChange?: (checked: boolean) => void;
+    tertiaryCheckboxDisabled?: boolean;
 }
 
 export const InsightExportModal: React.FC<InsightExportModalProps> = ({
@@ -52,6 +57,11 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
     secondaryCheckboxChecked = false,
     onSecondaryCheckboxChange,
     secondaryCheckboxDisabled = false,
+    tertiaryCheckboxLabel,
+    tertiaryCheckboxDescription,
+    tertiaryCheckboxChecked = false,
+    onTertiaryCheckboxChange,
+    tertiaryCheckboxDisabled = false,
 }) => {
     const [selectedFields, setSelectedFields] = useState<string[]>([]);
     const [fileName, setFileName] = useState('');
@@ -336,6 +346,44 @@ export const InsightExportModal: React.FC<InsightExportModalProps> = ({
                                     <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{secondaryCheckboxLabel}</span>
                                     {secondaryCheckboxDescription ? (
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{secondaryCheckboxDescription}</span>
+                                    ) : null}
+                                </div>
+                            </label>
+                        </div>
+                    ) : null}
+
+                    {tertiaryCheckboxLabel && onTertiaryCheckboxChange ? (
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
+                                Inventory Scope
+                            </label>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '1rem',
+                                    cursor: tertiaryCheckboxDisabled ? 'not-allowed' : 'pointer',
+                                    padding: '0.9rem 1rem',
+                                    borderRadius: '14px',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: tertiaryCheckboxChecked
+                                        ? 'linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, var(--bg-content) 100%)'
+                                        : 'linear-gradient(180deg, var(--bg-content) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%)',
+                                    transition: SAFE_INTERACTIVE_TRANSITION,
+                                    opacity: tertiaryCheckboxDisabled ? 0.55 : 1
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={tertiaryCheckboxChecked}
+                                    disabled={tertiaryCheckboxDisabled}
+                                    onChange={(e) => onTertiaryCheckboxChange(e.target.checked)}
+                                    style={{ width: '18px', height: '18px', cursor: tertiaryCheckboxDisabled ? 'not-allowed' : 'pointer', accentColor: 'hsl(var(--primary))', marginTop: '0.15rem' }}
+                                />
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{tertiaryCheckboxLabel}</span>
+                                    {tertiaryCheckboxDescription ? (
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{tertiaryCheckboxDescription}</span>
                                     ) : null}
                                 </div>
                             </label>

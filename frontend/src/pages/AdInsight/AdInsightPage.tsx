@@ -192,6 +192,7 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
     const [exportingReviewCsv, setExportingReviewCsv] = useState(false);
     const [includeTripSemrushFields, setIncludeTripSemrushFields] = useState(false);
     const [exportSelectedOnly, setExportSelectedOnly] = useState(false);
+    const [includeInactiveForExport, setIncludeInactiveForExport] = useState(false);
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
@@ -260,11 +261,11 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
         });
     }, []);
 
-    const fetchAllFilteredRecords = useCallback(async () => {
+    const fetchAllFilteredRecords = useCallback(async (includeInactive = false) => {
         const baseFilterString = buildFilterString(filters);
         let filterString = baseFilterString;
 
-        if (config.activeFilterKey) {
+        if (config.activeFilterKey && !includeInactive) {
             const activeCondition = `${config.activeFilterKey} = true`;
             filterString = baseFilterString ? `(${baseFilterString}) && ${activeCondition}` : activeCondition;
         }
@@ -299,8 +300,8 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
         if (exportSelectedOnly && selectedIds.length > 0) {
             return fetchSelectedRecords();
         }
-        return fetchAllFilteredRecords();
-    }, [exportSelectedOnly, selectedIds.length, fetchSelectedRecords, fetchAllFilteredRecords]);
+        return fetchAllFilteredRecords(includeInactiveForExport);
+    }, [exportSelectedOnly, selectedIds.length, fetchSelectedRecords, fetchAllFilteredRecords, includeInactiveForExport]);
 
     const handleExport = useCallback(async (selectedFields: string[], customFileName: string, customLabel?: string) => {
         try {
@@ -897,7 +898,10 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
 
                     <InsightExportModal
                         isOpen={isExportModalOpen}
-                        onClose={() => setIsExportModalOpen(false)}
+                        onClose={() => {
+                            setIsExportModalOpen(false);
+                            setIncludeInactiveForExport(false);
+                        }}
                         onExport={handleExport}
                         fields={config.exportFields}
                         totalCount={totalCount}
@@ -915,6 +919,11 @@ function AdInsightPageContent({ platformId }: { platformId: string }) {
                         secondaryCheckboxChecked={exportSelectedOnly}
                         onSecondaryCheckboxChange={setExportSelectedOnly}
                         secondaryCheckboxDisabled={selectedIds.length === 0}
+                        tertiaryCheckboxLabel="Include disabled LPs"
+                        tertiaryCheckboxDescription="Export matching records even if they are currently disabled, useful for building exclusion page feeds."
+                        tertiaryCheckboxChecked={includeInactiveForExport}
+                        onTertiaryCheckboxChange={setIncludeInactiveForExport}
+                        tertiaryCheckboxDisabled={exportSelectedOnly && selectedIds.length > 0}
                     />
                 </>
             ) : (

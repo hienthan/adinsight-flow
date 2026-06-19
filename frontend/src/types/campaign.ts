@@ -25,6 +25,9 @@ export interface Campaign {
     last_review_outcome?: 'no_change' | 'updated' | 'cpc_increase' | 'cpc_reduce';
     cpc?: number;
     max_daily_budget?: number;
+    bidding_strategy?: string;
+    target_cpa?: number;
+    target_roas?: number;
     keywords?: string;
     chatgpt_metadata?: string;
     metadata?: string;

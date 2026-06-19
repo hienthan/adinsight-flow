@@ -116,6 +116,7 @@ export default function CampTestTrackModal({
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [error, setError] = useState('');
     const [campaignSearch, setCampaignSearch] = useState('');
+    const [advancedOpen, setAdvancedOpen] = useState(false);
 
     useEffect(() => {
         if (!open) return;
@@ -150,6 +151,7 @@ export default function CampTestTrackModal({
         }
         setError('');
         setCampaignSearch('');
+        setAdvancedOpen(Boolean(initialTrack?.started_at || initialTrack?.last_reviewed_at || initialTrack?.failure_note));
     }, [initialTrack, mode, open, seed]);
 
     const selectedPlatform = useMemo(
@@ -335,7 +337,7 @@ export default function CampTestTrackModal({
 
             <div style={{
                 position: 'absolute',
-                inset: '3.5vh 4vw',
+                inset: '2vh 2.5vw',
                 overflow: 'hidden',
                 borderRadius: '28px',
                 border: '1px solid var(--border-subtle)',
@@ -344,12 +346,12 @@ export default function CampTestTrackModal({
                 display: 'flex',
                 flexDirection: 'column',
             }}>
-                <div style={{ padding: '1.1rem 1.1rem 0' }}>
+                <div style={{ padding: '0.9rem 0.95rem 0' }}>
                     <ModalHero
                         accent="#7c3aed"
                         eyebrow="Camp Tracking"
                         title={mode === 'edit' ? 'Edit Lane Record' : 'Create Lane Record'}
-                        subtitle="Keep lane-level coverage and testing knowledge normalized, searchable, and safe against accidental duplicates."
+                        subtitle="Fast lane setup with deterministic keys and duplicate protection."
                         actions={(
                             <SafeButton
                                 onClick={onClose}
@@ -371,20 +373,20 @@ export default function CampTestTrackModal({
                         <SurfaceCard
                             variant="soft"
                             radius="18px"
-                            padding="0.95rem 1rem"
+                            padding="0.75rem 0.9rem"
                             style={{
                                 border: '1px solid rgba(124, 58, 237, 0.14)',
                                 background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%)',
                             }}
                         >
-                            <div style={{ display: 'grid', gap: '0.45rem' }}>
+                            <div style={{ display: 'grid', gap: '0.28rem' }}>
                                 <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                                     Deterministic Preview
                                 </div>
-                                <div style={{ minHeight: '1.45rem', color: 'var(--text-main)', fontWeight: 800 }}>
+                                <div style={{ minHeight: '1.2rem', color: 'var(--text-main)', fontWeight: 800, lineHeight: 1.35 }}>
                                     {preview.title || 'Complete the required fields to generate a lane title.'}
                                 </div>
-                                <div style={{ minHeight: '1.15rem', color: preview.trackKey ? 'var(--text-dim)' : 'var(--text-muted)', fontSize: '0.82rem', fontFamily: 'monospace' }}>
+                                <div style={{ minHeight: '1rem', color: preview.trackKey ? 'var(--text-dim)' : 'var(--text-muted)', fontSize: '0.78rem', fontFamily: 'monospace' }}>
                                     {preview.trackKey || 'Track key will appear here once the required lane identity fields are valid.'}
                                 </div>
                             </div>
@@ -392,13 +394,12 @@ export default function CampTestTrackModal({
                     </ModalHero>
                 </div>
 
-                <div style={{ padding: '1.1rem', overflowY: 'auto', display: 'grid', gap: '1rem' }}>
+                <div style={{ padding: '0.95rem', overflowY: 'auto', display: 'grid', gap: '0.8rem' }}>
                     <SectionCard
                         title="Lane Identity"
-                        subtitle="Choose whether this lane targets a destination or tracks market-only brand/platform awareness."
                         tone="violet"
                     >
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' }}>
                             <Field label="Platform" required>
                                 <select className="camp-test-filter-control" value={form.platform} onChange={(event) => updateField('platform', event.target.value)} style={CONTROL_STYLE}>
                                     <option value="">Select platform</option>
@@ -433,7 +434,7 @@ export default function CampTestTrackModal({
                             ) : null}
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' }}>
                             <Field label="Pattern Topic" required>
                                 <input
                                     className="camp-test-filter-control"
@@ -479,10 +480,9 @@ export default function CampTestTrackModal({
 
                     <SectionCard
                         title="Execution State"
-                        subtitle="Keep current state, result, and review dates consistent so the lane stays useful for coverage and reporting."
                         tone="teal"
                     >
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' }}>
                             <Field label="Status">
                                 <select className="camp-test-filter-control" value={form.status} onChange={(event) => updateField('status', event.target.value as FormState['status'])} style={CONTROL_STYLE}>
                                     {['planned', 'testing', 'live', 'watching', 'failed', 'paused', 'archived'].map((value) => (
@@ -515,13 +515,7 @@ export default function CampTestTrackModal({
                             </Field>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem', alignItems: 'end' }}>
-                            <Field label="Started At">
-                                <input className="camp-test-filter-control" type="date" value={form.started_at} onChange={(event) => updateField('started_at', event.target.value)} style={CONTROL_STYLE} />
-                            </Field>
-                            <Field label="Last Reviewed">
-                                <input className="camp-test-filter-control" type="date" value={form.last_reviewed_at} onChange={(event) => updateField('last_reviewed_at', event.target.value)} style={CONTROL_STYLE} />
-                            </Field>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem', alignItems: 'end' }}>
                             <label style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -542,27 +536,61 @@ export default function CampTestTrackModal({
                                 Do not retest
                             </label>
                         </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                                Optional dates and failure notes are hidden by default.
+                            </div>
+                            <SafeButton
+                                onClick={() => setAdvancedOpen((prev) => !prev)}
+                                style={{
+                                    borderRadius: '10px',
+                                    border: '1px solid var(--border-subtle)',
+                                    background: 'var(--bg-overlay)',
+                                    color: 'var(--text-main)',
+                                    fontWeight: 800,
+                                    padding: '0.5rem 0.75rem',
+                                }}
+                            >
+                                {advancedOpen ? 'Hide Advanced' : 'Show Advanced'}
+                            </SafeButton>
+                        </div>
+
+                        {advancedOpen ? (
+                            <div style={{ display: 'grid', gap: '0.65rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' }}>
+                                    <Field label="Started At">
+                                        <input className="camp-test-filter-control" type="date" value={form.started_at} onChange={(event) => updateField('started_at', event.target.value)} style={CONTROL_STYLE} />
+                                    </Field>
+                                    <Field label="Last Reviewed">
+                                        <input className="camp-test-filter-control" type="date" value={form.last_reviewed_at} onChange={(event) => updateField('last_reviewed_at', event.target.value)} style={CONTROL_STYLE} />
+                                    </Field>
+                                </div>
+                                <Field label="Failure Note">
+                                    <textarea className="camp-test-filter-control" value={form.failure_note} onChange={(event) => updateField('failure_note', event.target.value)} rows={3} placeholder="Optional failure context..." style={TEXTAREA_STYLE} />
+                                </Field>
+                            </div>
+                        ) : null}
                     </SectionCard>
 
                     <SectionCard
                         title="Notes And Linking"
-                        subtitle="Link the relevant live campaigns, then keep the lane summary and failure context readable for future reviews."
                         tone="amber"
                     >
                         <Field label="Next Action">
                             <input className="camp-test-filter-control" value={form.next_action} onChange={(event) => updateField('next_action', event.target.value)} placeholder="Next action..." style={CONTROL_STYLE} />
                         </Field>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.95rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 0.95fr) minmax(320px, 1.05fr)', gap: '0.8rem' }}>
                             <SurfaceCard
                                 variant="inset"
                                 radius="18px"
-                                padding="1rem"
+                                padding="0.85rem"
                                 style={{
                                     border: '1px solid rgba(245, 158, 11, 0.14)',
                                     background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, var(--bg-content) 100%)',
                                     display: 'grid',
-                                    gap: '0.8rem',
+                                    gap: '0.65rem',
                                     alignContent: 'start',
                                 }}
                             >
@@ -571,9 +599,7 @@ export default function CampTestTrackModal({
                                         <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                                             Linked Campaigns
                                         </div>
-                                        <div style={{ color: 'var(--text-dim)', fontSize: '0.84rem', marginTop: '0.18rem' }}>
-                                            Scope is filtered by selected platform.
-                                        </div>
+                                        <div style={{ color: 'var(--text-dim)', fontSize: '0.78rem', marginTop: '0.12rem' }}>Filtered by platform.</div>
                                     </div>
                                     <div style={{
                                         padding: '0.28rem 0.55rem',
@@ -599,7 +625,7 @@ export default function CampTestTrackModal({
                                     />
                                 </div>
 
-                                <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'grid', gap: '0.5rem', paddingRight: '0.15rem' }}>
+                                <div style={{ maxHeight: '220px', overflowY: 'auto', display: 'grid', gap: '0.42rem', paddingRight: '0.15rem' }}>
                                     {scopedCampaigns.map((campaign) => {
                                         const checked = form.linked_campaigns.includes(campaign.id);
                                         return (
@@ -609,8 +635,8 @@ export default function CampTestTrackModal({
                                                     display: 'flex',
                                                     gap: '0.6rem',
                                                     alignItems: 'flex-start',
-                                                    padding: '0.7rem 0.8rem',
-                                                    borderRadius: '14px',
+                                                    padding: '0.58rem 0.72rem',
+                                                    borderRadius: '12px',
                                                     border: checked ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)',
                                                     background: checked ? 'hsla(var(--primary) / 0.08)' : 'var(--bg-content)',
                                                     cursor: 'pointer',
@@ -624,7 +650,7 @@ export default function CampTestTrackModal({
                                                 />
                                                 <div style={{ minWidth: 0 }}>
                                                     <div style={{ fontWeight: 800, color: 'var(--text-main)' }}>{campaign.name}</div>
-                                                    <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+                                                    <div style={{ color: 'var(--text-dim)', fontSize: '0.76rem', marginTop: '0.15rem' }}>
                                                         {formatSlug(campaign.status)}{campaign.priority ? ` · ${formatSlug(campaign.priority)}` : ''}
                                                     </div>
                                                 </div>
@@ -639,13 +665,9 @@ export default function CampTestTrackModal({
                                 </div>
                             </SurfaceCard>
 
-                            <div style={{ display: 'grid', gap: '0.85rem', alignContent: 'start' }}>
+                            <div style={{ display: 'grid', gap: '0.65rem', alignContent: 'start' }}>
                                 <Field label="Summary Note">
-                                    <textarea className="camp-test-filter-control" value={form.summary_note} onChange={(event) => updateField('summary_note', event.target.value)} rows={7} placeholder="Current state, why this lane exists, what we are watching..." style={TEXTAREA_STYLE} />
-                                </Field>
-
-                                <Field label="Failure Note">
-                                    <textarea className="camp-test-filter-control" value={form.failure_note} onChange={(event) => updateField('failure_note', event.target.value)} rows={5} placeholder="Why this lane failed or what risk we found..." style={TEXTAREA_STYLE} />
+                                    <textarea className="camp-test-filter-control" value={form.summary_note} onChange={(event) => updateField('summary_note', event.target.value)} rows={5} placeholder="Current state, why this lane exists, what we are watching..." style={TEXTAREA_STYLE} />
                                 </Field>
                             </div>
                         </div>
@@ -708,7 +730,7 @@ export default function CampTestTrackModal({
                 </div>
 
                 <div style={{
-                    padding: '0.95rem 1.1rem 1.1rem',
+                    padding: '0.8rem 0.95rem 0.95rem',
                     display: 'flex',
                     justifyContent: 'flex-end',
                     gap: '0.75rem',
@@ -752,12 +774,10 @@ export default function CampTestTrackModal({
 
 function SectionCard({
     title,
-    subtitle,
     tone,
     children,
 }: {
     title: string;
-    subtitle: string;
     tone: 'violet' | 'teal' | 'amber';
     children: ReactNode;
 }) {
@@ -782,20 +802,17 @@ function SectionCard({
         <SurfaceCard
             variant="soft"
             radius="22px"
-            padding="1rem"
+            padding="0.8rem"
             style={{
                 border: `1px solid ${styleDef.border}`,
                 background: styleDef.background,
                 display: 'grid',
-                gap: '0.9rem',
+                gap: '0.7rem',
             }}
         >
-            <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     {title}
-                </div>
-                <div style={{ color: 'var(--text-dim)', fontSize: '0.86rem', marginTop: '0.2rem', lineHeight: 1.5 }}>
-                    {subtitle}
                 </div>
             </div>
             {children}
@@ -813,8 +830,8 @@ function Field({
     required?: boolean;
 }) {
     return (
-        <label style={{ display: 'grid', gap: '0.45rem' }}>
-            <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <label style={{ display: 'grid', gap: '0.32rem' }}>
+            <div style={{ fontSize: '0.71rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {label}{required ? ' *' : ''}
             </div>
             {children}

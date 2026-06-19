@@ -49,6 +49,17 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
         return `${year}-${month}-${day} ${hours}:${minutes}`;
     })();
 
+    const startDateText = (() => {
+        if (!campaign?.created_date) return null;
+        const parsed = new Date(campaign.created_date);
+        if (Number.isNaN(parsed.getTime())) return campaign.created_date;
+
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+        const day = String(parsed.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    })();
+
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && isOpen) {
@@ -140,8 +151,18 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                 Campaign Edit
                             </div>
                             <div style={{ flex: 1 }} />
+                            {startDateText && (
+                                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-dim)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}>Start:</span>
+                                    {startDateText}
+                                </div>
+                            )}
+                            {startDateText && latestReviewedText && (
+                                <span style={{ color: 'var(--border-subtle)' }}>|</span>
+                            )}
                             {latestReviewedText && (
-                                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
+                                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-dim)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}>Reviewed:</span>
                                     {latestReviewedText}
                                 </div>
                             )}

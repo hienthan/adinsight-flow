@@ -56,6 +56,12 @@ V1.2 them `lane_scope`:
 - `destination`
 - `market_only`
 
+Tu v1.2 tro di, feature nay nen duoc nhin nhu 3 page cung mot domain:
+
+- `Testing Overview Dashboard`
+- `Camp Test Tracking`
+- `Coverage Overview`
+
 ## 3. What This Feature Should Answer
 
 Feature nay phai tra loi duoc nhanh:

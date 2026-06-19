@@ -119,6 +119,28 @@ export default function CampaignDetail() {
     // Use expanded platform or find in fetched platforms
     const platform = campaign.expand?.platform || platforms.find(p => p.id === campaign.platform);
     const platformColor = platform?.color || 'var(--accent)';
+
+    const getTargetMetric = () => {
+        const strategy = campaign.bidding_strategy;
+        if (strategy === 'target_roas') {
+            return {
+                label: 'Target ROAS',
+                value: `${campaign.target_roas || 0}%`
+            };
+        }
+        if (strategy === 'target_cpa') {
+            return {
+                label: 'Target CPA',
+                value: `$${campaign.target_cpa || 0}`
+            };
+        }
+        return {
+            label: 'Target CPC',
+            value: campaign.cpc ? `$${campaign.cpc.toFixed(0)}` : '$0'
+        };
+    };
+    const targetMetric = getTargetMetric();
+
     const campaignMetrics = [
         {
             icon: Calendar,
@@ -132,8 +154,8 @@ export default function CampaignDetail() {
         },
         {
             icon: Tag,
-            label: 'Target CPC',
-            value: `$${campaign.cpc?.toFixed(0)}`,
+            label: targetMetric.label,
+            value: targetMetric.value,
         },
     ];
 
@@ -289,9 +311,9 @@ export default function CampaignDetail() {
                                     </div>
                                 </div>
                                 <div className="filter-group">
-                                    <label>Target CPC</label>
+                                    <label>{targetMetric.label}</label>
                                     <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '0.2rem' }}>
-                                        ${campaign.cpc?.toFixed(0) || '0'}
+                                        {targetMetric.value}
                                     </div>
                                 </div>
                                 <div className="filter-group">

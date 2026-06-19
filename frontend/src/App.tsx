@@ -19,6 +19,7 @@ const AllReminders = lazy(() => import('./pages/CampTracking/AllReminders'));
 const AllChanges = lazy(() => import('./pages/CampTracking/AllChanges'));
 const CampaignFormPage = lazy(() => import('./pages/CampTracking/CampaignFormPage'));
 const PlatformManagement = lazy(() => import('./pages/CampTracking/PlatformManagement'));
+const CampTestingOverviewPage = lazy(() => import('./pages/CampTracking/CampTestingOverviewPage'));
 const CampTestTrackingPage = lazy(() => import('./pages/CampTracking/CampTestTrackingPage'));
 const CampCoverageOverviewPage = lazy(() => import('./pages/CampTracking/CampCoverageOverviewPage'));
 const OutboundMapPage = lazy(() => import('./pages/OutboundMap/OutboundMapPage'));
@@ -82,6 +83,7 @@ function App() {
             <Route path="/camp-tracking/new" element={<CampaignFormPage />} />
             <Route path="/camp-tracking/edit/:campaignId" element={<CampaignFormPage />} />
             <Route path="/camp-tracking/platforms" element={<PlatformManagement />} />
+            <Route path="/camp-tracking/testing-overview" element={<CampTestingOverviewPage />} />
             <Route path="/camp-tracking/testing" element={<CampTestTrackingPage />} />
             <Route path="/camp-tracking/coverage" element={<CampCoverageOverviewPage />} />
             <Route path="/camp-tracking/outbound-map" element={<OutboundMapPage />} />

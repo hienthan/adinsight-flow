@@ -33,11 +33,15 @@ const normalizeForComparison = (field: keyof Campaign, value: any) => {
     if (field === 'is_dsa') return Boolean(value);
     if (field === 'is_testing') return Boolean(value);
     if (field === 'priority') return value || 'normal';
-    if (field === 'cpc' || field === 'max_daily_budget') {
+    if (field === 'cpc' || field === 'max_daily_budget' || field === 'target_cpa' || field === 'target_roas') {
         const val = toComparableNumber(value);
         return val === 0 ? null : val; // Normalize 0 to null for stable comparison with DB
     }
     if (field === 'general_notes' || field === 'metadata') return normalizeHtmlForCompare((value ?? '').toString());
+    if (field === 'bidding_strategy') {
+        const val = (value ?? '').toString().trim();
+        return val === '' ? 'max_clicks' : val;
+    }
     if (field === 'name' || field === 'status' || field === 'platform' || field === 'keywords' || field === 'description') {
         return (value ?? '').toString().trim();
     }
@@ -72,6 +76,9 @@ export default function CampaignForm({
         platform: platformIdFromUrl || '',
         cpc: 0,
         max_daily_budget: 0,
+        bidding_strategy: 'max_clicks',
+        target_cpa: 0,
+        target_roas: 0,
         keywords: '',
         chatgpt_metadata: '',
         metadata: '',
@@ -128,6 +135,9 @@ export default function CampaignForm({
             'platform',
             'cpc',
             'max_daily_budget',
+            'bidding_strategy',
+            'target_cpa',
+            'target_roas',
             'keywords',
             'description',
             'metadata',
@@ -177,16 +187,16 @@ export default function CampaignForm({
             let savedRecord: Campaign;
 
             if (campaignId && existingCampaign) {
-                const trackedFields: (keyof Campaign)[] = ['cpc', 'description'];
+                const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'bidding_strategy', 'target_cpa', 'target_roas', 'description'];
                 const changes: any[] = [];
                 trackedFields.forEach((field) => {
-                    const oldValue = existingCampaign[field];
-                    const newValue = formData[field];
+                    const oldValue = normalizeForComparison(field, existingCampaign[field]);
+                    const newValue = normalizeForComparison(field, formData[field]);
                     if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
                         changes.push({
                             field_changed: field,
-                            old_value: oldValue,
-                            new_value: newValue,
+                            old_value: existingCampaign[field],
+                            new_value: formData[field],
                         });
                     }
                 });
@@ -435,18 +445,71 @@ export default function CampaignForm({
                         border: '1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(20, 184, 166, 0.18) 18%)',
                     }}
                 >
-                    <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: isModalLayout ? '0.6rem' : '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(5, 1fr)' : 'repeat(3, 1fr)', gap: isModalLayout ? '0.6rem' : '1rem' }}>
                         <div className="filter-group">
-                            <label>CPC ($)</label>
-                            <input
-                                type="number"
-                                name="cpc"
-                                step="0.01"
-                                value={formData.cpc ?? 0}
+                            <label>Bidding Strategy</label>
+                            <select
+                                name="bidding_strategy"
+                                value={formData.bidding_strategy || 'max_clicks'}
                                 onChange={handleChange}
-                                min="0"
-                            />
+                                style={{ fontWeight: 700 }}
+                            >
+                                <option value="max_clicks">CPC</option>
+                                <option value="manual_cpc">mCPC</option>
+                                <option value="target_cpa">tCPA</option>
+                                <option value="target_roas">tROAS</option>
+                                <option value="max_conversions">Max Conv</option>
+                                <option value="max_conversion_value">Max Value</option>
+                            </select>
                         </div>
+                        {(!formData.bidding_strategy || formData.bidding_strategy === 'max_clicks' || formData.bidding_strategy === 'manual_cpc') ? (
+                            <div className="filter-group">
+                                <label>CPC Limit ($)</label>
+                                <input
+                                    type="number"
+                                    name="cpc"
+                                    step="0.01"
+                                    value={formData.cpc ?? 0}
+                                    onChange={handleChange}
+                                    min="0"
+                                />
+                            </div>
+                        ) : formData.bidding_strategy === 'target_cpa' ? (
+                            <div className="filter-group">
+                                <label>Target CPA ($)</label>
+                                <input
+                                    type="number"
+                                    name="target_cpa"
+                                    step="0.01"
+                                    value={formData.target_cpa ?? 0}
+                                    onChange={handleChange}
+                                    min="0"
+                                />
+                            </div>
+                        ) : formData.bidding_strategy === 'target_roas' ? (
+                            <div className="filter-group">
+                                <label>Target ROAS (%)</label>
+                                <input
+                                    type="number"
+                                    name="target_roas"
+                                    step="1"
+                                    value={formData.target_roas ?? 0}
+                                    onChange={handleChange}
+                                    min="0"
+                                    placeholder="e.g. 350"
+                                />
+                            </div>
+                        ) : (
+                            <div className="filter-group">
+                                <label>Target Value</label>
+                                <input
+                                    type="text"
+                                    disabled
+                                    value="N/A (Auto)"
+                                    style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                                />
+                            </div>
+                        )}
                         <div className="filter-group">
                             <label>Daily Budget ($)</label>
                             <input
@@ -480,13 +543,18 @@ export default function CampaignForm({
                                     </button>
                                 </div>
                                 <div className="filter-group">
-                                    <label>Start Date</label>
-                                    <input
-                                        type="date"
-                                        name="created_date"
-                                        value={formData.created_date || ''}
-                                        onChange={handleChange}
-                                    />
+                                    <label>New Market</label>
+                                    <label className="compact-check" style={{ minHeight: '42px', display: 'flex', alignItems: 'center', margin: 0 }}>
+                                        <input
+                                            type="checkbox"
+                                            name="is_testing"
+                                            checked={Boolean(formData.is_testing)}
+                                            onChange={handleChange}
+                                        />
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                                            Testing
+                                        </span>
+                                    </label>
                                 </div>
                             </>
                         ) : (
@@ -511,22 +579,24 @@ export default function CampaignForm({
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: isModalLayout ? '0.6rem' : '0.8rem', marginTop: isModalLayout ? '0.6rem' : '0.8rem' }}>
-                        <div className="filter-group" style={{ minWidth: isModalLayout ? '180px' : '220px' }}>
-                            <label>New Market Test</label>
-                            <label className="compact-check">
-                                <input
-                                    type="checkbox"
-                                    name="is_testing"
-                                    checked={Boolean(formData.is_testing)}
-                                    onChange={handleChange}
-                                />
-                                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                                    Mark this campaign as testing a new market
-                                </span>
-                            </label>
+                    {!isModalLayout && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', marginTop: '0.8rem' }}>
+                            <div className="filter-group" style={{ minWidth: '220px' }}>
+                                <label>New Market Test</label>
+                                <label className="compact-check">
+                                    <input
+                                        type="checkbox"
+                                        name="is_testing"
+                                        checked={Boolean(formData.is_testing)}
+                                        onChange={handleChange}
+                                    />
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                                        Mark this campaign as testing a new market
+                                    </span>
+                                </label>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </SurfaceCard>
 
                 {!isModalLayout && (

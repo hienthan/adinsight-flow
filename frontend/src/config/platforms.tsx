@@ -448,6 +448,14 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
                 }
             },
             {
+                id: 'trip_disabled_lps',
+                label: 'Disabled LPs',
+                description: 'Rows currently disabled from active inventory',
+                filters: {
+                    is_active: 'false'
+                }
+            },
+            {
                 id: 'trip_transport_high_fit',
                 label: 'Transport High Fit',
                 description: 'Best transport candidates first',

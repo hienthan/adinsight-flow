@@ -97,8 +97,8 @@ const PRIORITY_OPTIONS = [
 ] as const;
 
 const SORT_OPTIONS: Array<{ value: CampaignSortMode; label: string }> = [
-    { value: 'smart', label: 'Smart' },
     { value: 'name_asc', label: 'A-Z' },
+    { value: 'smart', label: 'Smart' },
     { value: 'name_desc', label: 'Z-A' },
     { value: 'created_desc', label: 'New' },
     { value: 'created_asc', label: 'Old' },
@@ -229,12 +229,13 @@ export default function CampOverview() {
     const filterBroads = searchParams.get('broads') === 'true';
     const filterNoTraffic = searchParams.get('no_traffic') === 'true';
     const filterStop = searchParams.get('stop') === 'true';
+    const filterOverride = searchParams.get('override') === 'true';
     const filterCriticalRLink = searchParams.get('rlink_critical') === 'true';
     const filterShowAll = searchParams.get('all') === 'true';
     const filterMetadata = searchParams.get('has_meta') === 'true';
     const viewMode = (searchParams.get('view') as OverviewMode) || 'compact';
     const reminderQuickFilter = (searchParams.get('due') as ReminderQuickFilter) || 'all';
-    const sortMode = (searchParams.get('sort') as CampaignSortMode) || 'smart';
+    const sortMode = (searchParams.get('sort') as CampaignSortMode) || 'name_asc';
     const compactCards = viewMode === 'compact';
     const alertsOnlyEnabled = filterReminders;
     const deferredFilterName = useDeferredValue(filterName);
@@ -325,6 +326,14 @@ export default function CampOverview() {
         });
     };
 
+    const setToggleOverride = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterOverride) prev.delete('override');
+            else prev.set('override', 'true');
+            return prev;
+        });
+    };
+
     const setToggleCriticalRLink = () => {
         setSearchParams((prev: URLSearchParams) => {
             if (filterCriticalRLink) prev.delete('rlink_critical');
@@ -367,7 +376,7 @@ export default function CampOverview() {
 
     const setSortMode = (val: CampaignSortMode) => {
         setSearchParams((prev: URLSearchParams) => {
-            if (val === 'smart') prev.delete('sort');
+            if (val === 'name_asc') prev.delete('sort');
             else prev.set('sort', val);
             return prev;
         });
@@ -494,6 +503,7 @@ export default function CampOverview() {
             if (reminderText.includes('broads') || reminderText.includes(' broad ')) specialReminderSignals.add('Broads');
             if (reminderText.includes('notraffic') || reminderText.includes('no traffic')) specialReminderSignals.add('noTraffic');
             if (reminderText.includes('stop') || reminderText.includes(' pause ')) specialReminderSignals.add('Stop');
+            if (reminderText.includes('override') || reminderText.includes('overridden')) specialReminderSignals.add('Override');
             if (reminderText.includes('!url')) specialReminderSignals.add('!URL');
 
             const reminderDate = parseDateOnly(reminder.reminder_date);
@@ -614,6 +624,7 @@ export default function CampOverview() {
             if (campaign.specialReminderSignals.includes('Broads')) acc.broads += 1;
             if (campaign.specialReminderSignals.includes('noTraffic')) acc.noTraffic += 1;
             if (campaign.specialReminderSignals.includes('Stop')) acc.stop += 1;
+            if (campaign.specialReminderSignals.includes('Override')) acc.override += 1;
             if (campaign.hasCriticalRLinkAlert) acc.criticalRLink += 1;
             if (campaign.is_testing) acc.testing += 1;
 
@@ -623,7 +634,7 @@ export default function CampOverview() {
 
             return acc;
         },
-        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0, rLink: 0, terms: 0, broads: 0, noTraffic: 0, stop: 0, criticalRLink: 0, testing: 0 },
+        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0, rLink: 0, terms: 0, broads: 0, noTraffic: 0, stop: 0, override: 0, criticalRLink: 0, testing: 0 },
     ), [baseFilteredCampaigns]);
 
     // 3. Final display list (Applies all interactive filters)
@@ -635,12 +646,13 @@ export default function CampOverview() {
         if (filterBroads && !campaign.specialReminderSignals.includes('Broads')) return false;
         if (filterNoTraffic && !campaign.specialReminderSignals.includes('noTraffic')) return false;
         if (filterStop && !campaign.specialReminderSignals.includes('Stop')) return false;
+        if (filterOverride && !campaign.specialReminderSignals.includes('Override')) return false;
         if (filterCriticalRLink && !campaign.hasCriticalRLinkAlert) return false;
         if (reminderQuickFilter !== 'all' && campaign.reminderState !== reminderQuickFilter) return false;
         if (filterPriority !== 'all' && campaign.priority !== filterPriority) return false;
         if (filterMetadata && htmlToPlainText(campaign.metadata || '').trim().length === 0) return false;
         return true;
-    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterBroads, filterCriticalRLink, filterIsTesting, filterMetadata, filterNoTraffic, filterPriority, filterRLink, filterStop, filterTerms, reminderQuickFilter]);
+    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterBroads, filterCriticalRLink, filterIsTesting, filterMetadata, filterNoTraffic, filterOverride, filterPriority, filterRLink, filterStop, filterTerms, reminderQuickFilter]);
 
     const hasActiveFilters = hasPlatformFilter
         || filterPriority !== 'all'
@@ -652,11 +664,12 @@ export default function CampOverview() {
         || filterBroads
         || filterNoTraffic
         || filterStop
+        || filterOverride
         || filterCriticalRLink
         || filterShowAll
         || reminderQuickFilter !== 'all'
         || filterMetadata
-        || sortMode !== 'smart';
+        || sortMode !== 'name_asc';
 
     // Pulse Metrics (Calculated from base list)
     const reviewedCount = baseFilteredCampaigns.filter(c => c.hasReviewed).length;
@@ -1354,6 +1367,23 @@ export default function CampOverview() {
                         title="Campaigns with stop reminders"
                     >
                         Stop: {summary.stop}
+                    </FilterChip>
+
+                    <FilterChip
+                        active={filterOverride}
+                        onClick={setToggleOverride}
+                        activeBackground="#7c2d12"
+                        inactiveBackground="rgba(124, 45, 18, 0.06)"
+                        activeBorder="#7c2d12"
+                        inactiveBorder="rgba(124, 45, 18, 0.14)"
+                        activeColor="#fff"
+                        inactiveColor="#7c2d12"
+                        activeShadow="0 0 15px rgba(124, 45, 18, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterOverride : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterOverride ? '#fff' : '#7c2d12', boxShadow: filterOverride ? '0 0 8px #fff' : '0 0 8px rgba(124, 45, 18, 0.65)' }} />}
+                        title="Campaigns with override reminders"
+                    >
+                        Override: {summary.override}
                     </FilterChip>
 
                     <FilterChip

@@ -20,13 +20,14 @@ type ReminderFormData = {
     check_metrics: string[];
 };
 
-const REMINDER_METRICS = ['TF', 'Conv', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC', 'RSA', 'rLink', 'Terms', 'Broads', 'noTraffic', 'Stop', 'siteL', '!URL'] as const;
+const REMINDER_METRICS = ['TF', 'Conv', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC', 'RSA', 'rLink', 'Terms', 'Broads', 'noTraffic', 'Stop', 'Override', 'siteL', '!URL'] as const;
 
 const normalizeMetricLabel = (metric: string) => {
     const normalized = metric.trim().toUpperCase();
     if (normalized === 'TRAFFIC') return 'TF';
     if (normalized === 'NO TRAFFIC' || normalized === 'NOTRAFFIC' || normalized === 'NO_TRAFFIC') return 'noTraffic';
     if (normalized === 'STOP' || normalized === 'PAUSE') return 'Stop';
+    if (normalized === 'OVERRIDE' || normalized === 'OVERRIDDEN') return 'Override';
     if (normalized === 'CONVERSIONS') return 'Conv';
     if (normalized === 'MCPC KEYS') return 'mCPC';
     if (normalized === 'MCPC') return 'mCPC';

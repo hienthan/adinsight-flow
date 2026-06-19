@@ -7,11 +7,10 @@ import {
     Globe,
     ClipboardList,
     Route,
-    Bell,
-    History,
     Settings,
     TrendingUp,
     BarChart3,
+    Sparkles,
     Link2,
     NotebookPen,
     TextSearch,
@@ -126,8 +125,9 @@ const TripIcon = () => (
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const location = useLocation();
     const [reminderCounts, setReminderCounts] = useState({ overdue: 0, today: 0 });
-    const [platformsExpanded, setPlatformsExpanded] = useState(true);
-    const [dsaFilterExpanded, setDsaFilterExpanded] = useState(true);
+    const [platformsExpanded, setPlatformsExpanded] = useState(false);
+    const [testingExpanded, setTestingExpanded] = useState(false);
+    const [dsaFilterExpanded, setDsaFilterExpanded] = useState(false);
 
     const getLocalDateString = () => {
         const now = new Date();
@@ -236,6 +236,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         );
     };
 
+    const nestedGroupStyle = {
+        paddingLeft: collapsed ? '0' : '0.9rem',
+        marginTop: '0.15rem',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '0.15rem',
+    };
+
     return (
         <aside
             className={cn("sidebar", collapsed && "collapsed")}
@@ -308,7 +316,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 {/* Section Header */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>Tracking Core</div>}
 
-                <NavLink to="/camp-tracking" icon={ClipboardList} color="indigo" activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes', 'outbound-map', 'testing', 'coverage'].some(p => location.pathname.includes(p))}>
+                <NavLink
+                    to="/camp-tracking"
+                    icon={ClipboardList}
+                    color="indigo"
+                    badgeText={(reminderCounts.overdue > 0 || reminderCounts.today > 0) ? `${reminderCounts.overdue}/${reminderCounts.today}` : undefined}
+                    activeCondition={isActive('/camp-tracking') && !location.pathname.includes('/platform') && !['reminders', 'changes', 'outbound-map', 'testing', 'coverage'].some(p => location.pathname.includes(p))}
+                >
                     Overview
                 </NavLink>
 
@@ -316,29 +330,73 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     Manage Platforms
                 </NavLink>
 
-                <NavLink to="/camp-tracking/testing" icon={WandSparkles} color="rose">
-                    Test Tracking
-                </NavLink>
-
-                <NavLink to="/camp-tracking/coverage" icon={BarChart3} color="teal">
-                    Coverage Overview
-                </NavLink>
-
-                <NavLink to="/camp-tracking/outbound-map" icon={Route} color="emerald">
-                    Outbound Map
-                </NavLink>
-
-                <NavLink
-                    to="/camp-tracking/reminders"
-                    icon={Bell}
-                    color="amber"
-                    badgeText={(reminderCounts.overdue > 0 || reminderCounts.today > 0) ? `${reminderCounts.overdue}/${reminderCounts.today}` : undefined}
+                <div
+                    onClick={() => setTestingExpanded(!testingExpanded)}
+                    style={{
+                        padding: collapsed ? '0.7rem 0' : '0.6rem 1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: collapsed ? 'center' : 'flex-start',
+                        gap: '0.85rem',
+                        color: 'var(--text-dim)',
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        borderRadius: '0.85rem',
+                        transition: SAFE_INTERACTIVE_TRANSITION,
+                        background: testingExpanded ? 'var(--bg-overlay)' : 'transparent',
+                        border: testingExpanded ? '1px solid var(--border-subtle)' : '1px solid transparent',
+                        marginTop: collapsed ? '0.2rem' : '0.5rem',
+                    }}
+                    className="nav-item-header"
                 >
-                    Reminders
-                </NavLink>
-                <NavLink to="/camp-tracking/changes" icon={History} color="purple">
-                    Auto Logs
-                </NavLink>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '10px',
+                        background: 'rgba(59, 130, 246, 0.12)',
+                        color: '#3b82f6',
+                        flexShrink: 0,
+                    }}>
+                        <Sparkles size={18} strokeWidth={2} />
+                    </div>
+                    {!collapsed && (
+                        <>
+                            <span style={{ fontSize: '0.875rem', flex: 1 }}>Testing</span>
+                            <ChevronRight
+                                size={14}
+                                style={{
+                                    transform: testingExpanded ? 'rotate(90deg)' : 'none',
+                                    transition: 'transform 0.3s ease',
+                                    opacity: 0.5,
+                                }}
+                            />
+                        </>
+                    )}
+                </div>
+
+                {testingExpanded && (
+                    <div style={nestedGroupStyle}>
+                        <NavLink to="/camp-tracking/outbound-map" icon={Route} color="emerald">
+                            Outbound Map
+                        </NavLink>
+
+                        <NavLink to="/camp-tracking/testing-overview" icon={Sparkles} color="blue">
+                            Testing Overview
+                        </NavLink>
+
+                        <NavLink to="/camp-tracking/testing" icon={WandSparkles} color="rose">
+                            Test Tracking
+                        </NavLink>
+
+                        <NavLink to="/camp-tracking/coverage" icon={BarChart3} color="teal">
+                            Coverage Overview
+                        </NavLink>
+                    </div>
+                )}
 
                 {/* Ad Insight Section */}
                 {!collapsed && <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '1.25rem 0.5rem 0.5rem 0.5rem', textTransform: 'uppercase' }}>DSA Analytics</div>}
@@ -396,7 +454,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </div>
 
                 {platformsExpanded && (
-                    <div style={{ paddingLeft: collapsed ? '0' : '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                    <div style={nestedGroupStyle}>
                         <NavLink to="/adinsight/klook" icon={KlookIcon} activeCondition={isActive('/adinsight/klook')}>
                             Klook
                         </NavLink>
@@ -463,7 +521,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </div>
 
                 {dsaFilterExpanded && (
-                    <div style={{ paddingLeft: collapsed ? '0' : '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                    <div style={nestedGroupStyle}>
                         <NavLink to="/dsa-filter/url" icon={Link2} activeCondition={isActive('/dsa-filter/url')} color="teal">
                             URL
                         </NavLink>

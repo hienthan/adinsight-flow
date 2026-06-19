@@ -26,6 +26,11 @@ Recommended route:
 
 - `/camp-tracking/coverage`
 
+Positioning update:
+
+- page nay la `detailed analysis layer`
+- strategic scan tong quat nen duoc dua sang `Testing Overview Dashboard`
+
 ## 2. What This Page Must Answer
 
 Khi vao page, user phai tra loi duoc nhanh:
