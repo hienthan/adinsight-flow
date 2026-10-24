@@ -122,20 +122,33 @@ export default function CampaignDetail() {
 
     const getTargetMetric = () => {
         const strategy = campaign.bidding_strategy;
+        const prefix = campaign.is_portfolio ? 'Portfolio ' : '';
         if (strategy === 'target_roas') {
             return {
-                label: 'Target ROAS',
+                label: `${prefix}Target ROAS`,
                 value: `${campaign.target_roas || 0}%`
             };
         }
         if (strategy === 'target_cpa') {
             return {
-                label: 'Target CPA',
+                label: `${prefix}Target CPA`,
                 value: `$${campaign.target_cpa || 0}`
             };
         }
+        if (strategy === 'max_conversions') {
+            return {
+                label: `${prefix}Strategy`,
+                value: 'Max Conv'
+            };
+        }
+        if (strategy === 'max_conversion_value') {
+            return {
+                label: `${prefix}Strategy`,
+                value: 'Max Value'
+            };
+        }
         return {
-            label: 'Target CPC',
+            label: `${prefix}Target CPC`,
             value: campaign.cpc ? `$${campaign.cpc.toFixed(0)}` : '$0'
         };
     };
@@ -242,6 +255,11 @@ export default function CampaignDetail() {
                             ) : (
                                 <span className="hero-badge" style={{ background: 'hsla(var(--primary) / 0.1)', color: 'hsl(var(--primary))' }}>
                                     <ShieldCheck size={12} style={{ marginRight: '4px' }} /> DSA Ready
+                                </span>
+                            )}
+                            {campaign.is_portfolio && (
+                                <span className="hero-badge" style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#3b82f6', border: '1px solid rgba(37, 99, 235, 0.28)' }}>
+                                    Portfolio Bid
                                 </span>
                             )}
                         </div>

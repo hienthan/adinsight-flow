@@ -6,6 +6,7 @@ import { SAFE_INTERACTIVE_TRANSITION } from '../../lib/uiMotion';
 interface Option {
     label: string;
     value: string;
+    color?: string;
 }
 
 interface MultiSelectDropdownProps {
@@ -108,7 +109,24 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         if (selectedValues.length === 0) return <span style={{ color: 'var(--text-dim)' }}>{placeholder}</span>;
         if (selectedValues.length === 1) {
             const opt = options.find(o => o.value === selectedValues[0]);
-            return opt ? opt.label : selectedValues[0];
+            if (!opt) return selectedValues[0];
+            return (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', minWidth: 0, maxWidth: '100%' }}>
+                    {opt.color && (
+                        <span style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: opt.color,
+                            flexShrink: 0,
+                            boxShadow: `0 0 8px ${opt.color}88`
+                        }} />
+                    )}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {opt.label}
+                    </span>
+                </span>
+            );
         }
         return `${selectedValues.length} selected`;
     };
@@ -268,6 +286,17 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                     <div style={{ width: '16px', display: 'flex', justifyContent: 'center', marginRight: '6px' }}>
                                         {isSelected && <Check size={14} />}
                                     </div>
+                                    {opt.color && (
+                                        <span style={{
+                                            width: '9px',
+                                            height: '9px',
+                                            borderRadius: '50%',
+                                            background: opt.color,
+                                            flexShrink: 0,
+                                            boxShadow: `0 0 8px ${opt.color}88`,
+                                            marginRight: '6px'
+                                        }} />
+                                    )}
                                     <span style={{ flex: 1, whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.35 }}>{opt.label}</span>
                                 </div>
                             );

@@ -13,22 +13,86 @@ import {
 import { pb } from '../../lib/pocketbase';
 import { CampaignPlatform } from '../../types/campaign';
 import LazyRichTextEditor from '../../components/common/LazyRichTextEditor';
-import { SafeButton, SectionHeader, SurfaceCard } from '../../components/common/ui';
+import { SafeButton, SectionHeader, SurfaceCard, toAlphaColor, extractBaseColor, isGradientColor } from '../../components/common/ui';
 
-const COLOR_PRESETS = [
-    '#3b82f6', // Bright Blue
-    '#ef4444', // Red
-    '#10b981', // Emerald
-    '#f59e0b', // Amber
-    '#8b5cf6', // Violet
-    '#ec4899', // Pink
-    '#06b6d4', // Cyan
-    '#f97316', // Orange
-    '#6366f1', // Indigo
-    '#14b8a6', // Teal
-    '#334155', // Slate
-    '#e11d48', // Crimson
+interface ColorOption {
+    value: string;
+    label: string;
+    gradient?: boolean;
+}
+
+interface ColorCategory {
+    id: string;
+    title: string;
+    colors: ColorOption[];
+}
+
+const COLOR_CATEGORIES: ColorCategory[] = [
+    {
+        id: 'special-effects',
+        title: 'Special Gradients & Effects (Hiệu ứng đặc biệt)',
+        colors: [
+            { value: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', label: 'Cosmic Aurora', gradient: true },
+            { value: 'linear-gradient(135deg, #f97316 0%, #f43f5e 100%)', label: 'Sunset Blaze', gradient: true },
+            { value: 'linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)', label: 'Cyber Blue', gradient: true },
+            { value: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', label: 'Electric Emerald', gradient: true },
+            { value: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)', label: 'Golden Flare', gradient: true },
+            { value: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', label: 'Mystic Twilight', gradient: true },
+            { value: 'linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)', label: 'Rose Gold', gradient: true },
+            { value: 'linear-gradient(135deg, #14b8a6 0%, #10b981 100%)', label: 'Tropical Mint', gradient: true },
+            { value: 'linear-gradient(135deg, #22c55e 0%, #a3e635 100%)', label: 'Cyber Matrix', gradient: true },
+            { value: 'linear-gradient(135deg, #3b82f6 0%, #1e1b4b 100%)', label: 'Deep Cosmos', gradient: true },
+        ],
+    },
+    {
+        id: 'vibrant-neon',
+        title: 'Vibrant & Neon (Nổi bật & tương phản cao)',
+        colors: [
+            { value: '#00f2fe', label: 'Electric Cyan' },
+            { value: '#10e760', label: 'Cyber Lime' },
+            { value: '#ff007f', label: 'Neon Fuchsia' },
+            { value: '#facc15', label: 'Laser Yellow' },
+            { value: '#a855f7', label: 'Vivid Violet' },
+            { value: '#ff5722', label: 'Bright Coral' },
+            { value: '#06b6d4', label: 'Aqua Marine' },
+            { value: '#4f46e5', label: 'Electric Indigo' },
+        ],
+    },
+    {
+        id: 'core-solid',
+        title: 'Core Brand Palettes (Màu chuẩn thương hiệu)',
+        colors: [
+            { value: '#3b82f6', label: 'Bright Blue' },
+            { value: '#2563eb', label: 'Royal Blue' },
+            { value: '#ef4444', label: 'Crimson Red' },
+            { value: '#10b981', label: 'Emerald' },
+            { value: '#f59e0b', label: 'Amber' },
+            { value: '#f97316', label: 'Orange' },
+            { value: '#8b5cf6', label: 'Violet' },
+            { value: '#ec4899', label: 'Pink' },
+            { value: '#6366f1', label: 'Indigo' },
+            { value: '#14b8a6', label: 'Teal' },
+            { value: '#e11d48', label: 'Crimson' },
+            { value: '#334155', label: 'Slate' },
+        ],
+    },
+    {
+        id: 'jewel-deep',
+        title: 'Jewel & Deep Tones (Màu trầm & sang trọng)',
+        colors: [
+            { value: '#9333ea', label: 'Imperial Purple' },
+            { value: '#1d4ed8', label: 'Midnight Navy' },
+            { value: '#047857', label: 'Forest Pine' },
+            { value: '#b45309', label: 'Bronze Ochre' },
+            { value: '#be185d', label: 'Deep Rose' },
+            { value: '#0f766e', label: 'Dark Teal' },
+            { value: '#991b1b', label: 'Bordeaux' },
+            { value: '#1e293b', label: 'Graphite' },
+        ],
+    },
 ];
+
+const COLOR_PRESETS = COLOR_CATEGORIES.flatMap(c => c.colors.map(col => col.value));
 
 const PAGE_HEADER_STYLE = {
     display: 'flex',
@@ -83,6 +147,7 @@ export default function PlatformManagement() {
     const [isEditing, setIsEditing] = useState(false);
     const [viewMode, setViewMode] = useState(true);
     const [isDirty, setIsDirty] = useState(false);
+    const [activeColorTab, setActiveColorTab] = useState('special-effects');
 
     useEffect(() => {
         if (!isEditing) {
@@ -225,19 +290,22 @@ export default function PlatformManagement() {
 
         try {
             if (isEditing && formData.id) {
-                const updated = await pb.collection('campaign_platforms').update(formData.id, formData);
+                const { id, ...dataToSave } = formData;
+                const updated = await pb.collection('campaign_platforms').update(formData.id, dataToSave);
                 setPlatforms(prev => prev.map(p => p.id === formData.id ? updated as any : p));
                 setSuccess(`Platform "${formData.display_name}" updated.`);
             } else {
+                const { id, ...dataToSave } = formData;
                 const maxOrder = platforms.length > 0 ? Math.max(...platforms.map(p => p.order || 0)) : 0;
-                const newPlatform = await pb.collection('campaign_platforms').create({ ...formData, order: maxOrder + 1 });
+                const newPlatform = await pb.collection('campaign_platforms').create({ ...dataToSave, order: maxOrder + 1 });
                 setPlatforms(prev => [...prev, newPlatform as any]);
                 setSuccess(`Platform "${formData.display_name}" created.`);
                 handleSelect(newPlatform as any);
             }
             queryClient.invalidateQueries({ queryKey: ['platforms'] });
         } catch (err: any) {
-            setError(err.message || 'Failed to save platform.');
+            const fieldErrors = err?.data?.data ? Object.entries(err.data.data).map(([field, item]: any) => `${field}: ${item.message || item.code}`).join(', ') : '';
+            setError(fieldErrors ? `Validation error: ${fieldErrors}` : (err.message || 'Failed to save platform.'));
         } finally {
             setSubmitting(false);
         }
@@ -364,7 +432,15 @@ export default function PlatformManagement() {
                                                         }}
                                                     >
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
-                                                            <div style={{ width: '12px', height: '12px', borderRadius: '4px', background: platform.color, flexShrink: 0, boxShadow: `0 0 10px ${platform.color}44` }} />
+                                                            <div style={{
+                                                                width: '14px',
+                                                                height: '14px',
+                                                                borderRadius: '4px',
+                                                                background: platform.color,
+                                                                flexShrink: 0,
+                                                                boxShadow: `0 0 10px ${toAlphaColor(platform.color, 0.55)}`,
+                                                                border: '1px solid rgba(255,255,255,0.15)'
+                                                            }} />
                                                             <span style={{ fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: platform.id === formData.id ? 'hsl(var(--primary))' : 'var(--text-main)' }}>
                                                                 {platform.display_name}
                                                             </span>
@@ -400,14 +476,27 @@ export default function PlatformManagement() {
 
                         {/* 1. Identity Card */}
                         <SurfaceCard className="no-lift" style={{
-                            flex: '0 1 400px',
+                            flex: '0 1 480px',
                             border: isEditing ? '1px solid hsla(var(--primary) / 0.25)' : '1px solid var(--border-subtle)',
                             boxShadow: 'var(--shadow-glass)',
                             borderRadius: '1.5rem',
                             display: 'flex',
-                            flexDirection: 'column'
+                            flexDirection: 'column',
+                            position: 'relative',
+                            overflow: 'hidden'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                            {/* Glowing top accent based on selected color */}
+                            <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: '3px',
+                                background: formData.color || '#3b82f6',
+                                boxShadow: `0 0 14px ${toAlphaColor(formData.color || '#3b82f6', 0.8)}`
+                            }} />
+
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
                                         <Palette size={22} strokeWidth={2.5} />
@@ -442,7 +531,7 @@ export default function PlatformManagement() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                                 {PLATFORM_FORM_FIELDS.map((field) => (
                                     <div className="filter-group" key={field.name}>
                                         <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
@@ -459,23 +548,221 @@ export default function PlatformManagement() {
                                         />
                                     </div>
                                 ))}
+
                                 <div>
-                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Brand Color</label>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
-                                        {COLOR_PRESETS.map(c => (
-                                            <SafeButton
-                                                key={c}
-                                                type="button"
-                                                onClick={() => setFormData(p => ({ ...p, color: c }))}
-                                                style={{
-                                                    width: '32px', height: '32px', borderRadius: '8px', background: c,
-                                                    border: formData.color === c ? '3px solid var(--text-main)' : '1px solid var(--border-subtle)',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                <span style={{ display: 'none' }}>{c}</span>
-                                            </SafeButton>
-                                        ))}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                                        <label style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                            Brand Color & Effects
+                                        </label>
+                                        <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontFamily: 'monospace' }}>
+                                            {isGradientColor(formData.color) ? 'Custom Gradient' : formData.color}
+                                        </span>
+                                    </div>
+
+                                    {/* Palette Category Pills */}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '0.85rem' }}>
+                                        {COLOR_CATEGORIES.map(cat => {
+                                            const isActive = activeColorTab === cat.id;
+                                            return (
+                                                <button
+                                                    key={cat.id}
+                                                    type="button"
+                                                    onClick={() => setActiveColorTab(cat.id)}
+                                                    style={{
+                                                        padding: '0.35rem 0.65rem',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.72rem',
+                                                        fontWeight: 700,
+                                                        border: isActive ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)',
+                                                        background: isActive ? 'var(--accent-glow)' : 'var(--bg-overlay)',
+                                                        color: isActive ? 'hsl(var(--primary))' : 'var(--text-muted)',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.15s ease'
+                                                    }}
+                                                >
+                                                    {cat.id === 'special-effects' && '✨ '}
+                                                    {cat.id === 'vibrant-neon' && '⚡ '}
+                                                    {cat.id === 'core-solid' && '🎨 '}
+                                                    {cat.id === 'jewel-deep' && '💎 '}
+                                                    {cat.title.split(' (')[0]}
+                                                </button>
+                                            );
+                                        })}
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveColorTab('custom')}
+                                            style={{
+                                                padding: '0.35rem 0.65rem',
+                                                borderRadius: '8px',
+                                                fontSize: '0.72rem',
+                                                fontWeight: 700,
+                                                border: activeColorTab === 'custom' ? '1px solid hsl(var(--primary))' : '1px solid var(--border-subtle)',
+                                                background: activeColorTab === 'custom' ? 'var(--accent-glow)' : 'var(--bg-overlay)',
+                                                color: activeColorTab === 'custom' ? 'hsl(var(--primary))' : 'var(--text-muted)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.15s ease'
+                                            }}
+                                        >
+                                            ⚙️ Custom
+                                        </button>
+                                    </div>
+
+                                    {/* Swatches Grid for active category */}
+                                    {activeColorTab !== 'custom' ? (
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(40px, 1fr))',
+                                            gap: '8px',
+                                            padding: '0.75rem',
+                                            borderRadius: '12px',
+                                            background: 'var(--bg-overlay)',
+                                            border: '1px solid var(--border-subtle)'
+                                        }}>
+                                            {COLOR_CATEGORIES.find(c => c.id === activeColorTab)?.colors.map(col => {
+                                                const isSelected = formData.color === col.value;
+                                                return (
+                                                    <SafeButton
+                                                        key={col.value}
+                                                        type="button"
+                                                        title={col.label}
+                                                        onClick={() => setFormData(p => ({ ...p, color: col.value }))}
+                                                        style={{
+                                                            height: '38px',
+                                                            borderRadius: '9px',
+                                                            background: col.value,
+                                                            border: isSelected ? '3px solid #ffffff' : '1px solid rgba(255,255,255,0.15)',
+                                                            boxShadow: isSelected
+                                                                ? `0 0 16px ${toAlphaColor(col.value, 0.9)}`
+                                                                : `0 2px 6px ${toAlphaColor(col.value, 0.25)}`,
+                                                            cursor: 'pointer',
+                                                            transform: isSelected ? 'scale(1.08)' : 'scale(1)',
+                                                            transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)'
+                                                        }}
+                                                    >
+                                                        <span style={{ display: 'none' }}>{col.label}</span>
+                                                    </SafeButton>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '0.65rem',
+                                            padding: '0.85rem',
+                                            borderRadius: '12px',
+                                            background: 'var(--bg-overlay)',
+                                            border: '1px solid var(--border-subtle)'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                <input
+                                                    type="color"
+                                                    value={extractBaseColor(formData.color)}
+                                                    onChange={(e) => setFormData(p => ({ ...p, color: e.target.value }))}
+                                                    style={{
+                                                        width: '42px',
+                                                        height: '40px',
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer',
+                                                        border: '1px solid var(--border-subtle)',
+                                                        background: 'transparent',
+                                                        padding: 0
+                                                    }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={formData.color}
+                                                    onChange={(e) => setFormData(p => ({ ...p, color: e.target.value }))}
+                                                    placeholder="#hex or linear-gradient(...)"
+                                                    className="hero-input"
+                                                    style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.82rem' }}
+                                                />
+                                            </div>
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                Enter any hex code (e.g. #06b6d4) or CSS linear-gradient.
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Real-time Preview in CampOverview */}
+                                    <div style={{
+                                        marginTop: '1.25rem',
+                                        padding: '0.85rem 1rem',
+                                        borderRadius: '14px',
+                                        background: 'var(--bg-overlay)',
+                                        border: `1px solid ${toAlphaColor(formData.color || '#3b82f6', 0.25)}`,
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            height: '2.5px',
+                                            background: formData.color || '#3b82f6',
+                                            boxShadow: `0 0 10px ${toAlphaColor(formData.color || '#3b82f6', 0.7)}`
+                                        }} />
+                                        <div style={{
+                                            fontSize: '0.65rem',
+                                            fontWeight: 800,
+                                            textTransform: 'uppercase',
+                                            color: 'var(--text-muted)',
+                                            letterSpacing: '0.08em',
+                                            marginBottom: '0.6rem'
+                                        }}>
+                                            CampOverview Preview
+                                        </div>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '0.6rem 0.8rem',
+                                            borderRadius: '10px',
+                                            background: toAlphaColor(formData.color || '#3b82f6', 0.08),
+                                            border: `1px solid ${toAlphaColor(formData.color || '#3b82f6', 0.2)}`
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                                                <div style={{
+                                                    width: '8px',
+                                                    height: '24px',
+                                                    borderRadius: '999px',
+                                                    background: formData.color || '#3b82f6',
+                                                    boxShadow: `0 0 14px ${toAlphaColor(formData.color || '#3b82f6', 0.65)}`,
+                                                    flexShrink: 0
+                                                }} />
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div style={{
+                                                        fontSize: '0.95rem',
+                                                        fontWeight: 800,
+                                                        color: 'var(--text-main)',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '-0.02em',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis'
+                                                    }}>
+                                                        {formData.display_name || 'Channel Name'}
+                                                    </div>
+                                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                                                        Campaign Lane
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                fontWeight: 800,
+                                                padding: '0.2rem 0.6rem',
+                                                borderRadius: '999px',
+                                                background: formData.color?.includes('gradient(') ? formData.color : toAlphaColor(formData.color || '#3b82f6', 0.16),
+                                                color: formData.color?.includes('gradient(') ? '#ffffff' : extractBaseColor(formData.color || '#3b82f6'),
+                                                border: `1px solid ${toAlphaColor(formData.color || '#3b82f6', 0.35)}`,
+                                                boxShadow: `0 0 10px ${toAlphaColor(formData.color || '#3b82f6', 0.3)}`,
+                                                flexShrink: 0
+                                            }}>
+                                                Preview
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

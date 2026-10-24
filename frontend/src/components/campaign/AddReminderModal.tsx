@@ -20,20 +20,18 @@ type ReminderFormData = {
     check_metrics: string[];
 };
 
-const REMINDER_METRICS = ['TF', 'Conv', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC', 'RSA', 'rLink', 'Terms', 'Broads', 'noTraffic', 'Stop', 'Override', 'siteL', '!URL'] as const;
+const REMINDER_METRICS = ['TF', 'Conv', 'CPC', 'ROAS', 'maxV', 'tROAS', 'tCPA', 'RSA', 'rLink', 'noTraffic', 'Stop', '!URL'] as const;
 
 const normalizeMetricLabel = (metric: string) => {
     const normalized = metric.trim().toUpperCase();
     if (normalized === 'TRAFFIC') return 'TF';
     if (normalized === 'NO TRAFFIC' || normalized === 'NOTRAFFIC' || normalized === 'NO_TRAFFIC') return 'noTraffic';
     if (normalized === 'STOP' || normalized === 'PAUSE') return 'Stop';
-    if (normalized === 'OVERRIDE' || normalized === 'OVERRIDDEN') return 'Override';
     if (normalized === 'CONVERSIONS') return 'Conv';
-    if (normalized === 'MCPC KEYS') return 'mCPC';
-    if (normalized === 'MCPC') return 'mCPC';
-    if (normalized === 'TERM' || normalized === 'SEARCH TERMS') return 'Terms';
-    if (normalized === 'BROAD' || normalized === 'BROADS') return 'Broads';
-    if (normalized === 'IS') return null;
+    if (normalized === 'TROAS' || normalized === 'TARGET ROAS' || normalized === 'TARGET_ROAS') return 'tROAS';
+    if (normalized === 'TCPA' || normalized === 'TARGET CPA' || normalized === 'TARGET_CPA') return 'tCPA';
+    if (normalized === 'MAXV' || normalized === 'MAX CONVERSION VALUE' || normalized === 'MAX_CONVERSION_VALUE') return 'maxV';
+    if (normalized === 'OVERRIDE' || normalized === 'OVERRIDDEN' || normalized === 'CONV DELAY' || normalized === 'MCPC' || normalized === 'MCPC KEYS' || normalized === 'TERMS' || normalized === 'TERM' || normalized === 'SEARCH TERMS' || normalized === 'BROAD' || normalized === 'BROADS' || normalized === 'SITEL' || normalized === 'IS') return null;
 
     const matchedMetric = REMINDER_METRICS.find(option => option.toUpperCase() === normalized);
     return matchedMetric ?? metric.trim();

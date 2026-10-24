@@ -35,6 +35,9 @@ export interface Campaign {
     general_notes?: string;
     is_dsa: boolean;
     is_testing?: boolean;
+    is_case_study?: boolean;
+    is_portfolio?: boolean;
+    leads?: 'all' | 't1' | 't2' | 'p1' | 'p2' | 'p2v';
     priority?: 'normal' | 'medium' | 'high' | 'critical';
     custom_fields?: Record<string, any>;
     created: string;

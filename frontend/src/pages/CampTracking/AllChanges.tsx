@@ -8,7 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import AutoLogItem from '../../components/tracking/AutoLogItem';
 import { SurfaceCard } from '../../components/common/ui';
-import { createPremiumBadgeStyle } from '../../components/common/ui/premium';
+import { createPremiumBadgeStyle, extractBaseColor } from '../../components/common/ui/premium';
 
 const PAGE_HEADER_STYLE = {
     marginBottom: '1.5rem',
@@ -250,7 +250,7 @@ export default function AllChanges() {
                                                                 padding: 0,
                                                                 border: 'none',
                                                                 background: 'transparent',
-                                                                color: group.platform.color,
+                                                                color: extractBaseColor(group.platform.color),
                                                                 fontSize: '0.92rem',
                                                                 fontWeight: 800,
                                                                 letterSpacing: '-0.02em',

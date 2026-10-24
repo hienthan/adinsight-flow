@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     Plus,
     Check,
@@ -9,6 +9,11 @@ import {
     LayoutGrid,
     RefreshCw,
     Search,
+    Pause,
+    Play,
+    FlaskConical,
+    Archive,
+    X,
 } from 'lucide-react';
 import CampaignCard from '../../components/campaign/CampaignCard';
 import EditCampaignModal from '../../components/campaign/EditCampaignModal';
@@ -25,13 +30,12 @@ import { FilterChip } from '../../components/common/ui/FilterChip';
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
-import { createAmbientSurface, toAlphaColor } from '../../components/common/ui';
+import { createAmbientSurface, toAlphaColor, extractBaseColor, isGradientColor } from '../../components/common/ui';
 import { MultiSelectDropdown } from '../../components/common/MultiSelectDropdown';
 
 type ReminderState = 'none' | 'upcoming' | 'today' | 'overdue';
 type OverviewMode = 'comfortable' | 'compact';
 type ReminderQuickFilter = 'all' | 'overdue' | 'today' | 'upcoming';
-type FreshnessState = 'fresh' | 'watch' | 'stale';
 type ReminderPriority = 'low' | 'medium' | 'high' | 'critical';
 type CampaignSortMode = 'smart' | 'created_desc' | 'created_asc' | 'name_asc' | 'name_desc';
 type ReviewSource = 'review' | 'campaign' | 'reminder' | 'none';
@@ -43,7 +47,6 @@ type EnrichedCampaign = Campaign & {
     specialReminderSignals: string[];
     hasCriticalRLinkAlert: boolean;
     highestPriority?: ReminderPriority;
-    freshnessState: FreshnessState;
     hasReviewed: boolean;
     reviewStatusLabel?: string;
 };
@@ -211,6 +214,18 @@ const STATUS_RANK: Record<string, number> = {
     paused: 3,
 };
 
+const isTROASCampaign = (campaign: any) =>
+    campaign.bidding_strategy === 'target_roas' || campaign.specialReminderSignals?.includes('tROAS');
+
+const isTCPACampaign = (campaign: any) =>
+    campaign.bidding_strategy === 'target_cpa' || campaign.specialReminderSignals?.includes('tCPA');
+
+const isMaxConvCampaign = (campaign: any) =>
+    campaign.bidding_strategy === 'max_conversions' || campaign.specialReminderSignals?.includes('maxConv');
+
+const isMaxValueCampaign = (campaign: any) =>
+    campaign.bidding_strategy === 'max_conversion_value' || campaign.specialReminderSignals?.includes('maxV') || campaign.specialReminderSignals?.includes('maxValue');
+
 export default function CampOverview() {
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -223,20 +238,24 @@ export default function CampOverview() {
     const filterPriority = searchParams.get('priority') || 'all';
     const filterName = searchParams.get('q') || '';
     const filterIsTesting = searchParams.get('is_testing') === 'true';
+    const filterCaseStudy = searchParams.get('case_study') === 'true';
     const filterReminders = searchParams.get('reminders') === 'true';
     const filterRLink = searchParams.get('rlink') === 'true';
-    const filterTerms = searchParams.get('terms') === 'true';
-    const filterBroads = searchParams.get('broads') === 'true';
+    const filterMaxValue = searchParams.get('max_value') === 'true' || searchParams.get('maxv') === 'true';
+    const filterMaxConv = searchParams.get('max_conv') === 'true';
+    const filterTROAS = searchParams.get('troas') === 'true';
+    const filterTCPA = searchParams.get('tcpa') === 'true';
     const filterNoTraffic = searchParams.get('no_traffic') === 'true';
     const filterStop = searchParams.get('stop') === 'true';
-    const filterOverride = searchParams.get('override') === 'true';
     const filterCriticalRLink = searchParams.get('rlink_critical') === 'true';
     const filterShowAll = searchParams.get('all') === 'true';
     const filterMetadata = searchParams.get('has_meta') === 'true';
+    const filterLeads = searchParams.get('leads') || '';
     const viewMode = (searchParams.get('view') as OverviewMode) || 'compact';
     const reminderQuickFilter = (searchParams.get('due') as ReminderQuickFilter) || 'all';
     const sortMode = (searchParams.get('sort') as CampaignSortMode) || 'name_asc';
     const compactCards = viewMode === 'compact';
+    const [showCompactSearch, setShowCompactSearch] = useState(false);
     const alertsOnlyEnabled = filterReminders;
     const deferredFilterName = useDeferredValue(filterName);
 
@@ -261,6 +280,14 @@ export default function CampOverview() {
         });
     };
 
+    const setFilterLeads = (val: string) => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (!val) prev.delete('leads');
+            else prev.set('leads', val);
+            return prev;
+        });
+    };
+
     const setFilterName = (val: string) => {
         setSearchParams((prev: URLSearchParams) => {
             const normalized = val.trim();
@@ -274,6 +301,14 @@ export default function CampOverview() {
         setSearchParams((prev: URLSearchParams) => {
             if (filterIsTesting) prev.delete('is_testing');
             else prev.set('is_testing', 'true');
+            return prev;
+        });
+    };
+
+    const setToggleCaseStudy = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterCaseStudy) prev.delete('case_study');
+            else prev.set('case_study', 'true');
             return prev;
         });
     };
@@ -294,18 +329,38 @@ export default function CampOverview() {
         });
     };
 
-    const setToggleTerms = () => {
+    const setToggleMaxValue = () => {
         setSearchParams((prev: URLSearchParams) => {
-            if (filterTerms) prev.delete('terms');
-            else prev.set('terms', 'true');
+            if (filterMaxValue) {
+                prev.delete('max_value');
+                prev.delete('maxv');
+            } else {
+                prev.set('max_value', 'true');
+            }
             return prev;
         });
     };
 
-    const setToggleBroads = () => {
+    const setToggleMaxConv = () => {
         setSearchParams((prev: URLSearchParams) => {
-            if (filterBroads) prev.delete('broads');
-            else prev.set('broads', 'true');
+            if (filterMaxConv) prev.delete('max_conv');
+            else prev.set('max_conv', 'true');
+            return prev;
+        });
+    };
+
+    const setToggleTROAS = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterTROAS) prev.delete('troas');
+            else prev.set('troas', 'true');
+            return prev;
+        });
+    };
+
+    const setToggleTCPA = () => {
+        setSearchParams((prev: URLSearchParams) => {
+            if (filterTCPA) prev.delete('tcpa');
+            else prev.set('tcpa', 'true');
             return prev;
         });
     };
@@ -326,13 +381,7 @@ export default function CampOverview() {
         });
     };
 
-    const setToggleOverride = () => {
-        setSearchParams((prev: URLSearchParams) => {
-            if (filterOverride) prev.delete('override');
-            else prev.set('override', 'true');
-            return prev;
-        });
-    };
+
 
     const setToggleCriticalRLink = () => {
         setSearchParams((prev: URLSearchParams) => {
@@ -360,7 +409,7 @@ export default function CampOverview() {
 
     const setViewMode = (mode: OverviewMode) => {
         setSearchParams((prev: URLSearchParams) => {
-            if (mode === 'comfortable') prev.delete('view');
+            if (mode === 'compact') prev.delete('view');
             else prev.set('view', mode);
             return prev;
         });
@@ -382,9 +431,38 @@ export default function CampOverview() {
         });
     };
 
+    const queryClient = useQueryClient();
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+    const [selectedCampaignIds, setSelectedCampaignIds] = useState<Set<string>>(new Set());
+    const [isBatchSubmitting, setIsBatchSubmitting] = useState(false);
+
+    const toggleSelectCampaign = (id: string) => {
+        setSelectedCampaignIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleSelectPlatformGroup = (campaignIds: string[]) => {
+        setSelectedCampaignIds((prev) => {
+            const next = new Set(prev);
+            const allSelected = campaignIds.length > 0 && campaignIds.every((id) => next.has(id));
+            if (allSelected) {
+                campaignIds.forEach((id) => next.delete(id));
+            } else {
+                campaignIds.forEach((id) => next.add(id));
+            }
+            return next;
+        });
+    };
+
+    const clearSelection = () => {
+        setSelectedCampaignIds(new Set());
+    };
 
     const toggleSection = (platformId: string) => {
         setCollapsedSections(prev => ({
@@ -402,6 +480,12 @@ export default function CampOverview() {
             });
         },
     });
+
+    const hasTripDirectSelected = useMemo(() => {
+        if (selectedPlatformIds.length === 0) return true;
+        const leadsPlats = platforms.filter(p => p.platform_name === 'tripdirect' || p.platform_name === 'huytrip');
+        return leadsPlats.some(p => selectedPlatformIds.includes(p.id));
+    }, [selectedPlatformIds, platforms]);
 
     // Fetch campaigns with platform expand
     const { data: campaigns = [], isLoading, refetch } = useQuery<Campaign[]>({
@@ -499,11 +583,12 @@ export default function CampOverview() {
             const reminderText = `${reminder.message || ''} ${metricSignals.join(' ')}`.toLowerCase();
             if (reminderText.includes('rlink')) specialReminderSignals.add('rLink');
             if (reminderText.includes('rsa')) specialReminderSignals.add('RSA');
-            if (reminderText.includes('terms') || reminderText.includes('search terms')) specialReminderSignals.add('Terms');
-            if (reminderText.includes('broads') || reminderText.includes(' broad ')) specialReminderSignals.add('Broads');
+            if (reminderText.includes('maxv') || reminderText.includes('max conversion value') || reminderText.includes('max value')) specialReminderSignals.add('maxV');
+            if (reminderText.includes('maxconv') || reminderText.includes('max conversions') || reminderText.includes('max conv')) specialReminderSignals.add('maxConv');
+            if (reminderText.includes('troas') || reminderText.includes('target roas')) specialReminderSignals.add('tROAS');
+            if (reminderText.includes('tcpa') || reminderText.includes('target cpa')) specialReminderSignals.add('tCPA');
             if (reminderText.includes('notraffic') || reminderText.includes('no traffic')) specialReminderSignals.add('noTraffic');
             if (reminderText.includes('stop') || reminderText.includes(' pause ')) specialReminderSignals.add('Stop');
-            if (reminderText.includes('override') || reminderText.includes('overridden')) specialReminderSignals.add('Override');
             if (reminderText.includes('!url')) specialReminderSignals.add('!URL');
 
             const reminderDate = parseDateOnly(reminder.reminder_date);
@@ -560,16 +645,12 @@ export default function CampOverview() {
             reviewSource = 'reminder';
         }
 
-        const reviewedAgeDays = manualReviewAt ? Math.max(0, -getDayDiff(manualReviewAt, now)) : null;
-        const freshnessState: FreshnessState = reviewedAgeDays === null
-            ? 'stale'
-            : (reviewedAgeDays <= 3 ? 'fresh' : reviewedAgeDays <= 7 ? 'watch' : 'stale');
         const reviewOutcomeLabel = reviewSource === 'review'
             ? (
                 campaign.last_review_outcome === 'cpc_increase'
-                    ? 'CPC ↑'
+                    ? (campaign.bidding_strategy === 'target_cpa' ? 'tCPA ↑' : campaign.bidding_strategy === 'target_roas' ? 'tROAS ↑' : 'CPC ↑')
                     : campaign.last_review_outcome === 'cpc_reduce'
-                        ? 'CPC ↓'
+                        ? (campaign.bidding_strategy === 'target_cpa' ? 'tCPA ↓' : campaign.bidding_strategy === 'target_roas' ? 'tROAS ↓' : 'CPC ↓')
                         : campaign.last_review_outcome === 'updated'
                             ? 'Updated'
                             : campaign.last_review_outcome === 'no_change'
@@ -581,13 +662,8 @@ export default function CampOverview() {
                 : reviewSource === 'reminder'
                     ? 'Reminder updated'
                     : undefined;
-        const latestActivityAgeDays = latestActivityAt ? Math.max(0, -getDayDiff(latestActivityAt, now)) : null;
-        const latestActivityText = latestActivityAgeDays === 0 ? 'Reviewed today' : `Reviewed ${latestActivityAgeDays}d ago`;
-        const reviewStatusLabel = latestActivityAgeDays === null
-            ? 'Never reviewed'
-            : reviewOutcomeLabel
-                ? `${latestActivityText} • ${reviewOutcomeLabel}`
-                : latestActivityText;
+
+        const reviewStatusLabel = reviewOutcomeLabel || 'Never reviewed';
 
         return {
             ...campaign,
@@ -598,7 +674,6 @@ export default function CampOverview() {
             specialReminderSignals: Array.from(specialReminderSignals),
             hasCriticalRLinkAlert,
             highestPriority: hasActionableReminder ? priority : undefined,
-            freshnessState,
             hasReviewed: manualReviewAt !== null,
             reviewStatusLabel,
         };
@@ -620,13 +695,15 @@ export default function CampOverview() {
             if (campaign.reminderState === 'today') acc.today += 1;
             if (campaign.reminderState === 'upcoming') acc.upcoming += 1;
             if (campaign.specialReminderSignals.includes('rLink')) acc.rLink += 1;
-            if (campaign.specialReminderSignals.includes('Terms')) acc.terms += 1;
-            if (campaign.specialReminderSignals.includes('Broads')) acc.broads += 1;
+            if (isMaxValueCampaign(campaign)) acc.maxValue += 1;
+            if (isMaxConvCampaign(campaign)) acc.maxConv += 1;
+            if (isTROASCampaign(campaign)) acc.tROAS += 1;
+            if (isTCPACampaign(campaign)) acc.tCPA += 1;
             if (campaign.specialReminderSignals.includes('noTraffic')) acc.noTraffic += 1;
             if (campaign.specialReminderSignals.includes('Stop')) acc.stop += 1;
-            if (campaign.specialReminderSignals.includes('Override')) acc.override += 1;
             if (campaign.hasCriticalRLinkAlert) acc.criticalRLink += 1;
             if (campaign.is_testing) acc.testing += 1;
+            if (campaign.is_case_study) acc.caseStudy += 1;
 
             // Priorities
             if (campaign.priority === 'critical') acc.critical += 1;
@@ -634,42 +711,92 @@ export default function CampOverview() {
 
             return acc;
         },
-        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0, rLink: 0, terms: 0, broads: 0, noTraffic: 0, stop: 0, override: 0, criticalRLink: 0, testing: 0 },
+        { overdue: 0, today: 0, upcoming: 0, critical: 0, high: 0, rLink: 0, maxValue: 0, maxConv: 0, tROAS: 0, tCPA: 0, noTraffic: 0, stop: 0, criticalRLink: 0, testing: 0, caseStudy: 0 },
     ), [baseFilteredCampaigns]);
 
     // 3. Final display list (Applies all interactive filters)
     const filteredCampaigns = useMemo(() => baseFilteredCampaigns.filter((campaign) => {
         if (alertsOnlyEnabled && !campaign.hasPendingReminders) return false;
         if (filterIsTesting && !campaign.is_testing) return false;
+        if (filterCaseStudy && !campaign.is_case_study) return false;
         if (filterRLink && !campaign.specialReminderSignals.includes('rLink')) return false;
-        if (filterTerms && !campaign.specialReminderSignals.includes('Terms')) return false;
-        if (filterBroads && !campaign.specialReminderSignals.includes('Broads')) return false;
+
+        const hasBiddingFilter = filterTROAS || filterTCPA || filterMaxConv || filterMaxValue;
+        if (hasBiddingFilter) {
+            const matchesBidding =
+                (filterTROAS && isTROASCampaign(campaign)) ||
+                (filterTCPA && isTCPACampaign(campaign)) ||
+                (filterMaxConv && isMaxConvCampaign(campaign)) ||
+                (filterMaxValue && isMaxValueCampaign(campaign));
+            if (!matchesBidding) return false;
+        }
+
         if (filterNoTraffic && !campaign.specialReminderSignals.includes('noTraffic')) return false;
         if (filterStop && !campaign.specialReminderSignals.includes('Stop')) return false;
-        if (filterOverride && !campaign.specialReminderSignals.includes('Override')) return false;
         if (filterCriticalRLink && !campaign.hasCriticalRLinkAlert) return false;
         if (reminderQuickFilter !== 'all' && campaign.reminderState !== reminderQuickFilter) return false;
         if (filterPriority !== 'all' && campaign.priority !== filterPriority) return false;
+        if (filterLeads) {
+            const platName = campaign.expand?.platform?.platform_name;
+            const isSupported = platName === 'tripdirect' || platName === 'huytrip';
+            if (!isSupported || campaign.leads !== filterLeads) return false;
+        }
         if (filterMetadata && htmlToPlainText(campaign.metadata || '').trim().length === 0) return false;
         return true;
-    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterBroads, filterCriticalRLink, filterIsTesting, filterMetadata, filterNoTraffic, filterOverride, filterPriority, filterRLink, filterStop, filterTerms, reminderQuickFilter]);
+    }), [alertsOnlyEnabled, baseFilteredCampaigns, filterCriticalRLink, filterIsTesting, filterCaseStudy, filterMetadata, filterNoTraffic, filterPriority, filterLeads, filterRLink, filterStop, filterMaxValue, filterMaxConv, filterTROAS, filterTCPA, reminderQuickFilter]);
 
     const hasActiveFilters = hasPlatformFilter
         || filterPriority !== 'all'
+        || !!filterLeads
         || filterName !== ''
         || filterIsTesting
+        || filterCaseStudy
         || alertsOnlyEnabled
         || filterRLink
-        || filterTerms
-        || filterBroads
+        || filterMaxValue
+        || filterMaxConv
+        || filterTROAS
+        || filterTCPA
         || filterNoTraffic
         || filterStop
-        || filterOverride
         || filterCriticalRLink
         || filterShowAll
-        || reminderQuickFilter !== 'all'
         || filterMetadata
         || sortMode !== 'name_asc';
+
+    const toggleSelectAllVisible = () => {
+        setSelectedCampaignIds((prev) => {
+            const visibleIds = filteredCampaigns.map((c) => c.id);
+            const allSelected = visibleIds.length > 0 && visibleIds.every((id) => prev.has(id));
+            if (allSelected) {
+                return new Set();
+            } else {
+                return new Set(visibleIds);
+            }
+        });
+    };
+
+    const handleBatchStatusUpdate = async (newStatus: 'active' | 'paused' | 'testing' | 'archived') => {
+        if (selectedCampaignIds.size === 0 || isBatchSubmitting) return;
+        setIsBatchSubmitting(true);
+        try {
+            const ids = Array.from(selectedCampaignIds);
+            const updates = ids.map((id) =>
+                pb.collection('campaigns').update(id, {
+                    status: newStatus,
+                    is_testing: newStatus === 'testing' ? true : undefined,
+                })
+            );
+            await Promise.all(updates);
+            await refetch();
+            queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+            clearSelection();
+        } catch (err: any) {
+            console.error('Batch status update error:', err);
+        } finally {
+            setIsBatchSubmitting(false);
+        }
+    };
 
     // Pulse Metrics (Calculated from base list)
     const reviewedCount = baseFilteredCampaigns.filter(c => c.hasReviewed).length;
@@ -683,7 +810,8 @@ export default function CampOverview() {
     const quickFilters = [
         { id: 'alerts', label: 'Alerts', active: alertsOnlyEnabled, toggle: setToggleReminders },
         { id: 'all', label: 'All', active: filterShowAll, toggle: setToggleShowAll },
-        { id: 'meta', label: 'Metadata', active: filterMetadata, toggle: setToggleMetadata }
+        { id: 'meta', label: 'Metadata', active: filterMetadata, toggle: setToggleMetadata },
+        { id: 'case_study', label: 'Case Study', active: filterCaseStudy, toggle: setToggleCaseStudy }
     ] as const;
     const reminderChipConfig = {
         overdue: REMINDER_CHIP_CONFIG.overdue,
@@ -783,9 +911,64 @@ export default function CampOverview() {
     };
 
     return (
-        <div className="page-container camp-overview-page" style={shellBackground}>
+        <div className={`page-container camp-overview-page ${compactCards ? 'is-compact-view' : ''}`} style={shellBackground}>
             <style>{`
                 ${createSafeInteractionScopeCss('.camp-overview-page', [...SAFE_BUTTON_SELECTORS, ...SAFE_CARD_SELECTORS])}
+
+                .camp-overview-page.is-compact-view .filter-group {
+                    gap: 0.2rem;
+                }
+
+                .camp-overview-page.is-compact-view .filter-group label {
+                    display: none;
+                }
+
+                .camp-overview-page.is-compact-view .camp-filter-control {
+                    height: 30px;
+                    border-radius: 8px;
+                    font-size: 0.74rem;
+                    padding: 0 0.5rem;
+                }
+
+                .camp-overview-page.is-compact-view .camp-filter-segment {
+                    padding: 0.16rem;
+                    gap: 0.16rem;
+                    border-radius: 8px;
+                }
+
+                .camp-overview-page.is-compact-view .camp-filter-segment-btn {
+                    padding: 0.22rem 0.55rem;
+                    font-size: 0.65rem;
+                    border-radius: 6px;
+                }
+
+                .camp-overview-page.is-compact-view .camp-filter-pill {
+                    padding: 0.2rem 0.48rem;
+                    border-radius: 8px;
+                    gap: 0.35rem;
+                }
+
+                .camp-overview-page.is-compact-view .camp-filter-pill-box {
+                    width: 11px;
+                    height: 11px;
+                    border-radius: 3px;
+                }
+
+                .camp-overview-page.is-compact-view .camp-filter-pill-label {
+                    font-size: 0.68rem;
+                }
+
+                .camp-overview-page.is-compact-view .camp-status-filter-chip {
+                    padding: 0.22rem 0.52rem !important;
+                    font-size: 0.7rem !important;
+                    border-radius: 7px !important;
+                    gap: 0.35rem !important;
+                }
+
+                .camp-overview-page.is-compact-view .camp-status-filter-chip span {
+                    width: 5px !important;
+                    height: 5px !important;
+                }
 
                 .camp-overview-page .filter-group {
                     display: flex;
@@ -950,26 +1133,26 @@ export default function CampOverview() {
                 }
             `}</style>
             <SurfaceCard
-                padding="1.1rem 1.2rem"
-                radius="1.6rem"
+                padding={compactCards ? '0.4rem 0.85rem' : '1.1rem 1.2rem'}
+                radius={compactCards ? '0.95rem' : '1.6rem'}
                 style={{
                     ...createAmbientSurface('#3b82f6', 1),
-                    marginTop: '0.8rem',
-                    marginBottom: '1rem',
+                    marginTop: compactCards ? '0.25rem' : '0.8rem',
+                    marginBottom: compactCards ? '0.45rem' : '1rem',
                     display: 'grid',
                     gridTemplateColumns: 'minmax(0, 1fr) auto',
-                    gap: '1rem',
+                    gap: compactCards ? '0.5rem' : '1rem',
                     alignItems: 'center',
                 }}
             >
                 <div style={{ minWidth: 0 }}>
                     <h1 style={{
-                        fontSize: 'clamp(1.65rem, 2.5vw, 2.2rem)',
+                        fontSize: compactCards ? '1.15rem' : 'clamp(1.65rem, 2.5vw, 2.2rem)',
                         fontWeight: 850,
                         color: 'var(--text-main)',
                         letterSpacing: '-0.04em',
                         margin: 0,
-                        lineHeight: 1.02,
+                        lineHeight: 1.05,
                     }}>
                         Campaign Overview
                     </h1>
@@ -978,12 +1161,12 @@ export default function CampOverview() {
                 <div
                     style={{
                         ...createAmbientSurface('#14b8a6', 0.8),
-                        borderRadius: '1.25rem',
-                        padding: '0.75rem',
+                        borderRadius: compactCards ? '0.75rem' : '1.25rem',
+                        padding: compactCards ? '0.25rem 0.45rem' : '0.75rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'flex-end',
-                        gap: '0.5rem',
+                        gap: compactCards ? '0.35rem' : '0.5rem',
                         flexWrap: 'wrap',
                         minWidth: 0,
                     }}
@@ -991,17 +1174,24 @@ export default function CampOverview() {
                     <SafeButton
                         onClick={() => refetch()}
                         className="hero-btn hero-btn-ghost"
-                        style={{ padding: '0.6rem 0.85rem', borderRadius: '0.9rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
+                        style={{
+                            padding: compactCards ? '0.3rem 0.55rem' : '0.6rem 0.85rem',
+                            borderRadius: compactCards ? '0.55rem' : '0.9rem',
+                            fontSize: compactCards ? '0.75rem' : undefined,
+                            background: 'var(--bg-overlay)',
+                            border: '1px solid var(--border-subtle)',
+                        }}
                     >
-                        <RefreshCw size={16} />
+                        <RefreshCw size={compactCards ? 13 : 16} />
                         Refresh
                     </SafeButton>
                     <SafeButton
                         onClick={() => setSearchParams({})}
                         className="hero-btn"
                         style={{
-                            padding: '0.6rem 0.85rem',
-                            borderRadius: '0.9rem',
+                            padding: compactCards ? '0.3rem 0.55rem' : '0.6rem 0.85rem',
+                            borderRadius: compactCards ? '0.55rem' : '0.9rem',
+                            fontSize: compactCards ? '0.75rem' : undefined,
                             background: hasActiveFilters ? toAlphaColor('#3b82f6', 0.14) : 'var(--bg-overlay)',
                             border: `1px solid ${hasActiveFilters ? toAlphaColor('#3b82f6', 0.26) : 'var(--border-subtle)'}`,
                             color: hasActiveFilters ? '#7fb3ff' : 'var(--text-dim)',
@@ -1013,9 +1203,13 @@ export default function CampOverview() {
                     <SafeButton
                         onClick={() => openEdit(null)}
                         className="hero-btn hero-btn-primary"
-                        style={{ padding: '0.65rem 1rem', borderRadius: '0.9rem', fontSize: '0.85rem' }}
+                        style={{
+                            padding: compactCards ? '0.32rem 0.65rem' : '0.65rem 1rem',
+                            borderRadius: compactCards ? '0.55rem' : '0.9rem',
+                            fontSize: compactCards ? '0.75rem' : '0.85rem',
+                        }}
                     >
-                        <Plus size={18} strokeWidth={2.5} />
+                        <Plus size={compactCards ? 14 : 18} strokeWidth={2.5} />
                         New Campaign
                     </SafeButton>
                 </div>
@@ -1023,11 +1217,11 @@ export default function CampOverview() {
 
             {/* Filters Cluster */}
             <SurfaceCard
-                padding="1.05rem"
-                radius="1.55rem"
+                padding={compactCards ? '0.4rem 0.6rem' : '1.05rem'}
+                radius={compactCards ? '0.9rem' : '1.55rem'}
                 style={{
                     ...createAmbientSurface('#2563eb', 0.62),
-                    marginBottom: '1.25rem',
+                    marginBottom: compactCards ? '0.45rem' : '1.25rem',
                     background: [
                         'radial-gradient(circle at top right, rgba(59, 130, 246, 0.14) 0%, transparent 22%)',
                         'radial-gradient(circle at left bottom, rgba(20, 184, 166, 0.1) 0%, transparent 24%)',
@@ -1037,14 +1231,16 @@ export default function CampOverview() {
                     boxShadow: '0 28px 48px -36px rgba(15, 23, 42, 0.78)',
                 }}
             >
-                <div style={{ ...FILTER_CLUSTER_STYLE, marginBottom: 0, alignItems: 'stretch' }}>
+                <div style={{ ...FILTER_CLUSTER_STYLE, gap: compactCards ? '0.45rem' : '1rem', marginBottom: 0, alignItems: 'stretch' }}>
                 <SurfaceCard
                     className="camp-filter-panel"
                     variant="inset"
-                    padding="0.95rem 1rem"
+                    padding={compactCards ? '0.3rem 0.5rem' : '0.95rem 1rem'}
                     style={{
                         ...FILTER_CARD_STYLE,
-                        flex: '1 1 42rem',
+                        gap: compactCards ? '0.45rem' : '1rem',
+                        alignItems: 'center',
+                        flex: compactCards ? '1 1 auto' : '1 1 42rem',
                         background: [
                             'radial-gradient(circle at top left, rgba(59, 130, 246, 0.08) 0%, transparent 22%)',
                             'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 98%, white 2%) 0%, color-mix(in srgb, var(--bg-content) 91%, var(--bg-main) 9%) 100%)',
@@ -1053,34 +1249,100 @@ export default function CampOverview() {
                         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.42), 0 18px 30px -28px rgba(15, 23, 42, 0.36)',
                     }}
                 >
-                    <div className="filter-group">
-                        <label>Search Camp</label>
-                        <div style={{ position: 'relative', minWidth: '320px' }}>
-                            <Search size={16} style={{ position: 'absolute', left: '0.95rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                            <input
-                                className="camp-filter-control"
-                                type="text"
-                                value={filterName}
-                                onChange={(e) => setFilterName(e.target.value)}
-                                placeholder="Search by campaign name..."
+                    {compactCards ? (
+                        (showCompactSearch || filterName) ? (
+                            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                                <Search size={13} style={{ position: 'absolute', left: '0.65rem', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                                <input
+                                    className="camp-filter-control"
+                                    type="text"
+                                    autoFocus
+                                    value={filterName}
+                                    onChange={(e) => setFilterName(e.target.value)}
+                                    placeholder="Search camp..."
+                                    style={{
+                                        width: '150px',
+                                        height: '30px',
+                                        fontSize: '0.74rem',
+                                        borderRadius: '8px',
+                                        paddingLeft: '1.8rem',
+                                        paddingRight: '1.4rem',
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFilterName('');
+                                        setShowCompactSearch(false);
+                                    }}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '0.35rem',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: 'var(--text-muted)',
+                                        padding: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                    }}
+                                    title="Close search"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        ) : (
+                            <SafeButton
+                                onClick={() => setShowCompactSearch(true)}
+                                title="Search campaign"
+                                className="hero-btn hero-btn-ghost"
                                 style={{
-                                    minWidth: '320px',
-                                    borderRadius: '12px',
-                                    paddingLeft: '2.7rem',
+                                    height: '30px',
+                                    padding: '0 0.55rem',
+                                    borderRadius: '8px',
+                                    fontSize: '0.72rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    background: 'var(--bg-overlay)',
+                                    border: '1px solid var(--border-subtle)',
+                                    color: 'var(--text-dim)',
                                 }}
-                            />
+                            >
+                                <Search size={13} />
+                                <span>Search</span>
+                            </SafeButton>
+                        )
+                    ) : (
+                        <div className="filter-group">
+                            <label>Search Camp</label>
+                            <div style={{ position: 'relative', minWidth: '320px' }}>
+                                <Search size={16} style={{ position: 'absolute', left: '0.95rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                                <input
+                                    className="camp-filter-control"
+                                    type="text"
+                                    value={filterName}
+                                    onChange={(e) => setFilterName(e.target.value)}
+                                    placeholder="Search by campaign name..."
+                                    style={{
+                                        minWidth: '320px',
+                                        borderRadius: '12px',
+                                        paddingLeft: '2.7rem',
+                                    }}
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="filter-group">
                         <label>Platform</label>
-                        <div style={{ minWidth: '220px' }}>
+                        <div style={{ minWidth: compactCards ? '145px' : '220px' }}>
                             <MultiSelectDropdown
-                                options={platforms.map((platform) => ({ label: platform.display_name, value: platform.id }))}
+                                options={platforms.map((platform) => ({ label: platform.display_name, value: platform.id, color: platform.color }))}
                                 value={selectedPlatformIds.join('|')}
                                 onChange={setFilterPlatform}
                                 placeholder="All Channels"
-                                width="220px"
+                                width={compactCards ? '145px' : '220px'}
                                 showSearch
                                 variant="premium"
                             />
@@ -1094,8 +1356,8 @@ export default function CampOverview() {
                             value={filterPriority}
                             onChange={(e) => setFilterPriority(e.target.value)}
                             style={{
-                                minWidth: '140px',
-                                borderRadius: '12px',
+                                minWidth: compactCards ? '100px' : '140px',
+                                borderRadius: compactCards ? '8px' : '12px',
                                 color: filterPriority === 'critical' ? '#d946ef' : (filterPriority === 'high' ? '#ef4444' : (filterPriority === 'medium' ? '#f59e0b' : 'inherit')),
                                 fontWeight: filterPriority !== 'all' && filterPriority !== 'normal' ? 700 : 500,
                             }}
@@ -1115,8 +1377,8 @@ export default function CampOverview() {
                             value={sortMode}
                             onChange={(e) => setSortMode(e.target.value as CampaignSortMode)}
                             style={{
-                                minWidth: '110px',
-                                borderRadius: '12px',
+                                minWidth: compactCards ? '80px' : '110px',
+                                borderRadius: compactCards ? '8px' : '12px',
                             }}
                         >
                             {SORT_OPTIONS.map((option) => (
@@ -1131,9 +1393,10 @@ export default function CampOverview() {
                 <SurfaceCard
                     className="camp-filter-panel"
                     variant="inset"
-                    padding="0.8rem 0.95rem"
+                    padding={compactCards ? '0.3rem 0.55rem' : '0.8rem 0.95rem'}
                     style={{
                         ...VIEW_CONTROL_CARD_STYLE,
+                        gap: compactCards ? '0.45rem' : '1rem',
                         flex: '0 1 auto',
                         justifyContent: 'space-between',
                         background: [
@@ -1181,7 +1444,7 @@ export default function CampOverview() {
 
                     <div className="filter-group">
                         <label style={{ fontSize: '0.65rem', marginBottom: '0.2rem' }}>Quick Filters</label>
-                        <div style={{ display: 'flex', gap: '0.55rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: compactCards ? '0.35rem' : '0.55rem', alignItems: 'center', flexWrap: 'wrap' }}>
                             {quickFilters.map((item) => (
                                 <SafeButton
                                     key={item.id}
@@ -1198,6 +1461,52 @@ export default function CampOverview() {
                                     </span>
                                 </SafeButton>
                             ))}
+
+                            {filteredCampaigns.length > 0 && (
+                                <SafeButton
+                                    onClick={toggleSelectAllVisible}
+                                    className={`camp-filter-pill ${filteredCampaigns.every((c) => selectedCampaignIds.has(c.id)) ? 'is-active' : ''}`}
+                                    title="Toggle selection of all visible campaigns"
+                                >
+                                    <div className="camp-filter-pill-box">
+                                        {filteredCampaigns.every((c) => selectedCampaignIds.has(c.id)) && <Check size={10} strokeWidth={4} color="white" />}
+                                    </div>
+                                    <span className="camp-filter-pill-label">
+                                        {filteredCampaigns.every((c) => selectedCampaignIds.has(c.id)) ? 'Deselect All' : 'Select All'}
+                                    </span>
+                                </SafeButton>
+                            )}
+
+                            {hasTripDirectSelected && (
+                                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                                    <select
+                                        className={`camp-filter-pill ${filterLeads ? 'is-active' : ''}`}
+                                        value={filterLeads}
+                                        onChange={(e) => setFilterLeads(e.target.value)}
+                                        style={{
+                                            fontSize: compactCards ? '0.7rem' : '0.75rem',
+                                            fontWeight: 800,
+                                            outline: 'none',
+                                            cursor: 'pointer',
+                                            padding: compactCards ? '0.2rem 1.4rem 0.2rem 0.5rem' : '0.35rem 1.6rem 0.35rem 0.6rem',
+                                            appearance: 'none',
+                                            WebkitAppearance: 'none',
+                                            backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${filterLeads ? '%233b82f6' : '%2364748b'}' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                                            backgroundRepeat: 'no-repeat',
+                                            backgroundPosition: 'right 0.5rem center',
+                                            backgroundSize: '0.7rem',
+                                            color: filterLeads ? 'hsl(var(--primary))' : 'var(--text-dim)',
+                                        }}
+                                    >
+                                        <option value="">Leads: Any</option>
+                                        <option value="all">Leads: All</option>
+                                        <option value="t1">Leads: T1: 3</option>
+                                        <option value="t2">Leads: T2: 2</option>
+                                        <option value="p1">Leads: P1: 4</option>
+                                        <option value="p2">Leads: P2: 2.5</option>
+                                    </select>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </SurfaceCard>
@@ -1206,35 +1515,36 @@ export default function CampOverview() {
 
             {/* Status Dashboard Row */}
             <SurfaceCard
-                padding="0.85rem 1.15rem"
-                radius="1.45rem"
+                padding={compactCards ? '0.35rem 0.65rem' : '0.85rem 1.15rem'}
+                radius={compactCards ? '0.85rem' : '1.45rem'}
                 style={{
                     ...STATUS_CARD_STYLE,
                     ...createAmbientSurface('#8b5cf6', 0.4),
+                    marginBottom: compactCards ? '0.45rem' : '1.5rem',
                 }}
             >
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: compactCards ? '0.35rem' : '0.6rem', alignItems: 'center' }}>
                     {/* Review Rate */}
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '0.4rem 0.85rem',
+                        gap: compactCards ? '0.4rem' : '0.75rem',
+                        padding: compactCards ? '0.2rem 0.5rem' : '0.4rem 0.85rem',
                         background: 'var(--bg-overlay)',
-                        borderRadius: '10px',
+                        borderRadius: compactCards ? '6px' : '10px',
                         border: '1px solid var(--border-subtle)',
-                        marginRight: '0.5rem'
+                        marginRight: compactCards ? '0.25rem' : '0.5rem'
                     }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', lineHeight: 1 }}>Review</span>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-main)', lineHeight: 1.2 }}>{pulseMetrics.reviewRate}%</span>
+                            <span style={{ fontSize: compactCards ? '0.52rem' : '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', lineHeight: 1 }}>Review</span>
+                            <span style={{ fontSize: compactCards ? '0.74rem' : '0.85rem', fontWeight: 900, color: 'var(--text-main)', lineHeight: 1.2 }}>{pulseMetrics.reviewRate}%</span>
                         </div>
-                        <div style={{ width: '40px', height: '4px', background: 'var(--bg-overlay)', borderRadius: '2px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+                        <div style={{ width: compactCards ? '24px' : '40px', height: compactCards ? '3px' : '4px', background: 'var(--bg-overlay)', borderRadius: '2px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
                             <div style={{ width: `${pulseMetrics.reviewRate}%`, height: '100%', background: 'hsl(var(--primary))' }} />
                         </div>
                     </div>
 
-                    <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', marginRight: '0.5rem' }} />
+                    <div style={{ width: '1px', height: compactCards ? '14px' : '20px', background: 'var(--border-subtle)', marginRight: compactCards ? '0.25rem' : '0.5rem' }} />
 
                     <FilterChip
                         active={filterPriority === 'critical'}
@@ -1280,9 +1590,26 @@ export default function CampOverview() {
                         activeShadow="0 0 15px rgba(8, 145, 178, 0.35)"
                         dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterIsTesting : false}
                         indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterIsTesting ? '#fff' : '#0891b2', boxShadow: filterIsTesting ? '0 0 8px #fff' : '0 0 8px rgba(8, 145, 178, 0.65)' }} />}
-                        title="Campaigns marked as new-market tests"
+                        title="Campaigns marked as testing"
                     >
                         Testing: {summary.testing}
+                    </FilterChip>
+
+                    <FilterChip
+                        active={filterCaseStudy}
+                        onClick={setToggleCaseStudy}
+                        activeBackground="#e0824c"
+                        inactiveBackground="rgba(224, 130, 76, 0.06)"
+                        activeBorder="#e0824c"
+                        inactiveBorder="rgba(224, 130, 76, 0.14)"
+                        activeColor="#fff"
+                        inactiveColor="#e0824c"
+                        activeShadow="0 0 15px rgba(224, 130, 76, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterCaseStudy : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterCaseStudy ? '#fff' : '#e0824c', boxShadow: filterCaseStudy ? '0 0 8px #fff' : '0 0 8px rgba(224, 130, 76, 0.65)' }} />}
+                        title="Campaigns marked as Case Studies"
+                    >
+                        Case Study: {summary.caseStudy}
                     </FilterChip>
 
                     <FilterChip
@@ -1302,37 +1629,71 @@ export default function CampOverview() {
                     </FilterChip>
 
                     <FilterChip
-                        active={filterTerms}
-                        onClick={setToggleTerms}
-                        activeBackground="#2563eb"
-                        inactiveBackground="rgba(37, 99, 235, 0.05)"
-                        activeBorder="#2563eb"
-                        inactiveBorder="rgba(37, 99, 235, 0.12)"
+                        active={filterTROAS}
+                        onClick={setToggleTROAS}
+                        activeBackground="#6366f1"
+                        inactiveBackground="rgba(99, 102, 241, 0.05)"
+                        activeBorder="#6366f1"
+                        inactiveBorder="rgba(99, 102, 241, 0.12)"
                         activeColor="#fff"
-                        inactiveColor="#2563eb"
-                        activeShadow="0 0 15px rgba(37, 99, 235, 0.35)"
-                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterTerms : false}
-                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterTerms ? '#fff' : '#2563eb', boxShadow: filterTerms ? '0 0 8px #fff' : '0 0 8px rgba(37, 99, 235, 0.65)' }} />}
-                        title="Campaigns with reminders to review search terms"
+                        inactiveColor="#6366f1"
+                        activeShadow="0 0 15px rgba(99, 102, 241, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterTROAS : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterTROAS ? '#fff' : '#6366f1', boxShadow: filterTROAS ? '0 0 8px #fff' : '0 0 8px rgba(99, 102, 241, 0.65)' }} />}
+                        title="Campaigns with Target ROAS bidding strategy"
                     >
-                        Terms: {summary.terms}
+                        tROAS: {summary.tROAS}
                     </FilterChip>
 
                     <FilterChip
-                        active={filterBroads}
-                        onClick={setToggleBroads}
-                        activeBackground="#7c3aed"
-                        inactiveBackground="rgba(124, 58, 237, 0.06)"
-                        activeBorder="#7c3aed"
-                        inactiveBorder="rgba(124, 58, 237, 0.14)"
+                        active={filterTCPA}
+                        onClick={setToggleTCPA}
+                        activeBackground="#06b6d4"
+                        inactiveBackground="rgba(6, 182, 212, 0.05)"
+                        activeBorder="#06b6d4"
+                        inactiveBorder="rgba(6, 182, 212, 0.12)"
                         activeColor="#fff"
-                        inactiveColor="#7c3aed"
-                        activeShadow="0 0 15px rgba(124, 58, 237, 0.35)"
-                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterBroads : false}
-                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterBroads ? '#fff' : '#7c3aed', boxShadow: filterBroads ? '0 0 8px #fff' : '0 0 8px rgba(124, 58, 237, 0.65)' }} />}
-                        title="Campaigns with reminders tied to broad-keyword monitoring"
+                        inactiveColor="#06b6d4"
+                        activeShadow="0 0 15px rgba(6, 182, 212, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterTCPA : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterTCPA ? '#fff' : '#06b6d4', boxShadow: filterTCPA ? '0 0 8px #fff' : '0 0 8px rgba(6, 182, 212, 0.65)' }} />}
+                        title="Campaigns with Target CPA bidding strategy"
                     >
-                        Broads: {summary.broads}
+                        tCPA: {summary.tCPA}
+                    </FilterChip>
+
+                    <FilterChip
+                        active={filterMaxConv}
+                        onClick={setToggleMaxConv}
+                        activeBackground="#10b981"
+                        inactiveBackground="rgba(16, 185, 129, 0.05)"
+                        activeBorder="#10b981"
+                        inactiveBorder="rgba(16, 185, 129, 0.12)"
+                        activeColor="#fff"
+                        inactiveColor="#10b981"
+                        activeShadow="0 0 15px rgba(16, 185, 129, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterMaxConv : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterMaxConv ? '#fff' : '#10b981', boxShadow: filterMaxConv ? '0 0 8px #fff' : '0 0 8px rgba(16, 185, 129, 0.65)' }} />}
+                        title="Campaigns with Maximize Conversions bidding strategy"
+                    >
+                        maxConv: {summary.maxConv}
+                    </FilterChip>
+
+                    <FilterChip
+                        active={filterMaxValue}
+                        onClick={setToggleMaxValue}
+                        activeBackground="#a855f7"
+                        inactiveBackground="rgba(168, 85, 247, 0.05)"
+                        activeBorder="#a855f7"
+                        inactiveBorder="rgba(168, 85, 247, 0.12)"
+                        activeColor="#fff"
+                        inactiveColor="#a855f7"
+                        activeShadow="0 0 15px rgba(168, 85, 247, 0.35)"
+                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterMaxValue : false}
+                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterMaxValue ? '#fff' : '#a855f7', boxShadow: filterMaxValue ? '0 0 8px #fff' : '0 0 8px rgba(168, 85, 247, 0.65)' }} />}
+                        title="Campaigns with Maximize Conversion Value bidding strategy"
+                    >
+                        maxValue: {summary.maxValue}
                     </FilterChip>
 
                     <FilterChip
@@ -1369,22 +1730,7 @@ export default function CampOverview() {
                         Stop: {summary.stop}
                     </FilterChip>
 
-                    <FilterChip
-                        active={filterOverride}
-                        onClick={setToggleOverride}
-                        activeBackground="#7c2d12"
-                        inactiveBackground="rgba(124, 45, 18, 0.06)"
-                        activeBorder="#7c2d12"
-                        inactiveBorder="rgba(124, 45, 18, 0.14)"
-                        activeColor="#fff"
-                        inactiveColor="#7c2d12"
-                        activeShadow="0 0 15px rgba(124, 45, 18, 0.35)"
-                        dimmed={filterPriority !== 'all' || reminderQuickFilter !== 'all' ? !filterOverride : false}
-                        indicator={<span style={{ width: '6px', height: '6px', borderRadius: '50%', background: filterOverride ? '#fff' : '#7c2d12', boxShadow: filterOverride ? '0 0 8px #fff' : '0 0 8px rgba(124, 45, 18, 0.65)' }} />}
-                        title="Campaigns with override reminders"
-                    >
-                        Override: {summary.override}
-                    </FilterChip>
+
 
                     <FilterChip
                         active={filterCriticalRLink}
@@ -1532,10 +1878,23 @@ export default function CampOverview() {
                                     padding="1rem"
                                     radius="1.55rem"
                                     style={{
-                                        ...createAmbientSurface(group.platform.color || '#64748b', 0.45),
+                                        ...createAmbientSurface(group.platform.color || '#64748b', 0.58),
                                         overflow: 'hidden',
+                                        position: 'relative',
                                     }}
                                 >
+                                    {/* Glowing top accent strip */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        height: '3px',
+                                        background: group.platform.color || '#64748b',
+                                        boxShadow: `0 0 16px ${toAlphaColor(group.platform.color || '#64748b', 0.8)}`,
+                                        zIndex: 1
+                                    }} />
+
                                     <div
                                         onClick={() => toggleSection(group.platform.id)}
                                         style={{
@@ -1544,18 +1903,19 @@ export default function CampOverview() {
                                             gap: '0.75rem',
                                             marginBottom: isCollapsed ? '0' : '1rem',
                                             cursor: 'pointer',
-                                            padding: '0.7rem 0.8rem',
-                                            borderRadius: '1rem',
+                                            padding: '0.75rem 0.9rem',
+                                            borderRadius: '1.1rem',
                                             transition: SAFE_INTERACTIVE_TRANSITION,
                                             userSelect: 'none',
-                                            background: toAlphaColor(group.platform.color || '#64748b', 0.08),
-                                            border: `1px solid ${toAlphaColor(group.platform.color || '#64748b', 0.18)}`,
+                                            background: toAlphaColor(group.platform.color || '#64748b', 0.1),
+                                            border: `1px solid ${toAlphaColor(group.platform.color || '#64748b', 0.22)}`,
+                                            boxShadow: `0 4px 18px -8px ${toAlphaColor(group.platform.color || '#64748b', 0.3)}`
                                         }}
                                         onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = toAlphaColor(group.platform.color || '#64748b', 0.13);
+                                            e.currentTarget.style.background = toAlphaColor(group.platform.color || '#64748b', 0.16);
                                         }}
                                         onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = toAlphaColor(group.platform.color || '#64748b', 0.08);
+                                            e.currentTarget.style.background = toAlphaColor(group.platform.color || '#64748b', 0.1);
                                         }}
                                     >
                                         {isCollapsed ? (
@@ -1563,17 +1923,82 @@ export default function CampOverview() {
                                         ) : (
                                             <ChevronDown size={18} className="text-muted" />
                                         )}
-                                        <div style={{ width: '8px', height: '26px', background: group.platform.color, borderRadius: '999px', boxShadow: `0 0 18px ${toAlphaColor(group.platform.color || '#64748b', 0.45)}` }} />
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 }}>
-                                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', textTransform: 'uppercase', margin: 0 }}>
-                                            {group.platform.display_name}
-                                        </h3>
-                                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                                            Campaign lane
-                                        </span>
+                                        <div style={{
+                                            width: '10px',
+                                            height: '28px',
+                                            background: group.platform.color,
+                                            borderRadius: '999px',
+                                            boxShadow: `0 0 18px ${toAlphaColor(group.platform.color || '#64748b', 0.75)}`,
+                                            flexShrink: 0
+                                        }} />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', minWidth: 0 }}>
+                                            <h3 style={{ fontSize: '1.12rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', textTransform: 'uppercase', margin: 0 }}>
+                                                {group.platform.display_name}
+                                            </h3>
+                                            <span style={{
+                                                fontSize: '0.68rem',
+                                                fontWeight: 800,
+                                                letterSpacing: '0.06em',
+                                                textTransform: 'uppercase',
+                                                padding: '0.2rem 0.65rem',
+                                                borderRadius: '999px',
+                                                background: isGradientColor(group.platform.color)
+                                                    ? group.platform.color
+                                                    : toAlphaColor(group.platform.color, 0.16),
+                                                color: isGradientColor(group.platform.color)
+                                                    ? '#ffffff'
+                                                    : extractBaseColor(group.platform.color),
+                                                border: `1px solid ${toAlphaColor(group.platform.color, 0.35)}`,
+                                                boxShadow: `0 0 10px ${toAlphaColor(group.platform.color, 0.3)}`
+                                            }}>
+                                                Platform Lane
+                                            </span>
                                         </div>
                                         <div style={{ height: '1px', flex: 1, background: 'var(--border-subtle)', marginLeft: '0.5rem', opacity: 0.5 }} />
-                                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 700, padding: '0.35rem 0.6rem', borderRadius: '999px', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}>
+                                        {(() => {
+                                            const groupCampaignIds = group.campaigns.map((c) => c.id);
+                                            const isGroupAllSelected = groupCampaignIds.length > 0 && groupCampaignIds.every((id) => selectedCampaignIds.has(id));
+                                            const isGroupSomeSelected = groupCampaignIds.some((id) => selectedCampaignIds.has(id));
+                                            return (
+                                                <SafeButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        toggleSelectPlatformGroup(groupCampaignIds);
+                                                    }}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.4rem',
+                                                        fontSize: '0.72rem',
+                                                        fontWeight: 700,
+                                                        padding: '0.3rem 0.65rem',
+                                                        borderRadius: '999px',
+                                                        background: isGroupAllSelected || isGroupSomeSelected ? 'hsla(var(--primary) / 0.18)' : 'var(--bg-overlay)',
+                                                        color: isGroupAllSelected || isGroupSomeSelected ? 'hsl(var(--primary))' : 'var(--text-muted)',
+                                                        border: isGroupAllSelected || isGroupSomeSelected ? '1px solid hsla(var(--primary) / 0.35)' : '1px solid var(--border-subtle)',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                    title={isGroupAllSelected ? 'Deselect all in channel' : 'Select all in channel'}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isGroupAllSelected}
+                                                        onChange={() => {}}
+                                                        style={{ accentColor: 'hsl(var(--primary))', cursor: 'pointer', margin: 0, width: '13px', height: '13px' }}
+                                                    />
+                                                    <span>{isGroupAllSelected ? 'Selected' : (isGroupSomeSelected ? `${groupCampaignIds.filter((id) => selectedCampaignIds.has(id)).length}/${groupCampaignIds.length}` : 'Select All')}</span>
+                                                </SafeButton>
+                                            );
+                                        })()}
+                                        <span style={{
+                                            fontSize: 'var(--text-xs)',
+                                            color: 'var(--text-main)',
+                                            fontWeight: 700,
+                                            padding: '0.35rem 0.65rem',
+                                            borderRadius: '999px',
+                                            background: toAlphaColor(group.platform.color || '#64748b', 0.08),
+                                            border: `1px solid ${toAlphaColor(group.platform.color || '#64748b', 0.22)}`
+                                        }}>
                                             {group.campaigns.length} campaigns
                                         </span>
                                     </div>
@@ -1599,11 +2024,12 @@ export default function CampOverview() {
                                                     highestPriority={campaign.highestPriority}
                                                     specialReminderSignals={campaign.specialReminderSignals}
                                                     reminderState={campaign.reminderState}
-                                                    freshnessState={campaign.freshnessState}
                                                     hasReviewed={campaign.hasReviewed}
                                                     reviewStatusLabel={campaign.reviewStatusLabel}
                                                     viewMode={viewMode}
                                                     onEdit={openEdit}
+                                                    isSelected={selectedCampaignIds.has(campaign.id)}
+                                                    onToggleSelect={() => toggleSelectCampaign(campaign.id)}
                                                 />
                                             ))}
                                         </div>
@@ -1614,6 +2040,162 @@ export default function CampOverview() {
                     </div>
                 )
             }
+
+            {selectedCampaignIds.size > 0 && (
+                <div
+                    className="animate-fade"
+                    style={{
+                        position: 'fixed',
+                        bottom: '1.75rem',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.85rem',
+                        padding: '0.65rem 1.15rem',
+                        borderRadius: '1.25rem',
+                        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(2, 6, 23, 0.96) 100%)',
+                        border: '1px solid rgba(59, 130, 246, 0.35)',
+                        boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 25px rgba(59, 130, 246, 0.25)',
+                        backdropFilter: 'blur(16px)',
+                        color: '#f8fafc',
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingRight: '0.5rem', borderRight: '1px solid rgba(255, 255, 255, 0.12)' }}>
+                        <span
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minWidth: '22px',
+                                height: '22px',
+                                padding: '0 0.4rem',
+                                borderRadius: '999px',
+                                background: 'hsl(var(--primary))',
+                                color: '#fff',
+                                fontSize: '0.72rem',
+                                fontWeight: 900,
+                            }}
+                        >
+                            {selectedCampaignIds.size}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                            Selected
+                        </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <SafeButton
+                            onClick={() => handleBatchStatusUpdate('paused')}
+                            disabled={isBatchSubmitting}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                padding: '0.4rem 0.75rem',
+                                borderRadius: '10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                background: 'rgba(239, 68, 68, 0.15)',
+                                color: '#ef4444',
+                                border: '1px solid rgba(239, 68, 68, 0.35)',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <Pause size={13} />
+                            Pause
+                        </SafeButton>
+
+                        <SafeButton
+                            onClick={() => handleBatchStatusUpdate('active')}
+                            disabled={isBatchSubmitting}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                padding: '0.4rem 0.75rem',
+                                borderRadius: '10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                background: 'rgba(34, 197, 94, 0.15)',
+                                color: '#22c55e',
+                                border: '1px solid rgba(34, 197, 94, 0.35)',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <Play size={13} />
+                            Activate
+                        </SafeButton>
+
+                        <SafeButton
+                            onClick={() => handleBatchStatusUpdate('testing')}
+                            disabled={isBatchSubmitting}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                padding: '0.4rem 0.75rem',
+                                borderRadius: '10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                background: 'rgba(245, 158, 11, 0.15)',
+                                color: '#f59e0b',
+                                border: '1px solid rgba(245, 158, 11, 0.35)',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <FlaskConical size={13} />
+                            Test
+                        </SafeButton>
+
+                        <SafeButton
+                            onClick={() => handleBatchStatusUpdate('archived')}
+                            disabled={isBatchSubmitting}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                padding: '0.4rem 0.75rem',
+                                borderRadius: '10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                background: 'rgba(100, 116, 139, 0.15)',
+                                color: '#94a3b8',
+                                border: '1px solid rgba(100, 116, 139, 0.35)',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <Archive size={13} />
+                            Archive
+                        </SafeButton>
+                    </div>
+
+                    <div style={{ width: '1px', height: '20px', background: 'rgba(255, 255, 255, 0.15)', margin: '0 0.1rem' }} />
+
+                    <SafeButton
+                        onClick={clearSelection}
+                        disabled={isBatchSubmitting}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            padding: '0.4rem 0.6rem',
+                            borderRadius: '10px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            color: 'var(--text-muted)',
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                        }}
+                        title="Cancel selection"
+                    >
+                        <X size={14} />
+                        Cancel
+                    </SafeButton>
+                </div>
+            )}
 
             <EditCampaignModal
                 campaignId={editingId || undefined}

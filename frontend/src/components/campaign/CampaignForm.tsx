@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ShieldCheck, Lock, Maximize2 } from 'lucide-react';
+import { AlertTriangle, Maximize2 } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
 import { Campaign, CampaignPlatform } from '../../types/campaign';
 import LazyRichTextEditor from '../common/LazyRichTextEditor';
@@ -32,7 +32,10 @@ const normalizeForComparison = (field: keyof Campaign, value: any) => {
     if (field === 'created_date') return formatDateForInput(value || '');
     if (field === 'is_dsa') return Boolean(value);
     if (field === 'is_testing') return Boolean(value);
+    if (field === 'is_case_study') return Boolean(value);
+    if (field === 'is_portfolio') return Boolean(value);
     if (field === 'priority') return value || 'normal';
+    if (field === 'leads') return value || 'all';
     if (field === 'cpc' || field === 'max_daily_budget' || field === 'target_cpa' || field === 'target_roas') {
         const val = toComparableNumber(value);
         return val === 0 ? null : val; // Normalize 0 to null for stable comparison with DB
@@ -86,6 +89,9 @@ export default function CampaignForm({
         general_notes: '',
         is_dsa: true,
         is_testing: false,
+        is_case_study: false,
+        is_portfolio: false,
+        leads: 'all',
         priority: 'normal',
         created_date: getLocalDateInputValue(),
     });
@@ -103,6 +109,14 @@ export default function CampaignForm({
         },
     });
 
+    const isLeadsSupportedPlatform = React.useMemo(() => {
+        const selectedPlatformId = formData.platform;
+        if (!selectedPlatformId) return false;
+        const selectedPlat = platforms.find(p => p.id === selectedPlatformId);
+        const platName = selectedPlat?.platform_name?.toLowerCase();
+        return platName === 'tripdirect' || platName === 'huytrip';
+    }, [formData.platform, platforms]);
+
     const { data: existingCampaign } = useQuery<Campaign>({
         queryKey: ['campaign', campaignId],
         queryFn: async () => {
@@ -118,6 +132,9 @@ export default function CampaignForm({
                 ...existingCampaign,
                 created_date: formatDateForInput(existingCampaign.created_date),
                 is_testing: Boolean(existingCampaign.is_testing),
+                is_case_study: Boolean(existingCampaign.is_case_study),
+                is_portfolio: Boolean(existingCampaign.is_portfolio),
+                leads: existingCampaign.leads || 'all',
                 priority: existingCampaign.priority || 'normal'
             });
         } else if (platformIdFromUrl) {
@@ -144,6 +161,9 @@ export default function CampaignForm({
             'general_notes',
             'is_dsa',
             'is_testing',
+            'is_case_study',
+            'is_portfolio',
+            'leads',
             'priority',
             'created_date',
         ];
@@ -169,6 +189,17 @@ export default function CampaignForm({
             setFormData(prev => ({ ...prev, [name]: checked }));
             return;
         }
+        if (name === 'platform') {
+            const selectedPlat = platforms.find(p => p.id === value);
+            const platName = selectedPlat?.platform_name?.toLowerCase();
+            const supportsLeads = platName === 'tripdirect' || platName === 'huytrip';
+            setFormData(prev => ({
+                ...prev,
+                platform: value,
+                leads: supportsLeads ? prev.leads || 'all' : 'all'
+            }));
+            return;
+        }
         setFormData((prev) => ({
             ...prev,
             [name]: type === 'number' ? (value === '' ? 0 : parseFloat(value)) : value,
@@ -187,7 +218,7 @@ export default function CampaignForm({
             let savedRecord: Campaign;
 
             if (campaignId && existingCampaign) {
-                const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'bidding_strategy', 'target_cpa', 'target_roas', 'description'];
+                const trackedFields: (keyof Campaign)[] = ['cpc', 'max_daily_budget', 'bidding_strategy', 'target_cpa', 'target_roas', 'description', 'leads', 'is_portfolio'];
                 const changes: any[] = [];
                 trackedFields.forEach((field) => {
                     const oldValue = normalizeForComparison(field, existingCampaign[field]);
@@ -206,13 +237,33 @@ export default function CampaignForm({
                     return;
                 }
 
-                const previousCpc = toComparableNumber(existingCampaign.cpc);
-                const nextCpc = toComparableNumber(formData.cpc);
-                const cpcDiff = previousCpc !== null && nextCpc !== null ? nextCpc - previousCpc : 0;
-                const cpcChanged = Math.abs(cpcDiff) >= 0.0001;
+                const strategy = formData.bidding_strategy || 'max_clicks';
+                let primaryChanged = false;
+                let isIncrease = false;
+
+                if (strategy === 'target_cpa') {
+                    const prevCpa = toComparableNumber(existingCampaign.target_cpa);
+                    const nextCpa = toComparableNumber(formData.target_cpa);
+                    const cpaDiff = prevCpa !== null && nextCpa !== null ? nextCpa - prevCpa : 0;
+                    primaryChanged = Math.abs(cpaDiff) >= 0.0001;
+                    isIncrease = cpaDiff > 0;
+                } else if (strategy === 'target_roas') {
+                    const prevRoas = toComparableNumber(existingCampaign.target_roas);
+                    const nextRoas = toComparableNumber(formData.target_roas);
+                    const roasDiff = prevRoas !== null && nextRoas !== null ? nextRoas - prevRoas : 0;
+                    primaryChanged = Math.abs(roasDiff) >= 0.0001;
+                    isIncrease = roasDiff > 0;
+                } else {
+                    const prevCpc = toComparableNumber(existingCampaign.cpc);
+                    const nextCpc = toComparableNumber(formData.cpc);
+                    const cpcDiff = prevCpc !== null && nextCpc !== null ? nextCpc - prevCpc : 0;
+                    primaryChanged = Math.abs(cpcDiff) >= 0.0001;
+                    isIncrease = cpcDiff > 0;
+                }
+
                 const reviewOutcome: Campaign['last_review_outcome'] =
-                    cpcChanged
-                        ? (cpcDiff > 0 ? 'cpc_increase' : 'cpc_reduce')
+                    primaryChanged
+                        ? (isIncrease ? 'cpc_increase' : 'cpc_reduce')
                         : (hasFormChanges ? 'updated' : 'no_change');
 
                 const updatePayload = {
@@ -309,30 +360,20 @@ export default function CampaignForm({
                     color: var(--text-dim);
                     line-height: 1.45;
                 }
-                .campaign-form-shell .compact-check {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 0.55rem;
-                    min-height: 42px;
-                    padding: 0.72rem 0.9rem;
-                    border-radius: 14px;
-                    border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.18) 22%);
-                    background: linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 90%, var(--bg-main) 10%) 100%);
-                    box-shadow: inset 0 1px 0 color-mix(in srgb, white 54%, transparent), 0 14px 28px -24px rgba(15, 23, 42, 0.42);
-                    cursor: pointer;
-                    user-select: none;
-                }
-                .campaign-form-shell .compact-check input {
-                    width: 16px;
-                    min-width: 16px;
-                    height: 16px;
-                    min-height: 16px;
+                .campaign-form-shell input[type="checkbox"] {
+                    width: 18px;
+                    min-width: 18px;
+                    height: 18px;
+                    min-height: 18px;
                     padding: 0;
                     margin: 0;
-                    accent-color: #2563eb;
                     box-shadow: none;
+                    background: transparent;
+                    border: none;
+                    accent-color: #2563eb;
+                    cursor: pointer;
                 }
-                .dark .campaign-form-shell input,
+                .dark .campaign-form-shell input:not([type="checkbox"]),
                 .dark .campaign-form-shell select,
                 .dark .campaign-form-shell textarea {
                     background: linear-gradient(180deg, rgba(15,23,42,0.84) 0%, rgba(2,6,23,0.94) 100%);
@@ -346,11 +387,6 @@ export default function CampaignForm({
                 .dark .campaign-form-shell select option {
                     background: #020617;
                     color: #f8fafc;
-                }
-                .dark .campaign-form-shell .compact-check {
-                    background: linear-gradient(180deg, rgba(15,23,42,0.84) 0%, rgba(2,6,23,0.94) 100%);
-                    border-color: rgba(148, 163, 184, 0.18);
-                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 14px 28px -24px rgba(0, 0, 0, 0.5);
                 }
             `}</style>
             <div style={{ display: 'flex', flexDirection: 'column', gap: isModalLayout ? '0.55rem' : '1.2rem' }}>
@@ -378,7 +414,13 @@ export default function CampaignForm({
                         border: '1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.18) 20%)',
                     }}
                 >
-                    <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'minmax(180px, 2fr) minmax(120px, 1fr) 92px 82px' : 'minmax(200px, 2fr) minmax(140px, 1fr) 100px 90px', gap: isModalLayout ? '0.6rem' : '1rem' }}>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: isLeadsSupportedPlatform
+                            ? (isModalLayout ? 'minmax(180px, 2fr) minmax(110px, 1.2fr) minmax(80px, 0.8fr) 92px 82px' : 'minmax(200px, 2fr) minmax(130px, 1.2fr) minmax(90px, 0.8fr) 100px 90px')
+                            : (isModalLayout ? 'minmax(180px, 2fr) minmax(120px, 1fr) 92px 82px' : 'minmax(200px, 2fr) minmax(140px, 1fr) 100px 90px'),
+                        gap: isModalLayout ? '0.6rem' : '1rem'
+                    }}>
                         <div className="filter-group">
                             <label>Campaign Name</label>
                             <input
@@ -404,6 +446,22 @@ export default function CampaignForm({
                                 ))}
                             </select>
                         </div>
+                        {isLeadsSupportedPlatform && (
+                            <div className="filter-group">
+                                <label>Leads</label>
+                                <select
+                                    name="leads"
+                                    value={formData.leads || 'all'}
+                                    onChange={handleChange}
+                                >
+                                    <option value="all">All</option>
+                                    <option value="t1">T1: 3</option>
+                                    <option value="t2">T2: 2</option>
+                                    <option value="p1">P1: 4</option>
+                                    <option value="p2">P2: 2.5</option>
+                                </select>
+                            </div>
+                        )}
                         <div className="filter-group">
                             <label>Status</label>
                             <select
@@ -441,11 +499,16 @@ export default function CampaignForm({
                     padding={isModalLayout ? '0.72rem' : '1.1rem'}
                     radius={isModalLayout ? '1.1rem' : '1.35rem'}
                     style={{
-                        background: 'linear-gradient(180deg, rgba(20, 184, 166, 0.06) 0%, var(--bg-content) 100%)',
-                        border: '1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(20, 184, 166, 0.18) 18%)',
+                        background: formData.is_portfolio
+                            ? 'linear-gradient(180deg, rgba(37, 99, 235, 0.09) 0%, var(--bg-content) 100%)'
+                            : 'linear-gradient(180deg, rgba(20, 184, 166, 0.06) 0%, var(--bg-content) 100%)',
+                        border: formData.is_portfolio
+                            ? '1px solid color-mix(in srgb, var(--border-subtle) 68%, rgba(37, 99, 235, 0.4) 32%)'
+                            : '1px solid color-mix(in srgb, var(--border-subtle) 82%, rgba(20, 184, 166, 0.18) 18%)',
+                        transition: 'background 0.3s ease, border-color 0.3s ease',
                     }}
                 >
-                    <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? 'repeat(5, 1fr)' : 'repeat(3, 1fr)', gap: isModalLayout ? '0.6rem' : '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isModalLayout ? '2.1fr 1.5fr 1.5fr 0.9fr 0.9fr 0.9fr 1fr' : '2.3fr 1.6fr 1.6fr 1fr 1fr 1fr 1.1fr', gap: isModalLayout ? '0.6rem' : '1rem' }}>
                         <div className="filter-group">
                             <label>Bidding Strategy</label>
                             <select
@@ -522,81 +585,68 @@ export default function CampaignForm({
                             />
                         </div>
 
-                        {isModalLayout ? (
-                            <>
-                                <div className="filter-group">
-                                    <label>DSA Support</label>
-                                    <button
-                                        type="button"
-                                        className={`hero-btn ${formData.is_dsa ? 'hero-btn-primary' : 'hero-btn-secondary'}`}
-                                        onClick={() => setFormData(f => ({ ...f, is_dsa: !f.is_dsa }))}
-                                        style={{
-                                            justifyContent: 'center',
-                                            minHeight: '42px',
-                                            padding: '0.4rem 0.5rem',
-                                            fontSize: 'var(--text-xs)',
-                                            fontWeight: 700,
-                                        }}
-                                    >
-                                        {formData.is_dsa ? <ShieldCheck size={14} /> : <Lock size={14} />}
-                                        {formData.is_dsa ? 'DSA On' : 'Manual'}
-                                    </button>
-                                </div>
-                                <div className="filter-group">
-                                    <label>New Market</label>
-                                    <label className="compact-check" style={{ minHeight: '42px', display: 'flex', alignItems: 'center', margin: 0 }}>
-                                        <input
-                                            type="checkbox"
-                                            name="is_testing"
-                                            checked={Boolean(formData.is_testing)}
-                                            onChange={handleChange}
-                                        />
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                                            Testing
-                                        </span>
-                                    </label>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="filter-group">
-                                <label>DSA Support</label>
-                                <button
-                                    type="button"
-                                    className={`hero-btn ${formData.is_dsa ? 'hero-btn-primary' : 'hero-btn-secondary'}`}
-                                    onClick={() => setFormData(f => ({ ...f, is_dsa: !f.is_dsa }))}
-                                    style={{
-                                        justifyContent: 'center',
-                                        minHeight: '42px',
-                                        padding: '0.4rem 0.5rem',
-                                        fontSize: 'var(--text-xs)',
-                                        fontWeight: 700,
-                                    }}
-                                >
-                                    {formData.is_dsa ? <ShieldCheck size={14} /> : <Lock size={14} />}
-                                    {formData.is_dsa ? 'DSA On' : 'Manual'}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {!isModalLayout && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', marginTop: '0.8rem' }}>
-                            <div className="filter-group" style={{ minWidth: '220px' }}>
-                                <label>New Market Test</label>
-                                <label className="compact-check">
-                                    <input
-                                        type="checkbox"
-                                        name="is_testing"
-                                        checked={Boolean(formData.is_testing)}
-                                        onChange={handleChange}
-                                    />
-                                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                                        Mark this campaign as testing a new market
-                                    </span>
-                                </label>
+                        <div className="filter-group">
+                            <label style={{ textAlign: 'center', display: 'block' }}>DSA Support</label>
+                            <div style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    name="is_dsa"
+                                    checked={Boolean(formData.is_dsa)}
+                                    onChange={handleChange}
+                                />
                             </div>
                         </div>
-                    )}
+                        <div className="filter-group">
+                            <label style={{ textAlign: 'center', display: 'block' }}>Testing</label>
+                            <div style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    name="is_testing"
+                                    checked={Boolean(formData.is_testing)}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+                        <div className="filter-group">
+                            <label style={{ textAlign: 'center', display: 'block' }}>Case Study</label>
+                            <div style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    name="is_case_study"
+                                    checked={Boolean(formData.is_case_study)}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+                        <div className="filter-group" style={{
+                            padding: '0.15rem 0.35rem',
+                            borderRadius: '8px',
+                            background: formData.is_portfolio ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                            border: formData.is_portfolio ? '1px solid rgba(37, 99, 235, 0.28)' : '1px solid transparent',
+                            transition: 'all 0.25s ease',
+                        }}>
+                            <label
+                                style={{
+                                    textAlign: 'center',
+                                    display: 'block',
+                                    color: formData.is_portfolio ? '#3b82f6' : undefined,
+                                    fontWeight: formData.is_portfolio ? 800 : 700,
+                                }}
+                                title="Google Ads Portfolio Bidding Strategy"
+                            >
+                                Portfolio
+                            </label>
+                            <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    name="is_portfolio"
+                                    checked={Boolean(formData.is_portfolio)}
+                                    onChange={handleChange}
+                                    style={{ cursor: 'pointer', accentColor: '#2563eb' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </SurfaceCard>
 
                 {!isModalLayout && (
@@ -647,17 +697,15 @@ export default function CampaignForm({
                         <div className="filter-group">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                                 <label style={{ marginBottom: 0 }}>Metadata / Configs</label>
-                                {!isModalLayout ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsMetadataModalOpen(true)}
-                                        className="hero-btn hero-btn-ghost"
-                                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', gap: '0.3rem' }}
-                                    >
-                                        <Maximize2 size={13} />
-                                        Full Editor
-                                    </button>
-                                ) : null}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsMetadataModalOpen(true)}
+                                    className="hero-btn hero-btn-ghost"
+                                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', gap: '0.3rem' }}
+                                >
+                                    <Maximize2 size={13} />
+                                    Full Editor
+                                </button>
                             </div>
                             <LazyRichTextEditor
                                 value={(formData.metadata || '').toString()}
@@ -684,15 +732,13 @@ export default function CampaignForm({
                         </div>
                     </SurfaceCard>
 
-                    {!isModalLayout ? (
-                        <MetadataModal
-                            isOpen={isMetadataModalOpen}
-                            onClose={() => setIsMetadataModalOpen(false)}
-                            campaignName={formData.name}
-                            initialContent={(formData.metadata || '').toString()}
-                            onSave={(newContent) => setFormData(prev => ({ ...prev, metadata: newContent }))}
-                        />
-                    ) : null}
+                    <MetadataModal
+                        isOpen={isMetadataModalOpen}
+                        onClose={() => setIsMetadataModalOpen(false)}
+                        campaignName={formData.name}
+                        initialContent={(formData.metadata || '').toString()}
+                        onSave={(newContent) => setFormData(prev => ({ ...prev, metadata: newContent }))}
+                    />
                 </>
 
                 {!hideActions && (
