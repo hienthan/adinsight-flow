@@ -18,10 +18,8 @@ import {
     Loader2,
     Copy,
     FileText,
-    Tags,
     Paperclip,
-    ListTree,
-    Clock3,
+    WandSparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import RichTextEditor from '../../components/common/RichTextEditor';
@@ -37,7 +35,7 @@ import { SurfaceCard } from '../../components/common/ui/SurfaceCard';
 import { SafeButton } from '../../components/common/ui/SafeButton';
 import { ToolbarGroup } from '../../components/common/ui/ToolbarGroup';
 import { SectionHeader } from '../../components/common/ui/SectionHeader';
-import { MetricCard, PageHero, createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from '../../components/common/ui';
+import { createAmbientSurface, createPremiumBadgeStyle, toAlphaColor } from '../../components/common/ui';
 
 interface Note {
     id: string;
@@ -46,13 +44,14 @@ interface Note {
     tags: string[];
     is_pinned: boolean;
     priority: 'high' | 'medium' | 'normal';
-    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System' | 'RSA' | 'DSA';
+    platform: 'Klook' | 'Trip' | 'General' | 'Traveloka' | 'System' | 'RSA' | 'DSA' | 'Prompt';
     images: string[];
     created: string;
     updated: string;
 }
 
 type PocketBaseFileRecord = Parameters<typeof pb.files.getUrl>[0];
+const DRAFT_NOTE_ID = '__draft_note__';
 
 const NOTE_SHELL_STYLE = {
     height: 'calc(100vh - 2rem)',
@@ -63,7 +62,7 @@ const NOTE_SHELL_STYLE = {
 } as const;
 
 const NOTE_TOOLBAR_GROUP_STYLE = {
-    marginRight: '0.5rem',
+    marginRight: '0.2rem',
     background: 'transparent',
     border: 'none',
     boxShadow: 'none',
@@ -73,6 +72,7 @@ const NOTE_TOOLBAR_GROUP_STYLE = {
 const NOTE_META_OPTIONS = {
     platforms: [
         { value: 'General', label: 'General' },
+        { value: 'Prompt', label: 'Prompt' },
         { value: 'RSA', label: 'RSA' },
         { value: 'DSA', label: 'DSA' },
         { value: 'System', label: 'System' },
@@ -87,13 +87,14 @@ const NOTE_META_OPTIONS = {
     ],
 } as const;
 
-const GENERAL_PLATFORM_KEYS = ['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa', 'dsa'] as const;
+const GENERAL_PLATFORM_KEYS = ['klook', 'traveloka', 'tvlk', 'trip', 'system', 'rsa', 'dsa', 'prompt'] as const;
 
 const getPlatformAccent = (platform?: string) => {
     const normalized = String(platform || '').toLowerCase();
     if (normalized === 'klook') return '#ff5b00';
     if (normalized === 'traveloka' || normalized === 'tvlk') return '#1ba0e2';
     if (normalized === 'trip') return '#0e2b5c';
+    if (normalized === 'prompt') return '#7c3aed';
     if (normalized === 'rsa') return '#3b82f6';
     if (normalized === 'dsa') return '#8b5cf6';
     if (normalized === 'system') return '#64748b';
@@ -112,6 +113,7 @@ const formatPlatformLabel = (platform?: string) => {
     if (normalized === 'system') return 'System';
     if (normalized === 'rsa') return 'RSA';
     if (normalized === 'dsa') return 'DSA';
+    if (normalized === 'prompt') return 'Prompt';
     return platform || 'General';
 };
 
@@ -135,6 +137,12 @@ const getPlatformBadge = (platform?: string) => {
         return {
             label: 'TK',
             style: { ...baseStyle, minWidth: 14, height: 14, borderRadius: 3, background: 'rgba(27, 160, 226, 0.1)', color: '#1ba0e2', fontSize: '0.45rem', padding: '0 3px' },
+        };
+    }
+    if (normalized === 'prompt') {
+        return {
+            icon: <WandSparkles size={8} strokeWidth={2.6} />,
+            style: { ...baseStyle, minWidth: 14, height: 14, borderRadius: 3, background: 'hsla(262, 83%, 58%, 0.12)', color: '#7c3aed', fontSize: '0.5rem', padding: '0 3px' },
         };
     }
     if (normalized === 'rsa') {
@@ -173,6 +181,7 @@ const getPlatformBadge = (platform?: string) => {
 export default function GlobalNotesPage() {
     const queryClient = useQueryClient();
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+    const [draftNote, setDraftNote] = useState<Note | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
@@ -217,27 +226,12 @@ export default function GlobalNotesPage() {
         }
     }, [notes, selectedNoteId, isEditing]);
 
-    const activeNote = notes.find(n => n.id === selectedNoteId);
-
-    // Mutations
-    const createMutation = useMutation({
-        mutationFn: async () => {
-            const newNote = {
-                title: 'New Note',
-                content: '<h1>New Note</h1><p>Start writing...</p>',
-                platform: 'General',
-                priority: 'normal',
-                is_pinned: false,
-                tags: []
-            };
-            return await pb.collection('general_notes').create(newNote);
-        },
-        onSuccess: (newNote) => {
-            queryClient.invalidateQueries({ queryKey: ['global-notes'] });
-            setSelectedNoteId(newNote.id);
-            startEditing(newNote as unknown as Note);
-        }
-    });
+    const allNotes = useMemo(
+        () => (draftNote ? [draftNote, ...notes] : notes),
+        [draftNote, notes]
+    );
+    const activeNote = allNotes.find(n => n.id === selectedNoteId);
+    const isDraftNote = activeNote?.id === DRAFT_NOTE_ID;
 
     const updateMutation = useMutation({
         mutationFn: async (id: string) => {
@@ -277,6 +271,10 @@ export default function GlobalNotesPage() {
     };
 
     const handleImageUpload = async (file: File): Promise<string> => {
+        if (isDraftNote) {
+            toast.error('Save the note before uploading images');
+            throw new Error('Cannot upload images for unsaved draft note');
+        }
         if (!selectedNoteId) throw new Error('No note selected');
 
         const formData = new FormData();
@@ -334,7 +332,7 @@ export default function GlobalNotesPage() {
     });
 
     // Filtering
-    const filteredNotes = notes.filter(note =>
+    const filteredNotes = allNotes.filter(note =>
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         htmlToPlainText(note.content).toLowerCase().includes(searchTerm.toLowerCase()) ||
         note.tags?.some(t => t.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -353,9 +351,10 @@ export default function GlobalNotesPage() {
             const p = String(platform || '').toLowerCase();
             if (p === 'rsa') return 8;
             if (p === 'dsa') return 7;
-            if (p === 'traveloka' || p === 'tvlk') return 6;
-            if (p === 'klook') return 5;
-            if (p === 'trip') return 4;
+            if (p === 'prompt') return 6;
+            if (p === 'traveloka' || p === 'tvlk') return 5;
+            if (p === 'klook') return 4;
+            if (p === 'trip') return 3;
             if (p === 'system') return 2;
             return 1;
         };
@@ -367,19 +366,6 @@ export default function GlobalNotesPage() {
         return new Date(b.updated).getTime() - new Date(a.updated).getTime();
     });
 
-    const noteStats = useMemo(() => {
-        const pinned = notes.filter((note) => note.is_pinned).length;
-        const highPriority = notes.filter((note) => note.priority === 'high').length;
-        const attachments = notes.reduce((sum, note) => sum + (note.images?.length || 0), 0);
-
-        return {
-            total: notes.length,
-            pinned,
-            highPriority,
-            attachments,
-        };
-    }, [notes]);
-
     const renderedNote = useMemo(
         () => prepareNoteHtmlForRender(activeNote?.content || ''),
         [activeNote?.content]
@@ -388,6 +374,7 @@ export default function GlobalNotesPage() {
     // Compute changes for Save button
     const hasChanges = useMemo(() => {
         if (!activeNote) return false;
+        if (isDraftNote) return true;
 
         // Title comparison
         const titleChanged = (activeNote.title || '') !== (editTitle || '');
@@ -409,7 +396,7 @@ export default function GlobalNotesPage() {
         const priorityChanged = currentPriority !== editPriority;
 
         return titleChanged || contentChanged || tagsChanged || platformChanged || priorityChanged;
-    }, [activeNote, editTitle, editContent, editTags, editPlatform, editPriority]);
+    }, [activeNote, editTitle, editContent, editTags, editPlatform, editPriority, isDraftNote]);
 
     // ESC support for editing
     useEffect(() => {
@@ -422,31 +409,6 @@ export default function GlobalNotesPage() {
         return () => window.removeEventListener('keydown', handleEsc);
     }, [isEditing]);
 
-    // Helpers
-    const scrollToSection = (headingId: string) => {
-        const container = document.querySelector('.note-scroll-container');
-        if (!container) return;
-        const target = container.querySelector(`[data-note-heading-id="${headingId}"]`) as HTMLElement | null;
-        if (!target) return;
-
-        // Scroll with offset for sticky header
-        const headerOffset = 100;
-        const elementPosition = target.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + container.scrollTop - headerOffset;
-
-        container.scrollTo({
-            top: offsetPosition,
-            behavior: 'smooth'
-        });
-
-        const originalBg = target.style.backgroundColor;
-        target.style.backgroundColor = 'var(--accent-glow)';
-        target.style.transition = 'background-color 0.5s';
-        setTimeout(() => {
-            target.style.backgroundColor = originalBg;
-        }, 1000);
-    };
-
     const startEditing = (note: Note) => {
         setEditTitle(note.title);
         setEditContent(note.content);
@@ -455,6 +417,62 @@ export default function GlobalNotesPage() {
         setEditPriority(note.priority || 'normal');
         setIsEditing(true);
         setSelectedNoteId(note.id);
+    };
+
+    const handleCreateDraft = () => {
+        const newDraft: Note = {
+            id: DRAFT_NOTE_ID,
+            title: 'New Note',
+            content: '<h1>New Note</h1><p>Start writing...</p>',
+            platform: 'General',
+            priority: 'normal',
+            is_pinned: false,
+            tags: [],
+            images: [],
+            created: new Date().toISOString(),
+            updated: new Date().toISOString(),
+        };
+
+        setDraftNote(newDraft);
+        startEditing(newDraft);
+    };
+
+    const handleSaveNote = async () => {
+        if (!activeNote) return;
+
+        if (isDraftNote) {
+            try {
+                const createdNote = await pb.collection('general_notes').create({
+                    title: editTitle,
+                    content: editContent,
+                    tags: editTags.split(',').map(t => t.trim()).filter(t => t),
+                    platform: editPlatform,
+                    priority: editPriority,
+                    is_pinned: false,
+                });
+                setDraftNote(null);
+                setSelectedNoteId(createdNote.id);
+                setIsEditing(false);
+                queryClient.invalidateQueries({ queryKey: ['global-notes'] });
+            } catch (error) {
+                console.error('Failed to create note:', error);
+                toast.error('Failed to create note');
+            }
+            return;
+        }
+
+        updateMutation.mutate(activeNote.id);
+    };
+
+    const handleCancelEditing = () => {
+        if (isDraftNote) {
+            setDraftNote(null);
+            setSelectedNoteId(notes[0]?.id ?? null);
+            setIsEditing(false);
+            return;
+        }
+
+        setIsEditing(false);
     };
 
     const handleCopyToClipboard = () => {
@@ -494,24 +512,24 @@ export default function GlobalNotesPage() {
             key: 'copy',
             title: 'Copy to Clipboard',
             onClick: handleCopyToClipboard,
-            content: <Copy size={18} />,
+            content: <Copy size={16} />,
         },
         {
             key: 'pin',
             title: activeNote.is_pinned ? 'Unpin' : 'Pin',
             onClick: () => togglePinMutation.mutate(activeNote),
-            content: <Pin size={18} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />,
+            content: <Pin size={16} style={{ fill: activeNote.is_pinned ? 'currentColor' : 'none' }} />,
         },
         {
             key: 'delete',
             title: confirmingDeleteNote ? 'Confirm Delete' : 'Delete',
             onClick: () => handleDeleteNote(activeNote.id),
             className: `hero-btn-ghost ${confirmingDeleteNote ? 'bg-destructive text-white' : 'text-destructive'}`,
-            style: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
+            style: { display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.28rem 0.38rem', borderRadius: '8px' },
             content: (
                 <>
-                    <Trash2 size={18} />
-                    {confirmingDeleteNote && <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>Confirm?</span>}
+                    <Trash2 size={16} />
+                    {confirmingDeleteNote && <span style={{ fontSize: '0.68rem', fontWeight: 800 }}>Confirm?</span>}
                 </>
             ),
         },
@@ -548,27 +566,31 @@ export default function GlobalNotesPage() {
             }}>
                 {/* Header */}
                 <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%)' }}>
-                    <PageHero
-                        eyebrow="Knowledge Base"
-                        title="General Notes"
-                        subtitle="Keep strategy, operating notes, and supporting files in a single workspace."
-                        accent="#4f46e5"
-                        actions={(
-                            <SafeButton
-                                onClick={() => createMutation.mutate()}
-                                className="hero-btn hero-btn-primary"
-                                style={{ paddingInline: '0.9rem', minHeight: '2.5rem' }}
-                            >
-                                <Plus size={16} />
-                                New
-                            </SafeButton>
-                        )}
-                        style={{ padding: '1.15rem', borderRadius: '1.45rem' }}
+                    <SurfaceCard
+                        padding="0.9rem"
+                        radius="1.1rem"
+                        style={{
+                            ...createAmbientSurface('#4f46e5', 0.45),
+                            boxShadow: 'none',
+                        }}
                     >
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.65rem' }}>
-                            <MetricCard label="Notes" value={noteStats.total} icon={FileText} accent="#4f46e5" style={{ padding: '0.85rem 0.9rem' }} />
-                            <MetricCard label="Pinned" value={noteStats.pinned} icon={Pin} accent="#f59e0b" style={{ padding: '0.85rem 0.9rem' }} />
-                            <MetricCard label="Files" value={noteStats.attachments} icon={Paperclip} accent="#22c55e" style={{ padding: '0.85rem 0.9rem' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.65rem', marginBottom: '0.7rem' }}>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                    Knowledge Base
+                                </div>
+                                <div style={{ marginTop: '0.15rem', fontSize: '1rem', fontWeight: 850, letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
+                                    General Notes
+                                </div>
+                            </div>
+                            <SafeButton
+                                onClick={handleCreateDraft}
+                                className="hero-btn hero-btn-primary"
+                                style={{ padding: '0.5rem 0.75rem', minHeight: '2rem', fontSize: '0.75rem' }}
+                            >
+                                <Plus size={14} />
+                                Create
+                            </SafeButton>
                         </div>
                         <div style={{
                             display: 'flex',
@@ -599,7 +621,7 @@ export default function GlobalNotesPage() {
                                 }}
                             />
                         </div>
-                    </PageHero>
+                    </SurfaceCard>
                 </div>
 
                 {/* Note List */}
@@ -700,25 +722,26 @@ export default function GlobalNotesPage() {
                     <>
                         {/* Note Toolbar */}
                         <div style={{
-                            padding: '1rem 1.5rem',
+                            padding: '0.55rem 0.9rem',
                             borderBottom: '1px solid var(--border-subtle)',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
+                            gap: '0.75rem',
                             background: createAmbientSurface(getPlatformAccent(activeNote.platform), 0.4).background,
                             position: 'sticky',
                             top: 0,
                             zIndex: 10
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flex: 1 }}>
                                 <ToolbarGroup compact style={NOTE_TOOLBAR_GROUP_STYLE}>
                                     <SafeButton
                                         onClick={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
                                         className={`hero-btn-ghost ${isLeftSidebarCollapsed ? 'text-primary' : ''}`}
-                                        style={{ padding: '0.4rem', borderRadius: '8px' }}
+                                        style={{ padding: '0.28rem', borderRadius: '7px' }}
                                         title={isLeftSidebarCollapsed ? "Show Notes List" : "Hide Notes List"}
                                     >
-                                        {isLeftSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                                        {isLeftSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
                                     </SafeButton>
                                 </ToolbarGroup>
 
@@ -727,8 +750,8 @@ export default function GlobalNotesPage() {
                                         value={editTitle}
                                         onChange={e => setEditTitle(e.target.value)}
                                         style={{
-                                            fontSize: '1.25rem',
-                                            fontWeight: 700,
+                                            fontSize: '1rem',
+                                            fontWeight: 750,
                                             background: 'transparent',
                                             border: 'none',
                                             borderBottom: '1px solid var(--primary)',
@@ -742,33 +765,51 @@ export default function GlobalNotesPage() {
                                         autoFocus
                                     />
                                 ) : (
-                                    <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>{activeNote.title}</h1>
+                                    <h1
+                                        title={activeNote.title}
+                                        style={{
+                                            fontSize: '0.98rem',
+                                            fontWeight: 760,
+                                            margin: 0,
+                                            color: 'var(--text-main)',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            minWidth: 0,
+                                            flexShrink: 1,
+                                            maxWidth: '100%',
+                                            lineHeight: 1.15,
+                                        }}
+                                    >
+                                        {activeNote.title}
+                                    </h1>
                                 )}
 
                                 {!isEditing && (
-                                    <>
-                                        <span className="hero-badge" style={createPremiumBadgeStyle(getPlatformAccent(activeNote.platform), { textColor: getPlatformAccent(activeNote.platform) })}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0, minWidth: 0 }}>
+                                        <span className="hero-badge" style={{ ...createPremiumBadgeStyle(getPlatformAccent(activeNote.platform), { textColor: getPlatformAccent(activeNote.platform) }), padding: '0.16rem 0.42rem', fontSize: '0.7rem' }}>
                                             {formatPlatformLabel(activeNote.platform)}
                                         </span>
-                                        <span className="hero-badge" style={createPremiumBadgeStyle(getPriorityAccent(activeNote.priority), { textColor: getPriorityAccent(activeNote.priority) })}>
-                                            {activeNote.priority === 'high' ? 'High Priority' : activeNote.priority === 'medium' ? 'Medium Priority' : 'Normal Priority'}
+                                        <span className="hero-badge" style={{ ...createPremiumBadgeStyle(getPriorityAccent(activeNote.priority), { textColor: getPriorityAccent(activeNote.priority) }), padding: '0.16rem 0.42rem', fontSize: '0.7rem' }}>
+                                            {activeNote.priority === 'high' ? 'High' : activeNote.priority === 'medium' ? 'Med' : 'Norm'}
                                         </span>
-                                        {activeNote.is_pinned && <span className="hero-badge" style={createPremiumBadgeStyle('#f59e0b', { textColor: '#f59e0b' })}>Pinned</span>}
-                                    </>
+                                        {activeNote.is_pinned && <span className="hero-badge" style={{ ...createPremiumBadgeStyle('#f59e0b', { textColor: '#f59e0b' }), padding: '0.16rem 0.42rem', fontSize: '0.7rem' }}>Pin</span>}
+                                    </div>
                                 )}
                             </div>
 
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0, alignItems: 'center' }}>
                                 {isEditing ? (
                                     <>
                                         <SafeButton
-                                            onClick={() => updateMutation.mutate(activeNote.id)}
+                                            onClick={handleSaveNote}
                                             disabled={!hasChanges}
                                             className="hero-btn hero-btn-primary"
+                                            style={{ padding: '0.38rem 0.7rem', fontSize: '0.76rem' }}
                                         >
                                             Save
                                         </SafeButton>
-                                        <SafeButton onClick={() => setIsEditing(false)} className="hero-btn hero-btn-ghost">Cancel</SafeButton>
+                                        <SafeButton onClick={handleCancelEditing} className="hero-btn hero-btn-ghost" style={{ padding: '0.38rem 0.65rem', fontSize: '0.76rem' }}>Cancel</SafeButton>
                                     </>
                                 ) : (
                                     <>
@@ -778,19 +819,19 @@ export default function GlobalNotesPage() {
                                                 onClick={action.onClick}
                                                 className={action.className || 'hero-btn-ghost'}
                                                 title={action.title}
-                                                style={action.style}
+                                                style={action.style || { padding: '0.28rem', borderRadius: '8px' }}
                                             >
                                                 {action.content}
                                             </SafeButton>
                                         ))}
-                                        <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)', margin: '0 0.25rem' }} />
+                                        <div style={{ width: '1px', height: '16px', background: 'var(--border-subtle)', margin: '0 0.12rem' }} />
                                         <SafeButton
                                             onClick={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
                                             className={`hero-btn-ghost ${isRightSidebarCollapsed ? 'text-primary' : ''}`}
-                                            style={{ padding: '0.4rem', borderRadius: '8px' }}
+                                            style={{ padding: '0.28rem', borderRadius: '7px' }}
                                             title={isRightSidebarCollapsed ? "Show Information" : "Hide Information"}
                                         >
-                                            {isRightSidebarCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
+                                            {isRightSidebarCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
                                         </SafeButton>
                                     </>
                                 )}
@@ -804,29 +845,11 @@ export default function GlobalNotesPage() {
                                     maxWidth: '980px',
                                     width: '100%',
                                     margin: '0 auto',
-                                    padding: '2.5rem 1.5rem',
+                                    padding: '1.25rem 1.5rem',
                                     flex: 1,
                                     display: 'flex',
                                     flexDirection: 'column'
                                 }}>
-                                    <PageHero
-                                        eyebrow={isEditing ? 'Editing Workspace' : 'Document View'}
-                                        title={isEditing ? (editTitle || 'Untitled note') : activeNote.title}
-                                        subtitle={isEditing ? 'Adjust metadata, edit content, and keep your operating notes clean.' : 'Double-click the document or use Edit Content to revise this note.'}
-                                        accent={getPlatformAccent(activeNote.platform)}
-                                        style={{ marginBottom: '1rem', padding: '1.1rem 1.25rem', borderRadius: '1.5rem' }}
-                                    >
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.55rem' }}>
-                                            <span className="hero-badge" style={createPremiumBadgeStyle(getPlatformAccent(activeNote.platform), { textColor: getPlatformAccent(activeNote.platform) })}>{formatPlatformLabel(activeNote.platform)}</span>
-                                            <span className="hero-badge" style={createPremiumBadgeStyle(getPriorityAccent(activeNote.priority), { textColor: getPriorityAccent(activeNote.priority) })}>{activeNote.priority}</span>
-                                            {activeNote.tags?.slice(0, 3).map((tag) => (
-                                                <span key={tag} className="hero-badge" style={{ background: 'var(--bg-subtle)', color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>
-                                                    #{tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </PageHero>
-                                    {/* Document "Page" */}
                                     <SurfaceCard
                                         variant="soft"
                                         radius="1.25rem"
@@ -841,7 +864,7 @@ export default function GlobalNotesPage() {
                                         }}
                                     >
                                         {isEditing ? (
-                                            <div style={{ padding: '3rem 3.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
+                                            <div style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                         <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
@@ -908,7 +931,7 @@ export default function GlobalNotesPage() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div style={{ flex: 1, padding: '3rem 3.5rem' }}>
+                                            <div style={{ flex: 1, padding: '1.5rem 1.75rem' }}>
                                                 <div
                                                     style={{
                                                         color: 'var(--text-main)',
@@ -1118,76 +1141,29 @@ export default function GlobalNotesPage() {
                                         </div>
                                     </SurfaceCard>
                                 )}
-
-                                {/* TOC Section */}
-                                {!isEditing && (
-                                    <SurfaceCard
-                                        variant="inset"
-                                        padding="0.9rem"
-                                        style={{ ...createAmbientSurface('#3b82f6', 0.24), boxShadow: 'none' }}
-                                    >
-                                        <SectionHeader
-                                            title={<h4 style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', margin: 0 }}>Table of Contents</h4>}
-                                            actions={<ListTree size={14} style={{ color: '#3b82f6' }} />}
-                                            style={{ marginBottom: '1rem' }}
-                                        />
-                                        <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                            {renderedNote.headings.length === 0 ? (
-                                                <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.75rem' }}>No sections found</div>
-                                            ) : (
-                                                renderedNote.headings.map((item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        style={{
-                                                            paddingLeft: `calc(${(item.level - 1) * 0.75}rem + 0.5rem)`,
-                                                            cursor: 'pointer',
-                                                            fontSize: item.level === 1 ? '0.82rem' : '0.78rem',
-                                                            fontWeight: item.level === 1 ? 700 : 500,
-                                                            color: item.level === 1 ? 'var(--text-main)' : 'var(--text-dim)',
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap',
-                                                            paddingTop: '0.35rem',
-                                                            paddingBottom: '0.35rem',
-                                                            borderRadius: '0.7rem',
-                                                            transition: SAFE_INTERACTIVE_TRANSITION,
-                                                            background: 'color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%)'
-                                                        }}
-                                                        onClick={() => scrollToSection(item.id)}
-                                                        className="hover:bg-accent-glow hover:text-primary"
-                                                        title={item.text}
-                                                    >
-                                                        {item.text}
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                    </SurfaceCard>
-                                )}
                             </div>
                         </div>
                     </>
                 ) : (
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-                        <PageHero
-                            eyebrow="Workspace Empty"
-                            title="Select a note or create a new one"
-                            subtitle="Use the left rail to open an existing note, or create a new entry for strategy, process, or reference material."
-                            accent="#4f46e5"
-                            actions={(
-                                <SafeButton onClick={() => createMutation.mutate()} className="hero-btn hero-btn-primary">
-                                    <Plus size={16} />
-                                    New Note
-                                </SafeButton>
-                            )}
-                            style={{ maxWidth: '40rem', width: '100%' }}
+                        <SurfaceCard
+                            padding="1.1rem 1.2rem"
+                            radius="1.2rem"
+                            style={{ maxWidth: '28rem', width: '100%', ...createAmbientSurface('#4f46e5', 0.35) }}
                         >
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.75rem' }}>
-                                <MetricCard label="Notes" value={noteStats.total} helper="Knowledge base records" icon={FileText} accent="#4f46e5" />
-                                <MetricCard label="Critical" value={noteStats.highPriority} helper="High-priority notes" icon={Clock3} accent="#ef4444" />
-                                <MetricCard label="Tagged" value={notes.filter((note) => note.tags?.length).length} helper="Notes with tags" icon={Tags} accent="#22c55e" />
+                            <div style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                General Notes
                             </div>
-                        </PageHero>
+                            <div style={{ marginTop: '0.25rem', fontSize: '1.15rem', fontWeight: 850, color: 'var(--text-main)', letterSpacing: '-0.03em' }}>
+                                Select or create a note
+                            </div>
+                            <div style={{ marginTop: '0.75rem' }}>
+                                <SafeButton onClick={handleCreateDraft} className="hero-btn hero-btn-primary">
+                                    <Plus size={16} />
+                                    Create
+                                </SafeButton>
+                            </div>
+                        </SurfaceCard>
                     </div>
                 )}
             </div>

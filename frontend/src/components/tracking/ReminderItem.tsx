@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Calendar, CheckCircle, AlertCircle, Send } from 'lucide-react';
+import { Trash2, Calendar, CheckCircle, AlertCircle, Send, Pencil } from 'lucide-react';
 import { CampaignReminder } from '../../types/campaign';
 import { formatDate } from '../../lib/utils';
 import { SafeButton, SurfaceCard } from '../common/ui';
@@ -8,6 +8,7 @@ interface ReminderItemProps {
     reminder: CampaignReminder;
     onToggle?: (id: string, status: string, note?: string) => void;
     onDelete?: (id: string) => void;
+    onEdit?: (reminder: CampaignReminder) => void;
     showCampaignName?: boolean;
     onCampaignClick?: (id: string) => void;
     platformColor?: string;
@@ -18,6 +19,7 @@ export default function ReminderItem({
     reminder,
     onToggle,
     onDelete,
+    onEdit,
     showCampaignName = false,
     onCampaignClick,
     platformColor
@@ -166,14 +168,28 @@ export default function ReminderItem({
                     )}
                 </div>
 
-                {onDelete && (
-                    <SafeButton
-                        onClick={() => { if (confirm('Remove this log entry?')) onDelete(reminder.id); }}
-                        className="hero-btn-ghost text-destructive"
-                        style={{ padding: '0.15rem', borderRadius: '4px', height: 'auto', flexShrink: 0 }}
-                    >
-                        <Trash2 size={12} />
-                    </SafeButton>
+                {(onEdit || onDelete) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.18rem', flexShrink: 0 }}>
+                        {onEdit && reminder.status === 'pending' && (
+                            <SafeButton
+                                onClick={() => onEdit(reminder)}
+                                className="hero-btn-ghost"
+                                style={{ padding: '0.15rem', borderRadius: '4px', height: 'auto' }}
+                                title="Edit reminder"
+                            >
+                                <Pencil size={12} />
+                            </SafeButton>
+                        )}
+                        {onDelete && (
+                            <SafeButton
+                                onClick={() => { if (confirm('Remove this log entry?')) onDelete(reminder.id); }}
+                                className="hero-btn-ghost text-destructive"
+                                style={{ padding: '0.15rem', borderRadius: '4px', height: 'auto' }}
+                            >
+                                <Trash2 size={12} />
+                            </SafeButton>
+                        )}
+                    </div>
                 )}
             </div>
         </SurfaceCard>

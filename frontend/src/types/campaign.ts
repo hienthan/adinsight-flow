@@ -25,12 +25,19 @@ export interface Campaign {
     last_review_outcome?: 'no_change' | 'updated' | 'cpc_increase' | 'cpc_reduce';
     cpc?: number;
     max_daily_budget?: number;
+    bidding_strategy?: string;
+    target_cpa?: number;
+    target_roas?: number;
     keywords?: string;
     chatgpt_metadata?: string;
     metadata?: string;
     description?: string;
     general_notes?: string;
     is_dsa: boolean;
+    is_testing?: boolean;
+    is_case_study?: boolean;
+    is_portfolio?: boolean;
+    leads?: 'all' | 't1' | 't2' | 'p1' | 'p2' | 'p2v';
     priority?: 'normal' | 'medium' | 'high' | 'critical';
     custom_fields?: Record<string, any>;
     created: string;
@@ -101,5 +108,63 @@ export interface CampaignNote {
     updated: string;
     expand?: {
         platform?: CampaignPlatform;
+    };
+}
+
+export interface CampaignTestTrack {
+    id: string;
+    track_key: string;
+    title: string;
+    platform: string;
+    lane_scope: 'destination' | 'market_only';
+    source_market: string;
+    destination_country?: string;
+    destination_city?: string;
+    pattern_topic: string;
+    category?: string;
+    test_type: 'cookie' | 'country_launch' | 'topic_validation' | 'landing_page' | 'campaign_structure' | 'creative_angle' | 'bidding' | 'scaling' | 'other';
+    status: 'planned' | 'testing' | 'live' | 'watching' | 'failed' | 'paused' | 'archived';
+    result?: 'positive' | 'neutral' | 'negative' | 'mixed';
+    priority?: 'normal' | 'medium' | 'high' | 'critical';
+    cookie_test_state?: 'not_applicable' | 'on' | 'off' | 'mixed';
+    summary_note?: string;
+    failure_note?: string;
+    next_action?: string;
+    do_not_retest?: boolean;
+    linked_campaigns?: string[];
+    main_tags?: string[];
+    started_at?: string;
+    last_reviewed_at?: string;
+    last_state_changed_at?: string;
+    owner?: string;
+    metadata?: Record<string, any>;
+    created: string;
+    updated: string;
+    expand?: {
+        platform?: CampaignPlatform;
+        linked_campaigns?: Campaign[];
+    };
+}
+
+export interface CampaignTestUpdate {
+    id: string;
+    test_track: string;
+    update_type: 'launch_note' | 'performance_review' | 'hypothesis_update' | 'failure_note' | 'winner_note' | 'pause_note' | 'retest_note' | 'general_note';
+    status_snapshot?: CampaignTestTrack['status'];
+    result_snapshot?: CampaignTestTrack['result'];
+    note: string;
+    source_market_snapshot?: string;
+    destination_country_snapshot?: string;
+    destination_city_snapshot?: string;
+    pattern_topic_snapshot?: string;
+    category_snapshot?: string;
+    linked_campaigns_snapshot?: Array<{ id: string; name: string }>;
+    important_flag?: boolean;
+    created_by?: string;
+    metadata?: Record<string, any>;
+    created: string;
+    updated: string;
+    expand?: {
+        test_track?: CampaignTestTrack;
     };
 }

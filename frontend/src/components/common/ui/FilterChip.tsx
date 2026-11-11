@@ -17,6 +17,7 @@ interface FilterChipProps {
     indicator?: ReactNode;
     style?: CSSProperties;
     title?: string;
+    className?: string;
 }
 
 export function FilterChip({
@@ -35,11 +36,13 @@ export function FilterChip({
     indicator,
     style,
     title,
+    className = '',
 }: FilterChipProps) {
     return (
         <SafeButton
             onClick={onClick}
             title={title}
+            className={`camp-status-filter-chip ${className}`}
             style={{
                 display: 'inline-flex',
                 alignItems: 'center',

@@ -1,0 +1,15 @@
+﻿run_action,campaign_label,urls,traffic,avg_priority
+exclude,exclude_daytrip_local,39,63026,0.0
+exclude,exclude_non_hk_language,26,24480,0.0
+exclude,exclude_low_commission,8,3427,0.0
+exclude,exclude_weather_low_fit,3,691,0.0
+run,hk_core_destination_hub,23,35898,10.130434782608695
+run,hk_info_readiness_medium,14,14848,14.0
+run,hk_info_readiness_high,7,5463,16.0
+run,hk_core_destination_article,3,1754,11.0
+run,hk_info_prebooking_cost,1,226,14.0
+test,hk_exploration_destination_lowbid,15,33947,4.533333333333333
+test,hk_info_weather_capped,30,15078,11.0
+test,hk_exploration_lowbid,18,12194,4.0
+test,hk_info_logistics_capped,7,5903,12.142857142857142
+test,hk_info_flight_prep_capped,6,3191,13.0

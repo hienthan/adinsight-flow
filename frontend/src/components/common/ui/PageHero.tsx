@@ -24,8 +24,8 @@ export function PageHero({
 }: PageHeroProps) {
     return (
         <SurfaceCard
-            padding="1.5rem"
-            radius="1.8rem"
+            padding="1.1rem 1.2rem"
+            radius="1.5rem"
             style={{
                 ...createAmbientSurface(accent, 0.9),
                 ...style,
@@ -36,10 +36,10 @@ export function PageHero({
                 title={title}
                 subtitle={subtitle}
                 actions={actions}
-                titleStyle={{ fontSize: '1.5rem', fontWeight: 850, letterSpacing: '-0.04em' }}
-                subtitleStyle={{ fontSize: '0.92rem', lineHeight: 1.6, maxWidth: '56rem' }}
+                titleStyle={{ fontSize: '1.28rem', fontWeight: 850, letterSpacing: '-0.04em', lineHeight: 1.08 }}
+                subtitleStyle={{ fontSize: '0.84rem', lineHeight: 1.5, maxWidth: '52rem' }}
             />
-            {children ? <div style={{ marginTop: '1rem' }}>{children}</div> : null}
+            {children ? <div style={{ marginTop: '0.75rem' }}>{children}</div> : null}
         </SurfaceCard>
     );
 }

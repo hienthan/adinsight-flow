@@ -1,0 +1,18 @@
+Campaign,Ad Group,DSA Label,URL Count
+Campaign 1 - French Riviera & Provence,Core,riviera_provence__core,66
+Campaign 1 - French Riviera & Provence,Food & Cruise,riviera_provence__food_cruise,36
+Campaign 1 - French Riviera & Provence,Day Trips,riviera_provence__day_trips,26
+Campaign 1 - French Riviera & Provence,Private,riviera_provence__private,17
+Campaign 2 - Normandy & Shore Excursions,D-Day / History,normandy_shore__dday_history,35
+Campaign 2 - Normandy & Shore Excursions,Private,normandy_shore__private,18
+Campaign 2 - Normandy & Shore Excursions,Shore Excursions,normandy_shore__shore_excursions,7
+Campaign 2 - Normandy & Shore Excursions,Mont St-Michel,normandy_shore__mont_st_michel,5
+"Campaign 3 - Wine, Food & Châteaux France",Loire / Burgundy,wine_regions__loire_burgundy,26
+"Campaign 3 - Wine, Food & Châteaux France",Bordeaux,wine_regions__bordeaux,20
+"Campaign 3 - Wine, Food & Châteaux France",Champagne,wine_regions__champagne,16
+"Campaign 3 - Wine, Food & Châteaux France",Private,wine_regions__private,13
+Campaign 4 - France Long-Tail / Watchlist,Watchlist - Generic City TTD,watchlist__generic_city_ttd,35
+Campaign 4 - France Long-Tail / Watchlist,Watchlist - Disney / Paris Orbit,watchlist__disney_paris_orbit,34
+Campaign 4 - France Long-Tail / Watchlist,Exclude - Non-France,exclude__non_france,5
+Campaign 4 - France Long-Tail / Watchlist,Exclude - Transport Watchlist,exclude__transport_watchlist,3
+Campaign 4 - France Long-Tail / Watchlist,Exclude - France Hub,exclude__france_hub,1

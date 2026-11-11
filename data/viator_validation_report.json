@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "viator_caribbean_products_classified.csv": {
+      "source_bucket": "caribbean",
+      "source_mode": "generic_region",
+      "rows": 1007,
+      "findings": 0,
+      "severity_counts": {},
+      "top_codes": {}
+    },
+    "viator_europe_things_to_do_classified.csv": {
+      "source_bucket": "europe",
+      "source_mode": "generic_region",
+      "rows": 864,
+      "findings": 7,
+      "severity_counts": {
+        "MEDIUM": 7
+      },
+      "top_codes": {
+        "unknown_country_with_city": 7
+      }
+    },
+    "viator_europe_tickets_classified.csv": {
+      "source_bucket": "europe",
+      "source_mode": "generic_region",
+      "rows": 500,
+      "findings": 0,
+      "severity_counts": {},
+      "top_codes": {}
+    },
+    "viator_france_products_classified.csv": {
+      "source_bucket": "france",
+      "source_mode": "exact_country",
+      "rows": 623,
+      "findings": 0,
+      "severity_counts": {},
+      "top_codes": {}
+    },
+    "viator_italy_products_classified.csv": {
+      "source_bucket": "italy",
+      "source_mode": "exact_country",
+      "rows": 1533,
+      "findings": 0,
+      "severity_counts": {},
+      "top_codes": {}
+    },
+    "viator_japan_products_classified.csv": {
+      "source_bucket": "japan",
+      "source_mode": "exact_country",
+      "rows": 286,
+      "findings": 0,
+      "severity_counts": {},
+      "top_codes": {}
+    },
+    "viator_mexico_products_classified.csv": {
+      "source_bucket": "mexico",
+      "source_mode": "exact_country",
+      "rows": 675,
+      "findings": 0,
+      "severity_counts": {},
+      "top_codes": {}
+    },
+    "viator_spain_products_classified.csv": {
+      "source_bucket": "spain",
+      "source_mode": "exact_country",
+      "rows": 477,
+      "findings": 0,
+      "severity_counts": {},
+      "top_codes": {}
+    },
+    "viator_uk_products_classified.csv": {
+      "source_bucket": "united_kingdom",
+      "source_mode": "exact_country",
+      "rows": 523,
+      "findings": 0,
+      "severity_counts": {},
+      "top_codes": {}
+    },
+    "viator_usa_products_classified.csv": {
+      "source_bucket": "united_states",
+      "source_mode": "exact_country",
+      "rows": 3823,
+      "findings": 0,
+      "severity_counts": {},
+      "top_codes": {}
+    }
+  },
+  "finding_count": 7
+}

@@ -8,6 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import AutoLogItem from '../../components/tracking/AutoLogItem';
 import { SurfaceCard } from '../../components/common/ui';
+import { createPremiumBadgeStyle, extractBaseColor } from '../../components/common/ui/premium';
 
 const PAGE_HEADER_STYLE = {
     marginBottom: '1.5rem',
@@ -36,6 +37,27 @@ const GROUP_GRID_STYLE = {
     gap: '0.75rem',
     padding: '0 0.5rem',
 } as const;
+
+const CAMPAIGN_GROUP_STYLE = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+} as const;
+
+type CampaignLogGroup = {
+    campaign: {
+        id: string;
+        name: string;
+        status: string;
+    };
+    items: any[];
+};
+
+type PlatformLogGroup = {
+    platform: any;
+    campaigns: CampaignLogGroup[];
+    count: number;
+};
 
 export default function AllChanges() {
     const navigate = useNavigate();
@@ -85,24 +107,49 @@ export default function AllChanges() {
         }
     });
 
-    // Grouping logic
     const groupedChanges = platforms.reduce((acc, p) => {
         const platformChanges = (changes || []).filter(c => c.expand?.campaign?.platform === p.id);
         if (platformChanges.length > 0) {
+            const campaigns = platformChanges.reduce((campaignAcc, change) => {
+                const campaign = change.expand?.campaign;
+                const campaignId = campaign?.id || 'unknown-campaign';
+                const existing = campaignAcc.find((item: CampaignLogGroup) => item.campaign.id === campaignId);
+
+                if (existing) {
+                    existing.items.push(change);
+                    return campaignAcc;
+                }
+
+                campaignAcc.push({
+                    campaign: {
+                        id: campaignId,
+                        name: campaign?.name || 'Unknown Campaign',
+                        status: campaign?.status || 'unknown',
+                    },
+                    items: [change],
+                });
+                return campaignAcc;
+            }, [] as CampaignLogGroup[]);
+
             acc.push({
                 platform: p,
-                items: platformChanges
+                campaigns: campaigns.sort((left: CampaignLogGroup, right: CampaignLogGroup) => right.items.length - left.items.length),
+                count: platformChanges.length,
             });
         }
         return acc;
-    }, [] as { platform: any, items: any[] }[]);
+    }, [] as PlatformLogGroup[]);
 
     // Handle items with unknown platforms if any (e.g. if platform was deleted or data is inconsistent)
     const orphans = (changes || []).filter(c => !platforms.find(p => p.id === c.expand?.campaign?.platform));
     if (orphans.length > 0) {
         groupedChanges.push({
             platform: { id: 'unknown', display_name: 'Others', color: '#666' },
-            items: orphans
+            campaigns: [{
+                campaign: { id: 'unknown-campaign', name: 'Unknown Campaign', status: 'unknown' },
+                items: orphans,
+            }],
+            count: orphans.length,
         });
     }
 
@@ -179,20 +226,63 @@ export default function AllChanges() {
                                         {group.platform.display_name}
                                     </h3>
                                     <div style={{ height: '1px', flex: 1, background: 'var(--border-subtle)', marginLeft: '0.5rem', opacity: 0.5 }} />
-                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>{group.items.length} logs</span>
+                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>{group.count} logs</span>
                                 </div>
 
                                 {!isCollapsed && (
-                                    <div style={GROUP_GRID_STYLE}>
-                                        {group.items.map((change: any) => (
-                                            <AutoLogItem
-                                                key={change.id}
-                                                change={change}
-                                                showCampaignName={true}
-                                                onCampaignClick={(id) => navigate(`/camp-tracking/campaign/${id}`)}
-                                                onDelete={(id) => deleteMutation.mutate(id)}
-                                                platformColor={group.platform.color}
-                                            />
+                                    <div style={CAMPAIGN_GROUP_STYLE}>
+                                        {group.campaigns.map((campaignGroup: any) => (
+                                            <SurfaceCard
+                                                key={`${group.platform.id}-${campaignGroup.campaign.id}`}
+                                                padding="0.85rem 0.9rem"
+                                                style={{
+                                                    borderRadius: '1rem',
+                                                    border: '1px solid var(--border-subtle)',
+                                                    background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 96%, white 4%) 0%, color-mix(in srgb, var(--bg-content) 91%, var(--bg-main) 9%) 100%)',
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                                                    <div style={{ minWidth: 0 }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => navigate(`/camp-tracking/campaign/${campaignGroup.campaign.id}`)}
+                                                            style={{
+                                                                padding: 0,
+                                                                border: 'none',
+                                                                background: 'transparent',
+                                                                color: extractBaseColor(group.platform.color),
+                                                                fontSize: '0.92rem',
+                                                                fontWeight: 800,
+                                                                letterSpacing: '-0.02em',
+                                                                cursor: 'pointer',
+                                                                textAlign: 'left',
+                                                            }}
+                                                        >
+                                                            {campaignGroup.campaign.name}
+                                                        </button>
+                                                        <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                                                            <span className="hero-badge" style={{ ...createPremiumBadgeStyle(group.platform.color, { textColor: group.platform.color }), margin: 0 }}>
+                                                                {campaignGroup.items.length} logs
+                                                            </span>
+                                                            <span className="hero-badge" style={{ background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)', color: 'var(--text-dim)', margin: 0 }}>
+                                                                {campaignGroup.campaign.status}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div style={GROUP_GRID_STYLE}>
+                                                    {campaignGroup.items.map((change: any) => (
+                                                        <AutoLogItem
+                                                            key={change.id}
+                                                            change={change}
+                                                            onCampaignClick={(id) => navigate(`/camp-tracking/campaign/${id}`)}
+                                                            onDelete={(id) => deleteMutation.mutate(id)}
+                                                            platformColor={group.platform.color}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </SurfaceCard>
                                         ))}
                                     </div>
                                 )}

@@ -3,24 +3,53 @@ import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Bell, Save, AlertTriangle } from 'lucide-react';
 import { pb, formatDateForInput } from '../../lib/pocketbase';
-import { Campaign } from '../../types/campaign';
+import { Campaign, CampaignReminder } from '../../types/campaign';
 import { FilterChip, SafeButton, SurfaceCard, SectionHeader } from '../common/ui';
 
 interface AddReminderModalProps {
     campaignId: string;
     isOpen: boolean;
     onClose: () => void;
+    reminder?: CampaignReminder | null;
 }
 
-export default function AddReminderModal({ campaignId, isOpen, onClose }: AddReminderModalProps) {
+type ReminderFormData = {
+    reminder_date: string;
+    message: string;
+    priority: NonNullable<CampaignReminder['priority']>;
+    check_metrics: string[];
+};
+
+const REMINDER_METRICS = ['TF', 'Conv', 'CPC', 'ROAS', 'maxV', 'tROAS', 'tCPA', 'RSA', 'rLink', 'noTraffic', 'Stop', '!URL'] as const;
+
+const normalizeMetricLabel = (metric: string) => {
+    const normalized = metric.trim().toUpperCase();
+    if (normalized === 'TRAFFIC') return 'TF';
+    if (normalized === 'NO TRAFFIC' || normalized === 'NOTRAFFIC' || normalized === 'NO_TRAFFIC') return 'noTraffic';
+    if (normalized === 'STOP' || normalized === 'PAUSE') return 'Stop';
+    if (normalized === 'CONVERSIONS') return 'Conv';
+    if (normalized === 'TROAS' || normalized === 'TARGET ROAS' || normalized === 'TARGET_ROAS') return 'tROAS';
+    if (normalized === 'TCPA' || normalized === 'TARGET CPA' || normalized === 'TARGET_CPA') return 'tCPA';
+    if (normalized === 'MAXV' || normalized === 'MAX CONVERSION VALUE' || normalized === 'MAX_CONVERSION_VALUE') return 'maxV';
+    if (normalized === 'OVERRIDE' || normalized === 'OVERRIDDEN' || normalized === 'CONV DELAY' || normalized === 'MCPC' || normalized === 'MCPC KEYS' || normalized === 'TERMS' || normalized === 'TERM' || normalized === 'SEARCH TERMS' || normalized === 'BROAD' || normalized === 'BROADS' || normalized === 'SITEL' || normalized === 'IS') return null;
+
+    const matchedMetric = REMINDER_METRICS.find(option => option.toUpperCase() === normalized);
+    return matchedMetric ?? metric.trim();
+};
+
+const buildInitialFormData = (reminder?: CampaignReminder | null): ReminderFormData => ({
+    reminder_date: formatDateForInput(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()),
+    message: reminder?.message || '',
+    priority: reminder?.priority || 'medium',
+    check_metrics: (reminder?.check_metrics || [])
+        .map(normalizeMetricLabel)
+        .filter((metric): metric is string => Boolean(metric))
+});
+
+export default function AddReminderModal({ campaignId, isOpen, onClose, reminder }: AddReminderModalProps) {
     const queryClient = useQueryClient();
     const shouldCloseOnBackdropClickRef = useRef(false);
-    const [formData, setFormData] = useState({
-        reminder_date: formatDateForInput(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()), // Default 3 days from now
-        message: '',
-        priority: 'medium',
-        check_metrics: [] as string[]
-    });
+    const [formData, setFormData] = useState(buildInitialFormData(reminder));
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +62,11 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
         enabled: !!campaignId && isOpen
     });
 
-    const availableMetrics = ['TRAFFIC', 'CONVERSIONS', 'IS', 'CPC', 'ROAS', 'CONV DELAY', 'mCPC KEYS'];
+    useEffect(() => {
+        if (!isOpen) return;
+        setFormData(buildInitialFormData(reminder));
+        setError(null);
+    }, [isOpen, reminder]);
 
     const toggleMetric = (metric: string) => {
         setFormData(prev => {
@@ -74,20 +107,28 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
         setError(null);
 
         try {
-            await pb.collection('campaign_reminders').create({
+            const payload = {
                 campaign: campaignId,
                 reminder_date: formData.reminder_date,
                 message: formData.message,
                 priority: formData.priority,
                 check_metrics: formData.check_metrics,
-                status: 'pending'
-            });
+            };
+
+            if (reminder?.id) {
+                await pb.collection('campaign_reminders').update(reminder.id, payload);
+            } else {
+                await pb.collection('campaign_reminders').create({
+                    ...payload,
+                    status: 'pending'
+                });
+            }
 
             queryClient.invalidateQueries({ queryKey: ['campaign-reminders', campaignId] });
             queryClient.invalidateQueries({ queryKey: ['reminders'] });
             onClose();
         } catch (err: any) {
-            setError(err.message || 'Failed to create reminder');
+            setError(err.message || `Failed to ${reminder?.id ? 'update' : 'create'} reminder`);
         } finally {
             setLoading(false);
         }
@@ -118,7 +159,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1100,
-            padding: '1.5rem'
+            padding: '1rem'
         }}
             onMouseDown={(e) => {
                 shouldCloseOnBackdropClickRef.current = e.target === e.currentTarget;
@@ -137,26 +178,28 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                 onClick={e => e.stopPropagation()}
                 style={{
                     width: '100%',
-                    maxWidth: '520px',
+                    maxWidth: '500px',
                     pointerEvents: 'auto',
                     overflow: 'hidden',
                     boxShadow: 'var(--shadow-large)',
                 }}
             >
                 <div style={{
-                    padding: '2rem 2.5rem',
+                    padding: '1.2rem 1.4rem',
                     borderBottom: '1px solid var(--border-subtle)',
                     background: 'var(--bg-overlay)'
                 }}>
                     <SectionHeader
                         title={
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{ padding: '0.6rem', background: 'var(--accent-glow)', borderRadius: '12px', color: 'hsl(var(--primary))' }}>
-                                    <Bell size={24} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ padding: '0.45rem', background: 'var(--accent-glow)', borderRadius: '10px', color: 'hsl(var(--primary))' }}>
+                                    <Bell size={20} />
                                 </div>
                                 <div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Add Reminder</h3>
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em' }}>
+                                        {reminder?.id ? 'Edit Reminder' : 'Add Reminder'}
+                                    </h3>
+                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                                         Campaign: <span style={{ color: 'hsl(var(--primary))', fontWeight: 700 }}>{campaign?.name || 'Loading...'}</span>
                                     </p>
                                 </div>
@@ -166,18 +209,18 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                             <SafeButton
                                 onClick={onClose}
                                 className="hero-btn-ghost"
-                                style={{ padding: '0.5rem', borderRadius: '10px' }}
+                                style={{ padding: '0.35rem', borderRadius: '8px' }}
                             >
-                                <X size={20} />
+                                <X size={18} />
                             </SafeButton>
                         }
                     />
                 </div>
 
-                <form onSubmit={handleSubmit} style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+                <form onSubmit={handleSubmit} style={{ padding: '1.2rem 1.4rem 1.3rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {error && (
-                        <div className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '100%', textTransform: 'none', padding: '0.8rem 1rem', display: 'flex', gap: '0.6rem', fontSize: '0.85rem', fontWeight: 700 }}>
-                            <AlertTriangle size={16} />
+                        <div className="hero-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', width: '100%', textTransform: 'none', padding: '0.65rem 0.8rem', display: 'flex', gap: '0.5rem', fontSize: '0.78rem', fontWeight: 700 }}>
+                            <AlertTriangle size={14} />
                             {error}
                         </div>
                     )}
@@ -194,7 +237,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                         />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
                         <div className="filter-group">
                             <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Due Date</label>
                             <input
@@ -209,7 +252,7 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                             <select
                                 className="hero-select"
                                 value={formData.priority}
-                                onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                                onChange={e => setFormData({ ...formData, priority: e.target.value as ReminderFormData['priority'] })}
                             >
                                 <option value="low">Low</option>
                                 <option value="medium">Medium</option>
@@ -220,9 +263,9 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                     </div>
 
                     <div className="filter-group">
-                        <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '1rem', display: 'block' }}>Metrics to Monitor</label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                            {availableMetrics.map(metric => (
+                        <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: '0.6rem', display: 'block' }}>Metrics to Monitor</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            {REMINDER_METRICS.map(metric => (
                                 <FilterChip
                                     key={metric}
                                     onClick={() => toggleMetric(metric)}
@@ -235,8 +278,8 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                                     inactiveColor="var(--text-dim)"
                                     activeShadow="0 4px 12px hsla(var(--primary) / 0.3)"
                                     style={{
-                                        padding: '0.6rem 1rem',
-                                        fontSize: '0.75rem',
+                                        padding: '0.45rem 0.8rem',
+                                        fontSize: '0.7rem',
                                         fontWeight: 700,
                                     }}
                                 >
@@ -247,12 +290,12 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                     </div>
 
                     {/* Modal Footer */}
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', gap: '0.7rem', marginTop: '0.4rem', justifyContent: 'flex-end' }}>
                         <SafeButton
                             type="button"
                             onClick={onClose}
                             className="hero-btn hero-btn-secondary"
-                            style={{ padding: '0.8rem 1.5rem' }}
+                            style={{ padding: '0.62rem 1rem' }}
                         >
                             Cancel
                         </SafeButton>
@@ -261,12 +304,12 @@ export default function AddReminderModal({ campaignId, isOpen, onClose }: AddRem
                             disabled={loading}
                             className="hero-btn hero-btn-primary"
                             style={{
-                                padding: '0.8rem 2rem',
+                                padding: '0.62rem 1.2rem',
                                 opacity: loading ? 0.7 : 1
                             }}
                         >
-                            <Save size={18} />
-                            {loading ? 'Saving...' : 'Create Reminder'}
+                            <Save size={16} />
+                            {loading ? 'Saving...' : reminder?.id ? 'Update Reminder' : 'Create Reminder'}
                         </SafeButton>
                     </div>
                 </form>

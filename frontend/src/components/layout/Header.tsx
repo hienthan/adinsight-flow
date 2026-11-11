@@ -6,7 +6,7 @@ import {
     createSafeInteractionScopeCss,
 } from '../../lib/uiMotion';
 import { SafeButton } from '../common/ui/SafeButton';
-import { createAmbientSurface, createPremiumBadgeStyle } from '../common/ui';
+import { createAmbientSurface } from '../common/ui';
 
 interface HeaderProps {
     darkMode: boolean;
@@ -36,9 +36,6 @@ export default function Header({
                 }}
             >
                 <div className="title-group" style={{ minWidth: 0 }}>
-                    <div className="hero-badge" style={{ marginBottom: '0.6rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
-                        Workspace Shell
-                    </div>
                     <h1 style={{ color: 'var(--text-main)' }}>AdInsight Flow</h1>
                     <p>Command center for URL analysis, campaign tracking, and outbound planning.</p>
                 </div>
@@ -63,10 +60,7 @@ export default function Header({
                                 }}
                             >
                                 <div style={{ paddingRight: '0.5rem', borderRight: '1px solid var(--border-subtle)' }}>
-                                    <div style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                                        Trend Pulse
-                                    </div>
-                                    <div style={{ marginTop: '0.25rem', fontSize: '1rem', fontWeight: 850, color: 'var(--text-main)', lineHeight: 1 }}>
+                                    <div style={{ fontSize: '1rem', fontWeight: 850, color: 'var(--text-main)', lineHeight: 1 }}>
                                         {signalCount}
                                     </div>
                                 </div>

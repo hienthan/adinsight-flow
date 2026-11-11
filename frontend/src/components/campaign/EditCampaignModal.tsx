@@ -6,24 +6,11 @@ import CampaignForm from './CampaignForm';
 import AddReminderModal from './AddReminderModal';
 import CampaignReminders from './CampaignReminders';
 import CampaignHistory from './CampaignHistory';
-import { pb } from '../../lib/pocketbase';
-import { Campaign } from '../../types/campaign';
 import { SafeButton } from '../common/ui/SafeButton';
 import { SurfaceCard } from '../common/ui/SurfaceCard';
-import { createPremiumBadgeStyle } from '../common/ui/premium';
 import { SAFE_BUTTON_SELECTORS, SAFE_CARD_SELECTORS, createSafeInteractionScopeCss } from '../../lib/uiMotion';
-
-const chipStyle = (background: string, border: string, color: string) => ({
-    background,
-    border: `1px solid ${border}`,
-    color,
-    padding: '0.35rem 0.6rem',
-    borderRadius: '999px',
-    fontSize: '0.7rem',
-    fontWeight: 800,
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase' as const,
-});
+import { Campaign, CampaignReminder } from '../../types/campaign';
+import { pb } from '../../lib/pocketbase';
 
 interface EditCampaignModalProps {
     campaignId?: string;
@@ -34,6 +21,7 @@ interface EditCampaignModalProps {
 
 export default function EditCampaignModal({ campaignId, isOpen, onClose, onSuccess }: EditCampaignModalProps) {
     const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+    const [editingReminder, setEditingReminder] = useState<CampaignReminder | null>(null);
     const [isRemindersCollapsed, setIsRemindersCollapsed] = useState(false);
     const [isAutoLogCollapsed, setIsAutoLogCollapsed] = useState(false);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -44,12 +32,33 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
 
     const { data: campaign } = useQuery<Campaign>({
         queryKey: ['campaign', campaignId],
-        queryFn: async () => {
-            if (!campaignId) throw new Error('Campaign id is required');
-            return await pb.collection('campaigns').getOne<Campaign>(campaignId);
-        },
-        enabled: !!campaignId && isOpen,
+        queryFn: async () => await pb.collection('campaigns').getOne<Campaign>(campaignId!),
+        enabled: isOpen && !!campaignId,
     });
+
+    const latestReviewedText = (() => {
+        if (!campaign?.last_reviewed_date) return null;
+        const parsed = new Date(campaign.last_reviewed_date);
+        if (Number.isNaN(parsed.getTime())) return campaign.last_reviewed_date;
+
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+        const day = String(parsed.getDate()).padStart(2, '0');
+        const hours = String(parsed.getHours()).padStart(2, '0');
+        const minutes = String(parsed.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+    })();
+
+    const startDateText = (() => {
+        if (!campaign?.created_date) return null;
+        const parsed = new Date(campaign.created_date);
+        if (Number.isNaN(parsed.getTime())) return campaign.created_date;
+
+        const year = parsed.getFullYear();
+        const month = String(parsed.getMonth() + 1).padStart(2, '0');
+        const day = String(parsed.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    })();
 
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -57,6 +66,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                 if (!isReminderModalOpen) {
                     onClose();
                 } else {
+                    setEditingReminder(null);
                     setIsReminderModalOpen(false);
                 }
             }
@@ -96,7 +106,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     alignItems: 'center',
                     justifyContent: 'center',
                     zIndex: 1000,
-                    padding: '1.5rem',
+                    padding: '1rem',
                 }}
                 onMouseDown={(e) => {
                     shouldCloseOnBackdropClickRef.current = e.target === e.currentTarget;
@@ -112,16 +122,16 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                     className="campaign-edit-modal-shell hero-card animate-fade modal-layout"
                     style={{
                         width: '100%',
-                        maxWidth: '980px',
+                        maxWidth: '920px',
                         display: 'flex',
                         flexDirection: 'column',
-                        padding: '1.1rem',
+                        padding: '0.65rem',
                         background: [
                             'radial-gradient(circle at top right, rgba(59, 130, 246, 0.14) 0%, transparent 28%)',
                             'radial-gradient(circle at top left, rgba(20, 184, 166, 0.12) 0%, transparent 24%)',
                             'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%) 0%, color-mix(in srgb, var(--bg-content) 88%, var(--bg-main) 12%) 100%)',
                         ].join(', '),
-                        maxHeight: '92vh',
+                        maxHeight: '90vh',
                         position: 'relative',
                         boxShadow: 'var(--shadow-large)',
                         borderRadius: '2rem',
@@ -136,53 +146,36 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                         ${createSafeInteractionScopeCss('.campaign-edit-modal-shell', [...SAFE_BUTTON_SELECTORS, ...SAFE_CARD_SELECTORS])}
                     `}</style>
                     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                        <div
-                            style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                justifyContent: 'space-between',
-                                gap: '0.85rem',
-                                padding: '0.25rem 0.45rem 0.45rem',
-                                marginBottom: '0.2rem',
-                            }}
-                        >
-                            <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                                    {campaignId ? 'Edit Campaign' : 'Create Campaign'}
-                                </div>
-                                <div style={{ marginTop: '0.18rem', fontSize: '1.25rem', fontWeight: 850, letterSpacing: '-0.03em', color: 'var(--text-main)' }}>
-                                    {campaignId ? 'Edit Tracking Strategy' : 'Create New Campaign'}
-                                </div>
-                                <div style={{ marginTop: '0.45rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                    <span style={{ ...chipStyle('rgba(99, 102, 241, 0.12)', 'rgba(99, 102, 241, 0.2)', '#a5b4fc'), ...createPremiumBadgeStyle('#6366f1', { textColor: '#a5b4fc' }) }}>
-                                        {campaign?.status || 'draft'}
-                                    </span>
-                                    <span style={{ ...chipStyle('rgba(20, 184, 166, 0.12)', 'rgba(20, 184, 166, 0.2)', '#5eead4'), ...createPremiumBadgeStyle('#14b8a6', { textColor: '#5eead4' }) }}>
-                                        {campaign?.priority || 'normal'}
-                                    </span>
-                                    <span style={chipStyle('rgba(148, 163, 184, 0.12)', 'rgba(148, 163, 184, 0.2)', 'var(--text-dim)')}>
-                                        {isFormSubmitting ? 'saving' : isFormDirty ? 'unsaved' : 'stable'}
-                                    </span>
-                                </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0.1rem 0.2rem', gap: '0.65rem' }}>
+                            <div style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                Campaign Edit
                             </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
-                                {campaign?.created_date && (
-                                    <span style={chipStyle('var(--bg-overlay)', 'var(--border-subtle)', 'var(--text-dim)')}>
-                                        {campaign.created_date}
-                                    </span>
-                                )}
-                                <SafeButton
-                                    onClick={onClose}
-                                    className="hero-btn hero-btn-ghost"
-                                    style={{ padding: '0.45rem', borderRadius: '0.85rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
-                                >
-                                    <X size={18} />
-                                </SafeButton>
-                            </div>
+                            <div style={{ flex: 1 }} />
+                            {startDateText && (
+                                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-dim)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}>Start:</span>
+                                    {startDateText}
+                                </div>
+                            )}
+                            {startDateText && latestReviewedText && (
+                                <span style={{ color: 'var(--border-subtle)' }}>|</span>
+                            )}
+                            {latestReviewedText && (
+                                <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-dim)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}>Reviewed:</span>
+                                    {latestReviewedText}
+                                </div>
+                            )}
+                            <SafeButton
+                                onClick={onClose}
+                                className="hero-btn hero-btn-ghost"
+                            style={{ padding: '0.34rem', borderRadius: '0.7rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
+                            >
+                                <X size={16} />
+                            </SafeButton>
                         </div>
 
-                        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0.25rem 0.45rem 0.2rem 0.45rem' }}>
+                        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 0.1rem 0.1rem 0.1rem' }}>
                             <CampaignForm
                                 campaignId={campaignId}
                                 formId={campaignFormId}
@@ -200,66 +193,76 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                             {campaignId ? (
                                 <div
                                     style={{
-                                        marginTop: '0.9rem',
+                                        marginTop: '0.55rem',
                                         display: 'grid',
                                         gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                                        gap: '0.75rem',
+                                        gap: '0.6rem',
                                     }}
                                 >
                                     <SurfaceCard
-                                        padding="0.65rem"
-                                        radius="1.25rem"
+                                        padding="0.55rem"
+                                        radius="1.05rem"
                                         style={{
                                             background: 'linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, var(--bg-overlay) 100%)',
                                             border: '1px solid rgba(59, 130, 246, 0.14)',
                                         }}
                                     >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isRemindersCollapsed ? 0 : '0.25rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isRemindersCollapsed ? 0 : '0.18rem' }}>
                                     <SafeButton
                                         type="button"
                                         onClick={() => setIsRemindersCollapsed((v) => !v)}
                                         className="hero-btn hero-btn-ghost"
-                                        style={{ padding: '0.15rem 0.3rem', gap: '0.3rem', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-dim)' }}
+                                        style={{ padding: '0.1rem 0.24rem', gap: '0.24rem', fontSize: '0.66rem', fontWeight: 800, color: 'var(--text-dim)' }}
                                     >
-                                        {isRemindersCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
-                                        <Bell size={13} style={{ color: 'hsl(var(--primary))' }} />
+                                        {isRemindersCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                        <Bell size={12} style={{ color: 'hsl(var(--primary))' }} />
                                         Reminders
                                     </SafeButton>
                                     <SafeButton
                                         type="button"
-                                        onClick={() => setIsReminderModalOpen(true)}
+                                        onClick={() => {
+                                            setEditingReminder(null);
+                                            setIsReminderModalOpen(true);
+                                        }}
                                         className="hero-btn hero-btn-ghost"
-                                        style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', borderRadius: '0.75rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
+                                        style={{ padding: '0.22rem 0.42rem', fontSize: '0.66rem', borderRadius: '0.65rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
                                     >
-                                        <Plus size={12} />
+                                        <Plus size={11} />
                                         Add
                                     </SafeButton>
                                 </div>
 
                                 {!isRemindersCollapsed && (
-                                    <div style={{ maxHeight: '160px', overflowY: 'auto', paddingRight: '0.1rem' }}>
-                                        <CampaignReminders campaignId={campaignId} compact={true} />
+                                    <div style={{ maxHeight: '132px', overflowY: 'auto', paddingRight: '0.05rem' }}>
+                                        <CampaignReminders
+                                            campaignId={campaignId}
+                                            compact={true}
+                                            onEditReminder={(reminder) => {
+                                                setEditingReminder(reminder);
+                                                setIsReminderModalOpen(true);
+                                            }}
+                                        />
                                     </div>
                                 )}
                                     </SurfaceCard>
 
                                     <SurfaceCard
-                                        padding="0.65rem"
-                                        radius="1.25rem"
+                                        padding="0.55rem"
+                                        radius="1.05rem"
                                         style={{
                                             background: 'linear-gradient(180deg, rgba(20, 184, 166, 0.08) 0%, var(--bg-overlay) 100%)',
                                             border: '1px solid rgba(20, 184, 166, 0.14)',
                                         }}
                                     >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isAutoLogCollapsed ? 0 : '0.25rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isAutoLogCollapsed ? 0 : '0.18rem' }}>
                                     <SafeButton
                                         type="button"
                                         onClick={() => setIsAutoLogCollapsed((v) => !v)}
                                         className="hero-btn hero-btn-ghost"
-                                        style={{ padding: '0.15rem 0.3rem', gap: '0.3rem', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-dim)' }}
+                                        style={{ padding: '0.1rem 0.24rem', gap: '0.24rem', fontSize: '0.66rem', fontWeight: 800, color: 'var(--text-dim)' }}
                                     >
-                                        {isAutoLogCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
-                                        <Activity size={13} style={{ color: 'hsl(var(--primary))' }} />
+                                        {isAutoLogCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                        <Activity size={12} style={{ color: 'hsl(var(--primary))' }} />
                                         AutoLog (Latest)
                                     </SafeButton>
                                     <SafeButton
@@ -267,14 +270,14 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                         onClick={() => setIsHistoryModalOpen(true)}
                                         className="hero-btn hero-btn-ghost"
                                         title="View Full History"
-                                        style={{ padding: '0.3rem 0.55rem', fontSize: '0.7rem', borderRadius: '0.75rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
+                                        style={{ padding: '0.22rem 0.46rem', fontSize: '0.66rem', borderRadius: '0.65rem', background: 'var(--bg-overlay)', border: '1px solid var(--border-subtle)' }}
                                     >
-                                        <History size={13} />
+                                        <History size={12} />
                                     </SafeButton>
                                 </div>
 
                                 {!isAutoLogCollapsed && (
-                                    <div style={{ maxHeight: '160px', overflowY: 'auto', paddingRight: '0.1rem' }}>
+                                    <div style={{ maxHeight: '132px', overflowY: 'auto', paddingRight: '0.05rem' }}>
                                         <CampaignHistory campaignId={campaignId} compact={true} limit={5} />
                                     </div>
                                 )}
@@ -282,10 +285,10 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                 </div>
                             ) : (
                                 <SurfaceCard
-                                    padding="0.95rem 1rem"
-                                    radius="1.2rem"
-                                    style={{
-                                        marginTop: '1rem',
+                                padding="0.8rem 0.9rem"
+                                radius="1rem"
+                                style={{
+                                        marginTop: '0.55rem',
                                         background: 'linear-gradient(180deg, rgba(148, 163, 184, 0.08) 0%, var(--bg-overlay) 100%)',
                                         border: '1px dashed var(--border-subtle)',
                                         fontSize: 'var(--text-xs)',
@@ -303,16 +306,16 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 gap: '1rem',
-                                padding: '0.9rem 1rem 0.45rem 1rem',
+                                padding: '0.65rem 0.85rem 0.2rem 0.85rem',
                                 borderTop: '1px solid var(--border-subtle)',
                                 background: 'linear-gradient(180deg, transparent 0%, var(--bg-overlay) 100%)',
                             }}
                         >
                             <div>
-                                <div style={{ fontSize: '0.74rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                                     Ready To Save
                                 </div>
-                                <div style={{ marginTop: '0.22rem', fontSize: '0.82rem', color: 'var(--text-dim)', fontWeight: 600 }}>
+                                <div style={{ marginTop: '0.14rem', fontSize: '0.76rem', color: 'var(--text-dim)', fontWeight: 600 }}>
                                     {isFormDirty ? 'Changes detected in this strategy.' : 'No unsaved changes detected.'}
                                 </div>
                             </div>
@@ -320,7 +323,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                 <SafeButton
                                     onClick={onClose}
                                     className="hero-btn hero-btn-ghost"
-                                    style={{ padding: '0.55rem 0.8rem', fontSize: 'var(--text-xs)' }}
+                                    style={{ padding: '0.46rem 0.7rem', fontSize: 'var(--text-xs)' }}
                                 >
                                     Cancel
                                 </SafeButton>
@@ -329,7 +332,7 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                                     form={campaignFormId}
                                     disabled={isFormSubmitting || (!!campaignId && !isFormDirty)}
                                     className="hero-btn hero-btn-primary"
-                                    style={{ padding: '0.6rem 1rem', fontSize: 'var(--text-xs)' }}
+                                    style={{ padding: '0.5rem 0.9rem', fontSize: 'var(--text-xs)' }}
                                 >
                                     {isFormSubmitting ? 'Saving...' : (campaignId ? 'Update' : 'Create')}
                                 </SafeButton>
@@ -343,7 +346,11 @@ export default function EditCampaignModal({ campaignId, isOpen, onClose, onSucce
                 <AddReminderModal
                     campaignId={campaignId}
                     isOpen={isReminderModalOpen}
-                    onClose={() => setIsReminderModalOpen(false)}
+                    reminder={editingReminder}
+                    onClose={() => {
+                        setEditingReminder(null);
+                        setIsReminderModalOpen(false);
+                    }}
                 />
             )}
 

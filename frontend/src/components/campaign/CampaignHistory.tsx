@@ -57,7 +57,7 @@ export default function CampaignHistory({ campaignId, platformColor, compact = f
             }}>
                 <Activity size={compact ? 22 : 48} style={{ marginBottom: compact ? '0.45rem' : '1rem', opacity: 0.25 }} />
                 <p style={{ margin: 0 }}>No tracked changes yet.</p>
-                {!compact && <p style={{ fontSize: '0.8rem' }}>Changes to CPC, Budget, Keywords, and Status are automatically logged.</p>}
+                {!compact && <p style={{ fontSize: '0.8rem' }}>Changes to CPC, tCPA, tROAS, Budget, Keywords, and Status are automatically logged.</p>}
             </div>
         );
     }

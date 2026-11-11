@@ -15,6 +15,7 @@ interface OutboundMapToolbarProps {
     platforms: CampaignPlatform[];
     availableSourceMarkets: string[];
     onOpenCreate: () => void;
+    onOpenCoverage: () => void;
 }
 
 const STATUS_OPTIONS = [
@@ -46,6 +47,7 @@ export default function OutboundMapToolbar({
     platforms,
     availableSourceMarkets,
     onOpenCreate,
+    onOpenCoverage,
 }: OutboundMapToolbarProps) {
     const updateField = <K extends keyof CampaignRouteFilters>(key: K, value: CampaignRouteFilters[K]) => {
         onFiltersChange((previous) => ({
@@ -141,6 +143,20 @@ export default function OutboundMapToolbar({
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <SafeButton
+                        onClick={onOpenCoverage}
+                        style={{
+                            borderRadius: '12px',
+                            border: '1px solid var(--border-subtle)',
+                            background: 'var(--bg-content)',
+                            color: 'var(--text-main)',
+                            fontWeight: 800,
+                            padding: '0.8rem 1.05rem',
+                        }}
+                    >
+                        Coverage Overview
+                    </SafeButton>
+
                     <SafeButton
                         onClick={() => updateField('coreOnly', !filters.coreOnly)}
                         style={{

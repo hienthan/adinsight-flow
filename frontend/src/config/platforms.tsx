@@ -164,5 +164,356 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
             { id: 'city', label: 'City', desc: 'Primary City match' },
             { id: 'title_en', label: 'English Title', desc: 'Page title in English' }
         ]
+    },
+    viator: {
+        id: 'viator',
+        name: 'Viator',
+        collection: 'viator_pages',
+        titleKey: 'title',
+        defaultSitemapTags: [],
+        metadataMode: 'collection_distinct',
+        columns: [
+            { header: 'Title', key: 'title', width: '30%' },
+            { header: 'Country', key: 'country', width: '10%' },
+            { header: 'City', key: 'city', width: '12%' },
+            { header: 'Page Type', key: 'page_type', width: '10%' },
+            { header: 'Intent', key: 'intent_primary', width: '12%' },
+            { header: 'Campaign', key: 'dsa_campaign', width: '18%' },
+            { header: 'Confidence', key: 'classification_confidence', width: '8%' }
+        ],
+        filters: [
+            { id: 'searchTerm', label: 'Search Title', type: 'text', placeholder: 'Include keywords...' },
+            { id: 'searchUrl', label: 'Search URL', type: 'text', placeholder: 'Contains URL...' },
+            { id: 'excludeTerm', label: 'Exclude Title', type: 'text', placeholder: 'Exclude keywords...' },
+            { id: 'country', label: 'Country', type: 'datalist', placeholder: 'Global / All' },
+            {
+                id: 'page_type', label: 'Page Type', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Product', value: 'product' },
+                    { label: 'Ticket', value: 'ticket' },
+                    { label: 'Things To Do', value: 'ttd' }
+                ]
+            },
+            { id: 'city', label: 'City', type: 'text', placeholder: 'e.g. Paris' },
+            { id: 'is_private', label: 'Private Only', type: 'checkbox' },
+            { id: 'show_url', label: 'URL', type: 'checkbox' },
+            {
+                id: 'intent_primary', label: 'Intent', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Things To Do', value: 'things_to_do' },
+                    { label: 'Ticket', value: 'ticket' },
+                    { label: 'Day Trip', value: 'day_trip' },
+                    { label: 'Multi Day', value: 'multi_day' },
+                    { label: 'Transport', value: 'transport' },
+                    { label: 'Cruise', value: 'cruise' },
+                    { label: 'Food', value: 'food' },
+                    { label: 'Show', value: 'show' },
+                    { label: 'Private Tour', value: 'private_tour' }
+                ]
+            },
+            { id: 'dsa_campaign', label: 'Campaign', type: 'text', placeholder: 'Contains...' },
+            {
+                id: 'classification_confidence', label: 'Confidence', type: 'select', options: [
+                    { label: 'All', value: '' },
+                    { label: 'High', value: 'high' },
+                    { label: 'Medium', value: 'medium' },
+                    { label: 'Low', value: 'low' }
+                ]
+            }
+        ],
+        exportFields: [
+            { id: 'country', label: 'Country', desc: 'Destination country' },
+            { id: 'city', label: 'City', desc: 'Primary city or destination anchor' },
+            { id: 'page_type', label: 'Page Type', desc: 'product / ticket / ttd' },
+            { id: 'intent_primary', label: 'Intent', desc: 'DSA grouping intent' },
+            { id: 'content_type', label: 'Content Type', desc: 'Inventory subtype' },
+            { id: 'dsa_campaign', label: 'Campaign', desc: 'Deterministic campaign key' },
+            { id: 'dsa_adgroup', label: 'Ad Group', desc: 'Ad group grouping key' },
+            { id: 'title', label: 'Title', desc: 'Human-readable title' }
+        ]
+    },
+    trip: {
+        id: 'trip',
+        name: 'Trip.com',
+        collection: 'trip_pages',
+        titleKey: 'title',
+        defaultSitemapTags: [],
+        metadataMode: 'collection_distinct',
+        columns: [
+            { header: 'Title', key: 'title', width: '24%' },
+            { header: 'Pattern', key: 'pattern', width: '12%' },
+            { header: 'Scope', key: 'transport_scope', width: '11%' },
+            { header: 'Fit', key: 'transport_affiliate_fit', width: '9%' },
+            { header: 'Traffic', key: 'traffic', width: '8%' },
+            { header: 'Keywords', key: 'keyword_count', width: '8%' },
+            { header: 'Trend', key: 'traffic_change', width: '8%' },
+            { header: 'Geo Entity', key: 'geo_entity', width: '12%' },
+            { header: 'Geo Scope', key: 'transport_geo_scope', width: '11%' },
+            { header: 'Location', key: 'location', width: '12%' },
+            { header: 'Readiness', key: 'readiness_hint', width: '10%' },
+            { header: 'Market Fit', key: 'market_fit', width: '10%' }
+        ],
+        filters: [
+            { id: 'searchTerm', label: 'Search Title', type: 'text', placeholder: 'Include keywords...' },
+            { id: 'searchUrl', label: 'Search URL', type: 'text', placeholder: 'Contains URL...' },
+            { id: 'excludeTerm', label: 'Exclude Title', type: 'text', placeholder: 'Exclude keywords...' },
+            {
+                id: 'pattern', label: 'Pattern', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Blog', value: 'blog' },
+                    { label: 'Guide Destination', value: 'guide/destination' },
+                    { label: 'Guide Info', value: 'guide/info' },
+                    { label: 'Guide Transport', value: 'guide/transport' },
+                    { label: 'Travel Guide Destination', value: 'travel-guide/destination' }
+                ]
+            },
+            { id: 'country', label: 'Country', type: 'datalist', placeholder: 'Global / All' },
+            {
+                id: 'is_active', label: 'Status', type: 'select', options: [
+                    { label: 'All', value: '' },
+                    { label: 'Active Only', value: 'true' },
+                    { label: 'Inactive Only', value: 'false' }
+                ]
+            },
+            {
+                id: 'content_type', label: 'Content', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Requirements', value: 'requirements' },
+                    { label: 'Utility Info', value: 'utility_info' },
+                    { label: 'Transport Info', value: 'transport_info' },
+                    { label: 'Planning Guide', value: 'planning_guide' },
+                    { label: 'Destination Guide', value: 'destination_guide' },
+                    { label: 'Weather Info', value: 'weather_info' },
+                    { label: 'Airline Ops', value: 'airline_ops_info' },
+                    { label: 'Generic Info', value: 'generic_info' }
+                ]
+            },
+            {
+                id: 'readiness_hint', label: 'Readiness', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'High', value: 'high' },
+                    { label: 'Medium High', value: 'medium_high' },
+                    { label: 'Medium', value: 'medium' },
+                    { label: 'Low', value: 'low' }
+                ]
+            },
+            {
+                id: 'market_fit', label: 'Market Fit', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'High', value: 'high' },
+                    { label: 'Medium', value: 'medium' },
+                    { label: 'Low', value: 'low' }
+                ]
+            },
+            {
+                id: 'intent_primary', label: 'Intent', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Travel Requirements', value: 'travel_requirements' },
+                    { label: 'Travel Readiness', value: 'travel_readiness' },
+                    { label: 'Transport', value: 'transport' },
+                    { label: 'Planning', value: 'planning' },
+                    { label: 'Destination Research', value: 'destination_research' },
+                    { label: 'General Info', value: 'general_info' }
+                ]
+            },
+            {
+                id: 'topic_type', label: 'Topic', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Entry Document', value: 'entry_document' },
+                    { label: 'Visa', value: 'visa' },
+                    { label: 'Plug Voltage', value: 'plug_voltage' },
+                    { label: 'Baggage Rule', value: 'baggage_rule' },
+                    { label: 'Airport Transport', value: 'airport_transport' },
+                    { label: 'City Transport', value: 'city_transport' },
+                    { label: 'Itinerary', value: 'itinerary' },
+                    { label: 'Cost Budget', value: 'cost_budget' },
+                    { label: 'Weather', value: 'weather' },
+                    { label: 'Airline Ops', value: 'airline_ops' },
+                    { label: 'Destination Guide', value: 'destination_guide' },
+                    { label: 'Generic Info', value: 'generic_info' },
+                    { label: 'Local Daytrip', value: 'local_daytrip' }
+                ]
+            },
+            {
+                id: 'transport_scope', label: 'Transport Scope', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Airport Transfer', value: 'airport_transfer' },
+                    { label: 'Airport To City', value: 'airport_to_city' },
+                    { label: 'Airport General', value: 'airport_general' },
+                    { label: 'Intercity Route', value: 'intercity_route' },
+                    { label: 'Cross Border Route', value: 'cross_border_route' },
+                    { label: 'Station Guide', value: 'station_guide' },
+                    { label: 'Rail Pass', value: 'rail_pass' },
+                    { label: 'Ferry Route', value: 'ferry_route' },
+                    { label: 'City Transit', value: 'city_transit' },
+                    { label: 'Metro Map', value: 'metro_map' },
+                    { label: 'Timetable', value: 'timetable' },
+                    { label: 'Parking', value: 'parking' },
+                    { label: 'Unknown', value: 'unknown' }
+                ]
+            },
+            {
+                id: 'transport_affiliate_fit', label: 'Transport Fit', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'High', value: 'high' },
+                    { label: 'Medium', value: 'medium' },
+                    { label: 'Low', value: 'low' }
+                ]
+            },
+            {
+                id: 'transport_geo_scope', label: 'Transport Geo', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Top Outbound', value: 'top_outbound_geo' },
+                    { label: 'Destination City', value: 'destination_city' },
+                    { label: 'Domestic TW', value: 'domestic_tw' },
+                    { label: 'Cross Border Short Haul', value: 'cross_border_short_haul' },
+                    { label: 'Local City', value: 'local_city' },
+                    { label: 'Unknown', value: 'unknown' }
+                ]
+            },
+            {
+                id: 'transport_trip_stage', label: 'Transport Stage', type: 'select', multiple: true, options: [
+                    { label: 'All', value: '' },
+                    { label: 'Pre Trip', value: 'pre_trip' },
+                    { label: 'Arrival Immediate', value: 'arrival_immediate' },
+                    { label: 'In Trip', value: 'in_trip' },
+                    { label: 'Local Utility', value: 'local_utility' },
+                    { label: 'Unknown', value: 'unknown' }
+                ]
+            },
+            { id: 'geo_entity', label: 'Geo Entity', type: 'text', placeholder: 'e.g. thailand' },
+            {
+                id: 'language', label: 'Lang', type: 'select', options: [
+                    { label: 'All', value: 'all' },
+                    { label: 'zh-HK', value: 'zh-HK' },
+                    { label: 'zh-TW', value: 'zh-TW' }
+                ]
+            }
+        ],
+        activeFilterKey: 'is_active',
+        exportFields: [
+            { id: 'country', label: 'Country', desc: 'Destination country or market anchor' },
+            { id: 'city', label: 'City', desc: 'Primary city when available' },
+            { id: 'geo_entity', label: 'Geo Entity', desc: 'Classifier geo anchor' },
+            { id: 'intent_primary', label: 'Intent', desc: 'Travel intent cluster' },
+            { id: 'content_type', label: 'Content Type', desc: 'Trip content category' },
+            { id: 'sub_tag', label: 'Sub-tag', desc: 'Fine-grained classifier tag' },
+            { id: 'readiness_hint', label: 'Readiness', desc: '7-day cookie relevance signal' },
+            { id: 'pattern', label: 'Pattern', desc: 'Semrush source pattern' },
+            { id: 'title', label: 'Title', desc: 'English title for review/export' }
+        ],
+        filterPresets: [
+            {
+                id: 'trip_active',
+                label: 'All Active',
+                description: 'Core working inventory',
+                filters: {
+                    is_active: 'true'
+                }
+            },
+            {
+                id: 'trip_unknown_geo',
+                label: 'Unknown Geo',
+                description: 'Active rows needing geo review',
+                filters: {
+                    is_active: 'true',
+                    geo_entity: 'unknown'
+                }
+            },
+            {
+                id: 'trip_high_readiness',
+                label: 'High Readiness',
+                description: 'Strong 7-day cookie candidates',
+                filters: {
+                    is_active: 'true',
+                    readiness_hint: 'high|medium_high'
+                }
+            },
+            {
+                id: 'trip_weather',
+                label: 'Weather',
+                description: 'Weather rows for manual review',
+                filters: {
+                    is_active: 'true',
+                    content_type: 'weather_info'
+                }
+            },
+            {
+                id: 'trip_blog_active',
+                label: 'Blog Active',
+                description: 'Blog rows still considered active',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'blog'
+                }
+            },
+            {
+                id: 'trip_disabled_lps',
+                label: 'Disabled LPs',
+                description: 'Rows currently disabled from active inventory',
+                filters: {
+                    is_active: 'false'
+                }
+            },
+            {
+                id: 'trip_transport_high_fit',
+                label: 'Transport High Fit',
+                description: 'Best transport candidates first',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_affiliate_fit: 'high'
+                }
+            },
+            {
+                id: 'trip_transport_unknown_geo',
+                label: 'Transport Unknown Geo',
+                description: 'Transport rows with unresolved geo',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_geo_scope: 'unknown'
+                }
+            },
+            {
+                id: 'trip_transport_utility',
+                label: 'Transport Utility',
+                description: 'Map, transit, parking, timetable rows',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_scope: 'city_transit|metro_map|timetable|parking'
+                }
+            },
+            {
+                id: 'trip_transport_domestic_tw',
+                label: 'Transport Domestic TW',
+                description: 'Domestic Taiwan transport rows',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_geo_scope: 'domestic_tw'
+                }
+            },
+            {
+                id: 'trip_transport_airport_station',
+                label: 'Transport Airport',
+                description: 'Airport and station-related transport rows',
+                filters: {
+                    is_active: 'true',
+                    pattern: 'guide/transport',
+                    transport_scope: 'airport_transfer|airport_to_city|airport_general|station_guide'
+                }
+            },
+            {
+                id: 'trip_transport_non_core',
+                label: 'Transport Non-Core',
+                description: 'Shortlisted non-core transport URLs kept outside guide/transport',
+                filters: {
+                    is_active: 'true',
+                    'metadata.non_core_transport_bucket': 'keep_strong|keep_review'
+                }
+            }
+        ]
     }
 };

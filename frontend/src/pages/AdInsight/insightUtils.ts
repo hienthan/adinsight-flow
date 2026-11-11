@@ -1,3 +1,25 @@
+const tokenizeSearchInput = (value: string) =>
+    value
+        .split(/[\s,]+/)
+        .map((token) => token.trim())
+        .filter(Boolean);
+
+const buildContainsSearchClauses = (field: string, rawValue: string, isExclusion = false) => {
+    const tokens = tokenizeSearchInput(rawValue);
+    return tokens.map((token) => {
+        const variants = token.split('|').map((part) => part.trim()).filter(Boolean);
+        if (variants.length === 0) return '';
+
+        if (isExclusion) {
+            const clauses = variants.map((variant) => `${field} !~ "${variant}"`);
+            return clauses.length > 1 ? `(${clauses.join(' && ')})` : clauses[0];
+        }
+
+        const clauses = variants.map((variant) => `${field} ~ "${variant}"`);
+        return clauses.length > 1 ? `(${clauses.join(' || ')})` : clauses[0];
+    }).filter(Boolean);
+};
+
 export const buildFilterString = (currentFilters: Record<string, string>) => {
     const parts: string[] = [];
 
@@ -13,34 +35,41 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         }
     }
 
-    // 2. Language (Special logic for Klook)
+    // 2. Language logic
     if (currentFilters.language && currentFilters.language !== 'all') {
+        const isKlook = currentFilters.titleKey === 'translated_title_vi';
+        const langField = isKlook ? 'languages' : 'language';
+
         if (currentFilters.language === 'both') {
-            parts.push('languages ~ "zh-HK" && languages ~ "zh-TW"');
+            parts.push(`${langField} ~ "zh-HK" && ${langField} ~ "zh-TW"`);
         } else {
-            parts.push(`languages ~ "${currentFilters.language}"`);
+            // For list fields like 'languages' in PocketBase, we use ~ (contains)
+            // For single string fields like 'language', we use = (exact match)
+            const operator = isKlook ? '~' : '=';
+            parts.push(`${langField} ${operator} "${currentFilters.language}"`);
         }
     }
 
     // 3. Search Term & Exclude Term (Generic for Title)
     if (currentFilters.searchTerm && currentFilters.titleKey) {
-        const terms = currentFilters.searchTerm.split(/[,|\s]+/).filter(t => t.trim().length > 0);
-        terms.forEach(term => {
-            parts.push(`${currentFilters.titleKey} ~ "${term.trim()}"`);
-        });
+        parts.push(...buildContainsSearchClauses(currentFilters.titleKey, currentFilters.searchTerm));
+    }
+
+    if (currentFilters.searchUrl) {
+        parts.push(...buildContainsSearchClauses('url', currentFilters.searchUrl));
     }
 
     if (currentFilters.excludeTerm && currentFilters.titleKey) {
-        const terms = currentFilters.excludeTerm.split(/[,|\s]+/).filter(t => t.trim().length > 0);
-        terms.forEach(term => {
-            parts.push(`${currentFilters.titleKey} !~ "${term.trim()}"`);
-        });
+        parts.push(...buildContainsSearchClauses(currentFilters.titleKey, currentFilters.excludeTerm, true));
     }
 
     const basicFields = [
         'tier', 'funnel_stage', 'country', 'city', 'sub_tag', 'content_type',
         'affiliate_tier', 'affiliate_score', 'dsa_campaign', 'geo_category', 'province',
-        'intent_type'
+        'intent_type', 'intent_primary', 'page_type', 'classification_confidence', 'is_private', 'is_active',
+        'pattern', 'geo_entity', 'topic_type', 'readiness_hint', 'market_fit', 'language',
+        'transport_scope', 'transport_affiliate_fit', 'transport_geo_scope', 'transport_trip_stage',
+        'metadata.non_core_transport_bucket'
     ];
 
     Object.keys(currentFilters).forEach(key => {
@@ -48,7 +77,7 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
         if (!value) return;
 
         // Skip internal/special keys
-        if (['sitemap_tag', 'language', 'searchTerm', 'excludeTerm', 'titleKey'].includes(key)) return;
+        if (['sitemap_tag', 'language', 'searchTerm', 'searchUrl', 'excludeTerm', 'titleKey', 'show_url'].includes(key)) return;
 
         const isExclusion = key.startsWith('!');
         const baseKey = isExclusion ? key.slice(1) : key;
@@ -61,6 +90,11 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
 
                 const subQueries = values.map(v => {
                     const cleanVal = v.trim();
+                    if (baseKey === 'classification_confidence') {
+                        if (cleanVal === 'high') return `${baseKey} >= 0.85`;
+                        if (cleanVal === 'medium') return `(${baseKey} >= 0.70 && ${baseKey} < 0.85)`;
+                        if (cleanVal === 'low') return `${baseKey} < 0.70`;
+                    }
                     if (baseKey === 'country') {
                         if (cleanVal === 'Vietnam') {
                             return isExclusion
@@ -83,6 +117,12 @@ export const buildFilterString = (currentFilters: Record<string, string>) => {
                     if (baseKey === 'dsa_campaign') {
                         const campOperator = isExclusion ? '!~' : '~';
                         return `${baseKey} ${campOperator} "${cleanVal}"`;
+                    }
+                    if (baseKey === 'is_private') {
+                        return `${baseKey} = ${cleanVal === 'true' ? 'true' : 'false'}`;
+                    }
+                    if (baseKey === 'is_active') {
+                        return `${baseKey} = ${cleanVal === 'true' ? 'true' : 'false'}`;
                     }
                     return `${baseKey} ${operator} "${cleanVal}"`;
                 });

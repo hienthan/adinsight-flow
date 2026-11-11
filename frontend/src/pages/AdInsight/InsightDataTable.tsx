@@ -39,6 +39,131 @@ const formatLocationValue = (val: string | undefined, fullFormatting = false) =>
         .join(' ');
 };
 
+const formatCompactLabel = (val: string | undefined) => {
+    if (!val) return '-';
+    return val
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const formatSignedMetric = (value: number) => {
+    const rounded = Math.round(value);
+    if (rounded > 0) return `+${rounded.toLocaleString()}`;
+    if (rounded < 0) return rounded.toLocaleString();
+    return '0';
+};
+
+const getTripReadinessStyle = (value: string) => {
+    switch (value) {
+        case 'high':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'medium_high':
+            return { background: 'rgba(59, 130, 246, 0.14)', color: '#1d4ed8' };
+        case 'medium':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
+const getTripMarketFitStyle = (value: string) => {
+    switch (value) {
+        case 'high':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'medium':
+            return { background: 'rgba(99, 102, 241, 0.14)', color: '#4338ca' };
+        default:
+            return { background: 'rgba(239, 68, 68, 0.12)', color: '#b91c1c' };
+    }
+};
+
+const getTransportScopeStyle = (value: string) => {
+    switch (value) {
+        case 'airport_transfer':
+        case 'airport_to_city':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'intercity_route':
+        case 'cross_border_route':
+            return { background: 'rgba(59, 130, 246, 0.14)', color: '#1d4ed8' };
+        case 'airport_general':
+        case 'station_guide':
+        case 'rail_pass':
+        case 'ferry_route':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        case 'city_transit':
+        case 'metro_map':
+        case 'timetable':
+        case 'parking':
+        case 'unknown':
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
+const getTransportFitStyle = (value: string) => {
+    switch (value) {
+        case 'high':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'medium':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        case 'low':
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
+const getTransportGeoScopeStyle = (value: string) => {
+    switch (value) {
+        case 'top_outbound_geo':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'destination_city':
+            return { background: 'rgba(59, 130, 246, 0.14)', color: '#1d4ed8' };
+        case 'domestic_tw':
+        case 'cross_border_short_haul':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        case 'local_city':
+        case 'unknown':
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
+const getTransportTripStageStyle = (value: string) => {
+    switch (value) {
+        case 'pre_trip':
+            return { background: 'rgba(16, 185, 129, 0.14)', color: '#047857' };
+        case 'arrival_immediate':
+            return { background: 'rgba(59, 130, 246, 0.14)', color: '#1d4ed8' };
+        case 'in_trip':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        case 'local_utility':
+        case 'unknown':
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
+const getPatternBadgeStyle = (value: string) => {
+    switch (value) {
+        case 'guide/transport':
+            return { background: 'rgba(5, 150, 105, 0.14)', color: '#047857' };
+        case 'travel-guide/destination':
+            return { background: 'rgba(37, 99, 235, 0.14)', color: '#1d4ed8' };
+        case 'guide/destination':
+            return { background: 'rgba(124, 58, 237, 0.14)', color: '#6d28d9' };
+        case 'guide/info':
+            return { background: 'rgba(14, 165, 233, 0.14)', color: '#0369a1' };
+        case 'blog':
+            return { background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' };
+        default:
+            return { background: 'rgba(148, 163, 184, 0.16)', color: 'var(--text-muted)' };
+    }
+};
+
 export const InsightDataTable: React.FC<InsightDataTableProps> = ({
     records,
     columns,
@@ -133,6 +258,26 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                             </td>
                                         );
                                     }
+                                    if (col.key === 'url') {
+                                        const urlValue = String(record.url || '-');
+                                        return (
+                                            <td key={idx} style={{ maxWidth: col.width, overflow: 'hidden' }}>
+                                                <a
+                                                    href={record.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="slug-link"
+                                                    title={urlValue}
+                                                    style={{ maxWidth: '100%' }}
+                                                >
+                                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                                                        {urlValue}
+                                                    </span>
+                                                    <ExternalLink size={12} style={{ flexShrink: 0 }} />
+                                                </a>
+                                            </td>
+                                        );
+                                    }
                                     if (col.key === 'funnel_stage') {
                                         return (
                                             <td key={idx} style={{ width: col.width }}>
@@ -193,9 +338,15 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                     }
                                     if (col.key === 'location') {
                                         const isTraveloka = !!record.title_en;
+                                        const isTrip = !!record.pattern || !!record.readiness_hint || typeof record.traffic === 'number';
                                         let displayText = '';
 
-                                        if (isTraveloka) {
+                                        if (isTrip) {
+                                            const parts = [record.city, record.country]
+                                                .filter(p => p && p.toLowerCase() !== 'unknown')
+                                                .map(p => formatLocationValue(p, true));
+                                            displayText = parts.join(' / ') || '-';
+                                        } else if (isTraveloka) {
                                             const parts = [record.city, record.province]
                                                 .filter(p => p && p.toLowerCase() !== 'unknown')
                                                 .map(p => formatLocationValue(p, true));
@@ -235,6 +386,22 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                             </td>
                                         );
                                     }
+                                    if (col.key === 'pattern') {
+                                        const rawValue = String(record.pattern || '-');
+                                        return (
+                                            <td key={idx} style={{ width: col.width, overflow: 'hidden' }}>
+                                                <span className="hero-badge" style={{
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'none',
+                                                    justifyContent: 'center',
+                                                    ...getPatternBadgeStyle(rawValue)
+                                                }} title={rawValue}>
+                                                    {rawValue}
+                                                </span>
+                                            </td>
+                                        );
+                                    }
                                     if (col.key === 'sub_tag') {
                                         return (
                                             <td key={idx} style={{ width: col.width }}>
@@ -250,19 +417,144 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                             </td>
                                         )
                                     }
-                                    if (col.key === 'content_type') {
-                                        const rawCType = record.content_type || '-';
-                                        const displayCType = rawCType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                    if (col.key === 'content_type' || col.key === 'page_type' || col.key === 'intent_primary' || col.key === 'topic_type') {
+                                        const rawValue = String(record[col.key as keyof PageRecord] || '-');
+                                        const displayValue = formatCompactLabel(rawValue);
+                                        const badgeStyles =
+                                            col.key === 'page_type'
+                                                ? (rawValue === 'ticket'
+                                                    ? { background: 'rgba(245, 158, 11, 0.12)', color: '#b45309' }
+                                                    : rawValue === 'ttd'
+                                                        ? { background: 'rgba(99, 102, 241, 0.12)', color: '#4f46e5' }
+                                                        : { background: 'rgba(59, 130, 246, 0.12)', color: '#2563eb' })
+                                                : col.key === 'intent_primary'
+                                                    ? { background: 'rgba(16, 185, 129, 0.12)', color: '#047857' }
+                                                    : col.key === 'topic_type'
+                                                        ? { background: 'rgba(6, 182, 212, 0.12)', color: '#0f766e' }
+                                                    : { background: 'rgba(148, 163, 184, 0.14)', color: 'var(--text-muted)' };
                                         return (
                                             <td key={idx} style={{ width: col.width, overflow: 'hidden' }}>
-                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={displayCType}>
-                                                    {displayCType}
+                                                <span className="hero-badge" style={{
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'none',
+                                                    justifyContent: 'center',
+                                                    ...badgeStyles
+                                                }} title={displayValue}>
+                                                    {displayValue}
                                                 </span>
                                             </td>
                                         );
                                     }
-                                    if (col.key === 'title_en' || col.key === 'translated_title_vi') {
+                                    if (col.key === 'transport_scope' || col.key === 'transport_affiliate_fit' || col.key === 'transport_geo_scope' || col.key === 'transport_trip_stage') {
+                                        const rawValue = String(record[col.key as keyof PageRecord] || '-');
+                                        const displayValue = formatCompactLabel(rawValue);
+                                        const badgeStyles =
+                                            col.key === 'transport_scope'
+                                                ? getTransportScopeStyle(rawValue)
+                                                : col.key === 'transport_affiliate_fit'
+                                                    ? getTransportFitStyle(rawValue)
+                                                    : col.key === 'transport_geo_scope'
+                                                        ? getTransportGeoScopeStyle(rawValue)
+                                                        : getTransportTripStageStyle(rawValue);
+                                        return (
+                                            <td key={idx} style={{ width: col.width, overflow: 'hidden' }}>
+                                                <span className="hero-badge" style={{
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'none',
+                                                    justifyContent: 'center',
+                                                    ...badgeStyles
+                                                }} title={displayValue}>
+                                                    {displayValue}
+                                                </span>
+                                            </td>
+                                        );
+                                    }
+                                    if (col.key === 'readiness_hint' || col.key === 'market_fit') {
+                                        const rawValue = String(record[col.key as keyof PageRecord] || '-');
+                                        const displayValue = formatCompactLabel(rawValue);
+                                        const badgeStyles = col.key === 'readiness_hint'
+                                            ? getTripReadinessStyle(rawValue)
+                                            : getTripMarketFitStyle(rawValue);
+                                        return (
+                                            <td key={idx} style={{ width: col.width }}>
+                                                <span className="hero-badge" style={{
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 800,
+                                                    textTransform: 'none',
+                                                    justifyContent: 'center',
+                                                    ...badgeStyles
+                                                }} title={displayValue}>
+                                                    {displayValue}
+                                                </span>
+                                            </td>
+                                        );
+                                    }
+                                    if (col.key === 'traffic' || col.key === 'keyword_count' || col.key === 'traffic_change' || col.key === 'traffic_pct') {
+                                        const rawMetric = record[col.key as keyof PageRecord];
+                                        const metric = typeof rawMetric === 'number' ? rawMetric : Number(rawMetric || 0);
+                                        const isEmpty = rawMetric === undefined || rawMetric === null || rawMetric === '';
+                                        let displayValue = '-';
+                                        let textColor = 'var(--text-main)';
+
+                                        if (!isEmpty) {
+                                            if (col.key === 'traffic_pct') {
+                                                displayValue = `${metric.toFixed(2)}%`;
+                                                textColor = 'var(--text-dim)';
+                                            } else if (col.key === 'traffic_change') {
+                                                displayValue = formatSignedMetric(metric);
+                                                textColor = metric > 0 ? '#047857' : (metric < 0 ? '#b91c1c' : 'var(--text-dim)');
+                                            } else {
+                                                displayValue = Math.round(metric).toLocaleString();
+                                            }
+                                        }
+
+                                        return (
+                                            <td key={idx} style={{ width: col.width }}>
+                                                <span style={{
+                                                    fontSize: '0.82rem',
+                                                    fontWeight: 800,
+                                                    color: textColor,
+                                                    display: 'block',
+                                                    textAlign: col.key === 'traffic_change' ? 'center' : 'right',
+                                                    fontVariantNumeric: 'tabular-nums'
+                                                }}>
+                                                    {displayValue}
+                                                </span>
+                                            </td>
+                                        );
+                                    }
+                                    if (col.key === 'classification_confidence') {
+                                        const confidence = Number(record.classification_confidence || 0);
+                                        const badgeStyles = confidence >= 0.85
+                                            ? { background: 'rgba(16, 185, 129, 0.12)', color: '#047857' }
+                                            : confidence >= 0.70
+                                                ? { background: 'rgba(245, 158, 11, 0.12)', color: '#b45309' }
+                                                : { background: 'rgba(239, 68, 68, 0.12)', color: '#b91c1c' };
+                                        return (
+                                            <td key={idx} style={{ width: col.width }}>
+                                                <span className="hero-badge" style={{
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 800,
+                                                    justifyContent: 'center',
+                                                    ...badgeStyles
+                                                }}>
+                                                    {confidence ? confidence.toFixed(2) : '-'}
+                                                </span>
+                                            </td>
+                                        );
+                                    }
+                                    if (col.key === 'title_en' || col.key === 'translated_title_vi' || col.key === 'title') {
                                         const is404 = record.last_http_status === 404;
+                                        const titleValue = String(
+                                            record[col.key as keyof PageRecord]
+                                            || record.title
+                                            || record.title_en
+                                            || record.translated_title_vi
+                                            || record.slug
+                                            || record.url
+                                        );
                                         return (
                                             <td key={idx} style={{ minWidth: col.width || '200px' }}>
                                                 <a
@@ -277,14 +569,23 @@ export const InsightDataTable: React.FC<InsightDataTableProps> = ({
                                                         fontSize: '0.9rem',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
+                                                        display: 'flex',
+                                                        alignItems: 'flex-start',
+                                                        gap: '0.45rem'
+                                                    }}
+                                                    className="title-link"
+                                                    title={titleValue}
+                                                >
+                                                    <span style={{
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
                                                         display: '-webkit-box',
                                                         WebkitLineClamp: 2,
                                                         WebkitBoxOrient: 'vertical'
-                                                    }}
-                                                    className="title-link"
-                                                    title={String(record[col.key as keyof PageRecord] || '')}
-                                                >
-                                                    {String(record[col.key as keyof PageRecord] || '')}
+                                                    }}>
+                                                        {titleValue}
+                                                    </span>
+                                                    <ExternalLink size={13} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
                                                 </a>
                                             </td>
                                         );

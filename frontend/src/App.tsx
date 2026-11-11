@@ -19,8 +19,13 @@ const AllReminders = lazy(() => import('./pages/CampTracking/AllReminders'));
 const AllChanges = lazy(() => import('./pages/CampTracking/AllChanges'));
 const CampaignFormPage = lazy(() => import('./pages/CampTracking/CampaignFormPage'));
 const PlatformManagement = lazy(() => import('./pages/CampTracking/PlatformManagement'));
+const CampTestingOverviewPage = lazy(() => import('./pages/CampTracking/CampTestingOverviewPage'));
+const CampTestTrackingPage = lazy(() => import('./pages/CampTracking/CampTestTrackingPage'));
+const CampCoverageOverviewPage = lazy(() => import('./pages/CampTracking/CampCoverageOverviewPage'));
 const OutboundMapPage = lazy(() => import('./pages/OutboundMap/OutboundMapPage'));
 const GlobalNotesPage = lazy(() => import('./pages/GlobalNotes/GlobalNotesPage'));
+const UrlFilterPage = lazy(() => import('./pages/DSAFilter/UrlFilterPage'));
+const SearchTermsPage = lazy(() => import('./pages/DSAFilter/SearchTermsPage'));
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -78,12 +83,17 @@ function App() {
             <Route path="/camp-tracking/new" element={<CampaignFormPage />} />
             <Route path="/camp-tracking/edit/:campaignId" element={<CampaignFormPage />} />
             <Route path="/camp-tracking/platforms" element={<PlatformManagement />} />
+            <Route path="/camp-tracking/testing-overview" element={<CampTestingOverviewPage />} />
+            <Route path="/camp-tracking/testing" element={<CampTestTrackingPage />} />
+            <Route path="/camp-tracking/coverage" element={<CampCoverageOverviewPage />} />
             <Route path="/camp-tracking/outbound-map" element={<OutboundMapPage />} />
             <Route path="/camp-tracking/platform/:platformId" element={<PlatformCampaigns />} />
             <Route path="/camp-tracking/campaign/:campaignId" element={<CampaignDetail />} />
             <Route path="/camp-tracking/reminders" element={<AllReminders />} />
             <Route path="/camp-tracking/changes" element={<AllChanges />} />
             <Route path="/global-notes" element={<GlobalNotesPage />} />
+            <Route path="/dsa-filter/url" element={<UrlFilterPage />} />
+            <Route path="/dsa-filter/search-terms" element={<SearchTermsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

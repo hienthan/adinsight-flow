@@ -11,6 +11,7 @@ import { InsightExportModal } from './InsightExportModal';
 import { InsightActionBar } from './InsightActionBar';
 import { buildFilterString } from './insightUtils';
 import { PageRecord } from '../../types/adinsight';
+import type { ColumnDef } from '../../types/adinsight';
 import {
     SAFE_BUTTON_SELECTORS,
     SAFE_CARD_SELECTORS,
@@ -53,6 +54,41 @@ const VIEW_TOOLBAR_STYLE = {
 } as const;
 
 const PAGE_SIZE_OPTIONS = [50, 100, 200, 500] as const;
+const TRIP_REVIEW_EXPORT_FIELDS = [
+    'url',
+    'title',
+    'language',
+    'pattern',
+    'country',
+    'city',
+    'geo_entity',
+    'geo_category',
+    'topic_type',
+    'intent_primary',
+    'content_type',
+    'sub_tag',
+    'readiness_hint',
+    'market_fit',
+    'is_active',
+    'trip_mode_risk',
+    'post_booking_risk',
+    'semrush_signal_hint',
+    'translation_source',
+    'exclusion_reason',
+] as const;
+
+const TRIP_REVIEW_SEMRUSH_EXPORT_FIELDS = [
+    'traffic',
+    'keyword_count',
+    'traffic_pct',
+    'traffic_change',
+    'traffic_info_top20',
+    'traffic_commercial_top20',
+    'traffic_navigational_top20',
+    'traffic_transactional_top20',
+    'positions_info_top20',
+    'positions_commercial_top20',
+] as const;
 
 interface SaveFilePickerWindow extends Window {
     showSaveFilePicker?: (options?: {
@@ -72,16 +108,26 @@ interface SaveFilePickerWindow extends Window {
 
 export default function AdInsightPage() {
     const { platform } = useParams();
-    const platformId = (platform === 'traveloka' ? 'traveloka' : 'klook');
+    const platformId = platform && platform in PLATFORMS ? platform : 'klook';
+    return <AdInsightPageContent key={platformId} platformId={platformId} />;
+}
+
+function AdInsightPageContent({ platformId }: { platformId: string }) {
     const config = PLATFORMS[platformId];
 
     const [selectedView, setSelectedView] = useState("list");
     const [perPage, setPerPage] = useState(100);
+    const [activePresetId, setActivePresetId] = useState<string | null>(null);
     const initialFilters = useMemo(() => {
         const filters: Record<string, string> = {
-            sitemap_tag: config.defaultSitemapTags[0],
             titleKey: config.titleKey as string,
         };
+        if (config.defaultSitemapTags.length > 0) {
+            filters.sitemap_tag = config.defaultSitemapTags[0];
+        }
+        if (platformId !== 'viator') {
+            filters.language = 'all';
+        }
         if (config.activeFilterKey) {
             filters.activeFilterKey = config.activeFilterKey as string;
         }
@@ -90,6 +136,18 @@ export default function AdInsightPage() {
         }
         return filters;
     }, [config, platformId]);
+
+    const initialSortField = useMemo(() => {
+        if (platformId === 'traveloka') return 'province';
+        if (platformId === 'viator') return 'country';
+        if (platformId === 'trip') return 'traffic';
+        return 'id';
+    }, [platformId]);
+
+    const initialSortDirection = useMemo<'asc' | 'desc'>(() => {
+        if (platformId === 'traveloka' || platformId === 'viator') return 'asc';
+        return 'desc';
+    }, [platformId]);
 
     const {
         records,
@@ -107,13 +165,34 @@ export default function AdInsightPage() {
         collection: config.collection,
         perPage: perPage,
         initialFilters,
-        initialSortField: platformId === 'traveloka' ? 'province' : 'id',
-        initialSortDirection: platformId === 'traveloka' ? 'asc' : 'desc'
+        initialSortField,
+        initialSortDirection
     });
 
-    const { countries, sitemapTags } = usePlatformMeta(config.defaultSitemapTags);
+    const visibleColumns = useMemo<ColumnDef[]>(() => {
+        if (platformId !== 'viator' || filters.show_url !== 'true') {
+            return config.columns;
+        }
+
+        return [
+            { header: 'Title', key: 'title', width: '24%' },
+            { header: 'URL', key: 'url', width: '24%' },
+            { header: 'Country', key: 'country', width: '10%' },
+            { header: 'City', key: 'city', width: '10%' },
+            { header: 'Page Type', key: 'page_type', width: '10%' },
+            { header: 'Intent', key: 'intent_primary', width: '10%' },
+            { header: 'Campaign', key: 'dsa_campaign', width: '12%' },
+        ];
+    }, [config.columns, filters.show_url, platformId]);
+
+    const { countries, sitemapTags } = usePlatformMeta(config.defaultSitemapTags, config.collection, config.metadataMode);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [copyingUrls, setCopyingUrls] = useState(false);
+    const [exportingReviewCsv, setExportingReviewCsv] = useState(false);
+    const [includeTripSemrushFields, setIncludeTripSemrushFields] = useState(false);
+    const [exportSelectedOnly, setExportSelectedOnly] = useState(false);
+    const [includeInactiveForExport, setIncludeInactiveForExport] = useState(false);
 
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
@@ -152,12 +231,28 @@ export default function AdInsightPage() {
     };
 
     const handleFilterChange = useCallback((id: string, value: string) => {
+        setActivePresetId(null);
         setFilters(prev => ({ ...prev, [id]: value }));
     }, [setFilters]);
 
     const handleReset = () => {
+        setActivePresetId(null);
         setFilters(initialFilters);
     };
+
+    const handleApplyPreset = useCallback((presetId: string, presetFilters: Record<string, string>) => {
+        if (activePresetId === presetId) {
+            setActivePresetId(null);
+            setFilters(initialFilters);
+            return;
+        }
+
+        setActivePresetId(presetId);
+        setFilters({
+            ...initialFilters,
+            ...presetFilters,
+        });
+    }, [activePresetId, initialFilters, setFilters]);
 
     const handleViewChange = useCallback((view: 'list' | 'dashboard') => {
         startTransition(() => {
@@ -166,36 +261,64 @@ export default function AdInsightPage() {
         });
     }, []);
 
-    const handleExport = async (selectedFields: string[], customFileName: string, customLabel?: string) => {
+    const fetchAllFilteredRecords = useCallback(async (includeInactive = false) => {
+        const baseFilterString = buildFilterString(filters);
+        let filterString = baseFilterString;
+
+        if (config.activeFilterKey && !includeInactive) {
+            const activeCondition = `${config.activeFilterKey} = true`;
+            filterString = baseFilterString ? `(${baseFilterString}) && ${activeCondition}` : activeCondition;
+        }
+
+        const allRecords: PageRecord[] = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+            const result = await pb.collection(config.collection).getList<PageRecord>(page, 500, {
+                sort: (sortDirection === 'desc' ? '-' : '') + sortField,
+                filter: filterString,
+            });
+
+            allRecords.push(...result.items);
+            hasMore = result.items.length === 500;
+            page++;
+        }
+
+        return allRecords;
+    }, [config.activeFilterKey, config.collection, filters, sortDirection, sortField]);
+
+    const fetchSelectedRecords = useCallback(async () => {
+        if (selectedIds.length === 0) return [];
+        const records = await Promise.all(
+            selectedIds.map((id) => pb.collection(config.collection).getOne<PageRecord>(id))
+        );
+        return records;
+    }, [config.collection, selectedIds]);
+
+    const fetchRecordsForExport = useCallback(async () => {
+        if (exportSelectedOnly && selectedIds.length > 0) {
+            return fetchSelectedRecords();
+        }
+        return fetchAllFilteredRecords(includeInactiveForExport);
+    }, [exportSelectedOnly, selectedIds.length, fetchSelectedRecords, fetchAllFilteredRecords, includeInactiveForExport]);
+
+    const handleExport = useCallback(async (selectedFields: string[], customFileName: string, customLabel?: string) => {
         try {
             setExporting(true);
-            const baseFilterString = buildFilterString(filters);
-            let filterString = baseFilterString;
-            
-            // For export, always enforce that the record is active
-            if (config.activeFilterKey) {
-                const activeCondition = `${config.activeFilterKey} = true`;
-                filterString = baseFilterString ? `(${baseFilterString}) && ${activeCondition}` : activeCondition;
-            }
-
-            const allRecords: PageRecord[] = [];
-            let page = 1;
-            let hasMore = true;
-
-            while (hasMore) {
-                const result = await pb.collection(config.collection).getList<PageRecord>(page, 500, {
-                    sort: (sortDirection === 'desc' ? '-' : '') + sortField,
-                    filter: filterString,
-                });
-
-                allRecords.push(...result.items);
-                hasMore = result.items.length === 500;
-                page++;
-            }
+            const allRecords = await fetchRecordsForExport();
 
             const csvHeader = 'Page URL,Custom Label\n';
             const csvRows = allRecords.map(record => {
-                const url = record.url;
+                let url = record.url;
+
+                // Transform URL if a specific language is selected (logic cũ)
+                if (filters.language && filters.language !== 'all' && filters.language !== 'both') {
+                    const langPattern = /\/([a-z]{2}-[A-Z]{2}|[a-z]{2}-[a-z]{2})\//;
+                    if (langPattern.test(url)) {
+                        url = url.replace(langPattern, `/${filters.language}/`);
+                    }
+                }
 
                 const labelParts: string[] = [];
 
@@ -296,7 +419,113 @@ export default function AdInsightPage() {
         } finally {
             setExporting(false);
         }
-    };
+    }, [config.titleKey, fetchRecordsForExport, filters.language, filters.sitemap_tag, platformId]);
+
+    const handleCopyFilteredUrls = useCallback(async () => {
+        try {
+            setCopyingUrls(true);
+            const allRecords = await fetchRecordsForExport();
+            const headlineKey = config.titleKey;
+            const clipboardText = allRecords
+                .map((record) => {
+                    let url = record.url;
+
+                    // Transform URL if a specific language is selected (logic cũ)
+                    if (filters.language && filters.language !== 'all' && filters.language !== 'both') {
+                        const langPattern = /\/([a-z]{2}-[A-Z]{2}|[a-z]{2}-[a-z]{2})\//;
+                        if (langPattern.test(url)) {
+                            url = url.replace(langPattern, `/${filters.language}/`);
+                        }
+                    }
+
+                    const headline = String(record[headlineKey] || '').replace(/\s+/g, ' ').trim();
+                    return [url, headline].join('\t');
+                })
+                .join('\n');
+
+            await navigator.clipboard.writeText(clipboardText);
+            setIsExportModalOpen(false);
+        } catch (err) {
+            console.error('Copy filtered URLs failed:', err);
+            alert('Copy failed. Please try again.');
+        } finally {
+            setCopyingUrls(false);
+        }
+    }, [config.titleKey, fetchRecordsForExport, filters.language]);
+
+    const handleExportReviewCsv = useCallback(async () => {
+        try {
+            setExportingReviewCsv(true);
+            const allRecords = await fetchRecordsForExport();
+            const headers = includeTripSemrushFields
+                ? [...TRIP_REVIEW_EXPORT_FIELDS, ...TRIP_REVIEW_SEMRUSH_EXPORT_FIELDS]
+                : [...TRIP_REVIEW_EXPORT_FIELDS];
+
+            const escapeCsv = (value: unknown) => {
+                const raw = value === null || value === undefined
+                    ? ''
+                    : typeof value === 'object'
+                        ? JSON.stringify(value)
+                        : String(value);
+                return /[",\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+            };
+
+            const csvRows = allRecords.map((record) =>
+                headers.map((field) => {
+                    if ((TRIP_REVIEW_SEMRUSH_EXPORT_FIELDS as readonly string[]).includes(field)) {
+                        const semrushMetrics = record.semrush_metrics || {};
+                        return escapeCsv(semrushMetrics[field as keyof typeof semrushMetrics]);
+                    }
+                    if (field === 'semrush_signal_hint' || field === 'translation_source' || field === 'exclusion_reason') {
+                        const metadata = record.metadata || {};
+                        return escapeCsv(metadata[field as keyof typeof metadata]);
+                    }
+                    return escapeCsv(record[field as keyof PageRecord]);
+                }).join(',')
+            );
+            const csv = `${headers.join(',')}\n${csvRows.join('\n')}`;
+            const fileNameToUse = `trip-review-${allRecords.length}.csv`;
+
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const picker = (window as SaveFilePickerWindow).showSaveFilePicker;
+                    if (!picker) {
+                        throw new Error('File picker is unavailable');
+                    }
+                    const handle = await picker({
+                        suggestedName: fileNameToUse,
+                        id: 'trip-review-export',
+                        types: [{
+                            description: 'CSV File',
+                            accept: { 'text/csv': ['.csv'] },
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(csv);
+                    await writable.close();
+                    setIsExportModalOpen(false);
+                    return;
+                } catch (err: unknown) {
+                    if (err instanceof DOMException && err.name === 'AbortError') return;
+                    console.error('Trip review export picker error, falling back:', err);
+                }
+            }
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const urlObj = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.download = fileNameToUse;
+            anchor.href = urlObj;
+            anchor.click();
+            URL.revokeObjectURL(urlObj);
+            setIsExportModalOpen(false);
+        } catch (err) {
+            console.error('Trip review CSV export failed:', err);
+            alert('Trip review export failed. Please try again.');
+        } finally {
+            setExportingReviewCsv(false);
+        }
+    }, [fetchRecordsForExport, includeTripSemrushFields]);
 
     const isFiltered = Object.keys(filters).some(k =>
         !['sitemap_tag', 'titleKey'].includes(k) && filters[k]
@@ -314,7 +543,12 @@ export default function AdInsightPage() {
                 onApply={(payload) => {
                     const finalPayload: Partial<PageRecord> & { include_for_dsa?: boolean } = { ...payload };
                     if (payload.is_active !== undefined) {
-                        finalPayload.include_for_dsa = payload.is_active;
+                        if (config.activeFilterKey === 'include_for_dsa') {
+                            finalPayload.include_for_dsa = payload.is_active;
+                            delete finalPayload.is_active;
+                        } else {
+                            finalPayload.is_active = payload.is_active;
+                        }
                     }
                     if (payload.country) {
                         finalPayload.country = payload.country;
@@ -322,15 +556,15 @@ export default function AdInsightPage() {
                     handleBulkUpdate(finalPayload);
                 }}
                 isUpdating={isBulkUpdating}
-                allowTierUpdate={platformId !== 'traveloka'}
+                allowTierUpdate={platformId !== 'traveloka' && platformId !== 'trip'}
             />
 
             <SurfaceCard
-                padding="1rem 1.1rem"
+                padding="0.8rem 0.95rem"
                 style={{
                     ...VIEW_TOOLBAR_STYLE,
-                    borderRadius: '1.35rem',
-                    paddingBlock: '1.05rem',
+                    borderRadius: '1.1rem',
+                    paddingBlock: '0.85rem',
                     ...createAmbientSurface('#3b82f6', 0.38),
                     background: [
                         'radial-gradient(circle at top left, rgba(59, 130, 246, 0.14) 0%, transparent 24%)',
@@ -341,12 +575,12 @@ export default function AdInsightPage() {
                     border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.28) 22%)',
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                         <div style={{
-                            width: '42px',
-                            height: '42px',
-                            borderRadius: '12px',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
                             background: 'linear-gradient(135deg, hsla(var(--primary) / 0.14) 0%, rgba(20, 184, 166, 0.12) 100%)',
                             display: 'flex',
                             alignItems: 'center',
@@ -354,13 +588,13 @@ export default function AdInsightPage() {
                             color: 'hsl(var(--primary))',
                             border: '1px solid hsla(var(--primary) / 0.18)',
                         }}>
-                            <Globe size={18} />
+                            <Globe size={16} />
                         </div>
                         <div>
-                            <span className="hero-badge" style={{ marginBottom: '0.38rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                            <span className="hero-badge" style={{ marginBottom: '0.2rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
                                 AdInsight Workspace
                             </span>
-                            <p style={{ fontSize: '0.82rem', color: 'var(--text-main)', margin: '0.12rem 0 0', fontWeight: 700 }}>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-main)', margin: '0.08rem 0 0', fontWeight: 700 }}>
                                 Collection: {config.collection}
                             </p>
                         </div>
@@ -384,12 +618,12 @@ export default function AdInsightPage() {
                             title="List View"
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                width: '34px', height: '34px', border: 'none', cursor: 'pointer',
+                                width: '30px', height: '30px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'list' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'list' ? 'white' : 'var(--text-dim)',
                             }}
                         >
-                            <List size={14} />
+                            <List size={13} />
                         </SafeButton>
                         <SafeButton
                             aria-label="Dashboard Intelligence View"
@@ -398,12 +632,12 @@ export default function AdInsightPage() {
                             title="Dashboard Intelligence"
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                width: '34px', height: '34px', border: 'none', cursor: 'pointer',
+                                width: '30px', height: '30px', border: 'none', cursor: 'pointer',
                                 background: selectedView === 'dashboard' ? 'hsl(var(--primary))' : 'transparent',
                                 color: selectedView === 'dashboard' ? 'white' : 'var(--text-dim)',
                             }}
                         >
-                            <LayoutDashboard size={14} />
+                            <LayoutDashboard size={13} />
                         </SafeButton>
                     </ToolbarGroup>
                 </div>
@@ -414,10 +648,10 @@ export default function AdInsightPage() {
                                 onClick={() => fetchPages(currentPage)}
                                 className="hero-btn hero-btn-ghost"
                                 style={{
-                                    padding: '0.6rem 0.85rem',
+                                    padding: '0.48rem 0.72rem',
                                     gap: '0.45rem',
-                                    fontSize: '13px',
-                                    borderRadius: '10px',
+                                    fontSize: '12px',
+                                    borderRadius: '9px',
                                     background: 'var(--bg-overlay)',
                                     border: '1px solid var(--border-subtle)',
                                 }}
@@ -429,13 +663,13 @@ export default function AdInsightPage() {
                                 onClick={handleReset}
                                 className="hero-btn"
                                 style={{
-                                    padding: '0.6rem 1rem',
-                                    fontSize: '13px',
+                                    padding: '0.48rem 0.8rem',
+                                    fontSize: '12px',
                                     fontWeight: 700,
                                     visibility: isFiltered ? 'visible' : 'hidden',
                                     border: '1px solid var(--border-subtle)',
                                     background: 'var(--bg-overlay)',
-                                    borderRadius: '10px'
+                                    borderRadius: '9px'
                                 }}
                             >
                                 Reset
@@ -444,11 +678,29 @@ export default function AdInsightPage() {
                                 onClick={() => setIsExportModalOpen(true)}
                                 disabled={exporting}
                                 className="hero-btn hero-btn-primary"
-                                style={{ padding: '0.6rem 1.2rem', gap: '0.5rem', fontSize: '13px', borderRadius: '10px' }}
+                                style={{ padding: '0.5rem 0.95rem', gap: '0.45rem', fontSize: '12px', borderRadius: '9px' }}
                             >
                                 <Download size={16} />
                                 {exporting ? 'Exporting...' : 'CSV'}
                             </SafeButton>
+                            {platformId === 'trip' ? (
+                                <SafeButton
+                                    onClick={handleExportReviewCsv}
+                                    disabled={exportingReviewCsv}
+                                    className="hero-btn hero-btn-ghost"
+                                    style={{
+                                        padding: '0.5rem 0.95rem',
+                                        gap: '0.45rem',
+                                        fontSize: '12px',
+                                        borderRadius: '9px',
+                                        background: 'var(--bg-overlay)',
+                                        border: '1px solid var(--border-subtle)',
+                                    }}
+                                >
+                                    <Download size={16} />
+                                    {exportingReviewCsv ? 'Preparing Review CSV...' : 'Review CSV'}
+                                </SafeButton>
+                            ) : null}
                         </>
                     )}
                 </div>
@@ -457,10 +709,10 @@ export default function AdInsightPage() {
             {selectedView === 'list' ? (
                 <>
                     <SurfaceCard
-                        padding="1rem 1.2rem"
+                        padding="0.85rem 1rem"
                         style={{
-                            marginBottom: '1.5rem',
-                            borderRadius: '1.75rem',
+                            marginBottom: '1.1rem',
+                            borderRadius: '1.4rem',
                             ...createAmbientSurface('#3b82f6', 0.78),
                             background: [
                                 'radial-gradient(circle at top right, rgba(59, 130, 246, 0.14) 0%, transparent 24%)',
@@ -471,38 +723,38 @@ export default function AdInsightPage() {
                             border: '1px solid color-mix(in srgb, var(--border-subtle) 76%, rgba(59, 130, 246, 0.24) 24%)',
                         }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem', flexWrap: 'wrap' }}>
                             <div>
-                                <span className="hero-badge" style={{ marginBottom: '0.55rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
+                                <span className="hero-badge" style={{ marginBottom: '0.35rem', ...createPremiumBadgeStyle('#3b82f6', { textColor: '#93c5fd' }) }}>
                                     AdInsight Workspace
                                 </span>
-                                <h1 style={{ margin: '0.2rem 0 0', fontSize: '1.75rem', lineHeight: 1.05, color: 'var(--text-main)', fontWeight: 850 }}>
+                                <h1 style={{ margin: '0.12rem 0 0', fontSize: '1.4rem', lineHeight: 1.04, color: 'var(--text-main)', fontWeight: 850 }}>
                                     {config.name} Analytics
                                 </h1>
-                                <p style={{ margin: '0.35rem 0 0', color: 'var(--text-dim)', fontWeight: 600 }}>
+                                <p style={{ margin: '0.22rem 0 0', color: 'var(--text-dim)', fontWeight: 600, fontSize: '0.82rem' }}>
                                     Operator-first SEO analytics surface for {config.collection}.
                                 </p>
-                                <p style={{ margin: '1rem 0 0', color: 'var(--text-main)', fontWeight: 700, maxWidth: '38rem' }}>
+                                <p style={{ margin: '0.6rem 0 0', color: 'var(--text-main)', fontWeight: 700, maxWidth: '38rem', fontSize: '0.82rem', lineHeight: 1.45 }}>
                                     Use list mode for record QA, bulk actions, and exports.
                                 </p>
                             </div>
                             <div style={{
-                                minWidth: '190px',
-                                padding: '1rem 1.15rem',
-                                borderRadius: '1.25rem',
+                                minWidth: '170px',
+                                padding: '0.8rem 0.95rem',
+                                borderRadius: '1rem',
                                 textAlign: 'center',
                                 background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 88%, white 12%) 0%, color-mix(in srgb, var(--bg-content) 94%, var(--bg-main) 6%) 100%)',
                                 border: '1px solid color-mix(in srgb, var(--border-subtle) 78%, rgba(59, 130, 246, 0.22) 22%)',
                                 boxShadow: 'inset 0 1px 0 color-mix(in srgb, white 42%, transparent), 0 18px 32px -28px rgba(59, 130, 246, 0.38)',
                                 backdropFilter: 'blur(10px)',
                             }}>
-                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>
+                                <div style={{ fontSize: '0.64rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>
                                     Live Universe
                                 </div>
-                                <div style={{ fontSize: '1.8rem', fontWeight: 850, color: 'hsl(var(--primary))', lineHeight: 1 }}>
+                                <div style={{ fontSize: '1.45rem', fontWeight: 850, color: 'hsl(var(--primary))', lineHeight: 1 }}>
                                     {totalCount.toLocaleString()}
                                 </div>
-                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', marginTop: '0.35rem', letterSpacing: '0.05em' }}>
+                                <div style={{ fontSize: '0.64rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', marginTop: '0.24rem', letterSpacing: '0.05em' }}>
                                     {isFiltered ? 'Matching Records' : 'Total Records'}
                                 </div>
                             </div>
@@ -517,10 +769,64 @@ export default function AdInsightPage() {
                         sitemapTags={sitemapTags}
                     />
 
+                    {config.filterPresets?.length ? (
+                        <SurfaceCard
+                            padding="0.95rem 1rem"
+                            style={{
+                                marginBottom: '1rem',
+                                borderRadius: '1.2rem',
+                                background: 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%)',
+                                boxShadow: '0 18px 34px -30px rgba(15, 23, 42, 0.62)',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem', flexWrap: 'wrap' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                        Review Presets
+                                    </div>
+                                    <div style={{ marginTop: '0.24rem', fontSize: '0.82rem', color: 'var(--text-main)', fontWeight: 700 }}>
+                                        Fast QA slices for classifier cleanup and LP prioritization
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap' }}>
+                                    {config.filterPresets.map((preset) => (
+                                        <SafeButton
+                                            key={preset.id}
+                                            onClick={() => handleApplyPreset(preset.id, preset.filters)}
+                                            className={activePresetId === preset.id ? 'hero-btn hero-btn-primary' : 'hero-btn hero-btn-secondary'}
+                                            style={{
+                                                padding: '0.48rem 0.78rem',
+                                                borderRadius: '999px',
+                                                fontSize: '0.76rem',
+                                                fontWeight: 800,
+                                                border: activePresetId === preset.id
+                                                    ? '1px solid color-mix(in srgb, hsl(var(--primary)) 32%, transparent)'
+                                                    : '1px solid color-mix(in srgb, var(--border-subtle) 80%, rgba(59, 130, 246, 0.14) 20%)',
+                                                background: activePresetId === preset.id
+                                                    ? 'linear-gradient(135deg, hsla(var(--primary)/0.16) 0%, hsla(var(--primary)/0.08) 100%)'
+                                                    : 'linear-gradient(180deg, color-mix(in srgb, var(--bg-content) 97%, white 3%) 0%, color-mix(in srgb, var(--bg-content) 92%, var(--bg-main) 8%) 100%)',
+                                                color: activePresetId === preset.id
+                                                    ? 'hsl(var(--primary))'
+                                                    : 'var(--text-main)',
+                                                boxShadow: activePresetId === preset.id
+                                                    ? '0 16px 28px -24px hsla(var(--primary)/0.42), inset 0 1px 0 rgba(255,255,255,0.5)'
+                                                    : '0 14px 24px -22px rgba(15, 23, 42, 0.34)',
+                                            }}
+                                            title={preset.description}
+                                            aria-pressed={activePresetId === preset.id}
+                                        >
+                                            {preset.label}
+                                        </SafeButton>
+                                    ))}
+                                </div>
+                            </div>
+                        </SurfaceCard>
+                    ) : null}
+
                     <div className="animate-fade">
                         <InsightDataTable
                             records={records}
-                            columns={config.columns}
+                            columns={visibleColumns}
                             loading={loading || isBulkUpdating}
                             sortField={sortField}
                             sortDirection={sortDirection}
@@ -592,16 +898,37 @@ export default function AdInsightPage() {
 
                     <InsightExportModal
                         isOpen={isExportModalOpen}
-                        onClose={() => setIsExportModalOpen(false)}
+                        onClose={() => {
+                            setIsExportModalOpen(false);
+                            setIncludeInactiveForExport(false);
+                        }}
                         onExport={handleExport}
                         fields={config.exportFields}
                         totalCount={totalCount}
+                        displayCount={exportSelectedOnly && selectedIds.length > 0 ? selectedIds.length : totalCount}
                         isExporting={exporting}
+                        secondaryActionLabel={platformId === 'trip' ? 'Review CSV' : 'Copy URL + Headline'}
+                        onSecondaryAction={platformId === 'trip' ? handleExportReviewCsv : handleCopyFilteredUrls}
+                        isSecondaryActionLoading={platformId === 'trip' ? exportingReviewCsv : copyingUrls}
+                        extraCheckboxLabel={platformId === 'trip' ? 'Include Semrush Review Fields' : undefined}
+                        extraCheckboxDescription={platformId === 'trip' ? 'Adds traffic, keyword, change, and intent-breakdown fields to the Trip Review CSV for ChatGPT analysis.' : undefined}
+                        extraCheckboxChecked={platformId === 'trip' ? includeTripSemrushFields : undefined}
+                        onExtraCheckboxChange={platformId === 'trip' ? setIncludeTripSemrushFields : undefined}
+                        secondaryCheckboxLabel="Export selected rows only"
+                        secondaryCheckboxDescription={selectedIds.length > 0 ? `Use only the ${selectedIds.length.toLocaleString()} selected rows instead of the full filtered result set.` : 'Select rows in the table first to enable scoped export.'}
+                        secondaryCheckboxChecked={exportSelectedOnly}
+                        onSecondaryCheckboxChange={setExportSelectedOnly}
+                        secondaryCheckboxDisabled={selectedIds.length === 0}
+                        tertiaryCheckboxLabel="Include disabled LPs"
+                        tertiaryCheckboxDescription="Export matching records even if they are currently disabled, useful for building exclusion page feeds."
+                        tertiaryCheckboxChecked={includeInactiveForExport}
+                        onTertiaryCheckboxChange={setIncludeInactiveForExport}
+                        tertiaryCheckboxDisabled={exportSelectedOnly && selectedIds.length > 0}
                     />
                 </>
             ) : (
                 <Suspense fallback={<div style={{ padding: '2rem', color: 'var(--text-dim)', fontWeight: 700 }}>Loading dashboard...</div>}>
-                    <AdInsightDashboard platformInfo={config} sitemapTags={sitemapTags} />
+                    <AdInsightDashboard platformInfo={config} sitemapTags={sitemapTags} countries={countries} />
                 </Suspense>
             )}
 

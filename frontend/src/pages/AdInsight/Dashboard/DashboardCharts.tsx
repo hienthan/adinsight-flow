@@ -192,9 +192,95 @@ const normalizeProvince = (p: string | undefined): string => {
     return p;
 };
 
-export function DashboardCharts({ records, isLoading }: { records: PageRecord[]; isLoading: boolean }) {
+export function DashboardCharts({ records, isLoading, platformId }: { records: PageRecord[]; isLoading: boolean; platformId?: string }) {
+    const tripData = useMemo(() => {
+        if (platformId !== 'trip' || !records || records.length === 0) return null;
+
+        const totalUrls = records.length;
+        const activeRows = records.filter((record) => record.is_active !== false).length;
+        const totalTraffic = records.reduce((sum, record) => sum + (Number(record.traffic) || 0), 0);
+        const avgKeywords = totalUrls ? records.reduce((sum, record) => sum + (Number(record.keyword_count) || 0), 0) / totalUrls : 0;
+
+        const byPattern: Record<string, { traffic: number; count: number }> = {};
+        const byReadiness: Record<string, number> = {};
+        const byContentType: Record<string, number> = {};
+        const byCountry: Record<string, number> = {};
+        const trafficByCountry: Record<string, number> = {};
+        const semrushHints: Record<string, number> = {};
+        const marketFitMap: Record<string, number> = {};
+
+        records.forEach((record) => {
+            const pattern = record.pattern || 'unknown';
+            const readiness = record.readiness_hint || 'unknown';
+            const contentType = record.content_type || 'unknown';
+            const country = record.country || 'Unknown';
+            const traffic = Number(record.traffic) || 0;
+            const hint = record.metadata?.semrush_signal_hint || 'neutral';
+            const marketFit = record.market_fit || 'unknown';
+
+            if (!byPattern[pattern]) byPattern[pattern] = { traffic: 0, count: 0 };
+            byPattern[pattern].traffic += traffic;
+            byPattern[pattern].count += 1;
+
+            byReadiness[readiness] = (byReadiness[readiness] || 0) + 1;
+            byContentType[contentType] = (byContentType[contentType] || 0) + 1;
+            byCountry[country] = (byCountry[country] || 0) + 1;
+            trafficByCountry[country] = (trafficByCountry[country] || 0) + traffic;
+            semrushHints[hint] = (semrushHints[hint] || 0) + 1;
+            marketFitMap[marketFit] = (marketFitMap[marketFit] || 0) + 1;
+        });
+
+        const patternTrafficData = Object.entries(byPattern)
+            .map(([name, value]) => ({ name, traffic: Math.round(value.traffic), urls: value.count }))
+            .sort((a, b) => b.traffic - a.traffic);
+
+        const readinessData = Object.entries(byReadiness)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        const contentTypeData = Object.entries(byContentType)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        const topCountries = Object.entries(byCountry)
+            .map(([name, count]) => ({ name, count, traffic: Math.round(trafficByCountry[name] || 0) }))
+            .sort((a, b) => b.traffic - a.traffic)
+            .slice(0, 10);
+
+        const semrushHintData = Object.entries(semrushHints)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        const marketFitData = Object.entries(marketFitMap)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        const readinessTrafficData = Object.entries(byReadiness).map(([name]) => ({
+            name,
+            traffic: Math.round(
+                records
+                    .filter((record) => (record.readiness_hint || 'unknown') === name)
+                    .reduce((sum, record) => sum + (Number(record.traffic) || 0), 0)
+            ),
+        })).sort((a, b) => b.traffic - a.traffic);
+
+        return {
+            totalUrls,
+            activeRows,
+            totalTraffic,
+            avgKeywords,
+            patternTrafficData,
+            readinessData,
+            contentTypeData,
+            topCountries,
+            semrushHintData,
+            marketFitData,
+            readinessTrafficData,
+        };
+    }, [platformId, records]);
 
     const data = useMemo(() => {
+        if (platformId === 'trip') return null;
         if (!records || records.length === 0) return null;
 
         const totalUrls = records.length;
@@ -295,7 +381,7 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
             .sort((a, b) => a.name.localeCompare(b.name));
 
         return { totalUrls, tier1Count, avgScore, provincesCovered, topProvinces, intentTierData, contentTypeData, intentContentData, allContentTypes, scoreDistData, scoreByIntentData, scoreByProvinceData, tierCompositionData };
-    }, [records]);
+    }, [platformId, records]);
 
     /* Loading skeleton */
     if (isLoading) {
@@ -315,7 +401,7 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
     }
 
     /* Empty state */
-    if (!data) {
+    if (!data && !tripData) {
         return (
             <div style={{
                 ...cardStyle,
@@ -330,6 +416,114 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
         );
     }
 
+    if (tripData) {
+        const gridResponsive2: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px,1fr))', gap: '1rem' };
+        const gridResponsive3: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px,1fr))', gap: '1rem' };
+
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1rem' }}>
+                    <KpiCard label="Total URLs" value={tripData.totalUrls.toLocaleString()} accent={C.blue} icon="🔗" />
+                    <KpiCard label="Active Rows" value={tripData.activeRows.toLocaleString()} accent={C.emerald} icon="✅" />
+                    <KpiCard label="Total Traffic" value={tripData.totalTraffic.toLocaleString()} accent={C.amber} icon="📈" />
+                    <KpiCard label="Avg Keywords" value={tripData.avgKeywords.toFixed(1)} accent={C.violet} icon="🔎" />
+                </div>
+
+                <div style={gridResponsive2}>
+                    <ChartCard title="Pattern Traffic Share" subtitle="Traffic-weighted view of Semrush inventory" accent={C.blue}>
+                        <ResponsiveContainer width="100%" height={280}>
+                            <BarChart data={tripData.patternTrafficData} layout="vertical" margin={{ left: 0, right: 28, top: 4, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" horizontal={false} />
+                                <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
+                                <YAxis type="category" dataKey="name" tick={axisStyle} width={120} axisLine={false} tickLine={false} />
+                                <Tooltip content={<PremiumTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
+                                <Bar dataKey="traffic" fill={C.blue} radius={[0, 6, 6, 0]} maxBarSize={22} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Top Countries by Traffic" subtitle="Where the highest-value LPs cluster" accent={C.emerald}>
+                        <ResponsiveContainer width="100%" height={280}>
+                            <BarChart data={tripData.topCountries} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+                                <CartesianGrid {...gridProps} />
+                                <XAxis dataKey="name" tick={axisStyle} axisLine={false} tickLine={false} />
+                                <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
+                                <Tooltip content={<PremiumTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
+                                <Bar dataKey="traffic" fill={C.emerald} maxBarSize={34} radius={[6, 6, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+                </div>
+
+                <div style={gridResponsive2}>
+                    <ChartCard title="Readiness Distribution" subtitle="7-day cookie relevance mix" accent={C.amber}>
+                        <ResponsiveContainer width="100%" height={260}>
+                            <PieChart>
+                                <Pie data={tripData.readinessData} dataKey="value" nameKey="name" innerRadius={42} outerRadius={82} paddingAngle={2}>
+                                    {tripData.readinessData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                                </Pie>
+                                <Tooltip content={<PremiumTooltip />} />
+                                <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 10 }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Traffic by Readiness" subtitle="Scale vs booking-window suitability" accent={C.cyan}>
+                        <ResponsiveContainer width="100%" height={260}>
+                            <BarChart data={tripData.readinessTrafficData} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+                                <CartesianGrid {...gridProps} />
+                                <XAxis dataKey="name" tick={axisStyle} axisLine={false} tickLine={false} />
+                                <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
+                                <Tooltip content={<PremiumTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
+                                <Bar dataKey="traffic" fill={C.cyan} maxBarSize={34} radius={[6, 6, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+                </div>
+
+                <div style={gridResponsive3}>
+                    <ChartCard title="Content Type Mix" subtitle="Classifier taxonomy spread" accent={C.violet}>
+                        <ResponsiveContainer width="100%" height={230}>
+                            <PieChart>
+                                <Pie data={tripData.contentTypeData} dataKey="value" nameKey="name" innerRadius={38} outerRadius={78} paddingAngle={2}>
+                                    {tripData.contentTypeData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                                </Pie>
+                                <Tooltip content={<PremiumTooltip />} />
+                                <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 9 }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Semrush Signal Hints" subtitle="Hidden gold vs broad info vs commercial support" accent={C.orange}>
+                        <ResponsiveContainer width="100%" height={230}>
+                            <BarChart data={tripData.semrushHintData} layout="vertical" margin={{ left: 0, right: 18, top: 4, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" horizontal={false} />
+                                <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
+                                <YAxis type="category" dataKey="name" tick={axisStyle} width={110} axisLine={false} tickLine={false} />
+                                <Tooltip content={<PremiumTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
+                                <Bar dataKey="value" fill={C.orange} radius={[0, 6, 6, 0]} maxBarSize={18} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+
+                    <ChartCard title="Market Fit Mix" subtitle="HK/TW outbound suitability" accent={C.emerald}>
+                        <ResponsiveContainer width="100%" height={230}>
+                            <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="88%" data={tripData.marketFitData.map((item, index) => ({ ...item, fill: PALETTE[index % PALETTE.length] }))} startAngle={180} endAngle={0}>
+                                <RadialBar dataKey="value" cornerRadius={4} background={{ fill: 'var(--muted)' }}>
+                                    {tripData.marketFitData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                                </RadialBar>
+                                <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 10 }} />
+                                <Tooltip content={<PremiumTooltip />} />
+                            </RadialBarChart>
+                        </ResponsiveContainer>
+                    </ChartCard>
+                </div>
+            </div>
+        );
+    }
+
+    const legacyData = data!;
+
     /* Grid layout */
     const grid2: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '1rem' };
     const grid3: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem' };
@@ -342,17 +536,17 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
 
             {/* ── KPI Cards ─────────────────────────────────────── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1rem' }}>
-                <KpiCard label="Total URLs"        value={data.totalUrls.toLocaleString()}  accent={C.blue}    icon="🔗" />
-                <KpiCard label="Tier 1 URLs"       value={data.tier1Count.toLocaleString()} accent={C.emerald} icon="🏆" />
-                <KpiCard label="Avg Final Score"   value={data.avgScore.toFixed(2)}         accent={C.amber}   icon="⭐" />
-                <KpiCard label="Provinces Covered" value={String(data.provincesCovered)}    accent={C.fuchsia} icon="📍" />
+                <KpiCard label="Total URLs"        value={legacyData.totalUrls.toLocaleString()}  accent={C.blue}    icon="🔗" />
+                <KpiCard label="Tier 1 URLs"       value={legacyData.tier1Count.toLocaleString()} accent={C.emerald} icon="🏆" />
+                <KpiCard label="Avg Final Score"   value={legacyData.avgScore.toFixed(2)}         accent={C.amber}   icon="⭐" />
+                <KpiCard label="Provinces Covered" value={String(legacyData.provincesCovered)}    accent={C.fuchsia} icon="📍" />
             </div>
 
             {/* ── Geo + Intent Matrix ────────────────────────────── */}
             <div style={gridResponsive2}>
                 <ChartCard title="Top Provinces by URL Count" subtitle="Geographical distribution" accent={C.blue}>
                     <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={data.topProvinces} layout="vertical" margin={{ left: 0, right: 28, top: 4, bottom: 0 }}>
+                        <BarChart data={legacyData.topProvinces} layout="vertical" margin={{ left: 0, right: 28, top: 4, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="gp" x1="0" y1="0" x2="1" y2="0">
                                     <stop offset="0%" stopColor={C.blue} stopOpacity={0.7} />
@@ -371,7 +565,7 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
 
                 <ChartCard title="Intent & Tier Matrix" subtitle="Funnel structure by tier" accent={C.emerald}>
                     <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={data.intentTierData} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+                        <BarChart data={legacyData.intentTierData} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
                             <CartesianGrid {...gridProps} />
                             <XAxis dataKey="name" tick={axisStyle} axisLine={false} tickLine={false} />
                             <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
@@ -389,13 +583,13 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
             <div style={gridResponsive2}>
                 <ChartCard title="Intent & Content Matrix" subtitle="Content distribution by intent" accent={C.amber}>
                     <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={data.intentContentData} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+                        <BarChart data={legacyData.intentContentData} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
                             <CartesianGrid {...gridProps} />
                             <XAxis dataKey="name" tick={axisStyle} axisLine={false} tickLine={false} />
                             <YAxis tick={axisStyle} axisLine={false} tickLine={false} />
                             <Tooltip content={<PremiumTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
                             <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 10 }} />
-                            {data.allContentTypes.map((ct: string, i: number) => (
+                            {legacyData.allContentTypes.map((ct: string, i: number) => (
                                 <Bar key={ct} dataKey={ct} stackId="a" fill={PALETTE[i % PALETTE.length]} maxBarSize={36} />
                             ))}
                         </BarChart>
@@ -404,7 +598,7 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
 
                 <ChartCard title="Score Distribution" subtitle="Bell curve of inventory quality" accent={C.cyan}>
                     <ResponsiveContainer width="100%" height={280}>
-                        <AreaChart data={data.scoreDistData} margin={{ left: 0, right: 10, top: 8, bottom: 0 }}>
+                        <AreaChart data={legacyData.scoreDistData} margin={{ left: 0, right: 10, top: 8, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="gs" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor={C.cyan} stopOpacity={0.45} />
@@ -426,7 +620,7 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
             <div style={gridResponsive3}>
                 <ChartCard title="Score by Intent" accent={C.violet}>
                     <ResponsiveContainer width="100%" height={230}>
-                        <BarChart data={data.scoreByIntentData} layout="vertical" margin={{ left: 0, right: 28, top: 4, bottom: 0 }}>
+                        <BarChart data={legacyData.scoreByIntentData} layout="vertical" margin={{ left: 0, right: 28, top: 4, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="gi" x1="0" y1="0" x2="1" y2="0">
                                     <stop offset="0%" stopColor={C.violet} stopOpacity={0.6} />
@@ -445,7 +639,7 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
 
                 <ChartCard title="Score by Province" subtitle="Top 10 averages" accent={C.cyan}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px', overflowY: 'auto', maxHeight: '220px' }}>
-                        {data.scoreByProvinceData.map((item, i) => (
+                        {legacyData.scoreByProvinceData.map((item, i) => (
                             <ScoreRow key={i} rank={i} name={item.name} value={item.value} />
                         ))}
                     </div>
@@ -455,14 +649,14 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
                     <ResponsiveContainer width="100%" height={230}>
                         <PieChart>
                             <Pie
-                                data={data.contentTypeData}
+                                data={legacyData.contentTypeData}
                                 cx="50%" cy="50%"
                                 innerRadius={40} outerRadius={80}
                                 paddingAngle={2}
                                 dataKey="value" nameKey="name"
                                 stroke="none"
                             >
-                                {data.contentTypeData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                                {legacyData.contentTypeData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
                             </Pie>
                             <Tooltip content={<PremiumTooltip />} />
                             <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 9 }} />
@@ -472,10 +666,10 @@ export function DashboardCharts({ records, isLoading }: { records: PageRecord[];
 
                 <ChartCard title="Tier Composition" subtitle="URL tier distribution" accent={C.emerald}>
                     <ResponsiveContainer width="100%" height={230}>
-                        <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="88%" data={data.tierCompositionData} startAngle={180} endAngle={0}>
+                        <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="88%" data={legacyData.tierCompositionData} startAngle={180} endAngle={0}>
                             <RadialBar dataKey="value" cornerRadius={4} background={{ fill: 'var(--muted)' }}
                                 label={{ position: 'insideStart', fill: '#fff', fontSize: 10, fontWeight: 700 }}>
-                                {data.tierCompositionData.map((item, i) => <Cell key={i} fill={item.fill} />)}
+                                {legacyData.tierCompositionData.map((item, i) => <Cell key={i} fill={item.fill} />)}
                             </RadialBar>
                             <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 10 }}
                                 formatter={(v) => <span style={{ color: 'var(--text-dim)' }}>{v}</span>} />

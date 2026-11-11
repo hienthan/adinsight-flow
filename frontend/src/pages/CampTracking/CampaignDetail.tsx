@@ -119,6 +119,41 @@ export default function CampaignDetail() {
     // Use expanded platform or find in fetched platforms
     const platform = campaign.expand?.platform || platforms.find(p => p.id === campaign.platform);
     const platformColor = platform?.color || 'var(--accent)';
+
+    const getTargetMetric = () => {
+        const strategy = campaign.bidding_strategy;
+        const prefix = campaign.is_portfolio ? 'Portfolio ' : '';
+        if (strategy === 'target_roas') {
+            return {
+                label: `${prefix}Target ROAS`,
+                value: `${campaign.target_roas || 0}%`
+            };
+        }
+        if (strategy === 'target_cpa') {
+            return {
+                label: `${prefix}Target CPA`,
+                value: `$${campaign.target_cpa || 0}`
+            };
+        }
+        if (strategy === 'max_conversions') {
+            return {
+                label: `${prefix}Strategy`,
+                value: 'Max Conv'
+            };
+        }
+        if (strategy === 'max_conversion_value') {
+            return {
+                label: `${prefix}Strategy`,
+                value: 'Max Value'
+            };
+        }
+        return {
+            label: `${prefix}Target CPC`,
+            value: campaign.cpc ? `$${campaign.cpc.toFixed(0)}` : '$0'
+        };
+    };
+    const targetMetric = getTargetMetric();
+
     const campaignMetrics = [
         {
             icon: Calendar,
@@ -132,8 +167,8 @@ export default function CampaignDetail() {
         },
         {
             icon: Tag,
-            label: 'Target CPC',
-            value: `$${campaign.cpc?.toFixed(0)}`,
+            label: targetMetric.label,
+            value: targetMetric.value,
         },
     ];
 
@@ -222,6 +257,11 @@ export default function CampaignDetail() {
                                     <ShieldCheck size={12} style={{ marginRight: '4px' }} /> DSA Ready
                                 </span>
                             )}
+                            {campaign.is_portfolio && (
+                                <span className="hero-badge" style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#3b82f6', border: '1px solid rgba(37, 99, 235, 0.28)' }}>
+                                    Portfolio Bid
+                                </span>
+                            )}
                         </div>
                         <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: platformColor, letterSpacing: '-0.02em' }}>
                             {campaign.name}
@@ -289,9 +329,9 @@ export default function CampaignDetail() {
                                     </div>
                                 </div>
                                 <div className="filter-group">
-                                    <label>Target CPC</label>
+                                    <label>{targetMetric.label}</label>
                                     <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '0.2rem' }}>
-                                        ${campaign.cpc?.toFixed(0) || '0'}
+                                        {targetMetric.value}
                                     </div>
                                 </div>
                                 <div className="filter-group">
